@@ -1,0 +1,126 @@
+#!/usr/bin/env python
+#-m cProfile -s time
+import sys,os,string
+
+pyFileCount = 0
+theFileList = []
+exitAtEnd = 1
+doDrawTrees = 0
+forceExitAtEnd = 0
+afterDoubleDash = 0
+argvAfterDoubleDash = []
+
+# The advantage of using the p4 script is that it takes command line
+# args, so you can read in data files and scripts, and p4 will try to
+# deal with them sensibly.  Generally I assume that args to the p4
+# command are file names.  But what if you want to hand p4 some args
+# that are not file names?  That is fine, as long as you separate them
+# by a double dash, ie
+#    p4 aFile anotherFile -- 23 57
+# and then they get put in var.argvAfterDoubleDash, (as strings, of
+# course).
+
+# the path to this script is made sys.path[0], but I see no point in
+# that, so put it back to normal, which is sys.path[0] = an empty string
+sys.path[0] = ''  
+
+if len(sys.argv) > 1:  # Is there stuff on the command line?
+    for f in sys.argv[1:]:
+        if f == '-i':  # We want to be interactive
+            exitAtEnd = 0
+        elif f == '-x': # We want to force exit after reading in the files
+            forceExitAtEnd = 1
+        elif f == '-d': # We want to draw trees, then exit.
+            doDrawTrees = 1
+            forceExitAtEnd = 1
+        elif f in ['--help', '-h', '-help']:
+            try:
+                from p4.func import splash
+            except ImportError:
+                print "Can't do 'help'.  It appears that p4 is not installed correctly."
+                sys.exit()
+            splash()
+            sys.exit()
+        elif f == '--': # Non-filename args will follow.
+            afterDoubleDash = 1
+        else:
+            if afterDoubleDash == 0:
+                theFileList.append(f)
+            else:
+                argvAfterDoubleDash.append(f)
+    del(f)
+
+# Whether to "import p4" or "from p4 import *"?  The former is more
+# polite, and makes p4 a better Python citizen, but I prefer the
+# latter for regular p4 work.  If you want to use p4 in a more
+# Python-like way, then by all means "import p4", and don't use this
+# script.
+#print "sys.path = %s" % sys.path
+from p4 import *
+
+var.argvAfterDoubleDash = argvAfterDoubleDash
+del(argvAfterDoubleDash)
+
+if len(theFileList):
+    #var.nexus_doFastNextTok = True
+    for f in theFileList:
+        #print "about to readFile(%s)" % f
+        func.readFile(f)
+    del(f)
+
+# If the -d flag is set, draw the trees
+if doDrawTrees:
+    for t in var.trees:
+        t.draw(showInternalNodeNames=1, addToBrLen=0.2, width=None, showNodeNums=0, partNum=None, model=None)
+
+    
+if forceExitAtEnd:
+    sys.exit()
+if exitAtEnd:
+    if pyFileCount > 0:
+        sys.exit()
+
+# New in Python 2.3
+# - A program can now set the environment variable PYTHONINSPECT to some
+#  string value in Python, and cause the interpreter to enter the
+#  interactive prompt at program exit, as if Python had been invoked
+#  with the -i option.
+
+# If we made it this far, we are interactive.
+os.environ['PYTHONINSPECT'] = '1'
+
+# Set the prompt (default is '>>> ').  I suspect that doing this might
+# screw up using the python interpreter in python-mode in emacs, but
+# you'll want to confirm that.
+sys.ps1 = 'p4> '
+
+# When the "from p4 import *" was done above, it read in any *.py
+# files in ~/.p4.  Now we want to execfile one more file, which of
+# course cannot end in .py, called 'interactive'.  Its only for things
+# that you might want to set when interactive.
+if 1:
+    theDir = os.path.join(os.path.expanduser('~'), '.p4')
+    if os.path.isdir(theDir):
+        fName = os.path.join(theDir, 'interactive')
+        if os.path.isfile(fName):
+            try:
+                execfile(fName)
+            except:
+                pass
+        del(fName)
+    del(theDir)
+
+# This is only needed if we are interactive.
+from p4 import p3rlcompleter
+
+# Maybe the novice user just types 'p4' ...
+if len(sys.argv) == 1:
+    if var.doSplash:
+        func.splash()
+
+del(pyFileCount)
+del(theFileList)
+del(exitAtEnd)
+del(doDrawTrees)
+del(forceExitAtEnd)
+del(afterDoubleDash)

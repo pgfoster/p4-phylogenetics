@@ -1,0 +1,21 @@
+part *newPart(int nTax, int nChar, char *equateSymbols, int nEquates, char *symbols, int dim);
+void freePart(part *thePart);
+void pokeSequences(part *thePart, char *theString);
+void pokeEquatesTable(part *thePart, char *theString);
+void makePatterns(part *thePart);
+void dumpPart(part *thePart);
+PyObject *singleSequenceBaseCounts(part *thePart, int sequenceNum);
+PyObject *symbolSequences(part *thePart);
+double unconstrainedLogLike(part *thePart);
+void setGlobalInvarSitesVec(part *thePart);
+void partCompositionC(part *thePart, double *theComp);
+PyObject *partCompositionP(part *thePart);
+int partSequenceSitesCount(part *thePart, int sequenceNum);
+void calcEmpiricalRMatrixViaMatrixLog(part *thePart);
+
+double steelCRCInvariants(part *thePart);
+double qEval(part *thePart, int i, int j, int k, int l);
+void recodeNLike(part *thePart);
+double partMeanNCharsPerSite(part *thePart);
+int partSimpleConstantSitesCount(part *thePart);
+double partBigXSquared(part *thePart);

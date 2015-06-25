@@ -1,0 +1,15 @@
+void cpREVRMatrix(double **r);
+void d78RMatrix(double **r);
+void jttRMatrix(double **r);
+void mtREV24RMatrix(double **r);
+void mtmamRMatrix(double **r);
+void wagRMatrix(double **r);
+void rtRevRMatrix(double **r);
+void tmjtt94RMatrix(double **r);
+void tmlg99RMatrix(double **r);
+void lgRMatrix(double **r);
+void blosum62RMatrix(double **r);
+void hivbRMatrix(double **r);
+void mtartRMatrix(double **r);
+void mtzoaRMatrix(double **r);
+void gcpREVRMatrix(double **r);

@@ -1,0 +1,1 @@
+void logDetFillFxy(int *nUnambig, int *nAmbig, int *nDoubleGap, char *seq, int sNum1, int sNum2, int *refUnambigCountMatrix, int *refAmbigCountMatrix, int *allSymbolNums, int nTax, int nChar, int dim, int bigDim, double *normUnambig, double *bigFxy, int *equatesArray);

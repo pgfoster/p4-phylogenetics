@@ -1,0 +1,70 @@
+Instructions for making a Python module from the Aarhus qdist code.
+
+As usual, the hard part is getting the prerequisites properly in place.
+
+You will need blas, or cblas, or Atlas with cblas.  This sort of thing
+comes with a mac, but you may need to install it if you are using
+linux.  If you compile Atlas yourself, follow the instructions
+carefully, and make the shared libs (*.so).  I think on Ubuntu you can
+install blas, which gives you blas rather than cblas (and no Atlas),
+but where the header is cblas.h; adjust the instructions below
+accordingly.
+
+There is a boost-python library that would be needed as well.  On
+Ubuntu its something like sudo apt-get install libboost-python.  I
+suspect the rest of libboost is not needed -- I put it on my Ubuntu
+box for other reasons, and it did not hurt.
+
+Make sure you have Python.h in your include path.  You probably have
+that if you installed Python from source, from MacPorts, from
+HomeBrew, or if you installed python-dev.
+
+====================================================================
+
+Now for scqdist, the sub-cubic quartet distance code from the clever
+and helpful folks at BIRC at Aarhus.
+
+Thanks muchly to Anders Kabell Kristensen (no longer at Aarhus, but
+see http://www.cs.au.dk/~dalko/thesis/) and Jesper Nielsen for help
+with the code.
+
+Get the zip file, qdist-src-2.0.zip, from http://birc.au.dk/software/qdist/
+(http://users-birc.au.dk/cstorm/software/qdist/qdist-src-2.0.zip)
+
+Unzip it here in this directory, where the scqdistmodule.cpp and
+setup.py are needed.  It does not make a directory -- it explodes in a
+mess of files in this directory.  That is what you want, this time.
+
+Next step is to do "cmake ." (note the dot) on it, in order to make
+the file "include_blas.hpp", which is needed to include in Matrix.hpp.
+
+In a compile on a mac yosemite, I got an compile error from the
+include_blas.hpp, saying it could not find <vecLib/vBLAS.h>.  I
+replaced it with #include <Accelerate/Accelerate.h> and that seemed to
+work.
+
+Based on the main.cpp in the qdist src, I have made a file
+scqdistmodule.cpp, to make a Python module.  Do this ---
+
+python setup.py build_ext --inplace
+
+and pay attention to any error messages as they fly by.  (Warnings are
+usually ok)
+
+On Ubuntu, I needed to add #include <cstddef> near the top of Tree.hpp.
+
+It might work.  If it does, you will get a module, scqdist.so, which
+you can put in your Python path.  Make sure that you can import it.
+
+If it does not work, you may need to adjust your setup.py.  You may
+need to remove the atlas lib from the list (I needed to do that on
+Ubuntu), or you may need to uncomment and adjust the include_dirs and
+library_dirs.  You may need to change "cblas" to "blas" (I needed to
+do that on Ubuntu).  Try again until you get a working scqdist.so that
+loads without error (ie in Python or p4, do "import scqdist" in that
+directory), and then move that into your Python path.
+
+Use it like this ---
+# tsA and tsB are two newick trees as Python strings.
+import scqdist
+mydist = scqdist.qdist(tsA, tsB)
