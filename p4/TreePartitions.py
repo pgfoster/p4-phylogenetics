@@ -1233,7 +1233,8 @@ something like this::
         minimumProportion is given as a number between 0 and 1.0,
         often it will be 0.5, meaning 50%).
 
-        It returns the tree.  Do it like this:
+        It returns the tree.  Do it like this::
+
             tp = TreePartitions('myTreeFile.nex')
             tp.writeSplits() # If you want ...
             t = tp.consensus()

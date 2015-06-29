@@ -198,7 +198,7 @@ class STChain(object):
         self.logPriorRatio = 0.0
 
         self.frrf = None
-        self.nInTreeSplits = 0
+        #self.nInTreeSplits = 0
 
         if self.stMcmc.modelName.startswith('SR2008_rf'):
             self.curTree.beta = self.stMcmc.beta
@@ -220,8 +220,8 @@ class STChain(object):
             self.curTree.spaQ= self.stMcmc.spaQ
             self.propTree.spaQ = self.stMcmc.spaQ
 
-            for t in self.stMcmc.trees:
-                self.nInTreeSplits += len(t.splSet)
+            #for t in self.stMcmc.trees:
+            #    self.nInTreeSplits += len(t.splSet)
             #print "Got nInTreeSplits %s" % self.nInTreeSplits
             self.setupBitarrayCalcs()
             self.getTreeLogLike_spa_bitarray()
@@ -293,12 +293,12 @@ class STChain(object):
                     self.propTree.logLike += logr
         
 
-    def getTreeLogLike_spa_bitarray(self):
+    def getTreeLogLike_spa_bitarray_old_good_off(self):
         gm = ["STChain.getTreeLogLike_spa_bitarray"]
         if self.propTree.spaQ > 1. or self.propTree.spaQ <= 0.0:
             gm.append("bad propTree.spaQ value %f" % self.propTree.spaQ)
             raise Glitch, gm
-        slowCheck = False
+        slowCheck = True
         if slowCheck:
             slowCheckLogLike = 0.0
             for it in self.stMcmc.trees:
@@ -417,12 +417,140 @@ class STChain(object):
                         slowCheckLogLike += logq
                     else:
                         slowCheckLogLike += logr
-
+                print self.propTree.logLike, slowCheckLogLike
                 myDiff = self.propTree.logLike - slowCheckLogLike
                 if math.fabs(myDiff) > 1.e-12:
                     gm.append("Bad like calc. slowCheck %f, bitarray %f, diff %g" % (
                         slowCheckLogLike, self.propTree.logLike, myDiff))
                     raise Glitch, gm
+            
+
+    def getTreeLogLike_spa_bitarray(self):
+        gm = ["STChain.getTreeLogLike_spa_bitarray"]
+        if self.propTree.spaQ > 1. or self.propTree.spaQ <= 0.0:
+            gm.append("bad propTree.spaQ value %f" % self.propTree.spaQ)
+            raise Glitch, gm
+        slowCheck = False
+        if slowCheck:
+            slowCheckLogLike = 0.0
+            for it in self.stMcmc.trees:
+                it.makeSplitKeys()
+                it.inbb =  [n.br for n in it.iterInternalsNoRoot()]
+
+
+        self.propTree.logLike = 0.0
+        #self.propTree.draw()
+        for it in self.stMcmc.trees:
+            if 0:
+                print "-" * 50
+                it.draw()
+                print "baTaxBits %s" % it.baTaxBits
+                print "firstTax at %i" % it.firstTax
+
+            if slowCheck:
+                stDupe = self.propTree.dupe()
+                toRemove = []
+                for n in stDupe.iterLeavesNoRoot():
+                    if n.name not in it.taxNames:
+                        toRemove.append(n)
+                for n in toRemove:
+                    stDupe.removeNode(n)
+                stDupe.taxNames = it.taxNames
+                stDupe.makeSplitKeys(makeNodeForSplitKeyDict=True)
+
+            # No need to consider (masked) splits with less than two
+            # 1s or more than it.nTax - 2 1s.  
+            upperGood = it.nTax - 2
+            relevantStSplits = []
+            for n in self.propTree.iterInternalsNoRoot():
+                # Choose which spl (spl or spl2) based on it.firstTax)
+                if n.ss.spl[it.firstTax]:
+                    n.ss.theSpl = n.ss.spl
+                else:
+                    n.ss.theSpl = n.ss.spl2
+                n.ss.maskedSplitWithTheFirstTaxOne = n.ss.theSpl & it.baTaxBits
+                n.ss.onesCount = n.ss.maskedSplitWithTheFirstTaxOne.count()
+                if 0:
+                    print "bigT node %i" % n.nodeNum
+                    print "  theSpl is %s" % n.ss.theSpl
+                    print "  maskedSplitWithTheFirstTaxOne %s" %  n.ss.maskedSplitWithTheFirstTaxOne
+                    print "  onesCount %i" % n.ss.onesCount
+                    if n.ss.onesCount >= 2 and n.ss.onesCount <= upperGood:
+                        print "    -> relevant"
+                    else:
+                        print "    -> not relevant"
+                if n.ss.onesCount >= 2 and n.ss.onesCount <= upperGood:
+                    relevantStSplits.append(n.ss)
+
+            nonRedundantStSplitDict = {}
+            for ss in relevantStSplits:
+                ss.bytes = ss.maskedSplitWithTheFirstTaxOne.tobytes()
+                nonRedundantStSplitDict[ss.bytes] = ss
+
+            if 0:
+                for ss in relevantStSplits:
+                    ss.dump()
+                print "There are %i relevant splits in the st for this it." % len(relevantStSplits)
+                for ss in nonRedundantStSplitDict:
+                    ss.dump()
+                print "There are %i non-redundant splits in the st for this it." % len(nonRedundantStSplitDict)
+
+            S_st = len(nonRedundantStSplitDict)  # S_st is the number of splits in the reduced supertree
+            if slowCheck:
+                #stDupe.draw()
+                #print "the drawing above is stDupe"
+                slowCheckS_st = len([n for n in stDupe.iterInternalsNoRoot()])
+                assert S_st == slowCheckS_st
+                
+            S = 2**(it.nTax - 1) - (it.nTax + 1)     # S is the number of possible splits in an it-sized tree
+            #print "S=%i, S_st=%i, S_x=%i" % (S, S_st, S-S_st)
+            if S_st:
+                q = self.propTree.spaQ / S_st
+                R = 1. - self.propTree.spaQ
+                r = R/(S - S_st)
+                #print "q=%f" % q
+                logq = math.log(q)
+            else:
+                R = 1.
+                r = R/S
+            #print "r=%f" % r
+            logr = math.log(r)
+
+            for n in it.internals:
+                ret = nonRedundantStSplitDict.get(n.stSplitKeyBytes)
+                if ret:
+                    #self.propTree.logLike += logq
+                    #if self.stMcmc.useSplitSupport and n.br.support:
+                    #    #self.propTree.logLike += n.br.logSupport
+                    #    print 
+                    #    self.propTree.logLike += ((S_st - 1) * n.br.logSupport)
+                    # if self.stMcmc.useSplitSupport and n.br.support:
+                    #     self.propTree.logLike += math.log(r + (n.br.support * (q - r)))
+                    # else:
+                    #     self.propTree.logLike += logq
+                    self.propTree.logLike += logq
+                else:
+                    self.propTree.logLike += logr
+            
+            if slowCheck:
+                for inb in it.inbb:
+                    ret = stDupe.nodeForSplitKeyDict.get(inb.splitKey)
+                    if ret:
+                        slowCheckLogLike += logq
+                        if self.stMcmc.useSplitSupport and inb.support:
+                            slowCheckLogLike += inb.logSupport
+                    else:
+                        slowCheckLogLike += logr
+                        #if self.stMcmc.useSplitSupport and inb.logSupport:
+                        #    slowCheckLogLike += inb.logSupport
+
+        if slowCheck:
+            #print self.propTree.logLike, slowCheckLogLike
+            myDiff = self.propTree.logLike - slowCheckLogLike
+            if math.fabs(myDiff) > 1.e-12:
+                gm.append("Bad like calc. slowCheck %f, bitarray %f, diff %g" % (
+                    slowCheckLogLike, self.propTree.logLike, myDiff))
+                raise Glitch, gm
             
 
         
@@ -1527,7 +1655,7 @@ See :class:`TreePartitions`.
     """
 
     
-    def __init__(self, inTrees, bigT=None, modelName='SR2008_rf_aZ', beta=1.0, spaQ=0.5, stRFCalc='purePython1', runNum=0, sampleInterval=100, checkPointInterval=None):
+    def __init__(self, inTrees, bigT=None, modelName='SR2008_rf_aZ', beta=1.0, spaQ=0.5, stRFCalc='purePython1', runNum=0, sampleInterval=100, checkPointInterval=None, useSplitSupport=False):
         gm = ['STMcmc.__init__()']
 
         assert inTrees
@@ -1560,7 +1688,7 @@ See :class:`TreePartitions`.
                 if t.isFullyBifurcating():
                     pass
                 else:
-                    gm.append("At the moment STMcmc wants trees that are fully bifurcating.")
+                    gm.append("The SR2008 model wants trees that are fully bifurcating.")
                     raise Glitch, gm
 
             goodSTRFCalcNames = ['purePython1', 'bitarray', 'fastReducedRF']
@@ -1731,13 +1859,24 @@ See :class:`TreePartitions`.
                             n.stSplitKey |= p.stSplitKey    # "or", in-place
                             p = p.sibling
                         #print "setting node %i stSplitKey to %s" % (n.nodeNum, n.stSplitKey)
-                t.splSet = set()
-                for n in t.iterInternalsNoRoot():
-                    if not n.stSplitKey[t.firstTax]:   # make sure splitKey[firstTax] is a '1'
-                        n.stSplitKey.invert()
-                        n.stSplitKey &= t.baTaxBits     # 'and', in-place
-                        #print "inverting and and-ing node %i stSplitKey to %s" % (n.nodeNum, n.stSplitKey)
-                    t.splSet.add(n.stSplitKey.tobytes()) # bytes so that I can use it as a set element
+                if self.stRFCalc == 'bitarray':
+                    t.splSet = set()
+                    for n in t.iterInternalsNoRoot():
+                        if not n.stSplitKey[t.firstTax]:   # make sure splitKey[firstTax] is a '1'
+                            n.stSplitKey.invert()
+                            n.stSplitKey &= t.baTaxBits     # 'and', in-place
+                            #print "inverting and and-ing node %i stSplitKey to %s" % (n.nodeNum, n.stSplitKey)
+                        t.splSet.add(n.stSplitKey.tobytes()) # bytes so that I can use it as a set element
+                if self.modelName in ['SPA']:
+                    t.internals = []
+                    for n in t.iterInternalsNoRoot():
+                        if not n.stSplitKey[t.firstTax]:   # make sure splitKey[firstTax] is a '1'
+                            n.stSplitKey.invert()
+                            n.stSplitKey &= t.baTaxBits     # 'and', in-place
+                            #print "inverting and and-ing node %i stSplitKey to %s" % (n.nodeNum, n.stSplitKey)
+                        n.stSplitKeyBytes = n.stSplitKey.tobytes()  # bytes so that I can use it as a set element
+                        t.internals.append(n) 
+
 
         if self.modelName in ['QPA']:
             for t in inTrees:
@@ -1866,14 +2005,50 @@ See :class:`TreePartitions`.
                         else:
                             t.qSet.add(up+down)
             #print t.qSet
-            t.nQuartets = len(t.qSet)            
+            t.nQuartets = len(t.qSet) 
+
+        self.useSplitSupport = False
+        if useSplitSupport:
+            if self.modelName.startswith("SR2008"):
+                gm.append("Arg useSplitSupport is turned on, but it is not implemented with SR2008")
+                raise Glitch, gm
+            assert useSplitSupport in [True, 'percent']
+            self.useSplitSupport = True
+            hasSplitInfo = False
+            for it in self.trees:
+                for n in it.iterInternalsNoRoot():
+                    if not hasattr(n.br, 'support'):
+                        n.br.support = None
+                    else:
+                        assert n.br.support == None
+                    if n.name:
+                        flName = float(n.name)
+                        hasSplitInfo = True
+                        if useSplitSupport == 'percent':
+                            flName *= 0.01
+                        if flName < 0.0 or flName > 1.0:
+                            gm.append("Input tree %s" % it.writeNewick(toString=True))
+                            gm.append("Got support value %s, outside of range 0 to 1" % n.name)
+                            if flName > 1.0 and useSplitSupport == True:
+                                gm.append("Maybe it is percent support?  If so, set useSplitSupport to 'percent' rather than True")
+                            raise Glitch, gm
+                        n.br.support = flName
+                        n.br.logSupport = math.log(n.br.support)
+                    else:
+                        n.br.logSupport = None
+            if not hasSplitInfo:
+                gm.append("Arg useSplitSupport is turned on, but none of the trees seem to have split info.")
+                raise Glitch, gm
+            
 
         print "Initializing STMcmc"
-        print "%-10s: %s" % ('modelName', modelName)
+        print "%-16s: %s" % ('modelName', modelName)
         if self.modelName.startswith("SR2008"):
-            print "%-10s: %s" % ('stRFCalc', self.stRFCalc)
-        print "%-10s: %s" % ('inTrees', len(self.trees))
-        print "%-10s: %s" % ('nTax', self.nTax)
+            print "%-16s: %s" % ('stRFCalc', self.stRFCalc)
+        if self.modelName in ["SPA", "QPA"]:
+            print "%-16s: %s" % ('useSplitSupport', self.useSplitSupport)
+        print "%-16s: %s" % ('inTrees', len(self.trees))
+        print "%-16s: %s" % ('nTax', self.nTax)
 
 
 
