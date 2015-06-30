@@ -524,11 +524,11 @@ class STChain(object):
                     #    #self.propTree.logLike += n.br.logSupport
                     #    print 
                     #    self.propTree.logLike += ((S_st - 1) * n.br.logSupport)
-                    # if self.stMcmc.useSplitSupport and n.br.support:
-                    #     self.propTree.logLike += math.log(r + (n.br.support * (q - r)))
-                    # else:
-                    #     self.propTree.logLike += logq
-                    self.propTree.logLike += logq
+                    if self.stMcmc.useSplitSupport and n.br.support:
+                         self.propTree.logLike += math.log(r + (n.br.support * (q - r)))
+                    else:
+                        self.propTree.logLike += logq
+                    #self.propTree.logLike += logq
                 else:
                     self.propTree.logLike += logr
             
