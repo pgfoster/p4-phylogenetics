@@ -1,2 +1,2 @@
 # p4-phylogenetics
-A Python bioinformatic toolkit, and an implementation of tree-heterogeneous models of evolution
+A Python phyloinformatic toolkit, and an implementation of tree-heterogeneous models of evolution
