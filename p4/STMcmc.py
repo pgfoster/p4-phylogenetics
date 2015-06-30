@@ -2033,9 +2033,10 @@ See :class:`TreePartitions`.
                                 gm.append("Maybe it is percent support?  If so, set useSplitSupport to 'percent' rather than True")
                             raise Glitch, gm
                         n.br.support = flName
-                        n.br.logSupport = math.log(n.br.support)
+                        #n.br.logSupport = math.log(n.br.support)
                     else:
-                        n.br.logSupport = None
+                        #n.br.logSupport = None
+                        pass
             if not hasSplitInfo:
                 gm.append("Arg useSplitSupport is turned on, but none of the trees seem to have split info.")
                 raise Glitch, gm
