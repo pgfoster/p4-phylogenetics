@@ -432,6 +432,9 @@ class STChain(object):
             raise Glitch, gm
         slowCheck = False
         if slowCheck:
+            print "\n", "-" * 30
+            print "Super tree: ",
+            self.propTree.write()
             slowCheckLogLike = 0.0
             for it in self.stMcmc.trees:
                 it.makeSplitKeys()
@@ -446,6 +449,9 @@ class STChain(object):
                 it.draw()
                 print "baTaxBits %s" % it.baTaxBits
                 print "firstTax at %i" % it.firstTax
+            if 0:
+                print "  input tree: ", 
+                it.write()
 
             if slowCheck:
                 stDupe = self.propTree.dupe()
@@ -503,7 +509,7 @@ class STChain(object):
                 assert S_st == slowCheckS_st
                 
             S = 2**(it.nTax - 1) - (it.nTax + 1)     # S is the number of possible splits in an it-sized tree
-            #print "S=%i, S_st=%i, S_x=%i" % (S, S_st, S-S_st)
+            #print "    S=%i, S_st=%i, S_x=%i" % (S, S_st, S-S_st)
             if S_st:
                 q = self.propTree.spaQ / S_st
                 R = 1. - self.propTree.spaQ
@@ -515,42 +521,49 @@ class STChain(object):
                 r = R/S
             #print "r=%f" % r
             logr = math.log(r)
-
+            
             for n in it.internals:
                 ret = nonRedundantStSplitDict.get(n.stSplitKeyBytes)
                 if ret:
-                    #self.propTree.logLike += logq
-                    #if self.stMcmc.useSplitSupport and n.br.support:
-                    #    #self.propTree.logLike += n.br.logSupport
-                    #    print 
-                    #    self.propTree.logLike += ((S_st - 1) * n.br.logSupport)
-                    if self.stMcmc.useSplitSupport and n.br.support:
-                         self.propTree.logLike += math.log(r + (n.br.support * (q - r)))
+                    if self.stMcmc.useSplitSupport and n.br.support != None:
+                        self.propTree.logLike += math.log(r + (n.br.support * (q - r)))
                     else:
                         self.propTree.logLike += logq
-                    #self.propTree.logLike += logq
                 else:
-                    self.propTree.logLike += logr
+                    if self.stMcmc.useSplitSupport and n.br.support != None:
+                        self.propTree.logLike += math.log(r + ((1. - n.br.support) * (q - r)))
+                    else:
+                        self.propTree.logLike += logr
             
             if slowCheck:
                 for inb in it.inbb:
+                    splitString = func.getSplitStringFromKey(inb.splitKey, it.nTax)
+                    print "    %s " % splitString,
                     ret = stDupe.nodeForSplitKeyDict.get(inb.splitKey)
-                    if ret:
-                        slowCheckLogLike += logq
-                        if self.stMcmc.useSplitSupport and inb.support:
-                            slowCheckLogLike += inb.logSupport
+                    if self.stMcmc.useSplitSupport and inb.support != None:
+                        if ret:
+                            thisLogQc = math.log(r + (inb.support * (q - r)))
+                            print "qc %.3f" % thisLogQc
+                            slowCheckLogLike += thisLogQc
+                        else:
+                            thisLogRc = math.log(r + ((1. - inb.support) * (q - r)))
+                            print "rc %.3f" % thisLogRc
+                            slowCheckLogLike += thisLogRc
                     else:
-                        slowCheckLogLike += logr
-                        #if self.stMcmc.useSplitSupport and inb.logSupport:
-                        #    slowCheckLogLike += inb.logSupport
-
-        if slowCheck:
-            #print self.propTree.logLike, slowCheckLogLike
-            myDiff = self.propTree.logLike - slowCheckLogLike
-            if math.fabs(myDiff) > 1.e-12:
-                gm.append("Bad like calc. slowCheck %f, bitarray %f, diff %g" % (
-                    slowCheckLogLike, self.propTree.logLike, myDiff))
-                raise Glitch, gm
+                        if ret:
+                            print "q %.3f" % q
+                            slowCheckLogLike += logq
+                        else:
+                            print "r %.3f" % r
+                            slowCheckLogLike += logr
+        if 1:
+            if slowCheck:
+                #print self.propTree.logLike, slowCheckLogLike
+                myDiff = self.propTree.logLike - slowCheckLogLike
+                if math.fabs(myDiff) > 1.e-12:
+                    gm.append("Bad like calc. slowCheck %f, bitarray %f, diff %g" % (
+                        slowCheckLogLike, self.propTree.logLike, myDiff))
+                    raise Glitch, gm
             
 
         
