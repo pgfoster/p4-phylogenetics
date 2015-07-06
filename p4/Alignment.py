@@ -268,7 +268,7 @@ class Alignment(SequenceList):
         Alignment.checkTranslation
     """
 
-    from Alignment_muck import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,orMasks,andMasks,sequenceSlice,bluntEndLigate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups
+    from Alignment_muck import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,orMasks,andMasks,sequenceSlice,bluntEndLigate, concatenate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups
     # bigAMatrix, empiricalRateMatrixViaMatrixLog, calcOnePamMatrix, rateMatrixFromPamMatrixViaMatrixLog -- in hybernation
     from Alignment_readWrite import readOpenPhylipFile, _readPhylipSequential, _readPhylipInterleaved, _readPhylipSequentialStrict, _readPhylipInterleavedStrict, readOpenClustalwFile,writeNexus,writePhylip,writeMolphy,readOpenGdeFile
     if var.usePfAndNumpy:

@@ -631,6 +631,68 @@ def bluntEndLigate(self, alig, allowDifferentDataTypes=False):
     self.length = len(self.sequences[0].sequence)
     self.checkLengthsAndTypes()
 
+def concatenate(self, alig, sNames):
+    """Attaches alig to the end of self.
+
+    You need to provide a list of taxon names, arg sNames.
+
+    It will still work if the sequences are in a different
+    order in the two alignments.
+
+    The order of the taxa in sNames need not be the same order as either
+    alignment.  So this method can change the order of the sequences in self.
+
+    """
+
+    gm = ['Alignment.concatenate()']
+    from Alignment import Alignment
+    if not isinstance(alig, Alignment):
+        gm.append("Arg must be an Alignment instance")
+        raise Glitch, gm
+    elif self.length > 0 and not alig.length:
+        gm.append("self has sequence, but arg does not")
+        raise Glitch, gm
+    elif alig.length > 0 and not self.length:
+        gm.append("Arg has sequence, but self does not")
+        raise Glitch, gm
+    if self.parts and len(self.parts):
+        self.resetSequencesFromParts()
+        self.parts = []
+    if alig.parts and len(alig.parts):
+        alig.resetSequencesFromParts()
+    for tName in self.taxNames:
+        assert tName in sNames
+    for tName in alig.taxNames:
+        assert tName in sNames
+    if not self.sequenceForNameDict:
+        self.makeSequenceForNameDict()
+    if not alig.sequenceForNameDict:
+        alig.makeSequenceForNameDict()
+    newSequences = []
+    for sName in sNames:
+        # print sName, 
+        selfSeq = self.sequenceForNameDict.get(sName)
+        # print selfSeq,
+        if not selfSeq:
+            selfSeq = self.sequences[0].dupe()
+            selfSeq.name = sName
+            selfSeq.sequence = '-' * self.nChar
+            self.sequenceForNameDict[sName] = selfSeq
+        # print selfSeq.sequence,
+        aligSeq = alig.sequenceForNameDict.get(sName)
+        # print aligSeq,
+        if not aligSeq:
+            aligSeq = alig.sequences[0].dupe()
+            aligSeq.name = sName
+            aligSeq.sequence = '-' * alig.nChar
+        # print aligSeq.sequence
+        selfSeq.sequence += aligSeq.sequence
+        newSequences.append(selfSeq)
+    self.sequences = newSequences
+    self.nexusSets = None
+    self.length = len(self.sequences[0].sequence)
+    self.checkLengthsAndTypes()
+
 
 
 def constantSitesProportion(self):
