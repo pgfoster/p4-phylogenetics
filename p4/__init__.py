@@ -31,42 +31,10 @@ Documentation is at <http://p4.nhm.ac.uk>
 """
 
 import sys, os, glob
-# Check for version 2, then for version 2.3.  Using sys.version_info
-# is more convenient than sys.version, but it is only in v2.
-#if int(sys.version[0]) < 2:
-#    print 'p4 wants Python version 2.3 or better.'
-#    sys.exit()
-#if sys.version_info[1] < 3:
-#    print 'p4 wants Python version 2.3 or better.'
-#    sys.exit()
-
-### People have told me that it does not work when they first try it
-### after installing, calling p4 from the install directory.  That is
-### because the pf.so module is someplace else (ie installed) , but
-### python is trying to import the local p4.  No workee, and from the
-### users point of view, mysteriously.  So check ...
-##try:
-##    import pf
-##except ImportError:
-##    if os.path.isdir('p4') and os.path.isdir('Pf'):
-##        #print "cwd is %s" % os.getcwd()
-##        # Seems to be in the install directory?
-##        if os.path.isdir('build') and not os.path.isfile('p4/pf.so'):
-##            try:
-##                from Glitch import Glitch
-##                gm = ["It looks like you are importing the p4 package from the"]
-##                gm.append("install directory, after it has been installed.")
-##                gm.append("That does not work.")
-##                gm.append("Try going to another directory.")
-##                gm.append("If that does not work, maybe there was another installation problem.")
-##                raise Glitch, gm
-##            except:
-##                raise
 
 from Var import var
 import func
 from func import read # Make this one top-level, as it is used so often
-#import p3rlcompleter  # Although pyrepl sounds very interesting ...
 
 from Alignment import Alignment
 if var.usePfAndNumpy:

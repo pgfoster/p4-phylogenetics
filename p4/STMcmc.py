@@ -1,9 +1,19 @@
 # This is STMcmc, for super tree mcmc.
 # Started 18 March 2011, first commit 22 March 2011.
 
-import pf,func
+import pf
+import func
 from Var import var
-import math,random,string,sys,time,copy,os,cPickle,types,glob
+import math
+import random
+import string
+import sys
+import time
+import copy
+import os
+import cPickle
+import types
+import glob
 import numpy as np
 from Glitch import Glitch
 from TreePartitions import TreePartitions
@@ -1668,7 +1678,10 @@ See :class:`TreePartitions`.
     """
 
     
-    def __init__(self, inTrees, bigT=None, modelName='SR2008_rf_aZ', beta=1.0, spaQ=0.5, stRFCalc='purePython1', runNum=0, sampleInterval=100, checkPointInterval=None, useSplitSupport=False):
+    def __init__(self, inTrees, bigT=None, modelName='SR2008_rf_aZ', 
+                 beta=1.0, spaQ=0.5, stRFCalc='purePython1', 
+                 runNum=0, sampleInterval=100, 
+                 checkPointInterval=None, useSplitSupport=False):
         gm = ['STMcmc.__init__()']
 
         assert inTrees
@@ -1681,7 +1694,8 @@ See :class:`TreePartitions`.
             for n in bigT.iterInternalsNoRoot():
                 n.name = None
 
-        goodModelNames = ['SR2008_rf_ia', 'SR2008_rf_aZ', 'SR2008_rf_aZ_fb', 'SPA', 'QPA']
+        goodModelNames = ['SR2008_rf_ia', 'SR2008_rf_aZ', 'SR2008_rf_aZ_fb', 
+                          'SPA', 'QPA']
         if modelName not in goodModelNames:
             gm.append("Arg modelName '%s' is not recognized. " % modelName)
             gm.append("Good modelNames are %s" % goodModelNames)
@@ -3074,8 +3088,8 @@ class STMcmcCheckPointReader(object):
         for mNum1 in range(1, nM):
             for mNum2 in range(mNum1):
                 ret = self.compareSplits(mNum1, mNum2, verbose=False)
-                #print "+++ ret = %s" % ret
-                if ret == None:
+                # print "+++ ret = %s" % ret
+                if ret is None:
                     ret = 0.0
                 results[mNum1][mNum2] = ret
                 results[mNum2][mNum1] = ret
@@ -3092,8 +3106,7 @@ class STMcmcCheckPointReader(object):
         print "min =  ", vect.min()
         print "mean = ", vect.mean()
         print "var =  ", vect.var()
-            
-        
+
     def writeProposalAcceptances(self):
         for m in self.mm:
             m.writeProposalAcceptances()
@@ -3102,7 +3115,7 @@ class STMcmcCheckPointReader(object):
         for m in self.mm:
             if m.nChains > 1:
                 m.writeSwapMatrix()
-            
+
     def writeProposalProbs(self):
         for m in self.mm:
             m.writeProposalProbs()
