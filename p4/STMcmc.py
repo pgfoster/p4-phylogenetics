@@ -540,7 +540,8 @@ class STChain(object):
                     else:
                         self.propTree.logLike += logq
                 else:
-                    if self.stMcmc.useSplitSupport and n.br.support != None:
+                    # If we are here when S_st is zero, then q is undefined.  So fall into the else clause
+                    if self.stMcmc.useSplitSupport and S_st and n.br.support != None:
                         self.propTree.logLike += math.log(r + ((1. - n.br.support) * (q - r)))
                     else:
                         self.propTree.logLike += logr
@@ -550,7 +551,8 @@ class STChain(object):
                     splitString = func.getSplitStringFromKey(inb.splitKey, it.nTax)
                     print "    %s " % splitString,
                     ret = stDupe.nodeForSplitKeyDict.get(inb.splitKey)
-                    if self.stMcmc.useSplitSupport and inb.support != None:
+                    # Here we need to check that S_st is not zero.  If it is, then q is undefined.
+                    if self.stMcmc.useSplitSupport and inb.support != None and S_st: 
                         if ret:
                             thisLogQc = math.log(r + (inb.support * (q - r)))
                             print "qc %.3f" % thisLogQc
