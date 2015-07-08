@@ -661,9 +661,9 @@ def concatenate(self, alig, sNames):
     if alig.parts and len(alig.parts):
         alig.resetSequencesFromParts()
     for tName in self.taxNames:
-        assert tName in sNames
+        assert tName in sNames, "self name %s is not in sNames." % tName
     for tName in alig.taxNames:
-        assert tName in sNames
+        assert tName in sNames, "other alig name %s is not in sNames." % tName
     if not self.sequenceForNameDict:
         self.makeSequenceForNameDict()
     if not alig.sequenceForNameDict:
