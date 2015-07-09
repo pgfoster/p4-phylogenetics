@@ -1,4 +1,6 @@
-import sys,os,math
+import sys
+import os
+import math
 import func
 from var import var
 from tree import Tree
@@ -6,6 +8,7 @@ from p4exceptions import P4Error
 
 
 class Trees(object):
+
     """A bunch of trees, all with the same taxNames.
 
     This class would be good for doing things that you might want to
@@ -33,7 +36,8 @@ class Trees(object):
         gm = ['Trees()']
         if trees == None:
             if not var.trees:
-                gm.append("Arg trees is not given or is empty, and var.trees is empty.  No trees.")
+                gm.append(
+                    "Arg trees is not given or is empty, and var.trees is empty.  No trees.")
                 raise P4Error(gm)
             else:
                 self.trees = var.trees
@@ -45,14 +49,16 @@ class Trees(object):
                 gm.append("The list of trees appears to be empty.")
                 raise P4Error(gm)
             if not isinstance(trees[0], Tree):
-                gm.append("The first item in the input list is not a Tree object.")
+                gm.append(
+                    "The first item in the input list is not a Tree object.")
                 raise P4Error(gm)
             self.trees = trees
         if taxNames:
             if type(taxNames) == type([]) and len(taxNames) and type(taxNames[0]) == type('string'):
                 pass
             else:
-                gm.append("If provided, arg taxNames should be a list of (at least one) string(s).")
+                gm.append(
+                    "If provided, arg taxNames should be a list of (at least one) string(s).")
         else:
             if trees:
                 if trees[0].taxNames:
@@ -62,9 +68,12 @@ class Trees(object):
                     taxNames = var.trees[0].taxNames
         if not taxNames:
             gm.append("I can't find a taxNames list in the input trees. ")
-            gm.append("In this case you need to feed this a taxNames list when you instantiate.")
-            gm.append("Often you can get a good taxNames from yourAlignment.taxNames.")
-            gm.append("(The order often matters, and generally should be same for all your analyses.)")
+            gm.append(
+                "In this case you need to feed this a taxNames list when you instantiate.")
+            gm.append(
+                "Often you can get a good taxNames from yourAlignment.taxNames.")
+            gm.append(
+                "(The order often matters, and generally should be same for all your analyses.)")
             raise P4Error(gm)
         self.taxNames = None
         self.setTaxNames(taxNames)
@@ -124,17 +133,18 @@ class Trees(object):
         for t in self.trees:
             if t.taxNames != self.taxNames:
                 if t.name:
-                    gm.append("Tree %s taxNames is not the same object as self.taxNames." % t.name)
+                    gm.append(
+                        "Tree %s taxNames is not the same object as self.taxNames." % t.name)
                 else:
-                    gm.append("Tree taxNames is not the same object as self.taxNames.")
+                    gm.append(
+                        "Tree taxNames is not the same object as self.taxNames.")
                 raise P4Error(gm)
         for t in self.trees:
             t.checkTaxNames()
 
-
     def dump(self):
         """Print summary info about self."""
-        
+
         print "Trees dump."
         print "  There are %i trees." % len(self.trees)
         print "  nTax is %i" % self.nTax
@@ -163,7 +173,8 @@ class Trees(object):
 
         if withTranslation:
             if not self.taxNames:
-                gm.append("No taxNames.  Set taxNames if you want withTranslation.")
+                gm.append(
+                    "No taxNames.  Set taxNames if you want withTranslation.")
                 raise P4Error(gm)
 
             translationHash = {}
@@ -218,11 +229,9 @@ class Trees(object):
                     f.write(' %s' % func.nexusFixNameIfQuotesAreNeeded(tN))
                 f.write(';\nend;\n\n')
             else:
-                gm.append("writeTaxaBlock is set, but there is no taxNames.  How did *that* happen?!?")
+                gm.append(
+                    "writeTaxaBlock is set, but there is no taxNames.  How did *that* happen?!?")
                 raise P4Error(gm)
-
-
-
 
         f.write('begin trees;\n')
 
@@ -230,8 +239,10 @@ class Trees(object):
         if withTranslation:
             f.write('    translate\n')
             for i in range(self.nTax - 1):
-                f.write('        %3i %s,\n' % (i + 1, func.nexusFixNameIfQuotesAreNeeded(self.taxNames[i])))
-            f.write('        %3i %s\n' % (self.nTax, func.nexusFixNameIfQuotesAreNeeded(self.taxNames[-1])))
+                f.write('        %3i %s,\n' % (
+                    i + 1, func.nexusFixNameIfQuotesAreNeeded(self.taxNames[i])))
+            f.write('        %3i %s\n' % (
+                self.nTax, func.nexusFixNameIfQuotesAreNeeded(self.taxNames[-1])))
             f.write('    ;\n')
 
         # write the models comment
@@ -239,41 +250,46 @@ class Trees(object):
             first = self.trees[0]
             if likeMcmc:
                 if not withTranslation:
-                    gm.append("withTranslation is turned off, but likeMcmc is turned on.")
-                    gm.append("This will cause grief in TreePartitions, so is prohibited.")
+                    gm.append(
+                        "withTranslation is turned off, but likeMcmc is turned on.")
+                    gm.append(
+                        "This will cause grief in TreePartitions, so is prohibited.")
                     gm.append("Both on or both off, please.")
                     raise P4Error(gm)
                 f.write('    [&&p4 models p%i' % first.model.nParts)
                 for pNum in range(first.model.nParts):
                     f.write(' c%i.%i' % (pNum, first.model.parts[pNum].nComps))
-                    f.write(' r%i.%i' % (pNum, first.model.parts[pNum].nRMatrices))
-                    f.write(' g%i.%i' % (pNum, first.model.parts[pNum].nGdasrvs))
+                    f.write(' r%i.%i' %
+                            (pNum, first.model.parts[pNum].nRMatrices))
+                    f.write(' g%i.%i' %
+                            (pNum, first.model.parts[pNum].nGdasrvs))
                 f.write(']\n')
-
 
         # write each tree
         for t in self.trees:
             if not self.writeBranchLengths:
                 t.stripBrLens()
-            
-            if t.logLike:
-                f.write('    [logLike for tree %s is %f]\n' % (t.name, t.logLike))
 
-            f.write('    tree %s = [&U] ' % func.nexusFixNameIfQuotesAreNeeded(t.name))
+            if t.logLike:
+                f.write('    [logLike for tree %s is %f]\n' %
+                        (t.name, t.logLike))
+
+            f.write('    tree %s = [&U] ' %
+                    func.nexusFixNameIfQuotesAreNeeded(t.name))
             if t.recipWeight:
-                #if t.recipWeight == 1:
+                # if t.recipWeight == 1:
                 #    f.write('[&W 1] ')
-                #else:
+                # else:
                 f.write('[&W 1/%i] ' % t.recipWeight)
             if hasattr(t, 'weight'):
                 f.write('[&W %f] ' % t.weight)
 
-            t.writeNewick(f, withTranslation=withTranslation, translationHash=translationHash, doMcmcCommandComments=likeMcmc)
+            t.writeNewick(f, withTranslation=withTranslation,
+                          translationHash=translationHash, doMcmcCommandComments=likeMcmc)
 
         f.write('end;\n\n')
         if f != sys.stdout:
             f.close()
-
 
     def writeNewick(self, fName='intree'):
         """Write out the list of trees in Newick format.
@@ -295,7 +311,7 @@ class Trees(object):
         #flob.write(' %i\n' % len(self.trees))
         for t in self.trees:
             t.writeNewick(flob)
-        #flob.write('\n')
+        # flob.write('\n')
         if fName != sys.stdout:
             flob.close()
 
@@ -322,7 +338,6 @@ class Trees(object):
                         raise P4Error(gm)
         return foundTrees
 
-
     def topologyDistanceMatrix(self, metric='sd'):
         """Returns a DistanceMatrix object showing topology distances.
 
@@ -342,8 +357,8 @@ class Trees(object):
         for t in self.trees:
             d.names.append(t.name)
         d.dim = len(d.names)
-        #print d.names
-        #sys.exit()
+        # print d.names
+        # sys.exit()
         d.matrix = []
         for i in range(d.dim):
             d.matrix.append([0.0] * d.dim)
@@ -372,7 +387,7 @@ class Trees(object):
         sdd = []
         qdd = []
         for t in self.trees:
-            sd,qd = t.inputTreesToSuperTreeDistances(inputTrees)
+            sd, qd = t.inputTreesToSuperTreeDistances(inputTrees)
             nn.append(t.name)
             sdd.append(sd)
             qdd.append(qd)
@@ -450,10 +465,10 @@ class Trees(object):
                 dTree.stripBrLens()
                 skd[skk] = [1, dTree]
 
-        #for v in skd.itervalues():
+        # for v in skd.itervalues():
         #    print v
 
-        #Flatten to a list, order by counts
+        # Flatten to a list, order by counts
         skl = skd.values()
         skl = func.sortListOfListsOnListElementNumber(skl, 0)
         skl.reverse()
@@ -465,7 +480,7 @@ class Trees(object):
             raise P4Error(gm)
 
         # Calculate frequency from counts
-        trprobs = [(float(count)/float(nTrees), tree) for count, tree in skl]
+        trprobs = [(float(count) / float(nTrees), tree) for count, tree in skl]
         if writeNexus:
             count = 1
             for prob, tree in trprobs:
@@ -476,8 +491,6 @@ class Trees(object):
             tt.writeNexus(fName="treeProbabilities.nex", withTranslation=True)
 
         return trprobs
-        
-                       
 
     def consel(self, rankByInputOrder=False, clobber=False, quiet=1, tidy=1, returnResults=False):
         """Use Shimo's consel programs to compare trees.
@@ -536,14 +549,17 @@ class Trees(object):
                 gm.append("need to be in your path.")
                 gm.append("Can't find %s" % progName)
                 raise P4Error(gm)
-        
+
         # Check for bad arg vals
-        # False equates to zero, and True equates to 1.  True does not equate to 2
+        # False equates to zero, and True equates to 1.  True does not equate
+        # to 2
         if quiet not in [0, 1, 2]:
-            gm.append("arg 'quiet' should be set to one of 0 (or False), 1 (or True), or 2.  Got '%s'" % quiet)
+            gm.append(
+                "arg 'quiet' should be set to one of 0 (or False), 1 (or True), or 2.  Got '%s'" % quiet)
             raise P4Error(gm)
         if tidy not in [0, 1, 2]:
-            gm.append("arg 'tidy' should be set to one of 0 (or False), 1 (or True), or 2.  Got '%s'" % tidy)
+            gm.append(
+                "arg 'tidy' should be set to one of 0 (or False), 1 (or True), or 2.  Got '%s'" % tidy)
             raise P4Error(gm)
 
         # Can we make siteLikes?
@@ -568,7 +584,8 @@ class Trees(object):
                     t.data = self.data
 
         # Are we about to clobber?
-        #for fName in ['siteLikes.mt', 'consel_out.ci', 'consel_out.pv', 'consel_out.rmt', 'consel_out.vt']:
+        # for fName in ['siteLikes.mt', 'consel_out.ci', 'consel_out.pv',
+        # 'consel_out.rmt', 'consel_out.vt']:
         for fName in ['siteLikes.sitelh', 'consel_out.ci', 'consel_out.pv', 'consel_out.rmt', 'consel_out.vt']:
             if os.path.exists(fName):
                 if clobber:
@@ -577,14 +594,16 @@ class Trees(object):
                     gm.append("Refusing to overwrite file %s" % fName)
                     raise P4Error(gm)
 
-        #print "Calculating siteLikes ..."
+        # print "Calculating siteLikes ..."
         for t in self.trees:
             t.getSiteLikes()
-            t.deleteCStuff()    # Be memory efficient, but there is still a lot of inefficient re-malloc'ing.
+            # Be memory efficient, but there is still a lot of inefficient
+            # re-malloc'ing.
+            t.deleteCStuff()
         nSiteLikes = len(self.trees[0].siteLikes)
 
         # Write the site likes to a file in xx.sitelh, ie puzzle format
-        #print "Writing siteLikes ..."
+        # print "Writing siteLikes ..."
         f = file('siteLikes.sitelh', 'w')
         f.write('%i %i\n' % (len(self.trees), nSiteLikes))
         for i in range(len(self.trees)):
@@ -596,7 +615,7 @@ class Trees(object):
             f.write('\n')
         f.close()
 
-        #print "Invoking makermt, consel, and catpv ..."
+        # print "Invoking makermt, consel, and catpv ..."
         if quiet:
             os.system('makermt --puzzle siteLikes consel_out > /dev/null')
             os.system('consel consel_out > /dev/null')
@@ -617,7 +636,7 @@ class Trees(object):
         if returnResults:
             fh = open("conselOut", "r")
             lines = fh.readlines()
-            #for l in lines:
+            # for l in lines:
             #    print "x ", l,
             fh.close()
 
@@ -644,19 +663,18 @@ class Trees(object):
             if rankByInputOrder:
                 linesToSkip += 1
             results = []
-            for line in lines[linesToSkip:]: 
+            for line in lines[linesToSkip:]:
                 a, b = line.split("|")[:2]
                 results.append(tuple(a.split()[1:] + b.split()))
-            
-        
+
         if tidy:
             #os.system('rm consel_out.ci consel_out.pv consel_out.rmt consel_out.vt siteLikes.mt')
-            os.system('rm consel_out.ci consel_out.pv consel_out.rmt consel_out.vt siteLikes.sitelh')
+            os.system(
+                'rm consel_out.ci consel_out.pv consel_out.rmt consel_out.vt siteLikes.sitelh')
             if tidy == 2:
                 os.system('rm conselOut')
         if returnResults:
             return results
-
 
     def rell(self, bootCount=10000, seedIsPid=1):
         """This compares several trees by the RELL method.
@@ -679,7 +697,8 @@ class Trees(object):
 
         # Can we make siteLikes?
         if not self.data:
-            gm.append("No data.  You need to 'myTreesObject.data = myDataObject'")
+            gm.append(
+                "No data.  You need to 'myTreesObject.data = myDataObject'")
             raise P4Error(gm)
         for t in self.trees:
             if not t.model:
@@ -691,10 +710,12 @@ class Trees(object):
             if not t.data:
                 t.data = self.data
 
-        #print "Calculating siteLikes ..."
+        # print "Calculating siteLikes ..."
         for t in self.trees:
             t.getSiteLikes()
-            t.deleteCStuff()    # Be memory efficient, but there is still a lot of inefficient re-malloc'ing.
+            # Be memory efficient, but there is still a lot of inefficient
+            # re-malloc'ing.
+            t.deleteCStuff()
 
         nTrees = len(self.trees)
         for t in self.trees:
@@ -705,24 +726,24 @@ class Trees(object):
         if seedIsPid:
             theSeed = os.getpid()
 
-        #print "Setting C-memory..."
+        # print "Setting C-memory..."
         rStuff = pf.setRellMemory(nTrees, nChar, theSeed)
         for i in range(nTrees):
             t = self.trees[i]
             for j in range(nChar):
                 pf.pokeRellMemory(i, j, t.siteLikes[j], rStuff)
 
-        #print "Doing bootstrap ..."
+        # print "Doing bootstrap ..."
         winners = pf.rell(bootCount, rStuff)  # see data.c
         pf.freeRellMemory(rStuff)
 
-        #print winners
+        # print winners
 
         print "\nRELL bootstrap results"
         print "======================"
         for i in range(nTrees):
             t = self.trees[i]
-            print "%3i   %20s  %1.3f" % (i, t.name, (float(winners[i])/float(bootCount)))
+            print "%3i   %20s  %1.3f" % (i, t.name, (float(winners[i]) / float(bootCount)))
 
     def trackSplitsFromTree(self, theTree, windowSize=200, stride=100, fName='trackSplitsOut.py'):
         """See how slits from theTree changes over the trees in self.
@@ -758,7 +779,8 @@ class Trees(object):
             textDrawList = theTree.textDrawList()
             for l in textDrawList:
                 f.write("#  %s\n" % l)
-            f.write("#\n# The drawing above shows the splitKeys that are being tracked.\n")
+            f.write(
+                "#\n# The drawing above shows the splitKeys that are being tracked.\n")
             f.write("#\n# windowSize=%s, stride=%s.\n" % (windowSize, stride))
 
         # Remove the decoration from above.
@@ -768,8 +790,7 @@ class Trees(object):
                 n.name = n.name[: -(len(splitKeyStringWithBlank))]
             else:
                 n.name = None
-        #theTree.draw()
-
+        # theTree.draw()
 
         # Determine whether we need to makeSplitKeys()
         t = self.trees[0]
@@ -779,7 +800,7 @@ class Trees(object):
             for t in self.trees:
                 t.makeSplitKeys()
                 t.splitKeys = [n.br.splitKey for n in t.iterNodesNoRoot()]
-                #print '\nsplitKeys = %s' % t.splitKeys
+                # print '\nsplitKeys = %s' % t.splitKeys
         tracks = {}
         kk = []
         for n in theTree.iterInternalsNoRoot():
@@ -799,7 +820,8 @@ class Trees(object):
                     if theSplitKey in t.splitKeys:
                         splitCount += 1
                 print ' nTrees=%3i, splitCount= %3i' % (nTrees, splitCount)
-                tracks[theSplitKey].append([startTNum + (0.5 * windowSize), (float(splitCount)/nTrees)])
+                tracks[theSplitKey].append(
+                    [startTNum + (0.5 * windowSize), (float(splitCount) / nTrees)])
                 startTNum += stride
         if fName:
             f.write("kk = %s\n" % kk)
@@ -830,7 +852,8 @@ class Trees(object):
         textDrawList = theTree.textDrawList()
         for l in textDrawList:
             f.write("#  %s\n" % l)
-        f.write("#\n# The drawing above shows the splitKeys that are being tracked.\n")
+        f.write(
+            "#\n# The drawing above shows the splitKeys that are being tracked.\n")
         f.write("#\n# windowSize=%s, stride=%s.\n" % (windowSize, stride))
 
         # Remove the decoration from above.
@@ -840,9 +863,10 @@ class Trees(object):
                 n.name = n.name[: -(len(splitKeyStringWithBlank))]
             else:
                 n.name = None
-        #theTree.draw()
+        # theTree.draw()
 
-        # We need to have read in the model comments when we read in the trees for self.
+        # We need to have read in the model comments when we read in the trees
+        # for self.
         if not hasattr(self.trees[0], "modelInfo"):
             gm.append("The first tree has no modelInfo.")
             gm.append("The trees should have been read in with")
@@ -850,7 +874,6 @@ class Trees(object):
             raise P4Error(gm)
 
         mi = self.trees[0].modelInfo
-
 
         # Determine whether we need to makeSplitKeys()
         t = self.trees[0]
@@ -860,7 +883,7 @@ class Trees(object):
             for t in self.trees:
                 t.makeSplitKeys()
                 t.splitKeys = [n.br.splitKey for n in t.iterNodesNoRoot()]
-                #print '\nsplitKeys = %s' % t.splitKeys
+                # print '\nsplitKeys = %s' % t.splitKeys
 
         from treepartitions import TreePartitions
 
@@ -871,14 +894,16 @@ class Trees(object):
         startTNum = 0
         while len(self.trees) - startTNum >= windowSize:
             print "Trees %6i -- %6i" % (startTNum, (startTNum + windowSize))
-            tt2 = Trees(self.trees[startTNum:(startTNum + windowSize)], taxNames=self.taxNames)
+            tt2 = Trees(
+                self.trees[startTNum:(startTNum + windowSize)], taxNames=self.taxNames)
             tp = TreePartitions(tt2)
             for pNum in range(mi.nParts):
                 print "  Part %i, nComps=%i" % (pNum, mi.parts[pNum].nComps)
                 if mi.parts[pNum].nComps > 1:
-                    #for s in tp.splits:
+                    # for s in tp.splits:
                     #    if s.key in theTree.splitKeys:
-                    #        print "    Split key: %12s, compCounts=%s" % (s.key, s.modelUsage.parts[pNum].compCounts)
+                    # print "    Split key: %12s, compCounts=%s" % (s.key,
+                    # s.modelUsage.parts[pNum].compCounts)
                     for k in theTree.splitKeys:
                         if tp.splitsHash.has_key(k):
                             s = tp.splitsHash[k]
@@ -886,4 +911,3 @@ class Trees(object):
             startTNum += stride
 
         f.close()
-

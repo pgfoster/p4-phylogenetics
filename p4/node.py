@@ -3,7 +3,9 @@ from var import var
 import sys
 import pf
 
+
 class NodeBranchPart(object):
+
     def __init__(self):
         self.rMatrixNum = -1
         self.gdasrvNum = -1
@@ -11,24 +13,28 @@ class NodeBranchPart(object):
 
 
 class NodeBranch(object):
+
     def __init__(self):
         self.len = 0.1
-        #self.textDrawSymbol = '-'  # See var.modelSymbols for some alternative symbols
+        # self.textDrawSymbol = '-'  # See var.modelSymbols for some
+        # alternative symbols
         self.rawSplitKey = None    # Odd or even
         self.splitKey = None       # Only even
         #self.name = None
-        #self.uName = None          # under-name
-        #self.color =  None         # US spelling.
-        #self.support = None        # A float, so that it can preserve all its significant
-                                   # digits, yet can be formatted flexibly for output.
-        #self.biRootCount = None  # For cons trees, where the input trees are
-                                 # bi-Rooted, ie have bifurcating roots.  This
-                                 # is the number of compatible input trees that
-                                 # were rooted on this branch.
+        # self.uName = None          # under-name
+        # self.color =  None         # US spelling.
+        # self.support = None        # A float, so that it can preserve all its significant
+        # digits, yet can be formatted flexibly for output.
+        # self.biRootCount = None  # For cons trees, where the input trees are
+        # bi-Rooted, ie have bifurcating roots.  This
+        # is the number of compatible input trees that
+        # were rooted on this branch.
         self.parts = []    # NodeBranchPart() objects
         self.lenChanged = False
 
+
 class NodePart(object):
+
     def __init__(self):
         #self.pats = None
         #self.nPats = 0
@@ -37,21 +43,24 @@ class NodePart(object):
         #self.cl2 = None
 
 
-
 class Node(object):
+
     """A Node is a vertex in a Tree.  All but the root have a branch.
 
     A Node has pointers to its parent, leftChild, and sibling, any of which may be None.
     """
 
-    #def __del__(self, freeNode=pf.p4_freeNode, dp_freeNode=pf.dp_freeNode, mysys=sys):
+    # def __del__(self, freeNode=pf.p4_freeNode, dp_freeNode=pf.dp_freeNode,
+    # mysys=sys):
     def __del__(self, freeNode=pf.p4_freeNode, mysys=sys):
-    #def __del__(self, freeNode=pf.p4_freeNode, dp_freeNode=pf.dp_freeNode):
-    #def __del__(self, freeNode=pf.p4_freeNode):
-        #if self.nodeNum == 0:
+        # def __del__(self, freeNode=pf.p4_freeNode, dp_freeNode=pf.dp_freeNode):
+        # def __del__(self, freeNode=pf.p4_freeNode):
+        # if self.nodeNum == 0:
         #mysys.stdout.write('Node.__del__()   deleting node %i\n' % self.nodeNum)
-        #mysys.stdout.flush()
-        if self.cNode:  # Generally, cNodes are deleted before the cTree is freed.  freeNode requires the cTree!
+        # mysys.stdout.flush()
+        # Generally, cNodes are deleted before the cTree is freed.  freeNode
+        # requires the cTree!
+        if self.cNode:
             mysys.stdout.write('Node.__del__()  node %i (%s) has a cNode (%s).  How?!?\n' % (
                 self.nodeNum, self, self.cNode))
             if self.doDataPart:
@@ -59,7 +68,7 @@ class Node(object):
             else:
                 freeNode(self.cNode)
             self.cNode = None
-    
+
     def __init__(self):
         self.name = None
         self.nodeNum = -1
@@ -68,21 +77,19 @@ class Node(object):
         self.sibling = None
         self.isLeaf = 0
         self.cNode = None   # Pointer to a c-struct
-        self.seqNum = -1    # Zero-based seq numbering of course, so -1 means no sequence.
+        # Zero-based seq numbering of course, so -1 means no sequence.
+        self.seqNum = -1
         self.br = NodeBranch()
-        #self.rootCount = None           # For cons trees, where the input trees do not
-                                        # have bifurcating roots.  This is the number of
-                                        # compatible input trees that were rooted on this node.
+        # self.rootCount = None           # For cons trees, where the input trees do not
+        # have bifurcating roots.  This is the number of
+        # compatible input trees that were rooted on this node.
         self.parts = []     # NodePart objects
         self.doDataPart = 0
         self.flag = 0
 
-
-
-
     def wipe(self):
         """Set the pointers parent, leftChild, and sibling to None"""
-        
+
         self.parent = None
         self.leftChild = None
         self.sibling = None
@@ -111,18 +118,20 @@ class Node(object):
         leftSibling, return None.
         """
         if not self.parent:
-            #print 'leftSibling(%i).  No parent.  returning None.' % self.nodeNum
+            # print 'leftSibling(%i).  No parent.  returning None.' %
+            # self.nodeNum
             return None
         lsib = self.parent.leftChild
         if lsib == self:
-            #print 'leftSibling(%i).  self is self.parent.leftChild.  returning None.' % self.nodeNum
+            # print 'leftSibling(%i).  self is self.parent.leftChild.
+            # returning None.' % self.nodeNum
             return None
         while lsib:
             if lsib.sibling == self:
-                #print 'leftSibling(%i): returning node %i' % (self.nodeNum, lsib.nodeNum)
+                # print 'leftSibling(%i): returning node %i' % (self.nodeNum,
+                # lsib.nodeNum)
                 return lsib
             lsib = lsib.sibling
-
 
     # These next 3 were suggestions from Rick Ree.  Thanks, Rick!
     # Then I added a couple more.  Note that all of these use
@@ -135,7 +144,7 @@ class Node(object):
     # sys.setrecursionlimit(newLimit)
 
     # See also Tree.iterNodesNoRoot()
-    
+
     def iterChildren(self):
         n = self.leftChild
         while n:
@@ -180,7 +189,7 @@ class Node(object):
         that ``down`` attribute is zapped (to try to keep the bloat
         down ...).  So you need to test ``if hasattr(yourNode,
         'down'):`` before you actually use it.
-        
+
         """
 
         if showDown:
@@ -196,8 +205,6 @@ class Node(object):
                 else:
                     for n in c.iterPreOrder():
                         yield n
-    
-
 
     # ###############################
     def getNChildren(self):
@@ -220,12 +227,11 @@ class Node(object):
                 return False
             elif n == self:
                 return True
-            
 
     def _ladderize(self, biggerGroupsOnBottom):
         """This is only used by Tree.ladderize()."""
-        
-        #print '====Node %i' % self.nodeNum
+
+        # print '====Node %i' % self.nodeNum
         if not self.leftChild:
             pass
         else:
@@ -238,18 +244,19 @@ class Node(object):
                 ch.nLeaves = nL
                 children.append(ch)
                 ch = ch.sibling
-            #print '  nLeaves = %s' % nLeaves
+            # print '  nLeaves = %s' % nLeaves
             allOnes = True
             for ch in children:
                 if ch.nLeaves > 1:
                     allOnes = False
                     break
             if not allOnes:
-                children = func.sortListOfObjectsOnAttribute(children, 'nLeaves')
+                children = func.sortListOfObjectsOnAttribute(
+                    children, 'nLeaves')
                 if not biggerGroupsOnBottom:
                     children.reverse()
-                #print '\n    Children\n    ------------'
-                #for ch in children:
+                # print '\n    Children\n    ------------'
+                # for ch in children:
                 #    print '    node=%i, nLeaves=%i' % (ch.nodeNum, ch.nLeaves)
                 self.leftChild = children[0]
                 theLeftChild = self.leftChild
@@ -262,6 +269,3 @@ class Node(object):
                     del(ch.nLeaves)
                 for ch in self.iterChildren():
                     ch._ladderize(biggerGroupsOnBottom)
-
-        
-

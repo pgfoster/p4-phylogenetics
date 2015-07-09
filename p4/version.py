@@ -3,4 +3,3 @@ versionNumber = float(versionNumberString)
 versionNumberModifier = ' [2015-06-25]'    # a string
 versionString = '%s%s' % (versionNumberString, versionNumberModifier)
 dateString = "25 June, 2015"
-

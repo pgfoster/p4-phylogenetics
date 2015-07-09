@@ -14,14 +14,15 @@ way whenever CStrings are encountered."""
 
 
 class NexusToken(object):
+
     def __init__(self, max):
         self.max = numpy.array([max], numpy.int32)
-	self.tokLen = numpy.array([0], numpy.int32)
-	self.tok = numpy.array(['x'] * int(self.max), 'c')
-	self.embeddedCommentLen = numpy.array([0], numpy.int32)
-	self.embeddedComment = numpy.array(['x'] * int(self.max), 'c')
-	self.savedCommentLen = numpy.array([0], numpy.int32)
-	self.filePtr = None
+        self.tokLen = numpy.array([0], numpy.int32)
+        self.tok = numpy.array(['x'] * int(self.max), 'c')
+        self.embeddedCommentLen = numpy.array([0], numpy.int32)
+        self.embeddedComment = numpy.array(['x'] * int(self.max), 'c')
+        self.savedCommentLen = numpy.array([0], numpy.int32)
+        self.filePtr = None
         self.nexusToken = pf.newNexusToken(var._nexus_writeVisibleComments,
                                            var._nexus_getP4CommandComments,
                                            var._nexus_getWeightCommandComments,
@@ -39,34 +40,38 @@ class NexusToken(object):
 
 nt = NexusToken(300)
 
+
 def checkLineLengths(flob):
     global nt
-    #print 'NexusToken2.checkLineLengths here.'
-    flob.seek(0,0)
+    # print 'NexusToken2.checkLineLengths here.'
+    flob.seek(0, 0)
     longest = pf.nexusTokenCheckLineLengths(nt.nexusToken, flob)
-    flob.seek(0,0)
-    #print 'The longest line length is %i' % longest
+    flob.seek(0, 0)
+    # print 'The longest line length is %i' % longest
     if longest > nt.max:
         nt = NexusToken(longest)
 
+
 def nextTok(flob):
-    #print 'NexusToken2.nextTok() here.  nt.nexusToken = %i, max=%s, tokLen=%s, type(tokLen)=%s' % (nt.nexusToken, nt.max, nt.tokLen[0], type(nt.tokLen))
+    # print 'NexusToken2.nextTok() here.  nt.nexusToken = %i, max=%s, tokLen=%s, type(tokLen)=%s' % (nt.nexusToken, nt.max, nt.tokLen[0], type(nt.tokLen))
     #assert type(nt.tokLen) == type(numpy.array([0], numpy.int32))
-    #print "NexusToken2.nextTok().  nt.wordIsFinished[0]=%i, nt.tokLen=%i, previousTok=%s, previousComment=%s" % (nt.wordIsFinished[0], nt.tokLen[0], nt.previousTok, nt.previousEmbeddedComment) 
-    #if nt.wordIsFinished[0]:
+    # print "NexusToken2.nextTok().  nt.wordIsFinished[0]=%i, nt.tokLen=%i, previousTok=%s, previousComment=%s" % (nt.wordIsFinished[0], nt.tokLen[0], nt.previousTok, nt.previousEmbeddedComment)
+    # if nt.wordIsFinished[0]:
     #    assert nt.tokLen[0]
     #    ret = nt.tok[:int(nt.tokLen[0])].tostring()
     #    nt.tokLen[0] = 0
     #    nt.wordIsFinished[0] = 0
     #    #nt.previousTok = ret
     #    return ret
-    #print '    x1 NexusToken2.nextTok() here. savedCommentLen=%i' % nt.savedCommentLen[0]
+    # print '    x1 NexusToken2.nextTok() here. savedCommentLen=%i' %
+    # nt.savedCommentLen[0]
     if nt.savedCommentLen[0]:
         ret = nt.embeddedComment[:int(nt.savedCommentLen[0])].tostring()
         nt.savedCommentLen[0] = 0
         return ret
     pf.nextToken(nt.nexusToken, flob)
-    #print '    x2 tokLen = %i, embeddedCommentLen[0] = %i' % (nt.tokLen[0], nt.embeddedCommentLen[0])
+    # print '    x2 tokLen = %i, embeddedCommentLen[0] = %i' % (nt.tokLen[0],
+    # nt.embeddedCommentLen[0])
     if nt.embeddedCommentLen[0]:
         ret = nt.embeddedComment[:int(nt.embeddedCommentLen[0])].tostring()
         nt.embeddedCommentLen[0] = 0
@@ -80,7 +85,8 @@ def nextTok(flob):
             return ret
         else:
             return None
-    
+
+
 def safeNextTok(flob, caller=None):
     t = nextTok(flob)
     if not t:
@@ -93,6 +99,7 @@ def safeNextTok(flob, caller=None):
         raise P4Error(gm)
     else:
         return t
+
 
 def nexusSkipPastNextSemiColon(flob):
     pf.nexusSkipPastNextSemiColon(nt.nexusToken, flob)
@@ -120,7 +127,8 @@ def nexusSkipPastBlockEnd(flob):
                         gm.append("Got '%s'" % tok2)
                     raise P4Error(gm)
                 return
-            elif lowTok == ';':  # for pathological cases where the last command is a ';' by itself.
+            # for pathological cases where the last command is a ';' by itself.
+            elif lowTok == ';':
                 continue
             else:
                 pf.nexusSkipPastNextSemiColon(nt.nexusToken, flob)

@@ -1,7 +1,9 @@
 import func
 from p4exceptions import P4Error
 
+
 class Constraints(object):
+
     """A container for tree topology constraints.
 
     taxNames
@@ -16,7 +18,7 @@ class Constraints(object):
 
 
     For example::
-    
+
       tNames = ['A', 'B', 'C', 'D', 'E']
       read('(A, B, (E, D), C);')
       constTree = var.trees.pop()
@@ -29,23 +31,25 @@ class Constraints(object):
     Mcmc() to enforce constraints.
 
     """
+
     def __init__(self, taxNames, constraintTree):
-        
+
         if constraintTree.root.getNChildren() == 2:
-            raise P4Error('The constraint tree should not have a bifurcating root.')
+            raise P4Error(
+                'The constraint tree should not have a bifurcating root.')
         self.tree = constraintTree
         self.tree.taxNames = taxNames
         self.tree.reRoot(self.tree.taxNames[0], moveInternalName=False)
-        self.allOnes = 2L**(self.tree.nTax) - 1
+        self.allOnes = 2L ** (self.tree.nTax) - 1
 
         self.tree.makeSplitKeys()
         self.constraints = []
-        internalsExceptTheFirst = [n for n in self.tree.iterInternalsNoRoot()][1:]
+        internalsExceptTheFirst = [
+            n for n in self.tree.iterInternalsNoRoot()][1:]
         for n in internalsExceptTheFirst:
             n.name = n.br.splitKey
             self.constraints.append(n.br.splitKey)
         assert self.constraints, "No constraints?"
-        
 
     def dump(self):
         print 'Constraints.dump()'
@@ -56,4 +60,3 @@ class Constraints(object):
         for i in self.constraints:
             print func.getSplitStringFromKey(i, self.tree.nTax)
         self.tree.draw()
-

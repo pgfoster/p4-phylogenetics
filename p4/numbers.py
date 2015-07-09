@@ -6,8 +6,10 @@ import func
 from p4exceptions import P4Error
 from var import var
 import numpy
-    
+
+
 class Numbers(object):
+
     """Simple 1-dimensional data handling.  Emphasis on 'simple'.
 
     Feed this a list of floats, or the name of a file containing
@@ -18,7 +20,7 @@ class Numbers(object):
     files, sensibly skipping the first lines.
 
     Options:
-    
+
         col
                   If inThing is a file, it can have multiple columns.
                   This says which one to use.  Zero-based!
@@ -38,7 +40,7 @@ class Numbers(object):
     more stuff with the ``read()`` method.
 
     """
-    
+
     def __init__(self, inThing, col=0, skip=0):
         self.data = []
         self.bins = None
@@ -48,23 +50,23 @@ class Numbers(object):
         #self.min = None
         #self.max = None
         #self.range = None
-        #self.col
-        #self.skip
+        # self.col
+        # self.skip
         if inThing:
             self.read(inThing, col, skip)
 
     def _setBinSize(self, binSize):
         try:
             theBinSize = float(binSize)
-        except (ValueError,TypeError):
+        except (ValueError, TypeError):
             raise P4Error("Arg binSize, if set, should be a float.")
         if theBinSize <= 0.0:
             raise P4Error("Arg binSize, if set, should be a positive float.")
         self._binSize = theBinSize
-            
+
     def _delBinSize(self):
         self._binSize = None
-        
+
     binSize = property(lambda self: self._binSize, _setBinSize, _delBinSize)
 
     def read(self, inThing, col=0, skip=0):
@@ -86,7 +88,7 @@ class Numbers(object):
             flob = file(inThing)
             theLines = flob.readlines()
             flob.close()
-            #if skip:
+            # if skip:
             #    if len(theLines) <= self.skip:
             #        gm.append("File '%s' has %i lines, " % (inThing, len(theLines)))
             #        gm.append("but skip is set to %i." % self.skip)
@@ -100,9 +102,9 @@ class Numbers(object):
                 elif not ll:
                     pass
                 # Read MrBayes *.p files
-                #elif ll.startswith("[ID: "):
+                # elif ll.startswith("[ID: "):
                 #    pass
-                #elif ll.startswith("Gen"):
+                # elif ll.startswith("Gen"):
                 #    pass
                 elif ll[0] not in digitsPlusMinus:
                     pass
@@ -115,7 +117,8 @@ class Numbers(object):
                             theOne = splitLine[col]
                         except IndexError:
                             gm.append("Line '%s'.  " % string.rstrip(aLine))
-                            gm.append("Can't get the item at (zero-based) index %i  " % col) 
+                            gm.append(
+                                "Can't get the item at (zero-based) index %i  " % col)
                             raise P4Error(gm)
                         try:
                             aFloat = float(theOne)
@@ -129,16 +132,16 @@ class Numbers(object):
                 try:
                     aFloat = float(thing)
                     self.data.append(aFloat)
-                except (ValueError,TypeError):
+                except (ValueError, TypeError):
                     gm.append("Can't make sense of '%s'" % thing)
                     gm.append("I was expecting a float.")
                     raise P4Error(gm)
         else:
             gm.append("Can't understand inThing.  Should be a file or a list.")
             raise P4Error(gm)
-        #print "got %i data points" % len(self.data)
-        #print self.data
-        
+        # print "got %i data points" % len(self.data)
+        # print self.data
+
         self.min = min(self.data)
         self.max = max(self.data)
         self.range = self.max - self.min
@@ -157,15 +160,15 @@ class Numbers(object):
             rng = self.range
             orderOfMag = int(math.floor(math.log(rng, 10)))
             rng *= math.pow(10, -orderOfMag)
-            #print "rng = %f" % rng
-            #print "orderOfMag = %i" % orderOfMag
+            # print "rng = %f" % rng
+            # print "orderOfMag = %i" % orderOfMag
 
             # This gives 10-20 bins
-            #if rng < 2.0:
+            # if rng < 2.0:
             #    step = 0.1
-            #elif rng < 4.0:
+            # elif rng < 4.0:
             #    step = 0.2
-            #else:
+            # else:
             #    step = 0.5
 
             # This gives 9-18 bins (I think)
@@ -177,9 +180,9 @@ class Numbers(object):
                 step = 0.5
             else:
                 step = 1.0
-            
+
             step = step * math.pow(10, orderOfMag)
-            #print "step = %f" % step
+            # print "step = %f" % step
             self.binSize = step
 
         # At this point we have a binSize.  Now calculate a
@@ -188,31 +191,31 @@ class Numbers(object):
 
         if padMin != None:
             theMin = padMin
-            #print "theMin = padMin = %f" % padMin
+            # print "theMin = padMin = %f" % padMin
         else:
             theMin = self.min
-            #print "theMin = self.min = %f" % self.min
-        
+            # print "theMin = self.min = %f" % self.min
+
         if padMax != None:
             theMax = padMax
-            #print "theMax = padMax = %f" % padMax
+            # print "theMax = padMax = %f" % padMax
         else:
             theMax = self.max
-            #print "theMax = self.max = %f" % self.max
-        
+            # print "theMax = self.max = %f" % self.max
+
         nStepsToMin = int(math.floor(theMin / self.binSize))
         niceMin = nStepsToMin * self.binSize
 
-        #print "nStepsToMin = %i, niceMin = %f" % (nStepsToMin, niceMin)
-        #sys.exit()
+        # print "nStepsToMin = %i, niceMin = %f" % (nStepsToMin, niceMin)
+        # sys.exit()
 
         self.nBins = int(math.ceil((theMax - niceMin) / float(self.binSize)))
-        #print "self.max = %f, niceMin + (self.nBins * self.binSize) = %f" % (
+        # print "self.max = %f, niceMin + (self.nBins * self.binSize) = %f" % (
         #    self.max, niceMin + (self.nBins * self.binSize))
         assert niceMin + (self.nBins * self.binSize) >= theMax
         # If the maximum point lies on a bin border, we need another bin.
         if niceMin + (self.nBins * self.binSize) == theMax:
-            #print "...adding another bin."
+            # print "...adding another bin."
             self.nBins += 1
 
         if 0:
@@ -222,7 +225,7 @@ class Numbers(object):
             print "self.range = %f" % self.range
             print "theMax - niceMin = %f" % (theMax - niceMin)
             print "self.nBins = %i" % self.nBins
-            #sys.exit()
+            # sys.exit()
 
         # Make the bins
         self.bins = []
@@ -244,7 +247,7 @@ class Numbers(object):
                     break
             assert bNum >= 0 and bNum < self.nBins
             self.bins[bNum][1] += 1
-        
+
     def histo(self, verbose=True, binSize=None, padMin=None, padMax=None):
         """Put the data nicely into bins.
 
@@ -258,15 +261,15 @@ class Numbers(object):
         the same plot.
         """
 
-        
         gm = ['Numbers.histo()']
         if padMin != None:
             assert padMin <= self.min
         if padMax != None:
             assert padMax >= self.max
         if binSize:
-            self.binSize = binSize  # a property, so it checks to make sure it is a float
-            
+            # a property, so it checks to make sure it is a float
+            self.binSize = binSize
+
         # It is possible that the data are all the same, so its really
         # not clear how to make bins.  Unless there is a binSize defined.
         if self.binSize:
@@ -274,7 +277,8 @@ class Numbers(object):
         else:
             if not self.range:
                 self.dump()
-                gm.append("The data are all the same.  max=min.  That will not work.")
+                gm.append(
+                    "The data are all the same.  max=min.  That will not work.")
                 raise P4Error(gm)
 
         self._makeBins(padMin, padMax)
@@ -288,8 +292,7 @@ class Numbers(object):
                 print "padMin=%s, padMax=%s" % (padMin, padMax)
             print "%i points at min, %i points at max" % (self.data.count(self.min), self.data.count(self.max))
             for bin in self.bins:
-                print " %-8s  %i" % (bin[0], bin[1]) 
-
+                print " %-8s  %i" % (bin[0], bin[1])
 
     def dump(self):
         print "%i data points, " % len(self.data),
@@ -298,7 +301,6 @@ class Numbers(object):
         print "mean=%s, " % self.mean(),
         print "binSize=%s, " % self.binSize,
         print "nBins=%s" % self.nBins
-     
 
     def plot(self, term='x11'):
         """A horrible hack to plot stuff with GnuPlot.
@@ -318,10 +320,11 @@ class Numbers(object):
 
         instructionsFileName = 'gNupLot_inStruCts'
         f1 = open(instructionsFileName, 'w')
-        f1.write('set term %s\n' % term)   # my new gnuplot on my mac, from macports, has aqua as the default.
+        # my new gnuplot on my mac, from macports, has aqua as the default.
+        f1.write('set term %s\n' % term)
         f1.write('plot "%s" notitle\n' % weirdName)
         f1.close()
-        
+
         os.system('gnuplot -persist %s' % instructionsFileName)
         os.system('rm %s' % weirdName)
         os.system('rm %s' % instructionsFileName)
@@ -351,7 +354,7 @@ class Numbers(object):
 
     def gsl_meanVariance(self):
         """Uses gsl.  Returns a tuple of the mean and the variance."""
-        
+
         if len(self.data):
             a = numpy.array(self.data, numpy.float)
             m = numpy.zeros([1], numpy.float)
@@ -363,7 +366,7 @@ class Numbers(object):
 
     def arithmeticMeanOfLogs(self):
         ar = numpy.array(self.data, numpy.float)
-        #print ar
+        # print ar
 
         if 0:
             numpy.exp(ar, ar)
@@ -386,13 +389,12 @@ class Numbers(object):
                 a = x
             else:
                 aOld = a
-                a = aOld + (x -aOld) / (n + 1.0)
+                a = aOld + (x - aOld) / (n + 1.0)
             n += 1.0
         mean = numpy.log(a) + scaler
-        #print "mean = %f" % mean
+        # print "mean = %f" % mean
         return mean
-    
-        
+
     def harmonicMeanOfLogs(self):
         """Returns log of the harmonic mean of logs.
 
@@ -406,20 +408,20 @@ class Numbers(object):
         # The numbers are scaled relative to the lowest log value.  If
         # the highest log values are more than 200 log units more than
         # the lowest log value, then they are ignored.
-        
+
         ar = numpy.array(self.data, numpy.float)
-        #print ar
+        # print ar
 
         # From MrBayes.
         scaler = (0.0 - min(ar)) - 100.0
-        #print "scaler = %f" % scaler
-        
+        # print "scaler = %f" % scaler
+
         a = aOld = n = 0.0
         for x in ar:
             x *= -1.0
             y = x
             y -= scaler
-            #print "x=%f, y = %f" % (x, y)
+            # print "x=%f, y = %f" % (x, y)
             if y < -100.0:
                 print "Numbers.harmonicMeanOfLogs()  Ignoring outlier %f" % -x
                 continue
@@ -433,8 +435,3 @@ class Numbers(object):
             n += 1.0
         harm_mean = - numpy.log(a) - scaler
         return harm_mean
-
-
-
-
-

@@ -1,7 +1,15 @@
 import pf
 import func
 from var import var
-import math,random,string,sys,time,copy,os,cPickle,types
+import math
+import random
+import string
+import sys
+import time
+import copy
+import os
+import cPickle
+import types
 from chain import Chain
 from p4exceptions import P4Error
 from treepartitions import TreePartitions
@@ -16,20 +24,24 @@ fudgeFactor['eTBR'] = 1.0
 fudgeFactor['polytomy'] = 1.0
 fudgeFactor['rjComp'] = 2.0
 fudgeFactor['rjRMatrix'] = 2.0
-fudgeFactor['root3'] = 0.02           
-fudgeFactor['compLocation'] = 0.01    
-fudgeFactor['rMatrixLocation'] = 0.01 
+fudgeFactor['root3'] = 0.02
+fudgeFactor['compLocation'] = 0.01
+fudgeFactor['rMatrixLocation'] = 0.01
 fudgeFactor['gdasrvLocation'] = 0.01
 
 
 class McmcTuningsPart(object):
+
     def __init__(self, partNum):
         object.__setattr__(self, 'num', partNum)
-        object.__setattr__(self, 'comp', 0.3)    # It is no longer changed depending on the dim
-        object.__setattr__(self, 'compDir', 100.) # This would depend on the dim
+        # It is no longer changed depending on the dim
+        object.__setattr__(self, 'comp', 0.3)
+        # This would depend on the dim
+        object.__setattr__(self, 'compDir', 100.)
         object.__setattr__(self, 'rjComp', 200.)
-        object.__setattr__(self, 'rMatrix', 0.3)  # No longer changed depending on the dim (ie size of rMatrix)
-        object.__setattr__(self, 'twoP', 50.)  
+        # No longer changed depending on the dim (ie size of rMatrix)
+        object.__setattr__(self, 'rMatrix', 0.3)
+        object.__setattr__(self, 'twoP', 50.)
         object.__setattr__(self, 'rjRMatrix', 300.)
         object.__setattr__(self, 'gdasrv', 2.0 * math.log(1.5))  # 0.811
         #object.__setattr__(self, 'gdasrv', 2.0 * math.log(2.0))
@@ -43,7 +55,7 @@ class McmcTuningsPart(object):
         #object.__setattr__(self, 'cmd1_lnt', 100.0)
 
     def __setattr__(self, item, val):
-        #print "Got request to set %s to %s" % (item, val)
+        # print "Got request to set %s to %s" % (item, val)
         if item in self.__dict__.keys():
             if type(val) != types.FloatType:
                 gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
@@ -52,11 +64,13 @@ class McmcTuningsPart(object):
             # Sanity checking goes here.
             if item in ['comp', 'rMatrix']:
                 if val > var.mcmcMaxCompAndRMatrixTuning:
-                    gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
+                    gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" %
+                          self.num]
                     gm.append("Maximum tuning for '%s' is %s.  Got attempt to set it to %s" % (
                         item, var.mcmcMaxCompAndRMatrixTuning, val))
                     raise P4Error(gm)
-            #print "    Part %i, setting tuning of '%s' to %s" % (self.num, item, val)
+            # print "    Part %i, setting tuning of '%s' to %s" % (self.num,
+            # item, val)
             object.__setattr__(self, item, val)
         else:
             gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
@@ -64,8 +78,8 @@ class McmcTuningsPart(object):
             raise P4Error(gm)
 
 
-
 class McmcTunings(object):
+
     def __init__(self, nParts):
         object.__setattr__(self, 'nParts', nParts)
         object.__setattr__(self, 'parts', [])
@@ -73,12 +87,14 @@ class McmcTunings(object):
             self.parts.append(McmcTuningsPart(pNum))
         object.__setattr__(self, 'chainTemp', 0.15)  # was 0.2
         object.__setattr__(self, 'relRate', 0.5)
-        # This next tuning is set so that by default the brLens go up or down maximum 10%, ie from 0.909 to 1.1
-        object.__setattr__(self, 'local', 2.0 * math.log(1.1))    #  0.1906
+        # This next tuning is set so that by default the brLens go up or down
+        # maximum 10%, ie from 0.909 to 1.1
+        object.__setattr__(self, 'local', 2.0 * math.log(1.1))  # 0.1906
         #object.__setattr__(self, 'local', 100.)
         object.__setattr__(self, 'brLen', 2.0 * math.log(2.0))  # 1.386
-        object.__setattr__(self, 'etbrLambda', 2.0 * math.log(1.6))  # Crux has  2.0 * math.log(1.6) as default
-        object.__setattr__(self, 'etbrPExt', 0.8) 
+        # Crux has  2.0 * math.log(1.6) as default
+        object.__setattr__(self, 'etbrLambda', 2.0 * math.log(1.6))
+        object.__setattr__(self, 'etbrPExt', 0.8)
         object.__setattr__(self, 'brLenPriorLambda', 10.0)
         object.__setattr__(self, 'brLenPriorLambdaForInternals', 1000.0)
         object.__setattr__(self, 'doInternalBrLenPrior', False)
@@ -86,22 +102,21 @@ class McmcTunings(object):
         object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
         object.__setattr__(self, 'brLenPriorType', 'exponential')
 
-
     def __setattr__(self, item, val):
-        #print "Got request to set %s to %s" % (item, val)
+        # print "Got request to set %s to %s" % (item, val)
         if item in self.__dict__.keys() and item not in ['nParts', 'parts']:
-            # Here is where I should do the sanity checking of the new vals. 
+            # Here is where I should do the sanity checking of the new vals.
             if item == 'brLenPriorType':
                 assert val in ['exponential', 'uniform']
 
-            #print "    Setting tuning '%s' to %s" % (item, val)
+            # print "    Setting tuning '%s' to %s" % (item, val)
             object.__setattr__(self, item, val)
         else:
             print self.dump()
             gm = ["\nMcmcTunings.__setattr__()"]
             gm.append("Can't set tuning '%s'-- no such tuning." % item)
             raise P4Error(gm)
-    
+
     def reprString(self, advice=True):
         lst = ["\nMcmc.tunings:  nParts=%s" % self.nParts]
         spacer = ' ' * 4
@@ -109,7 +124,8 @@ class McmcTunings(object):
         lst.append("%s%15s: %s" % (spacer, 'chainTemp', self.chainTemp))
         lst.append("%s%15s: %5.3f" % (spacer, 'local', self.local))
         lst.append("%s%15s: %5.3f" % (spacer, 'brLen', self.brLen))
-        lst.append("%s%15s: %s" % (spacer, 'brLenPriorType', self.brLenPriorType))
+        lst.append("%s%15s: %s" %
+                   (spacer, 'brLenPriorType', self.brLenPriorType))
         lst.append("%s%15s: %5.3f" % (spacer, 'etbrPExt', self.etbrPExt))
         lst.append("%s%15s: %5.3f" % (spacer, 'etbrLambda', self.etbrLambda))
         lst.append("%s%15s: %s" % (spacer, 'relRate', self.relRate))
@@ -118,7 +134,8 @@ class McmcTunings(object):
         #lst.append("%s%30s: %5.3f" % (spacer, 'local', self.local))
         #lst.append("%s%30s: %5.3f" % (spacer, 'brLen', self.brLen))
         #lst.append("%s%30s: %s" % (spacer, 'relRate', self.relRate))
-        lst.append("%s%15s: %5.3f" % (spacer, 'brLenPriorLambda', self.brLenPriorLambda))
+        lst.append("%s%15s: %5.3f" %
+                   (spacer, 'brLenPriorLambda', self.brLenPriorLambda))
         #lst.append("%s%30s: %s" % (spacer, 'doPolytomyResolutionClassPrior', self.doPolytomyResolutionClassPrior))
         #lst.append("%s%30s: %5.3f" % (spacer, 'polytomyPriorLogBigC', self.polytomyPriorLogBigC))
 
@@ -129,12 +146,12 @@ class McmcTunings(object):
         for pNum in range(self.nParts):
             aLine += " %10s" % pNum
         lst.append(aLine)
-        
+
         aLine = theSig % (spacer, '')
         for pNum in range(self.nParts):
             aLine += " %10s" % '------'
         lst.append(aLine)
-        
+
         aLine = theSig % (spacer, 'comp')
         for pNum in range(self.nParts):
             aLine += " %10.3f" % self.parts[pNum].comp
@@ -177,9 +194,9 @@ class McmcTunings(object):
         lst.append(aLine)
 
         #aLine = theSig % (spacer, 'gdasrvPriorLambda')
-        #for pNum in range(self.nParts):
+        # for pNum in range(self.nParts):
         #    aLine += " %10.2f" % self.parts[pNum].gdasrvPriorLambda
-        #lst.append(aLine)
+        # lst.append(aLine)
 
         aLine = theSig % (spacer, 'compLocation')
         for pNum in range(self.nParts):
@@ -203,7 +220,7 @@ class McmcTunings(object):
         print self.reprString(advice)
 
     def __repr__(self):
-        return  self.reprString()
+        return self.reprString()
 
 # McmcTuningsUsage is used only by autoTune().  It is used to allow
 # autoTune() to be able to get proposals easily.  So for example
@@ -211,6 +228,7 @@ class McmcTunings(object):
 
 
 class McmcTuningsUsagePart(object):
+
     def __init__(self, partNum):
         object.__setattr__(self, 'num', partNum)
         object.__setattr__(self, 'comp', [])
@@ -230,7 +248,9 @@ class McmcTuningsUsagePart(object):
 
 
 class McmcTuningsUsage(object):
+
     """This class associates tunings with proposals."""
+
     def __init__(self, nParts):
         object.__setattr__(self, 'nParts', nParts)
         object.__setattr__(self, 'parts', [])
@@ -266,10 +286,10 @@ class McmcTuningsUsage(object):
             lst.append("%s%15s: 1" % (spacer, 'brLen'))
         else:
             lst.append("%s%15s: None" % (spacer, 'brLen'))
-        #if self.polytomy:
+        # if self.polytomy:
         #    nTunings += 1
         #    lst.append("%s%15s: 1" % (spacer, 'polytomy'))
-        #else:
+        # else:
         #    lst.append("%s%15s: None" % (spacer, 'polytomy'))
         if self.relRate:
             nTunings += 1
@@ -286,8 +306,10 @@ class McmcTuningsUsage(object):
         for pNum in range(self.nParts):
             lst.append(theSig % (spacer, 'part %i    ' % pNum))
             lst.append(sig2 % (spacer, 'comp', len(self.parts[pNum].comp)))
-            lst.append(sig2 % (spacer, 'compDir', len(self.parts[pNum].compDir)))
-            lst.append(sig2 % (spacer, 'rMatrix', len(self.parts[pNum].rMatrix)))
+            lst.append(sig2 %
+                       (spacer, 'compDir', len(self.parts[pNum].compDir)))
+            lst.append(sig2 %
+                       (spacer, 'rMatrix', len(self.parts[pNum].rMatrix)))
             lst.append(sig2 % (spacer, 'gdasrv', len(self.parts[pNum].gdasrv)))
             if len(self.parts[pNum].comp):
                 nTunings += 1
@@ -301,39 +323,39 @@ class McmcTuningsUsage(object):
             else:
                 lst.append(sig2 % (spacer, 'pInvar', 0))
 
-            #if self.parts[pNum].compLocation:
+            # if self.parts[pNum].compLocation:
             if len(self.parts[pNum].comp) > 1:
                 lst.append(sig2 % (spacer, 'compLocation', 1))
                 nTunings += 1
             else:
                 lst.append(sig2 % (spacer, 'compLocation', 0))
 
-            #if self.parts[pNum].rMatrixLocation:
+            # if self.parts[pNum].rMatrixLocation:
             if len(self.parts[pNum].rMatrix) > 1:
                 lst.append(sig2 % (spacer, 'rMatrixLocation', 1))
                 nTunings += 1
             else:
                 lst.append(sig2 % (spacer, 'rMatrixLocation', 0))
 
-        lst.append("There are %i tunings for the model (not including the chainTemp tuning, if it exists)." % nTunings)
-        
+        lst.append(
+            "There are %i tunings for the model (not including the chainTemp tuning, if it exists)." % nTunings)
+
         return string.join(lst, '\n')
 
     def dump(self):
         print self.reprString()
 
     def __repr__(self):
-        return  self.reprString()
-
-
+        return self.reprString()
 
 
 class McmcProposalProbs(dict):
+
     """User-settable relative proposal probabilities.
 
     An instance of this class is made as Mcmc.prob, where you can
     do, for example::
-    
+
         yourMcmc.prob.local = 2.0
 
     These are relative proposal probs, that do not sum to 1.0, and
@@ -344,11 +366,11 @@ class McmcProposalProbs(dict):
     probabilities, setting it to 2.0 makes it somewhat bigger.
 
     Check the effect that it has by doing::
-    
+
         yourMcmc.writeProposalIntendedProbs()
     which prints out the final calculated probabilities. 
     """
-    
+
     def __init__(self):
         object.__setattr__(self, 'comp', 1.0)
         object.__setattr__(self, 'compDir', 0.0)
@@ -384,14 +406,15 @@ class McmcProposalProbs(dict):
             except:
                 gm.append("Should be a float.  Got '%s'" % val)
                 raise P4Error(gm)
-                
+
         else:
             self.dump()
             gm.append("    Can't set '%s'-- no such proposal." % item)
             raise P4Error(gm)
 
     def reprString(self):
-        stuff = ["\nUser-settable relative proposal probabilities, from yourMcmc.prob"]
+        stuff = [
+            "\nUser-settable relative proposal probabilities, from yourMcmc.prob"]
         stuff.append("  To change it, do eg ")
         stuff.append("    yourMcmc.prob.comp = 0.0 # turns comp proposals off")
         stuff.append("  Current settings:")
@@ -405,9 +428,11 @@ class McmcProposalProbs(dict):
         print self.reprString()
 
     def __repr__(self):
-        return  self.reprString()
-                           
+        return self.reprString()
+
+
 class Proposal(object):
+
     def __init__(self, theMcmc=None):
         self.name = None
         self.variant = 'gtr'  # only for rMatrix.  2p or gtr
@@ -435,40 +460,42 @@ class Proposal(object):
     # Some tunings are part-specific, and so are associated with the proposals.
     def _getTuning(self):
         if self.name in ['relRate', 'local', 'brLen']:
-            #print "getting tuning for %s, returning %f" % (self.name, getattr(self.mcmc.tunings, self.name))
+            # print "getting tuning for %s, returning %f" % (self.name,
+            # getattr(self.mcmc.tunings, self.name))
             return getattr(self.mcmc.tunings, self.name)
         elif self.name in ['eTBR']:
             return getattr(self.mcmc.tunings, 'etbrLambda')
         elif self.name in ['comp', 'compDir', 'rjComp', 'rMatrix', 'rjRMatrix', 'gdasrv', 'pInvar']:
-            #print "getting tuning for %s, partNum %i, returning %f" % (
+            # print "getting tuning for %s, partNum %i, returning %f" % (
             #    self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum], self.name))
-            # the variant attribute is new, and can mess up reading older pickles.
+            # the variant attribute is new, and can mess up reading older
+            # pickles.
             if self.name == 'rMatrix' and hasattr(self, 'variant') and self.variant == '2p':
                 return getattr(self.mcmc.tunings.parts[self.pNum], 'twoP')
             else:
                 return getattr(self.mcmc.tunings.parts[self.pNum], self.name)
-        elif self.name in ['compLocation', 'rMatrixLocation']: 
-            #print "getting tuning for %s, partNum %i, returning %f" % (
-            #    self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum], self.name))
+        elif self.name in ['compLocation', 'rMatrixLocation']:
+            # print "getting tuning for %s, partNum %i, returning %f" % (
+            # self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum],
+            # self.name))
             if hasattr(self.mcmc.tunings.parts[self.pNum], self.name):
                 return getattr(self.mcmc.tunings.parts[self.pNum], self.name)
             else:
                 return None
         else:
             return None
-        
+
     def _setTuning(self, whatever):
         raise P4Error("Can't set tuning this way.")
+
     def _delTuning(self):
         raise P4Error("Can't del tuning.")
-    
-    tuning = property(_getTuning, _setTuning, _delTuning) 
-            
 
-
+    tuning = property(_getTuning, _setTuning, _delTuning)
 
 
 class Mcmc(object):
+
     """An MCMC for molecular sequences.
 
     aTree
@@ -502,9 +529,9 @@ class Mcmc(object):
                   a 'binary' number from 1-31 that says what posterior
                   predictive simulation test quantities to collect.
                   This week, we have
-                  
+
                   1.  multinomial log likelihood
-                  
+
                   2.  bigXSquared
 
                   4.  meanNCharsPerSite
@@ -612,7 +639,6 @@ class Mcmc(object):
         t.writeNexus('cons.nex')
     """
 
-    
     def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, tuningsFileName=None):
         gm = ['Mcmc.__init__()']
 
@@ -621,17 +647,20 @@ class Mcmc(object):
         if aTree and aTree.model and aTree.data:
             pass
         else:
-            gm.append("The tree that you feed to this class should have a model and data attached.")
+            gm.append(
+                "The tree that you feed to this class should have a model and data attached.")
             raise P4Error(gm)
 
         if 1:
             if 1:
                 if aTree.root.getNChildren() != 3 or not aTree.isFullyBifurcating():
-                    gm.append("Mcmc is not implemented for bifurcating roots, or trees that are not fully bifurcating.")
+                    gm.append(
+                        "Mcmc is not implemented for bifurcating roots, or trees that are not fully bifurcating.")
                     raise P4Error(gm)
             else:
                 if aTree.root.getNChildren() < 3:
-                    gm.append("Mcmc is not implemented for roots that have less than 3 children.")
+                    gm.append(
+                        "Mcmc is not implemented for roots that have less than 3 children.")
                     raise P4Error(gm)
 
         if 0:  # Muck with polytomies
@@ -641,9 +670,8 @@ class Mcmc(object):
                 if r < 0.4:
                     aTree.collapseNode(n)
             aTree.draw()
-            #sys.exit()
-                    
-        
+            # sys.exit()
+
         self.tree = aTree
         self.constraints = constraints
         if self.constraints:
@@ -652,18 +680,20 @@ class Mcmc(object):
             mySplitKeys = []
             for n in self.tree.iterInternalsNoRoot():
                 mySplitKeys.append(n.br.splitKey)
-            #print "input tree splitKeys = %s" % mySplitKeys
+            # print "input tree splitKeys = %s" % mySplitKeys
             for sk in self.constraints.constraints:
                 if sk not in mySplitKeys:
-                    #self.tree.draw()
-                    gm.append('Constraint %s' % func.getSplitStringFromKey(sk, self.tree.nTax))
+                    # self.tree.draw()
+                    gm.append('Constraint %s' %
+                              func.getSplitStringFromKey(sk, self.tree.nTax))
                     gm.append('is not in the starting tree.')
-                    gm.append('Maybe you want to make a randomTree with constraints?')
+                    gm.append(
+                        'Maybe you want to make a randomTree with constraints?')
                     raise P4Error(gm)
-                    
+
         try:
             nChains = int(nChains)
-        except (ValueError,TypeError):
+        except (ValueError, TypeError):
             gm.append("nChains should be an int, 1 or more.  Got %s" % nChains)
             raise P4Error(gm)
         if nChains < 1:
@@ -676,12 +706,13 @@ class Mcmc(object):
 
         for n in self.tree.iterNodesNoRoot():
             if n.br.len < var.BRLEN_MIN:
-                gm.append("node %i brlen (%g)is too short." % (n.nodeNum, n.br.len))
+                gm.append("node %i brlen (%g)is too short." %
+                          (n.nodeNum, n.br.len))
                 raise P4Error(gm)
             elif n.br.len > var.BRLEN_MAX:
-                gm.append("node %i brlen (%f)is too long." % (n.nodeNum, n.br.len))
+                gm.append("node %i brlen (%f)is too long." %
+                          (n.nodeNum, n.br.len))
                 raise P4Error(gm)
-            
 
         try:
             runNum = int(runNum)
@@ -702,14 +733,19 @@ class Mcmc(object):
                 break
         if hasPickle:
             gm.append("runNum is set to %i" % self.runNum)
-            gm.append("There is at least one mcmc_checkPoint_%i.xxx file in this directory." % self.runNum)
-            gm.append("This is a new Mcmc, and I am refusing to over-write exisiting files.")
-            gm.append("Maybe you want to re-start from the latest mcmc_checkPoint_%i file?" % self.runNum)
-            gm.append("Otherwise, get rid of the existing mcmc_xxx_%i.xxx files and start again." % self.runNum)
+            gm.append(
+                "There is at least one mcmc_checkPoint_%i.xxx file in this directory." % self.runNum)
+            gm.append(
+                "This is a new Mcmc, and I am refusing to over-write exisiting files.")
+            gm.append(
+                "Maybe you want to re-start from the latest mcmc_checkPoint_%i file?" % self.runNum)
+            gm.append(
+                "Otherwise, get rid of the existing mcmc_xxx_%i.xxx files and start again." % self.runNum)
             raise P4Error(gm)
 
         if var.strictRunNumberChecking:
-            # We want to start runs with number 0, so if runNum is more than that, check that there are other runs.
+            # We want to start runs with number 0, so if runNum is more than
+            # that, check that there are other runs.
             if self.runNum > 0:
                 for runNum2 in range(self.runNum):
                     hasTrees = False
@@ -720,12 +756,13 @@ class Mcmc(object):
                     if not hasTrees:
                         gm.append("runNum is set to %i" % self.runNum)
                         gm.append("runNums should go from zero up.")
-                        gm.append("There are no mcmc_trees_%i.nex files to show that run %i has been done." % (runNum2, runNum2))
+                        gm.append("There are no mcmc_trees_%i.nex files to show that run %i has been done." % (
+                            runNum2, runNum2))
                         gm.append("Set the runNum to that, first.")
-                        gm.append("(To get rid of this requirement, turn off var.strictRunNumberChecking.)")
+                        gm.append(
+                            "(To get rid of this requirement, turn off var.strictRunNumberChecking.)")
                         raise P4Error(gm)
-                                      
-        
+
         self.sampleInterval = sampleInterval
         self.checkPointInterval = checkPointInterval
 
@@ -774,11 +811,12 @@ class Mcmc(object):
         aTree.calcLogLike(verbose=False)
 
         if 0:
-            #print complaintHead
+            # print complaintHead
             print "    logLike of the input tree is %s" % aTree.logLike
 
         if not aTree.taxNames:
-            gm.append("The tree that you supply should have a 'taxNames' attribute.")
+            gm.append(
+                "The tree that you supply should have a 'taxNames' attribute.")
             gm.append("The taxNames should be in the same order as the data.")
             raise P4Error(gm)
 
@@ -795,7 +833,7 @@ class Mcmc(object):
         self.tuningsUsage = McmcTuningsUsage(self.tree.model.nParts)
         self.prob = McmcProposalProbs()
 
-        ####### Tuning hack --- for old dirichlet proposals
+        # Tuning hack --- for old dirichlet proposals
 
         # Notes on default tunings.  Test with sims.  (XX% acceptance shown)
 
@@ -826,10 +864,10 @@ class Mcmc(object):
                 elif self.tree.model.parts[pNum].dim == 6:
                     self.tunings.parts[pNum].comp = 700.
                     self.tunings.parts[pNum].rMatrix = 1000.
-                elif self.tree.model.parts[pNum].dim == 4: # DNA
+                elif self.tree.model.parts[pNum].dim == 4:  # DNA
                     if self.tree.model.parts[pNum].rMatrices[0].spec == '2p':
                         self.tunings.parts[pNum].rMatrix = 50
-                        #print "setting 2p tunings to 50"
+                        # print "setting 2p tunings to 50"
 
         # New tunings, as of May 2010.
         # For real data, with grouped aa's, comp 0.074, rMatrix 0.067
@@ -848,8 +886,7 @@ class Mcmc(object):
                 nRates = ((theDim * theDim) - theDim) / 2
                 self.tunings.parts[pNum].comp = 1.0 / theDim
                 self.tunings.parts[pNum].rMatrix = 1.0 / nRates
-                
-                
+
         # Zap internal node names
         for n in aTree.root.iterInternals():
             if n.name:
@@ -866,7 +903,6 @@ class Mcmc(object):
         else:
             self.prob.relRate = 0.0
 
-        
         if self.tree.model.isHet:
             props_on = []
             if verbose:
@@ -912,25 +948,30 @@ class Mcmc(object):
             self.prob.gdasrvLocation = 0.0
 
         # Are we using rjComp in any model partitions?
-        rjCompParts = [mp.rjComp for mp in self.tree.model.parts]  # True and False
-        rjCompPartNums = [pNum for pNum in range(self.tree.model.nParts) if rjCompParts[pNum]] 
-        #print rjCompParts
-        #print rjCompPartNums
+        # True and False
+        rjCompParts = [mp.rjComp for mp in self.tree.model.parts]
+        rjCompPartNums = [
+            pNum for pNum in range(self.tree.model.nParts) if rjCompParts[pNum]]
+        # print rjCompParts
+        # print rjCompPartNums
         if rjCompPartNums:
             if verbose:
                 print "\nInitiating rjComp..."
                 print "Turning on proposal for rjComp."
-                
+
             for pNum in rjCompPartNums:
                 mp = self.tree.model.parts[pNum]
                 # Do some checking
                 if mp.nComps <= 1:
-                    gm.append("rjComp is turned on for part %i, but there are %i comps.  Too few." % (pNum, mp.nComps))
+                    gm.append("rjComp is turned on for part %i, but there are %i comps.  Too few." % (
+                        pNum, mp.nComps))
                     gm.append("You will want to add more comps.")
                     raise P4Error(gm)
                 elif mp.nComps > len(self.tree.nodes):
-                    gm.append("rjComp is turned on for part %i, but there are %i comps.  Too many." % (pNum, mp.nComps))
-                    gm.append("That is more than the number of nodes in the tree.")
+                    gm.append("rjComp is turned on for part %i, but there are %i comps.  Too many." % (
+                        pNum, mp.nComps))
+                    gm.append(
+                        "That is more than the number of nodes in the tree.")
                     raise P4Error(gm)
 
                 self.prob.rjComp = 1.0
@@ -941,42 +982,48 @@ class Mcmc(object):
                     if comp.nNodes:
                         mp.rjComp_k += 1
                         comp.rj_isInPool = True   # False by default
-                    
+
                 if verbose:
                     print "Part %i: nComps %i, pool size (rjComp_k) %i" % (pNum, mp.nComps, mp.rjComp_k)
-                    
+
                 # This stuff below applies when
                 # rjCompUniformAllocationPrior is not on, meaning it
                 # uses the hierarchical allocation prior.
 
-                # This next calc of rj_f depends on self.tree.setModelThingsNNodes() having been done, above.
+                # This next calc of rj_f depends on
+                # self.tree.setModelThingsNNodes() having been done, above.
                 mySum = float(len(self.tree.nodes))
                 for comp in mp.comps:
                     if comp.nNodes:
                         comp.rj_f = comp.nNodes / mySum
-                #for comp in mp.comps:
+                # for comp in mp.comps:
                 #    print comp.num, comp.nNodes, comp.rj_f
-                
+
         # Are we using rjRMatrix in any model partitions?
-        rjRMatrixParts = [mp.rjRMatrix for mp in self.tree.model.parts]  # True and False
-        rjRMatrixPartNums = [pNum for pNum in range(self.tree.model.nParts) if rjRMatrixParts[pNum]] 
-        #print rjRMatrixParts
-        #print rjRMatrixPartNums
+        # True and False
+        rjRMatrixParts = [mp.rjRMatrix for mp in self.tree.model.parts]
+        rjRMatrixPartNums = [
+            pNum for pNum in range(self.tree.model.nParts) if rjRMatrixParts[pNum]]
+        # print rjRMatrixParts
+        # print rjRMatrixPartNums
         if rjRMatrixPartNums:
             if verbose:
                 print "\nInitiating rjRMatrix..."
                 print "Turning on proposal for rjRMatrix."
-                
+
             for pNum in rjRMatrixPartNums:
                 mp = self.tree.model.parts[pNum]
                 # Do some checking
                 if mp.nRMatrices <= 1:
-                    gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too few." % (pNum, mp.nRMatrices))
+                    gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too few." % (
+                        pNum, mp.nRMatrices))
                     gm.append("You will want to add more rMatrices.")
                     raise P4Error(gm)
                 elif mp.nRMatrices > (len(self.tree.nodes) - 1):
-                    gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too many." % (pNum, mp.nRMatrices))
-                    gm.append("That is more than the number of branches in the tree.")
+                    gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too many." % (
+                        pNum, mp.nRMatrices))
+                    gm.append(
+                        "That is more than the number of branches in the tree.")
                     raise P4Error(gm)
 
                 self.prob.rjRMatrix = 1.0
@@ -987,25 +1034,28 @@ class Mcmc(object):
                     if rMatrix.nNodes:
                         mp.rjRMatrix_k += 1
                         rMatrix.rj_isInPool = True   # False by default
-                    
+
                 if verbose:
                     print "Part %i: nRMatrices %i, pool size (rjRMatrix_k) %i" % (pNum, mp.nRMatrices, mp.rjRMatrix_k)
-                    
+
                 # This stuff below applies when
                 # rjRMatrixUniformAllocationPrior is not on, meaning it
                 # uses the hierarchical allocation prior.
 
-                # This next calc of rj_f depends on self.tree.setModelThingsNNodes() having been done, above.
+                # This next calc of rj_f depends on
+                # self.tree.setModelThingsNNodes() having been done, above.
                 mySum = float(len(self.tree.nodes) - 1.)
                 for rMatrix in mp.rMatrices:
                     if rMatrix.nNodes:
                         rMatrix.rj_f = rMatrix.nNodes / mySum
-                #for rMatrix in mp.rMatrices:
+                # for rMatrix in mp.rMatrices:
                 #    print rMatrix.num, rMatrix.nNodes, rMatrix.rj_f
 
         # Are we doing cmd1 in any model partitions?
-        cmd1Parts = [mp.cmd1 for mp in self.tree.model.parts] # True and False
-        cmd1PartNums = [pNum for pNum in range(self.tree.model.nParts) if cmd1Parts[pNum]]  # empty if there are none that do cmd1
+        cmd1Parts = [mp.cmd1 for mp in self.tree.model.parts]  # True and False
+        # empty if there are none that do cmd1
+        cmd1PartNums = [
+            pNum for pNum in range(self.tree.model.nParts) if cmd1Parts[pNum]]
         if cmd1PartNums:
             if verbose:
                 print "\nInitiating cmd1 ..."
@@ -1016,8 +1066,7 @@ class Mcmc(object):
             self.prob.cmd1_alpha = 1.0
             for pNum in cmd1PartNums:
                 mp = self.tree.model.parts[pNum]
-                mp.cmd1_pi0 = [1.0 /mp.dim] * mp.dim
-
+                mp.cmd1_pi0 = [1.0 / mp.dim] * mp.dim
 
     def _makeProposals(self):
         """Make proposals for the mcmc."""
@@ -1049,7 +1098,8 @@ class Mcmc(object):
         if self.prob.local:
             p = Proposal(self)
             p.name = 'local'
-            p.weight = self.prob.local * (len(self.tree.nodes) - 1) * fudgeFactor['local']
+            p.weight = self.prob.local * \
+                (len(self.tree.nodes) - 1) * fudgeFactor['local']
             self.proposals.append(p)
             object.__setattr__(self.tuningsUsage, 'local', p)
 
@@ -1057,7 +1107,8 @@ class Mcmc(object):
         if self.prob.brLen:
             p = Proposal(self)
             p.name = 'brLen'
-            p.weight = self.prob.brLen * (len(self.tree.nodes) - 1) * fudgeFactor['local']
+            p.weight = self.prob.brLen * \
+                (len(self.tree.nodes) - 1) * fudgeFactor['local']
             self.proposals.append(p)
             object.__setattr__(self.tuningsUsage, 'brLen', p)
 
@@ -1065,7 +1116,8 @@ class Mcmc(object):
         if self.prob.eTBR:
             p = Proposal(self)
             p.name = 'eTBR'
-            p.weight = self.prob.eTBR * (len(self.tree.nodes) - 1) * fudgeFactor['eTBR']
+            p.weight = self.prob.eTBR * \
+                (len(self.tree.nodes) - 1) * fudgeFactor['eTBR']
             self.proposals.append(p)
             object.__setattr__(self.tuningsUsage, 'eTBR', p)
 
@@ -1073,7 +1125,8 @@ class Mcmc(object):
         if self.prob.polytomy:
             p = Proposal(self)
             p.name = 'polytomy'
-            p.weight = self.prob.polytomy * (len(self.tree.nodes) - 1) * fudgeFactor['polytomy']
+            p.weight = self.prob.polytomy * \
+                (len(self.tree.nodes) - 1) * fudgeFactor['polytomy']
             self.proposals.append(p)
             #object.__setattr__(self.tuningsUsage, 'polytomy', p)
 
@@ -1084,7 +1137,8 @@ class Mcmc(object):
             if len(self.tree.taxNames) <= 3:
                 p.weight = 0.0
             else:
-                p.weight = self.prob.root3 * (len(self.tree.taxNames) - 3) * fudgeFactor['root3']
+                p.weight = self.prob.root3 * \
+                    (len(self.tree.taxNames) - 3) * fudgeFactor['root3']
             self.proposals.append(p)
 
         # relRate
@@ -1125,7 +1179,7 @@ class Mcmc(object):
                         p.mtNum = mtNum
                         self.proposals.append(p)
                         self.tuningsUsage.parts[pNum].compDir.append(p)
-                                                
+
             # rjComp
             if self.prob.rjComp:
                 if mp.rjComp:
@@ -1148,7 +1202,8 @@ class Mcmc(object):
                             p.weight = self.prob.rMatrix
                             p.variant = '2p'
                         else:
-                            p.weight = self.prob.rMatrix * (((mp.dim * mp.dim) - mp.dim) / 2)
+                            p.weight = self.prob.rMatrix * \
+                                (((mp.dim * mp.dim) - mp.dim) / 2)
                         p.pNum = pNum
                         p.mtNum = mtNum
                         #p.tuning = self.tunings.parts[pNum].rMatrix
@@ -1179,7 +1234,6 @@ class Mcmc(object):
                         self.proposals.append(p)
                         self.tuningsUsage.parts[pNum].gdasrv.append(p)
 
-
             # pInvar
             if self.prob.pInvar:
                 if mp.pInvar.free:
@@ -1188,7 +1242,8 @@ class Mcmc(object):
                     p.weight = self.prob.pInvar
                     p.pNum = pNum
                     self.proposals.append(p)
-                    object.__setattr__(self.tuningsUsage.parts[pNum], 'pInvar', p)
+                    object.__setattr__(
+                        self.tuningsUsage.parts[pNum], 'pInvar', p)
 
             # compLocation
             if self.prob.compLocation:
@@ -1196,7 +1251,7 @@ class Mcmc(object):
                     p = Proposal(self)
                     p.name = 'compLocation'
                     p.weight = self.prob.compLocation * mp.nComps * len(self.tree.nodes) * \
-                               fudgeFactor['compLocation']
+                        fudgeFactor['compLocation']
                     p.pNum = pNum
                     self.proposals.append(p)
 
@@ -1206,7 +1261,7 @@ class Mcmc(object):
                     p = Proposal(self)
                     p.name = 'rMatrixLocation'
                     p.weight = self.prob.rMatrixLocation * mp.nRMatrices * (len(self.tree.nodes) - 1) * \
-                               fudgeFactor['rMatrixLocation']
+                        fudgeFactor['rMatrixLocation']
                     p.pNum = pNum
                     self.proposals.append(p)
 
@@ -1216,7 +1271,7 @@ class Mcmc(object):
                     p = Proposal(self)
                     p.name = 'gdasrvLocation'
                     p.weight = self.prob.gdasrvLocation * mp.nGdasrvs * (len(self.tree.nodes) - 1) * \
-                               fudgeFactor['gdasrvLocation']
+                        fudgeFactor['gdasrvLocation']
                     p.pNum = pNum
                     self.proposals.append(p)
 
@@ -1237,7 +1292,8 @@ class Mcmc(object):
             if 1 and mp.cmd1:
                 p = Proposal(self)
                 p.name = 'cmd1_allCompDir'
-                p.weight = self.prob.cmd1_allCompDir * (mp.dim - 1) * len(self.tree.nodes)
+                p.weight = self.prob.cmd1_allCompDir * \
+                    (mp.dim - 1) * len(self.tree.nodes)
                 p.pNum = pNum
                 self.proposals.append(p)
 
@@ -1247,20 +1303,18 @@ class Mcmc(object):
                 p.pNum = pNum
                 self.proposals.append(p)
 
-                
-
-
         if not self.proposals:
             gm.append("No proposals?")
             raise P4Error(gm)
         self.propWeights = []
         for p in self.proposals:
-            #print "%s: %s" % (p.name, p.weight)
+            # print "%s: %s" % (p.name, p.weight)
             self.propWeights.append(p.weight)
-        #print self.propWeights
+        # print self.propWeights
         self.cumPropWeights = [self.propWeights[0]]
         for i in range(len(self.propWeights))[1:]:
-            self.cumPropWeights.append(self.cumPropWeights[i - 1] + self.propWeights[i])
+            self.cumPropWeights.append(
+                self.cumPropWeights[i - 1] + self.propWeights[i])
         self.totalPropWeights = sum(self.propWeights)
         if self.totalPropWeights < 1e-9:
             gm.append("No proposal weights?")
@@ -1276,26 +1330,31 @@ class Mcmc(object):
         for p in self.proposals:
             # local
             if p.name == 'local':
-                p.weight = self.prob.local * (len(self.tree.nodes) - 1) * fudgeFactor['local']
+                p.weight = self.prob.local * \
+                    (len(self.tree.nodes) - 1) * fudgeFactor['local']
 
             # brLen
             if p.name == 'brLen':
-                p.weight = self.prob.brLen * (len(self.tree.nodes) - 1) * fudgeFactor['brLen']
+                p.weight = self.prob.brLen * \
+                    (len(self.tree.nodes) - 1) * fudgeFactor['brLen']
 
             # eTBR
             if p.name == 'eTBR':
-                p.weight = self.prob.eTBR * (len(self.tree.nodes) - 1) * fudgeFactor['eTBR']
+                p.weight = self.prob.eTBR * \
+                    (len(self.tree.nodes) - 1) * fudgeFactor['eTBR']
 
             # polytomy
             if p.name == 'polytomy':
-                p.weight = self.prob.polytomy * (len(self.tree.nodes) - 1) * fudgeFactor['polytomy']
+                p.weight = self.prob.polytomy * \
+                    (len(self.tree.nodes) - 1) * fudgeFactor['polytomy']
 
             # root3
             if p.name == 'root3':
                 if len(self.tree.taxNames) <= 3:
                     p.weight = 0.0
                 else:
-                    p.weight = self.prob.root3 * (len(self.tree.taxNames) - 3) * fudgeFactor['root3']
+                    p.weight = self.prob.root3 * \
+                        (len(self.tree.taxNames) - 3) * fudgeFactor['root3']
 
             # relRate
             if p.name == 'relRate':
@@ -1321,7 +1380,8 @@ class Mcmc(object):
                 if mp.rMatrices[0].spec == '2p':
                     p.weight = self.prob.rMatrix
                 else:
-                    p.weight = self.prob.rMatrix * ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
+                    p.weight = self.prob.rMatrix * \
+                        ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
 
             # rjRMatrix
             if p.name == 'rjRMatrix':
@@ -1338,19 +1398,20 @@ class Mcmc(object):
             # compLocation
             if p.name == 'compLocation':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.compLocation * mp.nComps * len(self.tree.nodes) * fudgeFactor['compLocation']
+                p.weight = self.prob.compLocation * mp.nComps * \
+                    len(self.tree.nodes) * fudgeFactor['compLocation']
 
             # rMatrixLocation
             if p.name == 'rMatrixLocation':
                 mp = self.tree.model.parts[p.pNum]
                 p.weight = self.prob.rMatrixLocation * mp.nRMatrices * (len(self.tree.nodes) - 1) * \
-                           fudgeFactor['rMatrixLocation']
+                    fudgeFactor['rMatrixLocation']
 
             # gdasrvLocation
             if p.name == 'gdasrvLocation':
                 mp = self.tree.model.parts[p.pNum]
                 p.weight = self.prob.gdasrvLocation * mp.nGdasrvs * (len(self.tree.nodes) - 1) * \
-                           fudgeFactor['gdasrvLocation']
+                    fudgeFactor['gdasrvLocation']
 
             if p.name.startswith('cmd1_'):
                 raise P4Error("fix me!")
@@ -1360,14 +1421,12 @@ class Mcmc(object):
             self.propWeights.append(p.weight)
         self.cumPropWeights = [self.propWeights[0]]
         for i in range(len(self.propWeights))[1:]:
-            self.cumPropWeights.append(self.cumPropWeights[i - 1] + self.propWeights[i])
+            self.cumPropWeights.append(
+                self.cumPropWeights[i - 1] + self.propWeights[i])
         self.totalPropWeights = sum(self.propWeights)
         if self.totalPropWeights < 1e-9:
             gm.append("No proposal weights?")
             raise P4Error(gm)
-
-
-
 
     def writeProposalAcceptances(self):
         """Pretty-print the proposal acceptances."""
@@ -1395,7 +1454,7 @@ class Mcmc(object):
                     print "   - ",
                 print "%10i" % p.nProposals[0],
 
-                if p.nProposals[0]: # Don't divide by zero
+                if p.nProposals[0]:  # Don't divide by zero
                     print "       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])),
                 else:
                     print "           - ",
@@ -1432,7 +1491,7 @@ class Mcmc(object):
                         print "  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])),
                         print "%20i" % p.nTopologyChangeAttempts[tNum],
                         print "%13i" % p.nTopologyChanges[tNum],
-                        print "  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum])/float(p.nTopologyChangeAttempts[tNum]))
+                        print "  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum]))
                 else:
                     print "%sFor the 'local' proposals, there were no attempted" % spacer
                     print "%stopology changes in any of the chains." % spacer
@@ -1461,11 +1520,10 @@ class Mcmc(object):
                         print "  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])),
                         print "%20i" % p.nTopologyChangeAttempts[tNum],
                         print "%13i" % p.nTopologyChanges[tNum],
-                        print "  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum])/float(p.nTopologyChangeAttempts[tNum]))
+                        print "  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum]))
                 else:
                     print "%sFor the 'eTBR' proposals, there were no attempted" % spacer
                     print "%stopology changes in any of the chains." % spacer
-
 
             # Check for aborts.
             p = None
@@ -1497,7 +1555,7 @@ class Mcmc(object):
                     else:
                         if self.constraints:
                             print "The 'eTBR' proposal had no aborts (due to violated constraints)."
-                        
+
             for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
                 p = None
                 try:
@@ -1507,9 +1565,6 @@ class Mcmc(object):
                 if p:
                     if hasattr(p, 'nAborts'):
                         print "The %15s proposal had %5i aborts." % (p.name, p.nAborts[0])
-            
-            
-            
 
     def writeSwapMatrix(self):
         print "\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
@@ -1529,31 +1584,31 @@ class Mcmc(object):
         for i in range(self.nChains):
             print " " * 7, "%2i" % i,
             for j in range(self.nChains):
-                if i < j: # upper triangle
+                if i < j:  # upper triangle
                     print "%7i" % self.swapMatrix[i][j],
                 elif i == j:
                     print "      -",
                 else:
-                    if self.swapMatrix[j][i] == 0: # no proposals
+                    if self.swapMatrix[j][i] == 0:  # no proposals
                         print "      -",
                     else:
                         print "  %5.1f" % (100.0 * float(self.swapMatrix[i][j]) / float(self.swapMatrix[j][i])),
             print
-        
 
     def _makeChainsAndProposals(self):
         """Make chains and proposals."""
 
         gm = ['Mcmc._makeChainsAndProposals()']
 
-        #random.seed(0)
+        # random.seed(0)
 
         # Make chains, if needed
         if not self.chains:
             self.chains = []
             for chNum in range(self.nChains):
                 aChain = Chain(self)
-                aChain.tempNum = chNum  # Temperature.  Set this way to start, but it changes.
+                # Temperature.  Set this way to start, but it changes.
+                aChain.tempNum = chNum
                 self.chains.append(aChain)
         if not self.proposals:
             self._makeProposals()
@@ -1568,7 +1623,7 @@ class Mcmc(object):
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
                     p.logBigT[i] = math.log(bigT[i])
-                #print p.logBigT
+                # print p.logBigT
 
     def _setOutputTreeFile(self):
         """Setup the (output) tree file for the mcmc."""
@@ -1603,14 +1658,16 @@ class Mcmc(object):
         if self.tree.model.isHet:
             self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
             for pNum in range(self.tree.model.nParts):
-                self.treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
-                self.treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
-                self.treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
+                self.treeFile.write(
+                    ' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
+                self.treeFile.write(
+                    ' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
+                self.treeFile.write(
+                    ' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
             self.treeFile.write(']\n')
         self.treeFile.write('  [Tree numbers are gen+1]\n')
         self.treeFile.close()
 
-        
         if 0:
             self.prob.dump()
             self.tunings.dump()
@@ -1618,14 +1675,14 @@ class Mcmc(object):
         if 0:
             for p in self.proposals:
                 p.dump()
-            #return
+            # return
 
     def run(self, nGensToDo, verbose=True):
         """Start the Mcmc running."""
 
         gm = ['Mcmc.run()']
 
-        #Keep track of the first gen of this call to run(), maybe restart
+        # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
 
         if self.checkPointInterval:
@@ -1637,23 +1694,24 @@ class Mcmc(object):
             #      you re-start after 500 gens and change to a
             #      checkPointInterval of 200, then you won't be allowed to
             #      do 500 gens.
-            #if ((self.gen + 1) + nGensToDo) % self.checkPointInterval == 0:
+            # if ((self.gen + 1) + nGensToDo) % self.checkPointInterval == 0:
             if nGensToDo % self.checkPointInterval == 0:
                 pass
             else:
-                gm.append("With the current settings, the last generation won't be on a checkPointInterval.")
+                gm.append(
+                    "With the current settings, the last generation won't be on a checkPointInterval.")
                 gm.append("self.gen+1=%i, nGensToDo=%i, checkPointInterval=%i" % ((self.gen + 1),
-                                                                                  nGensToDo, self.checkPointInterval)) 
+                                                                                  nGensToDo, self.checkPointInterval))
                 raise P4Error(gm)
             #  2.  We also want the checkPointInterval to be evenly
             #      divisible by the sampleInterval.
             if self.checkPointInterval % self.sampleInterval == 0:
                 pass
             else:
-                gm.append("The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
+                gm.append(
+                    "The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
-
 
         if self.proposals:
             # Its either a re-start, or it has been thru autoTune().
@@ -1667,7 +1725,8 @@ class Mcmc(object):
             # The probs and tunings may have been changed by the user.
             self._refreshProposalProbsAndTunings()
 
-            # This stuff below should be the same as is done after pickling, see below.
+            # This stuff below should be the same as is done after pickling,
+            # see below.
             self.startMinusOne = self.gen
 
             # Start the tree partitions over.
@@ -1683,7 +1742,7 @@ class Mcmc(object):
                 self.swapMatrix = []
                 for i in range(self.nChains):
                     self.swapMatrix.append([0] * self.nChains)
-            
+
         else:
             self._makeChainsAndProposals()
             self._setOutputTreeFile()
@@ -1694,33 +1753,39 @@ class Mcmc(object):
             sys.stdout.flush()
 
         coldChainNum = 0
-        
+
         # If polytomy is turned on, then it is possible to get a star
         # tree, in which case local will not work.  So if we have both
         # polytomy and local proposals, we should also have brLen.
         if self.proposalsHash.has_key("polytomy") and self.proposalsHash.has_key("local"):
             if not self.proposalsHash.has_key('brLen'):
-                gm.append("If you have polytomy and local proposals, you should have a brLen proposal as well.")
-                gm.append("It can have a low proposal probability, but it needs to be there.")
+                gm.append(
+                    "If you have polytomy and local proposals, you should have a brLen proposal as well.")
+                gm.append(
+                    "It can have a low proposal probability, but it needs to be there.")
                 gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
                 raise P4Error(gm)
 
         # Are we using rjComp in any model partitions?
-        rjCompParts = [mp.rjComp for mp in self.chains[coldChainNum].curTree.model.parts]  # True and False
-        rjCompPartNums = [pNum for pNum in range(self.chains[coldChainNum].curTree.model.nParts) if rjCompParts[pNum]] 
-        #print rjCompParts
-        #print rjCompPartNums
+        rjCompParts = [mp.rjComp for mp in self.chains[
+            coldChainNum].curTree.model.parts]  # True and False
+        rjCompPartNums = [pNum for pNum in range(
+            self.chains[coldChainNum].curTree.model.nParts) if rjCompParts[pNum]]
+        # print rjCompParts
+        # print rjCompPartNums
 
         # Are we using rjRMatrix in any model partitions?
-        rjRMatrixParts = [mp.rjRMatrix for mp in self.chains[coldChainNum].curTree.model.parts]  # True and False
-        rjRMatrixPartNums = [pNum for pNum in range(self.chains[coldChainNum].curTree.model.nParts) if rjRMatrixParts[pNum]] 
-        #print rjRMatrixParts
-        #print rjRMatrixPartNums
-        #print self.chains[0].curTree.model.parts[1].rjRMatrix_k
+        rjRMatrixParts = [mp.rjRMatrix for mp in self.chains[
+            coldChainNum].curTree.model.parts]  # True and False
+        rjRMatrixPartNums = [pNum for pNum in range(
+            self.chains[coldChainNum].curTree.model.nParts) if rjRMatrixParts[pNum]]
+        # print rjRMatrixParts
+        # print rjRMatrixPartNums
+        # print self.chains[0].curTree.model.parts[1].rjRMatrix_k
 
-        
         if self.gen > -1:
-            # it is a re-start, so we need to back over the "end;" in the tree files.
+            # it is a re-start, so we need to back over the "end;" in the tree
+            # files.
             f2 = file(self.treeFileName, 'a+')
             pos = -1
             while 1:
@@ -1729,19 +1794,20 @@ class Mcmc(object):
                 if c == ';':
                     break
                 pos -= 1
-            #print "pos now %i" % pos
-            pos -= 3 # end;
+            # print "pos now %i" % pos
+            pos -= 3  # end;
             f2.seek(pos, 2)
             c = f2.read(4)
-            #print "got c = '%s'" % c
+            # print "got c = '%s'" % c
             if c != "end;":
-                gm.append("Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
+                gm.append(
+                    "Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
                 raise P4Error(gm)
             else:
                 f2.seek(pos, 2)
                 f2.truncate()
             f2.close()
-                
+
             if verbose:
                 print
                 print "Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen)
@@ -1757,7 +1823,7 @@ class Mcmc(object):
             if verbose:
                 print "Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum)
                 print "Set to do %i generations." % nGensToDo
-                
+
             if self.writePrams:
                 if self.chains[0].curTree.model.nFreePrams == 0:
                     if verbose:
@@ -1768,36 +1834,45 @@ class Mcmc(object):
                     self.chains[0].curTree.model.writePramsProfile(pramsFile)
                     #pramsFile.write("     genPlus1")
                     pramsFile.write("genPlus1")
-                    self.chains[0].curTree.model.writePramsHeaderLine(pramsFile)
+                    self.chains[0].curTree.model.writePramsHeaderLine(
+                        pramsFile)
                     pramsFile.close()
 
             if 1 and rjCompPartNums:
                 rjKFile = file(self.rjKFileName, 'w')
-                rjKFile.write("# k_comp_max, a constant, is the number of comp vectors in a part in total\n")
-                rjKFile.write("#             (both in the pool and not in the pool).\n")
-                rjKFile.write("# ck, aka ModelPart.rjComp_k, is the number of comp vectors in the 'pool' (for each part)\n")
-                rjKFile.write("# k_0 for comps (ck0 below) is the number of comp vectors on the tree (for each part)\n")
+                rjKFile.write(
+                    "# k_comp_max, a constant, is the number of comp vectors in a part in total\n")
+                rjKFile.write(
+                    "#             (both in the pool and not in the pool).\n")
+                rjKFile.write(
+                    "# ck, aka ModelPart.rjComp_k, is the number of comp vectors in the 'pool' (for each part)\n")
+                rjKFile.write(
+                    "# k_0 for comps (ck0 below) is the number of comp vectors on the tree (for each part)\n")
                 rjKFile.write("#\n")
                 for pNum in rjCompPartNums:
                     rjKFile.write("# part%i: " % pNum)
-                    rjKFile.write(" k_comp_max = %i\n" % self.chains[coldChainNum].curTree.model.parts[pNum].nComps)
+                    rjKFile.write(" k_comp_max = %i\n" % self.chains[
+                                  coldChainNum].curTree.model.parts[pNum].nComps)
                 rjKFile.write("#\n")
-                
 
             if 1 and rjRMatrixPartNums:
                 if not rjCompPartNums:
                     rjKFile = file(self.rjKFileName, 'w')
-                rjKFile.write("# k_rMatrix_max, a constant, is the number of rMatrices in a part in total\n")
-                rjKFile.write("#             (both in the pool and not in the pool).\n")
-                rjKFile.write("# rk, aka ModelPart.rjRMatrix_k, is the number of rMatrices in the 'pool' (for each part)\n")
-                rjKFile.write("# k_0 for rMatrices (rk0 below) is the number of rMatrices on the tree (for each part)\n")
+                rjKFile.write(
+                    "# k_rMatrix_max, a constant, is the number of rMatrices in a part in total\n")
+                rjKFile.write(
+                    "#             (both in the pool and not in the pool).\n")
+                rjKFile.write(
+                    "# rk, aka ModelPart.rjRMatrix_k, is the number of rMatrices in the 'pool' (for each part)\n")
+                rjKFile.write(
+                    "# k_0 for rMatrices (rk0 below) is the number of rMatrices on the tree (for each part)\n")
                 rjKFile.write("#\n")
                 for pNum in rjRMatrixPartNums:
                     rjKFile.write("# part%i: " % pNum)
-                    rjKFile.write(" k_rMatrix_max = %i\n" % self.chains[coldChainNum].curTree.model.parts[pNum].nRMatrices)
+                    rjKFile.write(" k_rMatrix_max = %i\n" % self.chains[
+                                  coldChainNum].curTree.model.parts[pNum].nRMatrices)
                 rjKFile.write("#\n")
-                
-            
+
             if 1 and rjCompPartNums or rjRMatrixPartNums:
                 rjKFile.write("# %10s " % 'genPlus1')
                 for pNum in rjCompPartNums:
@@ -1808,7 +1883,6 @@ class Mcmc(object):
                     rjKFile.write("%8s " % 'p%i_rk0' % pNum)
                 rjKFile.write("\n")
                 rjKFile.close()
-                
 
         if verbose:
             print "Sampling every %i." % self.sampleInterval
@@ -1824,28 +1898,31 @@ class Mcmc(object):
         realTimeStart = time.time()
         self.lastTimeCheck = time.time()
         for ch in self.chains:
-            pf.p4_copyCondLikes(ch.curTree.cTree, ch.propTree.cTree, 1) # 1 means do all
-            pf.p4_copyBigPDecks(ch.curTree.cTree, ch.propTree.cTree, 1) # 1 means do all
+            # 1 means do all
+            pf.p4_copyCondLikes(ch.curTree.cTree, ch.propTree.cTree, 1)
+            # 1 means do all
+            pf.p4_copyBigPDecks(ch.curTree.cTree, ch.propTree.cTree, 1)
             ch.verifyIdentityOfTwoTreesInChain()
 
-        abortableProposals = ['local', 'polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation', 'rjComp', 'rjRMatrix']
+        abortableProposals = ['local', 'polytomy', 'compLocation',
+                              'rMatrixLocation', 'gdasrvLocation', 'rjComp', 'rjRMatrix']
 
         for gNum in range(nGensToDo):
             self.gen += 1
-            #Do an initial time estimate based on 100 gens 
-            if nGensToDo > 100 and self.gen-firstGen == 100:
+            # Do an initial time estimate based on 100 gens
+            if nGensToDo > 100 and self.gen - firstGen == 100:
                 diff_secs = time.time() - realTimeStart
-                total_secs = (float(nGensToDo)/float(100))*float(diff_secs)
-                deltaTime = datetime.timedelta(seconds = int(round(total_secs)))
+                total_secs = (float(nGensToDo) / float(100)) * float(diff_secs)
+                deltaTime = datetime.timedelta(seconds=int(round(total_secs)))
                 print "Estimated completion time: %s days, %s" % (
-                    deltaTime.days, time.strftime("%H:%M:%S",time.gmtime(deltaTime.seconds)))
+                    deltaTime.days, time.strftime("%H:%M:%S", time.gmtime(deltaTime.seconds)))
 
             # Above is a list of proposals where it is possible to abort.
             # When a gen(aProposal) is made, below, aProposal.doAbort
             # might be set, in which case we want to skip it for this
             # gen.  But we want to start each 'for chNum' loop with
             # doAborts all turned off.
-            
+
             for chNum in range(self.nChains):
                 failure = True
                 nAttempts = 0
@@ -1861,86 +1938,101 @@ class Mcmc(object):
                         aProposal = self.proposals[i]
                         gotIt = True
                         if aProposal.name == 'local':
-                            if self.chains[chNum].curTree.nInternalNodes == 1:  # Can't do local on a star tree.
+                            # Can't do local on a star tree.
+                            if self.chains[chNum].curTree.nInternalNodes == 1:
                                 aProposal = self.proposalsHash['brLen']
                         elif aProposal.name == 'root3':
-                            if self.chains[chNum].curTree.nInternalNodes == 1:  # Can't do root3 on a star tree.
+                            # Can't do root3 on a star tree.
+                            if self.chains[chNum].curTree.nInternalNodes == 1:
                                 gotIt = False
                         elif aProposal.name in ['comp', 'compDir']:
-                            # If we do RJ on this part, make sure the comp is actually in the RJ pool.
-                            mp = self.chains[chNum].curTree.model.parts[aProposal.pNum]
+                            # If we do RJ on this part, make sure the comp is
+                            # actually in the RJ pool.
+                            mp = self.chains[chNum].curTree.model.parts[
+                                aProposal.pNum]
                             if mp.rjComp:
                                 mt = mp.comps[aProposal.mtNum]
                                 if not mt.rj_isInPool:
                                     gotIt = False
                         elif aProposal.name in ['rMatrix']:
-                            # If we do RJ on this part, make sure the rMatrix is actually in the RJ pool.
-                            mp = self.chains[chNum].curTree.model.parts[aProposal.pNum]
+                            # If we do RJ on this part, make sure the rMatrix
+                            # is actually in the RJ pool.
+                            mp = self.chains[chNum].curTree.model.parts[
+                                aProposal.pNum]
                             if mp.rjRMatrix:
                                 mt = mp.rMatrices[aProposal.mtNum]
                                 if not mt.rj_isInPool:
                                     gotIt = False
                         if aProposal.doAbort:
                             gotIt = False
-                        #if aProposal.name == 'gdasrv':
+                        # if aProposal.name == 'gdasrv':
                         #    gotIt = False
                         if aProposal.name in ['comp', 'compDir']:
                             if self.chains[chNum].curTree.model.parts[aProposal.pNum].nComps > 1:
-                                nNodes = self.chains[chNum].curTree.model.parts[aProposal.pNum].comps[aProposal.mtNum].nNodes
+                                nNodes = self.chains[chNum].curTree.model.parts[
+                                    aProposal.pNum].comps[aProposal.mtNum].nNodes
                                 if nNodes == 0:
                                     gotIt = False
                         safety += 1
                         if safety > 1000:
-                            gm.append("Could not find a proposal after %i attempts." % safety)
+                            gm.append(
+                                "Could not find a proposal after %i attempts." % safety)
                             gm.append("Possibly a programming error.")
-                            gm.append("Or possibly it is just a pathologically frustrating Mcmc.")
+                            gm.append(
+                                "Or possibly it is just a pathologically frustrating Mcmc.")
                             raise P4Error(gm)
 
-                    #if gNum % 2:
+                    # if gNum % 2:
                     #    aProposal = self.proposalsHash['brLen']
-                    #else:
+                    # else:
                     #    aProposal = self.proposalsHash['comp']
 
                     if 0:
                         print "==== gNum=%i, chNum=%i, aProposal=%s (part %i)" % (
                             gNum, chNum, aProposal.name, aProposal.pNum),
                         sys.stdout.flush()
-                        #print gNum,
+                        # print gNum,
 
-                    failure = self.chains[chNum].gen(aProposal)  # success returns None
+                    # success returns None
+                    failure = self.chains[chNum].gen(aProposal)
 
                     if 0:
                         if failure:
                             print "    failure"
                         else:
                             print
-                        
+
                     nAttempts += 1
                     if nAttempts > 1000:
-                        gm.append("Was not able to do a successful generation after %i attempts." % nAttempts)
+                        gm.append(
+                            "Was not able to do a successful generation after %i attempts." % nAttempts)
                         raise P4Error(gm)
-                #print "   Mcmc.run(). finished a gen on chain %i" % (chNum)
+                # print "   Mcmc.run(). finished a gen on chain %i" % (chNum)
                 for pr in abortableProposals:
                     if self.proposalsHash.has_key(pr):
                         self.proposalsHash[pr].doAbort = False
-                        
+
             # Do swap, if there is more than 1 chain.
             if self.nChains == 1:
                 coldChain = 0
             else:
                 # Chain swapping stuff was lifted from MrBayes.  Thanks again.
-                chain1,chain2 = random.sample(self.chains, 2)
+                chain1, chain2 = random.sample(self.chains, 2)
 
                 # Use the upper triangle of swapMatrix for nProposed's
                 if chain1.tempNum < chain2.tempNum:
                     self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
                 else:
                     self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-                    
-                lnR =  (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
-                lnR += (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))) * chain1.curTree.logLike
-                lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain1.curTree.logLike
-                lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))) * chain2.curTree.logLike
+
+                lnR = (
+                    1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
+                lnR += (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))
+                        ) * chain1.curTree.logLike
+                lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))
+                        ) * chain1.curTree.logLike
+                lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))
+                        ) * chain2.curTree.logLike
 
                 if lnR < -100.0:
                     r = 0.0
@@ -1954,7 +2046,8 @@ class Mcmc(object):
                     acceptSwap = 1
 
                 if acceptSwap:
-                    # Use the lower triangle of swapMatrix to keep track of nAccepted's
+                    # Use the lower triangle of swapMatrix to keep track of
+                    # nAccepted's
                     if chain1.tempNum < chain2.tempNum:
                         self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
                     else:
@@ -1970,29 +2063,31 @@ class Mcmc(object):
                         coldChainNum = i
                         break
                 if coldChainNum == -1:
-                    gm.append("Unable to find which chain is the cold chain.  Bad.")
+                    gm.append(
+                        "Unable to find which chain is the cold chain.  Bad.")
                     raise P4Error(gm)
 
             # If it is a writeInterval, write stuff
             if (self.gen + 1) % self.sampleInterval == 0:
                 if 1:
                     likesFile = file(self.likesFileName, 'a')
-                    likesFile.write('%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
+                    likesFile.write(
+                        '%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
                     likesFile.close()
                     treeFile = file(self.treeFileName, 'a')
                     treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
                     self.chains[coldChainNum].curTree.writeNewick(treeFile,
-                                                               withTranslation=1,
-                                                               translationHash=self.translationHash,
-                                                               doMcmcCommandComments=self.tree.model.isHet)
+                                                                  withTranslation=1,
+                                                                  translationHash=self.translationHash,
+                                                                  doMcmcCommandComments=self.tree.model.isHet)
                     treeFile.close()
-
 
                 if 1 and rjCompPartNums:  # we made rjCompPartNums above
                     rjKFile = file(self.rjKFileName, 'a')
                     rjKFile.write("%12i " % (self.gen + 1))
                     for pNum in rjCompPartNums:
-                        mp = self.chains[coldChainNum].curTree.model.parts[pNum]
+                        mp = self.chains[
+                            coldChainNum].curTree.model.parts[pNum]
                         assert mp.rjComp
                         # k is the number of comp vectors in the pool
                         # k_0 is the number of comp vectors on the tree
@@ -2018,13 +2113,15 @@ class Mcmc(object):
                         rjKFile = file(self.rjKFileName, 'a')
                         rjKFile.write("%12i " % (self.gen + 1))
                     for pNum in rjRMatrixPartNums:
-                        #print "doing pNum %i" % pNum
-                        mp = self.chains[coldChainNum].curTree.model.parts[pNum]
+                        # print "doing pNum %i" % pNum
+                        mp = self.chains[
+                            coldChainNum].curTree.model.parts[pNum]
                         assert mp.rjRMatrix
                         # k is the number of rMatrices in the pool
                         # k_0 is the number of rMatrices on the tree
                         # k_max is the number of rMatrices in total
-                        # mp.rjRMatrix_k is the number of comp vectors in the pool
+                        # mp.rjRMatrix_k is the number of comp vectors in the
+                        # pool
                         k = 0
                         k_0 = 0
                         for rNum in range(mp.nRMatrices):
@@ -2034,7 +2131,8 @@ class Mcmc(object):
                             if theRMatrix.rj_isInPool:
                                 k += 1
                         if k != mp.rjRMatrix_k:
-                            gm.append("k=%i, mp.rjRMatrix_k=%i" % (k, mp.rjRMatrix_k))
+                            gm.append("k=%i, mp.rjRMatrix_k=%i" %
+                                      (k, mp.rjRMatrix_k))
                             raise P4Error(gm)
                         rjKFile.write("%6i " % k)
                         rjKFile.write("%7i " % k_0)
@@ -2045,15 +2143,16 @@ class Mcmc(object):
                     pramsFile = file(self.pramsFileName, 'a')
                     #pramsFile.write("%12i " % (self.gen + 1))
                     pramsFile.write("%12i" % (self.gen + 1))
-                    self.chains[coldChainNum].curTree.model.writePramsLine(pramsFile)
+                    self.chains[coldChainNum].curTree.model.writePramsLine(
+                        pramsFile)
                     pramsFile.close()
 
                 # Do a simulation
                 if self.simulate:
-                    #print "about to simulate..."
+                    # print "about to simulate..."
                     self._doSimulate(self.chains[coldChainNum].curTree)
-                    #print "...finished simulate."
-                
+                    # print "...finished simulate."
+
                 # Do other stuff.
                 if hasattr(self, 'hook'):
                     self.hook(self.chains[coldChainNum].curTree)
@@ -2069,11 +2168,14 @@ class Mcmc(object):
 
                 # Add curTree to treePartitions
                 if self.treePartitions:
-                    self.treePartitions._getSplitsFromTree(self.chains[coldChainNum].curTree)
+                    self.treePartitions._getSplitsFromTree(
+                        self.chains[coldChainNum].curTree)
                 else:
-                    self.treePartitions = TreePartitions(self.chains[coldChainNum].curTree)
+                    self.treePartitions = TreePartitions(
+                        self.chains[coldChainNum].curTree)
                 # After _getSplitsFromTree, need to follow, at some point,
-                # with _finishSplits().  Do that when it is pickled, or at the end of the run.
+                # with _finishSplits().  Do that when it is pickled, or at the
+                # end of the run.
 
                 # Checking and debugging constraints
                 if 0 and self.constraints:
@@ -2083,9 +2185,9 @@ class Mcmc(object):
                     self.chains[coldChainNum].curTree.checkSplitKeys()
                     print "c checking propTree ..."
                     self.chains[coldChainNum].propTree.checkSplitKeys()
-                    #print "c checking that all constraints are present"
+                    # print "c checking that all constraints are present"
                     #theSplits = [n.br.splitKey for n in self.chains[0].curTree.iterNodesNoRoot()]
-                    #for sk in self.constraints.constraints:
+                    # for sk in self.constraints.constraints:
                     #    if sk not in theSplits:
                     #        gm.append("split %i is not present in the curTree." % sk)
                     #        raise P4Error(gm)
@@ -2093,19 +2195,23 @@ class Mcmc(object):
 
                 # Check that the curTree has all the constraints
                 if self.constraints:
-                    splitsInCurTree = [n.br.splitKey for n in self.chains[coldChainNum].curTree.iterInternalsNoRoot()]
+                    splitsInCurTree = [
+                        n.br.splitKey for n in self.chains[coldChainNum].curTree.iterInternalsNoRoot()]
                     for sk in self.constraints.constraints:
                         if sk not in splitsInCurTree:
                             gm.append("Programming error.")
-                            gm.append("The current tree (the last tree sampled) does not contain constraint")
-                            gm.append("%s" % func.getSplitStringFromKey(sk, self.tree.nTax))
+                            gm.append(
+                                "The current tree (the last tree sampled) does not contain constraint")
+                            gm.append(
+                                "%s" % func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
 
                 # If it is a checkPointInterval, pickle
                 if self.checkPointInterval and (self.gen + 1) % self.checkPointInterval == 0:
                     self._checkPoint()
 
-                    # The stuff below needs to be done in a re-start as well.  See above "if self.proposals:"
+                    # The stuff below needs to be done in a re-start as well.
+                    # See above "if self.proposals:"
                     self.startMinusOne = self.gen
 
                     # Start the tree partitions over.
@@ -2122,41 +2228,45 @@ class Mcmc(object):
                         self.swapMatrix = []
                         for i in range(self.nChains):
                             self.swapMatrix.append([0] * self.nChains)
-                
 
             # Reassuring pips ...
-            if firstGen != self.gen: #We want to skip the first gen of every call to run()
+            # We want to skip the first gen of every call to run()
+            if firstGen != self.gen:
                 if nGensToDo <= 20000:
-                    if (self.gen-firstGen) % 1000 == 0:
+                    if (self.gen - firstGen) % 1000 == 0:
                         if verbose:
-                            deltaTime = self._doTimeCheck(nGensToDo, firstGen, 1000)
+                            deltaTime = self._doTimeCheck(
+                                nGensToDo, firstGen, 1000)
                             if deltaTime.days:
                                 timeString = "%s days, %s" % (
-                                    deltaTime.days, time.strftime("%H:%M:%S",time.gmtime(deltaTime.seconds)))
+                                    deltaTime.days, time.strftime("%H:%M:%S", time.gmtime(deltaTime.seconds)))
                             else:
-                                timeString = time.strftime("%H:%M:%S",time.gmtime(deltaTime.seconds))
+                                timeString = time.strftime(
+                                    "%H:%M:%S", time.gmtime(deltaTime.seconds))
                             print "%10i - %s" % (self.gen, timeString)
 
                         else:
                             sys.stdout.write(".")
                             sys.stdout.flush()
-                    elif (self.gen-firstGen) % 100 == 0:
+                    elif (self.gen - firstGen) % 100 == 0:
                         sys.stdout.write(".")
                         sys.stdout.flush()
                 else:
-                    if (self.gen-firstGen) % 50000 == 0:
+                    if (self.gen - firstGen) % 50000 == 0:
                         if verbose:
-                            deltaTime = self._doTimeCheck(nGensToDo, firstGen, 50000)
+                            deltaTime = self._doTimeCheck(
+                                nGensToDo, firstGen, 50000)
                             if deltaTime.days:
                                 timeString = "%s days, %s" % (
-                                    deltaTime.days, time.strftime("%H:%M:%S",time.gmtime(deltaTime.seconds)))
+                                    deltaTime.days, time.strftime("%H:%M:%S", time.gmtime(deltaTime.seconds)))
                             else:
-                                timeString = time.strftime("%H:%M:%S",time.gmtime(deltaTime.seconds))
+                                timeString = time.strftime(
+                                    "%H:%M:%S", time.gmtime(deltaTime.seconds))
                             print "%10i - %s" % (self.gen, timeString)
                         else:
                             sys.stdout.write(".")
                             sys.stdout.flush()
-                    elif (self.gen-firstGen) % 1000 == 0:
+                    elif (self.gen - firstGen) % 1000 == 0:
                         sys.stdout.write(".")
                         sys.stdout.flush()
 
@@ -2168,16 +2278,17 @@ class Mcmc(object):
         treeFile = file(self.treeFileName, 'a')
         treeFile.write('end;\n\n')
         treeFile.close()
-        
+
     def _doTimeCheck(self, nGensToDo, firstGen, genInterval):
         """Time check 
-        
+
         firstGen is the first generation of this call to Mcmc.run() else
         timing fails on restart"""
         nowTime = time.time()
         diff_secs = nowTime - self.lastTimeCheck
-        total_secs = (float(nGensToDo-(self.gen-firstGen))/float(genInterval))*float(diff_secs)
-        deltaTime = datetime.timedelta(seconds = int(round(total_secs)))
+        total_secs = (float(nGensToDo - (self.gen - firstGen)) /
+                      float(genInterval)) * float(diff_secs)
+        deltaTime = datetime.timedelta(seconds=int(round(total_secs)))
         self.lastTimeCheck = nowTime
         return deltaTime
 
@@ -2185,24 +2296,27 @@ class Mcmc(object):
         simFile = file(self.simFileName, 'a')
 
         simFile.write(" genPlus1")
-        if 1 & self.simulate:  # If self.simulate contains a 1, do unconstrained log like
+        # If self.simulate contains a 1, do unconstrained log like
+        if 1 & self.simulate:
             for pNum in range(self.simTree.data.nParts):
                 simFile.write(' uncLike%i' % pNum)
         if 2 & self.simulate:  # If self.simulate contains a 2, do bigX^2
             for pNum in range(self.simTree.model.nParts):
                 simFile.write(' bigXSq%i' % pNum)
-        if 4 & self.simulate:  # If self.simulate contains a 4, do meanNCharPerSite
+        # If self.simulate contains a 4, do meanNCharPerSite
+        if 4 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
                 simFile.write(' meanNCharsPerSite%i' % pNum)
-        if 8 & self.simulate:  # If self.simulate contains an 8, do c_m, the compStatFromCharFreqs
+        # If self.simulate contains an 8, do c_m, the compStatFromCharFreqs
+        if 8 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
                 simFile.write(' c_mSim%i  c_mOrig%i' % (pNum, pNum))
-        if 16 & self.simulate:  # If self.simulate contains a 16, do constant sites count
+        # If self.simulate contains a 16, do constant sites count
+        if 16 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
                 simFile.write(' nConstSites%i' % pNum)
         simFile.write('\n')
         simFile.close()
-        
 
     def _doSimulate(self, curTree):
         curTree.copyToTree(self.simTree)
@@ -2210,32 +2324,38 @@ class Mcmc(object):
         self.simTree.simulate()
         simFile = file(self.simFileName, 'a')
         simFile.write(" %11i" % (self.gen + 1))
-        if 1 & self.simulate:  # If self.simulate contains a 1, do unconstrained log like
+        # If self.simulate contains a 1, do unconstrained log like
+        if 1 & self.simulate:
             for p in self.simTree.data.parts:
                 simFile.write(' %f' % pf.getUnconstrainedLogLike(p.cPart))
         if 2 & self.simulate:  # If self.simulate contains a 2, do bigX^2
             #ret2 = self.simTree.data.compoChiSquaredTest(verbose=0, skipColumnZeros=True)
-            #for pNum in range(self.simTree.model.nParts):
+            # for pNum in range(self.simTree.model.nParts):
             #    simFile.write(' %f' % ret[pNum][0])
             ret = self.simTree.data.simpleBigXSquared()
             for pNum in range(self.simTree.model.nParts):
                 simFile.write(' %f' % ret[pNum])
-            #for i in range(len(ret)):
+            # for i in range(len(ret)):
             #    if math.fabs(ret[i][0] - ret2[i]) > 0.000001:
-            #        print "The two methods of bigXSquared calculations differed.  %f and %f" % (ret[i], ret2[i])
-        if 4 & self.simulate:  # If self.simulate contains a 4, do meanNCharPerSite
+            # print "The two methods of bigXSquared calculations differed.  %f
+            # and %f" % (ret[i], ret2[i])
+        # If self.simulate contains a 4, do meanNCharPerSite
+        if 4 & self.simulate:
             ret = self.simTree.data.meanNCharsPerSite()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
                 simFile.write(' %f' % ret[pNum])
-        if 8 & self.simulate:  # If self.simulate contains an 8, do c_m, the compStatFromCharFreqs
+        # If self.simulate contains an 8, do c_m, the compStatFromCharFreqs
+        if 8 & self.simulate:
             ret = self.simTree.compStatFromCharFreqs()
             ret2 = curTree.compStatFromCharFreqs()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
                 simFile.write(' %f  %f' % (ret[pNum], ret2[pNum]))
-                #print ' compStatFromCharFreqs: %f  %f' % (ret[pNum], ret2[pNum])
-        if 16 & self.simulate:  # If self.simulate contains a 16, do constant sites count
+                # print ' compStatFromCharFreqs: %f  %f' % (ret[pNum],
+                # ret2[pNum])
+        # If self.simulate contains a 16, do constant sites count
+        if 16 & self.simulate:
             ret = self.simTree.data.simpleConstantSitesCount()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
@@ -2250,7 +2370,7 @@ class Mcmc(object):
                 ch = self.chains[chNum]
                 print "chain %i ==================" % chNum
                 ch.curTree.summarizeModelThingsNNodes()
-                
+
         # Make a copy of self, but with no cStuff.
         # But we don't want to copy data.  So detach it.
         savedData = self.tree.data
@@ -2262,7 +2382,7 @@ class Mcmc(object):
             ch = self.chains[chNum]
             ch.curTree.data = None
             ch.propTree.data = None
-                    
+
         theCopy = copy.deepcopy(self)
 
         # Re-attach data to self.
@@ -2299,7 +2419,6 @@ class Mcmc(object):
         f = file(fName, 'w')
         cPickle.dump(theCopy, f, 1)
         f.close()
-
 
     def autoTune(self, gensPerProposal=500, verbose=True, giveUpAfter=10, writeTunings=True):
         """Attempt to tune the Mcmc automatically.  A bit of a hack.
@@ -2394,10 +2513,12 @@ class Mcmc(object):
                 doingRj = True
                 break
         if doingRj:
-            gm.append("Sorry, autoTune() does not play well with rjComp or rjRMatrix.")
-            gm.append("Autotune with a regular (fixed) hetero model, and then turn on RJ.")
+            gm.append(
+                "Sorry, autoTune() does not play well with rjComp or rjRMatrix.")
+            gm.append(
+                "Autotune with a regular (fixed) hetero model, and then turn on RJ.")
             raise P4Error(gm)
-            
+
         if self.proposals:  # Its a re-start
             self.gen = -1
             self.startMinusOne = -1
@@ -2417,13 +2538,12 @@ class Mcmc(object):
                 self.swapMatrix = []
                 for i in range(self.nChains):
                     self.swapMatrix.append([0] * self.nChains)
-            
+
         if not self.proposals:
             self._makeChainsAndProposals()
 
-            
         #coldChainNum = 0
-        nGensToDo = gensPerProposal * len(self.proposals)    
+        nGensToDo = gensPerProposal * len(self.proposals)
         if verbose:
             print "Starting the MCMC autoTune()"
             print "There are %i proposals." % len(self.proposals)
@@ -2443,7 +2563,7 @@ class Mcmc(object):
             if verbose:
                 print "================ autoTune() round %i ================" % roundCounter
 
-            #self.chains[0].curTree.model.dump()
+            # self.chains[0].curTree.model.dump()
             needsToBeTuned = False
             for gNum in range(nGensToDo):
                 self.gen += 1
@@ -2455,19 +2575,23 @@ class Mcmc(object):
                         aProposal = random.choice(self.proposals)
                         gotIt = True
                         if aProposal.name == 'local':
-                            if self.chains[chNum].curTree.nInternalNodes == 1:  # Can't do local on a star tree.
+                            # Can't do local on a star tree.
+                            if self.chains[chNum].curTree.nInternalNodes == 1:
                                 #aProposal = self.proposalsHash['brLen']
                                 gotIt = False
                         elif aProposal.name == 'root3':
-                            if self.chains[chNum].curTree.nInternalNodes == 1:  # Can't do root3 on a star tree.
+                            # Can't do root3 on a star tree.
+                            if self.chains[chNum].curTree.nInternalNodes == 1:
                                 gotIt = False
                         safety += 1
                         if safety > 100:
-                            gm.append("I've been unable to find a suitable proposal after 100 tries.")
-                            gm.append("Its probably a star tree, and none of the proposals can use star trees.")
+                            gm.append(
+                                "I've been unable to find a suitable proposal after 100 tries.")
+                            gm.append(
+                                "Its probably a star tree, and none of the proposals can use star trees.")
                             raise P4Error(gm)
-                    
-                    #print aProposal.name
+
+                    # print aProposal.name
                     self.chains[chNum].gen(aProposal)
 
                 # Do swap, if there is more than 1 chain.
@@ -2475,8 +2599,9 @@ class Mcmc(object):
                     #coldChain = 0
                     pass
                 else:
-                    # Chain swapping stuff was lifted from MrBayes.  Thanks again.
-                    chain1,chain2 = random.sample(self.chains, 2)
+                    # Chain swapping stuff was lifted from MrBayes.  Thanks
+                    # again.
+                    chain1, chain2 = random.sample(self.chains, 2)
 
                     # Use the upper triangle of swapMatrix for nProposed's
                     if chain1.tempNum < chain2.tempNum:
@@ -2484,10 +2609,14 @@ class Mcmc(object):
                     else:
                         self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
 
-                    lnR =  (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
-                    lnR += (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))) * chain2.curTree.logLike
+                    lnR = (
+                        1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
+                    lnR += (1.0 / (1.0 + (self.tunings.chainTemp *
+                                          chain2.tempNum))) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.tunings.chainTemp *
+                                          chain1.tempNum))) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.tunings.chainTemp *
+                                          chain2.tempNum))) * chain2.curTree.logLike
 
                     if lnR < -100.0:
                         r = 0.0
@@ -2501,11 +2630,14 @@ class Mcmc(object):
                         acceptSwap = 1
 
                     if acceptSwap:
-                        # Use the lower triangle of swapMatrix to keep track of nAccepted's
+                        # Use the lower triangle of swapMatrix to keep track of
+                        # nAccepted's
                         if chain1.tempNum < chain2.tempNum:
-                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                            self.swapMatrix[chain2.tempNum][
+                                chain1.tempNum] += 1
                         else:
-                            self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                            self.swapMatrix[chain1.tempNum][
+                                chain2.tempNum] += 1
 
                         # Do the swap
                         temporary = chain1.tempNum
@@ -2521,20 +2653,22 @@ class Mcmc(object):
                     print "c checking propTree ..."
                     self.chains[0].propTree.checkSplitKeys()
                     print "c checking that all constraints are present"
-                    theSplits = [n.br.splitKey for n in self.chains[0].curTree.iterNodesNoRoot()]
+                    theSplits = [
+                        n.br.splitKey for n in self.chains[0].curTree.iterNodesNoRoot()]
                     for sk in self.constraints.constraints:
                         if sk not in theSplits:
-                            gm.append("split %i is not present in the curTree." % sk)
+                            gm.append(
+                                "split %i is not present in the curTree." % sk)
                             raise P4Error(gm)
                     print "Mcmc zzz"
 
                 # Reassuring pips ...
-                #if self.gen and self.gen % 1000 == 0:
+                # if self.gen and self.gen % 1000 == 0:
                 #    print "%10i" % self.gen
-                #elif self.gen and self.gen % 100 == 0:
+                # elif self.gen and self.gen % 100 == 0:
                 if self.gen and self.gen % 100 == 0:
-                     sys.stdout.write(".")
-                     sys.stdout.flush()
+                    sys.stdout.write(".")
+                    sys.stdout.flush()
 
             if verbose:
                 print
@@ -2544,14 +2678,17 @@ class Mcmc(object):
                 p = self.proposals[i]
                 if p.nProposals[0] < atLeast:
                     self.writeProposalProbs()
-                    gm.append("nProposals for proposal %i (%s) is only %i." % (i, p.name, p.nProposals[0]))
-                    gm.append("We want at least %i samples per proposal." % atLeast)
+                    gm.append(
+                        "nProposals for proposal %i (%s) is only %i." % (i, p.name, p.nProposals[0]))
+                    gm.append(
+                        "We want at least %i samples per proposal." % atLeast)
                     gm.append("The sample size is not big enough.")
                     raise P4Error(gm)
-            #self.writeProposalAcceptances()
+            # self.writeProposalAcceptances()
             if 0:
                 for p in self.proposals:
-                    accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+                    accepted = float(
+                        p.nAcceptances[0]) / float(p.nProposals[0])
                     print "%25s  %5.3f" % (p.name, accepted)
 
             # Here is where we go over each tuning and ask whether the
@@ -2568,11 +2705,11 @@ class Mcmc(object):
 
             if verbose:
                 print "Acceptances for the tunings:"
-                
+
             theSig = "%25s  %5.3f"
             sig2 = " %-10s"
             sig3 = "%40s %s"
-            
+
             if self.tuningsUsage.local:
                 p = self.tuningsUsage.local
                 accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
@@ -2582,7 +2719,7 @@ class Mcmc(object):
                     if verbose:
                         print sig2 % "too small",
                     oldTuning = self.tunings.local
-                    self.tunings.local /=2.0
+                    self.tunings.local /= 2.0
                     #self.tuningsUsage.local.tuning = self.tunings.local
                     if verbose:
                         print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.local)
@@ -2591,7 +2728,7 @@ class Mcmc(object):
                     if verbose:
                         print sig2 % "too big",
                     oldTuning = self.tunings.local
-                    self.tunings.local *=2.0
+                    self.tunings.local *= 2.0
                     #self.tuningsUsage.local.tuning = self.tunings.local
                     if verbose:
                         print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.local)
@@ -2608,7 +2745,7 @@ class Mcmc(object):
                     if verbose:
                         print sig2 % "too small",
                     oldTuning = self.tunings.brLen
-                    self.tunings.brLen /=2.0
+                    self.tunings.brLen /= 2.0
                     if verbose:
                         print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.brLen)
                     needsToBeTuned = True
@@ -2616,7 +2753,7 @@ class Mcmc(object):
                     if verbose:
                         print sig2 % "too big",
                     oldTuning = self.tunings.brLen
-                    self.tunings.brLen *=2.0
+                    self.tunings.brLen *= 2.0
                     if verbose:
                         print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.brLen)
                     needsToBeTuned = True
@@ -2633,7 +2770,7 @@ class Mcmc(object):
                     if verbose:
                         print sig2 % "too small",
                     oldTuning = self.tunings.relRate
-                    self.tunings.relRate /=2.0
+                    self.tunings.relRate /= 2.0
                     #self.tuningsUsage.relRate.tuning = self.tunings.relRate
                     if verbose:
                         print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.relRate)
@@ -2642,7 +2779,7 @@ class Mcmc(object):
                     if verbose:
                         print sig2 % "too big",
                     oldTuning = self.tunings.relRate
-                    self.tunings.relRate *=2.0
+                    self.tunings.relRate *= 2.0
                     #self.tuningsUsage.relRate.tuning = self.tunings.relRate
                     if verbose:
                         print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.relRate)
@@ -2660,14 +2797,15 @@ class Mcmc(object):
                     isTooSmall = 0
                     #isVerySmall = 0
                     for p in self.tuningsUsage.parts[pNum].comp:
-                        accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+                        accepted = float(
+                            p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
                             print theSig % ("comp", accepted),
-                        #if accepted < 0.01:
+                        # if accepted < 0.01:
                         #    if verbose:
                         #        print sig2 % "very small"
                         #    isVerySmall += 1
-                        #    isTooSmall += 1                            
+                        #    isTooSmall += 1
                         if accepted < safeLower:
                             if verbose:
                                 print sig2 % "too small"
@@ -2693,12 +2831,13 @@ class Mcmc(object):
                             myNewVal = self.tunings.parts[pNum].comp * 1.5
                             newlyAtMax = False
                             if myNewVal >= var.mcmcMaxCompAndRMatrixTuning:
-                                self.tunings.parts[pNum].comp = var.mcmcMaxCompAndRMatrixTuning
+                                self.tunings.parts[
+                                    pNum].comp = var.mcmcMaxCompAndRMatrixTuning
                                 newlyAtMax = True
                             else:
                                 self.tunings.parts[pNum].comp = myNewVal
                             # Transfer the new tuning to the proposals
-                            #for mt in self.tuningsUsage.parts[pNum].comp:
+                            # for mt in self.tuningsUsage.parts[pNum].comp:
                             #    mt.tuning = self.tunings.parts[pNum].comp
                             if verbose:
                                 print sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].comp)
@@ -2712,12 +2851,12 @@ class Mcmc(object):
                         if verbose:
                             print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].comp)
                         # if accepted is very small, decrease the tuning by a lot
-                        #if isVerySmall:
+                        # if isVerySmall:
                         #    self.tunings.parts[pNum].comp /= 3.
-                        #else:
+                        # else:
                         self.tunings.parts[pNum].comp /= 1.5
                         # Transfer the new tuning to the proposals
-                        #for mt in self.tuningsUsage.parts[pNum].comp:
+                        # for mt in self.tuningsUsage.parts[pNum].comp:
                         #    mt.tuning = self.tunings.parts[pNum].comp
                         if verbose:
                             print sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].comp)
@@ -2729,10 +2868,11 @@ class Mcmc(object):
                     isTooSmall = 0
                     #isVerySmall = 0
                     for p in self.tuningsUsage.parts[pNum].rMatrix:
-                        accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+                        accepted = float(
+                            p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
                             print theSig % ("rMatrix", accepted),
-                        #if accepted < 0.01:
+                        # if accepted < 0.01:
                         #    if verbose:
                         #        print sig2 % "very small"
                         #    isTooSmall += 1
@@ -2757,7 +2897,7 @@ class Mcmc(object):
                             if isTooBig:
                                 if verbose:
                                     print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP)
-                                self.tunings.parts[pNum].twoP /=2.0
+                                self.tunings.parts[pNum].twoP /= 2.0
                                 if verbose:
                                     print sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].twoP)
                                 needsToBeTuned = True
@@ -2765,7 +2905,7 @@ class Mcmc(object):
                             elif isTooSmall:
                                 if verbose:
                                     print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP)
-                                self.tunings.parts[pNum].twoP *=2.0
+                                self.tunings.parts[pNum].twoP *= 2.0
                                 if verbose:
                                     print sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].twoP)
                                 needsToBeTuned = True
@@ -2778,15 +2918,18 @@ class Mcmc(object):
                                 if verbose:
                                     print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrix)
                                 if not alreadyAtMax:
-                                    myNewVal = self.tunings.parts[pNum].rMatrix * 1.5
+                                    myNewVal = self.tunings.parts[
+                                        pNum].rMatrix * 1.5
                                     newlyAtMax = False
                                     if myNewVal >= var.mcmcMaxCompAndRMatrixTuning:
-                                        self.tunings.parts[pNum].rMatrix = var.mcmcMaxCompAndRMatrixTuning
+                                        self.tunings.parts[
+                                            pNum].rMatrix = var.mcmcMaxCompAndRMatrixTuning
                                         newlyAtMax = True
                                     else:
-                                        self.tunings.parts[pNum].rMatrix = myNewVal
+                                        self.tunings.parts[
+                                            pNum].rMatrix = myNewVal
                                     # Transfer the new tuning to the proposals
-                                    #for mt in self.tuningsUsage.parts[pNum].rMatrix:
+                                    # for mt in self.tuningsUsage.parts[pNum].rMatrix:
                                     #    mt.tuning = self.tunings.parts[pNum].rMatrix
                                     if verbose:
                                         print sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].rMatrix)
@@ -2801,12 +2944,12 @@ class Mcmc(object):
                                 if verbose:
                                     print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrix)
                                 # if accepted is very small, decrease the tuning by a lot
-                                #if isVerySmall:
+                                # if isVerySmall:
                                 #    self.tunings.parts[pNum].rMatrix /= 3.0
-                                #else:
+                                # else:
                                 self.tunings.parts[pNum].rMatrix /= 1.5
                                 # Transfer the new tuning to the proposals
-                                #for mt in self.tuningsUsage.parts[pNum].rMatrix:
+                                # for mt in self.tuningsUsage.parts[pNum].rMatrix:
                                 #    mt.tuning = self.tunings.parts[pNum].rMatrix
                                 if verbose:
                                     print sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].rMatrix)
@@ -2817,7 +2960,8 @@ class Mcmc(object):
                     isTooBig = 0
                     isTooSmall = 0
                     for p in self.tuningsUsage.parts[pNum].gdasrv:
-                        accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+                        accepted = float(
+                            p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
                             print theSig % ("gdasrv", accepted),
                         if accepted < safeLower:
@@ -2838,32 +2982,32 @@ class Mcmc(object):
                     elif isTooBig:
                         if verbose:
                             print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].gdasrv)
-                        self.tunings.parts[pNum].gdasrv *=2.0
+                        self.tunings.parts[pNum].gdasrv *= 2.0
                         # Transfer the new tuning to the proposals
-                        #for mt in self.tuningsUsage.parts[pNum].gdasrv:
+                        # for mt in self.tuningsUsage.parts[pNum].gdasrv:
                         #    mt.tuning = self.tunings.parts[pNum].gdasrv
                         if verbose:
                             print sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].gdasrv)
                         needsToBeTuned = True
-                        
+
                     elif isTooSmall:
                         if verbose:
                             print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].gdasrv)
-                        self.tunings.parts[pNum].gdasrv /=2.0
+                        self.tunings.parts[pNum].gdasrv /= 2.0
                         # Transfer the new tuning to the proposals
-                        #for mt in self.tuningsUsage.parts[pNum].gdasrv:
+                        # for mt in self.tuningsUsage.parts[pNum].gdasrv:
                         #    mt.tuning = self.tunings.parts[pNum].gdasrv
                         if verbose:
                             print sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].gdasrv)
                         needsToBeTuned = True
-
 
                 # pInvar
                 if self.tuningsUsage.parts[pNum].pInvar:
                     isTooBig = 0
                     isTooSmall = 0
                     p = self.tuningsUsage.parts[pNum].pInvar
-                    accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+                    accepted = float(
+                        p.nAcceptances[0]) / float(p.nProposals[0])
                     if verbose:
                         print theSig % ("pInvar", accepted),
                     if accepted < safeLower:
@@ -2884,25 +3028,23 @@ class Mcmc(object):
                     elif isTooBig:
                         if verbose:
                             print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].pInvar)
-                        self.tunings.parts[pNum].pInvar *=2.0
+                        self.tunings.parts[pNum].pInvar *= 2.0
                         # Transfer the new tuning to the proposals
                         #self.tuningsUsage.parts[pNum].pInvar.tuning = self.tunings.parts[pNum].pInvar
                         if verbose:
                             print sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].pInvar)
                         needsToBeTuned = True
-                        
+
                     elif isTooSmall:
                         if verbose:
                             print sig3 % (' ', "Current tuning is %.1f" % self.tunings.parts[pNum].pInvar)
-                        self.tunings.parts[pNum].pInvar /=2.0
+                        self.tunings.parts[pNum].pInvar /= 2.0
                         # Transfer the new tuning to the proposals
                         #self.tuningsUsage.parts[pNum].pInvar.tuning = self.tunings.parts[pNum].pInvar
                         if verbose:
                             print sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].pInvar)
                         needsToBeTuned = True
 
-                    
-                    
             if 0 and self.nChains > 1:
                 # Try to autoTune the swaps, by adjusting the
                 # chainTemp.  Arbitrary rules.  If the coldest -
@@ -2913,7 +3055,8 @@ class Mcmc(object):
                 # self.swapMatrix[][], where the upper triangle is
                 # nProposed and the lower triangle is nAccepted.
 
-                # First check that there were enough proposals to make a valid calculation.
+                # First check that there were enough proposals to make a valid
+                # calculation.
                 tooFews = 0
                 for i in range(self.nChains)[:-1]:
                     for j in range(i + 1, self.nChains):
@@ -2921,19 +3064,22 @@ class Mcmc(object):
                             tooFews += 1
                 if tooFews:
                     self.writeSwapMatrix()
-                    gm.append("checking the swap matrix, but there were too few samples taken.")
-                    gm.append("I want at least %i samples, but %i swaps had fewer than that." % (atLeast, tooFews))
+                    gm.append(
+                        "checking the swap matrix, but there were too few samples taken.")
+                    gm.append("I want at least %i samples, but %i swaps had fewer than that." % (
+                        atLeast, tooFews))
                     raise P4Error(gm)
 
                 diagonal = []
                 for i in range(self.nChains)[:-1]:
                     j = i + 1
-                    accepted = float(self.swapMatrix[j][i]) / float(self.swapMatrix[i][j])
+                    accepted = float(
+                        self.swapMatrix[j][i]) / float(self.swapMatrix[i][j])
                     diagonal.append(accepted)
-                #print diagonal
+                # print diagonal
                 meanDiagonal = func.mean(diagonal)
                 isOK = True
-                if meanDiagonal > 0.7: # chainTemp is too low
+                if meanDiagonal > 0.7:  # chainTemp is too low
                     isOK = False
                     if verbose:
                         self.writeSwapMatrix()
@@ -2943,16 +3089,18 @@ class Mcmc(object):
                         print "    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal
                         print "      -> raising the chainTemp by one third, to %5.3f" % self.tunings.chainTemp
                     needsToBeTuned = True
-                elif meanDiagonal < 0.5: # maybe too high
-                    accepted = float(self.swapMatrix[self.nChains - 1][0]) / float(self.swapMatrix[0][self.nChains - 1])
-                    #print "coldest minus hottest acceptance is %5.3f" % accepted
+                elif meanDiagonal < 0.5:  # maybe too high
+                    accepted = float(
+                        self.swapMatrix[self.nChains - 1][0]) / float(self.swapMatrix[0][self.nChains - 1])
+                    # print "coldest minus hottest acceptance is %5.3f" %
+                    # accepted
                     if accepted < 0.01:
                         isOK = False
                         if verbose:
                             self.writeSwapMatrix()
                             print "    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp
                             print "    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal
-                        if meanDiagonal > 0.25: 
+                        if meanDiagonal > 0.25:
                             self.tunings.chainTemp /= 1.3333
                             if verbose:
                                 print "      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp
@@ -2964,23 +3112,23 @@ class Mcmc(object):
                             self.tunings.chainTemp /= 3.0
                             if verbose:
                                 print "      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp
-                            
+
                         needsToBeTuned = True
                 if isOK:
                     if verbose:
                         print "    Chain temp appears to be ok."
-                    
 
             roundCounter += 1
-            #if roundCounter >= 1:
+            # if roundCounter >= 1:
             #    needsToBeTuned = False
             if needsToBeTuned and roundCounter >= giveUpAfter:
                 self.tunings.dump(advice=False)
-                gm.append("autoTune() has gone thru %i rounds, and it still needs tuning." % giveUpAfter)
+                gm.append(
+                    "autoTune() has gone thru %i rounds, and it still needs tuning." % giveUpAfter)
                 gm.append("Giving up.  Do it by hand?")
                 raise P4Error(gm)
 
-            #self.writeProposalProbs()
+            # self.writeProposalProbs()
 
             # This stuff below should be the same as is done after pickling
             self.startMinusOne = self.gen
@@ -2999,8 +3147,8 @@ class Mcmc(object):
                 for i in range(self.nChains):
                     self.swapMatrix.append([0] * self.nChains)
 
-            #print "End of round %i, needsToBeTuned = %s" % (roundCounter - 1, needsToBeTuned)
-            #break  
+            # print "End of round %i, needsToBeTuned = %s" % (roundCounter - 1, needsToBeTuned)
+            # break
 
         print "\nAfter autoTune() ...",
         self.tunings.dump(advice=False)
@@ -3030,7 +3178,6 @@ class Mcmc(object):
             f = file(tuningsFileName, 'w')
             cPickle.dump(self.tunings, f, 1)
             f.close()
-        
 
     def writeProposalProbs(self):
         """(Another) Pretty-print the proposal probabilities.
@@ -3043,9 +3190,9 @@ class Mcmc(object):
             print "Mcmc.writeProposalProbs().  No proposals (yet?)."
             return
         #intended = self.propWeights[:]
-        #for i in range(len(intended)):
+        # for i in range(len(intended)):
         #    intended[i] /= self.totalPropWeights
-        #if math.fabs(sum(intended) - 1.0 > 1e-15):
+        # if math.fabs(sum(intended) - 1.0 > 1e-15):
         #    raise P4Error("bad sum of intended proposal probs. %s" % sum(intended))
 
         nAttained = [0] * nProposals
@@ -3053,26 +3200,27 @@ class Mcmc(object):
         for i in range(nProposals):
             nAttained[i] = self.proposals[i].nProposals[0]
             nAccepted[i] = self.proposals[i].nAcceptances[0]
-        sumAttained = float(sum(nAttained)) # should be zero or nGen
+        sumAttained = float(sum(nAttained))  # should be zero or nGen
         if not sumAttained:
             print "Mcmc.writeProposalProbs().  No proposals have been made."
             print "Possibly, due to it being a checkPoint interval, nProposals have all been set to zero."
             return
-        #assert int(sumAttained) == self.gen + 1, "sumAttained is %i, should be gen+1, %i." % (
+        # assert int(sumAttained) == self.gen + 1, "sumAttained is %i, should be gen+1, %i." % (
         #    int(sumAttained), self.gen + 1)
         probAttained = []
         for i in range(len(nAttained)):
             probAttained.append(100.0 * float(nAttained[i]) / sumAttained)
         if math.fabs(sum(probAttained) - 100.0 > 1e-13):
-            raise P4Error("bad sum of attained proposal probs. %s" % sum(probAttained))
+            raise P4Error(
+                "bad sum of attained proposal probs. %s" % sum(probAttained))
 
         spacer = ' ' * 4
         print "\nProposal probabilities (%)"
-        #print "There are %i proposals" % len(self.proposals)
+        # print "There are %i proposals" % len(self.proposals)
         print "For %i gens, from gens %i to %i, inclusive." % (
             (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
         print "%2s %11s %11s  %11s %10s %18s %5s %5s" % ('', 'nProposals', 'proposed(%)',
-                                                    'accepted(%)', 'tuning', 'proposal', 'part', 'num')
+                                                         'accepted(%)', 'tuning', 'proposal', 'part', 'num')
         for i in range(len(self.proposals)):
             print "%2i" % i,
             p = self.proposals[i]
@@ -3101,7 +3249,6 @@ class Mcmc(object):
                 print "   - ",
             print
 
-
     def writeProposalIntendedProbs(self):
         """Tabulate the intended proposal probabilities.
         """
@@ -3114,11 +3261,12 @@ class Mcmc(object):
         for i in range(len(intended)):
             intended[i] /= self.totalPropWeights
         if math.fabs(sum(intended) - 1.0 > 1e-14):
-            raise P4Error("bad sum of intended proposal probs. %s" % sum(intended))
+            raise P4Error(
+                "bad sum of intended proposal probs. %s" % sum(intended))
 
         spacer = ' ' * 4
         print "\nIntended proposal probabilities (%)"
-        #print "There are %i proposals" % len(self.proposals)
+        # print "There are %i proposals" % len(self.proposals)
         print "%2s %11s %18s %5s %5s" % ('', 'intended(%)', 'proposal', 'part', 'num')
         for i in range(len(self.proposals)):
             print "%2i" % i,

@@ -1,14 +1,16 @@
 import textwrap
 import types
 
+
 class P4Error(Exception):
+
     """A class for exceptions in p4.
 
     You can raise this with a string, or a list of strings.  If its
     a single string, it gets wrapped.  If its a list of 2 strings, the
     first one is output flush and unwrapped, and the second is
     indented and wrapped."""
-    
+
     def __init__(self, msg='', flavour=''):
         myIndent = ' ' * 4
         if type(msg) in [types.StringType, types.UnicodeType]:
@@ -23,7 +25,7 @@ class P4Error(Exception):
             except:
                 firstLine = ''
             self.msg = firstLine
-            
+
         elif type(msg) == types.ListType:
             try:
                 if msg[0].startswith('\n\n'):
@@ -41,18 +43,19 @@ class P4Error(Exception):
                     if len(msg[i]) < 66:
                         niceMsgList.append(myIndent + msg[i])
                     else:
-                        wLine = textwrap.fill(msg[i], 70, initial_indent=myIndent, subsequent_indent=myIndent)
+                        wLine = textwrap.fill(
+                            msg[i], 70, initial_indent=myIndent, subsequent_indent=myIndent)
                         niceMsgList.append(wLine)
                 else:
                     pass
-                
+
             #self.msg = string.join(niceMsgList, '\n')
             self.msg = '\n'.join(niceMsgList)
-            
-            #try:
+
+            # try:
             #    myIndent = ' ' * 8
             #    otherStuff = textwrap.fill(msg[1], 70, initial_indent=myIndent, subsequent_indent=myIndent)
-            #except:
+            # except:
             #    otherStuff = ''
             #self.msg = firstLine + '\n' + otherStuff
         else:
@@ -62,4 +65,3 @@ class P4Error(Exception):
 
     def __str__(self):
         return self.msg
-

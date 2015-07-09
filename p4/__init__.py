@@ -36,7 +36,7 @@ import glob
 
 from var import var
 import func
-from func import read # Make this one top-level, as it is used so often
+from func import read  # Make this one top-level, as it is used so often
 
 from alignment import Alignment
 import numpy
@@ -45,11 +45,11 @@ from model import Model
 from mcmc import Mcmc
 from mcmccheckpointreader import McmcCheckPointReader
 from chain import Chain
-from stmcmc import STMcmc,STMcmcCheckPointReader
+from stmcmc import STMcmc, STMcmcCheckPointReader
 from distancematrix import DistanceMatrix
-from sequencelist import Sequence,SequenceList
+from sequencelist import Sequence, SequenceList
 from tree import Tree
-from node import Node,NodeBranch
+from node import Node, NodeBranch
 #from nexus import Nexus
 from treepartitions import TreePartitions
 from trees import Trees
@@ -81,7 +81,7 @@ from var import Var  # To provide access to the property docstrings.
 # directory remains, and need not be listed in P4_STARTUP_DIRS
 
 if 1:
-    verboseStartupFiles = False # Turn on for debugging...
+    verboseStartupFiles = False  # Turn on for debugging...
     if 0:  # If you want it, turn it on.
         try:
             execfile(os.environ['P4_STARTUP'])
@@ -93,7 +93,7 @@ if 1:
             pass
 
     sdd = os.environ.get('P4_STARTUP_DIRS')
-    #print "got startup dirs", sdd
+    # print "got startup dirs", sdd
     if sdd:
         sdd = sdd.split(':')
     else:
@@ -102,7 +102,7 @@ if 1:
     fName = None
     pathPat = None
     pyFileNames = None
-    
+
     for theDir in sdd:
         if os.path.isdir(theDir):
             pathPat = os.path.join(theDir, '*.py')

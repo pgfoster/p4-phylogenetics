@@ -47,7 +47,9 @@ longMessage1 = """
 
 """
 
+
 class ExcludeDelete(object):
+
     """A class for Alignment exclude/include and delete/restore.
 
        - Exclude         for character sites.   Works.
@@ -57,15 +59,15 @@ class ExcludeDelete(object):
     In Nexus-speak, when you exclude character sites, the remaining
     sites are not renumbered.  So if we have an alignment of one short
     sequence, as::
-    
+
         123456789    1-based char numbers
         acgtacgta    the sequence
-        
+
     and I exclude chars 4, 5, and 6, I get::
-    
+
         123789    1-based char numbers
         acggta    the sequence
-        
+
     Now what if I want to exclude sites 2 and 8 from the original as
     well?  It would not work if I re-numbered the characters; I need
     access to the original numbers.  This class provides that access.
@@ -85,7 +87,7 @@ class ExcludeDelete(object):
         print a.excludeDelete.sequences[0].sequence   # acgtacgta
 
     The Alignment interface stuff is only partly written.  We have::
-    
+
         Alignment.excludeCharSet()   # works
 
     but we do not have an ``include()`` yet, and we do not have either
@@ -127,7 +129,6 @@ class ExcludeDelete(object):
                 if cs.mask[i] == '1':
                     self.mask[i] = 0
 
-
     def _resetSequences(self):
         for sNum in range(len(self.alignment.sequences)):
             s = []
@@ -138,8 +139,8 @@ class ExcludeDelete(object):
         self.alignment.length = len(self.alignment.sequences[0].sequence)
 
 
-
 class Alignment(SequenceList):
+
     """A SequenceList where all the sequences are the same length and dataType.
 
     From SequenceList, this inherits
@@ -169,7 +170,7 @@ class Alignment(SequenceList):
     **Various checks are made when alignments are read in from files**
 
      .. autosummary::
-     
+
         SequenceList.SequenceList.checkNamesForDupes
         Alignment.checkForAllGapColumns
         Alignment.checkForBlankSequences
@@ -177,7 +178,7 @@ class Alignment(SequenceList):
         Alignment.checkLengthsAndTypes
 
     These are under the control of some variables in ``var``
-    
+
     * ``var.doCheckForDuplicateSequenceNames``
     * ``var.doRepairDupedTaxonNames``
     * ``var.doCheckForAllGapColumns``
@@ -186,7 +187,7 @@ class Alignment(SequenceList):
 
     **Writing**
      .. autosummary::
-     
+
         Alignment.writeNexus
         Alignment.writePhylip
         SequenceList.SequenceList.writeFasta
@@ -200,7 +201,7 @@ class Alignment(SequenceList):
         Alignment.bootstrap
         Data.Data.bootstrap
         Alignment.sequenceSlice
-        
+
     **Masks are strings that are nChar long, usually just 0s and 1s**
      .. autosummary::
 
@@ -210,7 +211,7 @@ class Alignment(SequenceList):
         Alignment.getAllGapsMask
         Alignment.getEnoughCharsMask
         Alignment.getLikelihoodTopologyInformativeSitesMask
-        
+
 
     You can also make masks with :func:`func.maskFromNexusCharacterList`.
     You can combine masks bitwise with the methods :meth:`Alignment.andMasks` and :meth:`Alignment.orMasks`
@@ -234,7 +235,7 @@ class Alignment(SequenceList):
             charset gene2 = 104 - 397;
             charpartition by_gene = gene1:gene1, gene2:gene2;
         end;
-    
+
     However, you can also make new charSets from an
     Alignment.nexusSets with a mask using :meth:`NexusSets.NexusSets.newCharSet`
 
@@ -247,7 +248,7 @@ class Alignment(SequenceList):
     :meth:`Alignment.setNexusSets` is automatically called to make it
     --- so usually you do not need to do
     :meth:`Alignment.setNexusSets`.
-    
+
      .. autosummary::
 
         Alignment.excludeCharSet
@@ -276,7 +277,7 @@ class Alignment(SequenceList):
         Alignment.translate
         Alignment.checkTranslation
     """
-    
+
     def __init__(self):
 
         # In SequenceList:
@@ -295,14 +296,14 @@ class Alignment(SequenceList):
         #: The number of symbols, eg 4 for DNA.
         self.dim = None
 
-        #: A dictionary of NEXUS-style equates, eg r=[a,g] in DNA 
+        #: A dictionary of NEXUS-style equates, eg r=[a,g] in DNA
         self.equates = {}   # A hash
 
-        #: A :class:`NexusSets` object, perhaps copied from 
+        #: A :class:`NexusSets` object, perhaps copied from
         #: var.nexusSets and made specific to self.  You can do a
         #: :meth:`NexusSets.NexusSets.dump` on it to see what is in
         #: there.
-        self.nexusSets = None # A NexusSets object
+        self.nexusSets = None  # A NexusSets object
 
         #: A list of Part objects, encapsulating data partitions in
         #: :class:`Data` objects.  There would be one or more parts in
@@ -356,9 +357,9 @@ class Alignment(SequenceList):
     # __nonzero__() makes "assert self" work.
     def __nonzero__(self):
         return True
+
     def __len__(self):
         return self.length
-        
 
     def checkLengthsAndTypes(self):
         """Last checks after reading an Alignment.
@@ -366,7 +367,7 @@ class Alignment(SequenceList):
         Make sure the sequence lengths and dataType are all the same.
         Set self.length, self.dataType, self.symbols, self.dim, and self.equates
         """
-        
+
         gm = ["Alignment.checkLengthsAndTypes()"]
         if self.fName:
             gm.append("fName = %s" % self.fName)
@@ -375,14 +376,16 @@ class Alignment(SequenceList):
             type0 = self.sequences[0].dataType
             for i in range(len(self.sequences))[1:]:
                 if len0 != len(self.sequences[i].sequence):
-                    gm.append("(Zero-based) sequence %i (%s) length (%i)," % \
-                                           (i, self.sequences[i].name, len(self.sequences[i].sequence)))
-                    gm.append("is not the same as the first sequence length (%i)." % len0)
+                    gm.append("(Zero-based) sequence %i (%s) length (%i)," %
+                              (i, self.sequences[i].name, len(self.sequences[i].sequence)))
+                    gm.append(
+                        "is not the same as the first sequence length (%i)." % len0)
                     raise P4Error(gm)
                 if type0 != self.sequences[i].dataType:
-                    gm.append("Type of (zero-based) sequence %i (%s)," % \
-                          (i, self.sequences[i].dataType))
-                    gm.append("is not the same as the first sequence type (%s)." % type0)
+                    gm.append("Type of (zero-based) sequence %i (%s)," %
+                              (i, self.sequences[i].dataType))
+                    gm.append(
+                        "is not the same as the first sequence type (%s)." % type0)
                     raise P4Error(gm)
             self.length = len0
             self.dataType = type0
@@ -396,7 +399,7 @@ class Alignment(SequenceList):
             self.symbols = 'acgt'
             self.dim = 4
             if not self.equates:
-                self.equates = {'n': 'acgt', 'm': 'ac', 'k': 'gt', # 'x': 'acgt', 
+                self.equates = {'n': 'acgt', 'm': 'ac', 'k': 'gt',  # 'x': 'acgt',
                                 'h': 'act', 'y': 'ct', 'v': 'acg',
                                 'w': 'at', 'd': 'agt', 'b': 'cgt',
                                 'r': 'ag', 's': 'cg'}
@@ -404,7 +407,8 @@ class Alignment(SequenceList):
             self.symbols = 'arndcqeghilkmfpstwyv'
             self.dim = 20
             if not self.equates:
-                self.equates = {'b': 'dn', 'x': 'arndcqeghilkmfpstwyv', 'z': 'eq'}
+                self.equates = {
+                    'b': 'dn', 'x': 'arndcqeghilkmfpstwyv', 'z': 'eq'}
 
         elif self.dataType == 'standard':
             if not self.symbols:
@@ -418,14 +422,13 @@ class Alignment(SequenceList):
             self.symbols = 'acgu'
             self.dim = 4
             if not self.equates:
-                self.equates = {'n': 'acgu', 'm': 'ac', 'k': 'gu', # 'x': 'acgu', 
+                self.equates = {'n': 'acgu', 'm': 'ac', 'k': 'gu',  # 'x': 'acgu',
                                 'h': 'acu', 'y': 'cu', 'v': 'acg',
                                 'w': 'au', 'd': 'agu', 'b': 'cgu',
                                 'r': 'ag', 's': 'cg'}
         else:
             gm.append("unknown dataType %s." % self.dataType)
             raise P4Error(gm)
-
 
     def composition(self, sequenceNumberList=None):
         """Returns a list of compositions.
@@ -442,7 +445,8 @@ class Alignment(SequenceList):
         final comp.
         """
 
-        gm = ['Alignment.composition(sequenceNumberList=%s).' % sequenceNumberList]
+        gm = [
+            'Alignment.composition(sequenceNumberList=%s).' % sequenceNumberList]
         dbug = 0
 
         # symbolFreq and equateFreq are hashes for the raw counts
@@ -459,11 +463,12 @@ class Alignment(SequenceList):
         if dbug:
             print "Alignment.composition() sequenceNumberList = %s" % sequenceNumberList
         if sequenceNumberList:
-            if type(sequenceNumberList) != type([1,2]):
+            if type(sequenceNumberList) != type([1, 2]):
                 gm.append("The sequenceNumberList should be a list, ok?")
                 raise P4Error(gm)
             if len(sequenceNumberList) == 0:
-                gm.append("The sequenceNumberList should have something in it, ok?")
+                gm.append(
+                    "The sequenceNumberList should have something in it, ok?")
                 raise P4Error(gm)
         else:
             sequenceNumberList = range(len(self.sequences))
@@ -479,7 +484,8 @@ class Alignment(SequenceList):
                 gm.append("The sequenceNumberList should be integers, ok?")
                 raise P4Error(gm)
             if i < 0 or i > len(self.sequences) - 1:
-                gm.append("Item '%i' in sequenceNumberList is out of range" % i)
+                gm.append(
+                    "Item '%i' in sequenceNumberList is out of range" % i)
                 raise P4Error(gm)
 
             seq = self.sequences[i]
@@ -496,9 +502,10 @@ class Alignment(SequenceList):
                 symbolFreq[symb] = float(string.count(seq.sequence, symb))
             if self.equates:
                 for equate in equatesKeys:
-                    #equateFreq[equate] = equateFreq[equate] + \
+                    # equateFreq[equate] = equateFreq[equate] + \
                     #                     float(string.count(seq.sequence, equate))
-                    equateFreq[equate] = float(string.count(seq.sequence, equate))
+                    equateFreq[equate] = float(
+                        string.count(seq.sequence, equate))
                     if equateFreq[equate]:
                         hasEquates = 1
 
@@ -523,13 +530,15 @@ class Alignment(SequenceList):
                             for symb in self.equates[equate]:
                                 factor = factor + comp[symb]
                             for symb in self.equates[equate]:
-                                symbSum[symb] = symbSum[symb] + (equateFreq[equate] * (comp[symb]/factor))
+                                symbSum[symb] = symbSum[
+                                    symb] + (equateFreq[equate] * (comp[symb] / factor))
                 factor = 0.0
                 for symb in self.symbols:
                     factor = factor + symbSum[symb]
                 if not factor:
                     gm.append('(Zero-based) sequence %i. Empty?' % i)
-                    gm.append('Perhaps exclude it by specifying arg sequenceNumberList.')
+                    gm.append(
+                        'Perhaps exclude it by specifying arg sequenceNumberList.')
                     gm.append('(Or use the Data/Part composition.)')
                     raise P4Error(gm)
                 diff = 0.0
@@ -543,7 +552,7 @@ class Alignment(SequenceList):
                         print "%s: %.6f  " % (symb, comp[symb]),
                     print ''
                 if diff < epsilon:
-                    #print "did %i iterations" % dummy
+                    # print "did %i iterations" % dummy
                     break
 
             for j in range(len(self.symbols)):
@@ -554,97 +563,93 @@ class Alignment(SequenceList):
         return result
 
 
+# def subsetUsingCharPartition(self, charPartitionName, inverse=0):
+# """Return a subset of self based on a character partition.
 
-
-
-##    def subsetUsingCharPartition(self, charPartitionName, inverse=0):
-##        """Return a subset of self based on a character partition.
-
-##        A charpartition has one or more subsets, which together need
-##        not span the length of self.  This method would of course only
-##        be useful if the charpartition does not span the entire
-##        alignment-- otherwise you would get the whole alignment.  This
-##        method makes a new mask (using the CharPartition.mask()
-##        method) which has a 1 wherever any subset of the charPartition
-##        has a 1, and a zero otherwise.  Returns an alignment.  """
+# A charpartition has one or more subsets, which together need
+# not span the length of self.  This method would of course only
+# be useful if the charpartition does not span the entire
+# alignment-- otherwise you would get the whole alignment.  This
+# method makes a new mask (using the CharPartition.mask()
+# method) which has a 1 wherever any subset of the charPartition
+# has a 1, and a zero otherwise.  Returns an alignment.  """
 
 ##        gm = ['Alignment.subsetUsingCharPartition()']
-##        if not self.nexusSets:
-##            self.setNexusSets()
+# if not self.nexusSets:
+# self.setNexusSets()
 
-##        if not len(self.nexusSets.charPartitions):
+# if not len(self.nexusSets.charPartitions):
 ##            gm.append("This alignment has no charPartitions")
 ##            raise P4Error(gm)
 ##        theCP = None
 ##        lowName = string.lower(charPartitionName)
-##        for cp in self.nexusSets.charPartitions:
-##            if cp.lowName == lowName:
+# for cp in self.nexusSets.charPartitions:
+# if cp.lowName == lowName:
 ##                theCP = cp
-##                break
-##        if theCP == None:
+# break
+# if theCP == None:
 ##            gm.append("This alignment has no charPartition named '%s'" % charPartitionName)
 ##            raise P4Error(gm)
 
-##        # Get the mask
+# Get the mask
 ##        m = theCP.mask(self.nexusSets, self)
 
-##        #print "The mask is: %s" % m
-##        if not inverse:
+# print "The mask is: %s" % m
+# if not inverse:
 ##            a = self.subsetUsingMask(m, theMaskChar='1')
-##        else:
+# else:
 ##            a = self.subsetUsingMask(m, theMaskChar='0')
-##        return a
+# return a
 
-##    def subsetUsingCharPartitionSubset(self, charPartitionName, charPartitionSubsetName, inverse=0):
-##        """Return a subset of self based on a charPartition subset.
+# def subsetUsingCharPartitionSubset(self, charPartitionName, charPartitionSubsetName, inverse=0):
+# """Return a subset of self based on a charPartition subset.
 
-##        A charPartition has one or more subsets, each of which can
-##        have a mask.  This method uses that mask to subset self.
-##        Returns an alignment.  """
+# A charPartition has one or more subsets, each of which can
+# have a mask.  This method uses that mask to subset self.
+# Returns an alignment.  """
 
 ##        gm = 'Alignment.subsetUsingCharPartitionSubset(charPartitionName=\'%s\'' % charPartitionName
 ##        gm += ', charPartitionSubsetName=\'%s\', inverse=%s)' % (charPartitionSubsetName, inverse)
 ##        gm = [gm]
 
-##        if not self.nexusSets:
-##            self.setNexusSets()
+# if not self.nexusSets:
+# self.setNexusSets()
 
-##        if not len(self.nexusSets.charPartitions):
+# if not len(self.nexusSets.charPartitions):
 ##            gm.append("This alignment has no charPartitions")
 ##            raise P4Error(gm)
 
-##        # Find the charPartition
+# Find the charPartition
 ##        theCP = None
 ##        lowName = string.lower(charPartitionName)
-##        for cp in self.nexusSets.charPartitions:
-##            if cp.lowName == lowName:
+# for cp in self.nexusSets.charPartitions:
+# if cp.lowName == lowName:
 ##                theCP = cp
-##                break
-##        if theCP == None:
+# break
+# if theCP == None:
 ##            gm.append("This alignment has no charPartition named '%s'" % charPartitionName)
 ##            raise P4Error(gm)
 
-##        # Find the charPartitionSubset
+# Find the charPartitionSubset
 ##        theCPsubset = None
 ##        lowName = string.lower(charPartitionSubsetName)
-##        for cps in theCP.subsets:
-##            if cps.lowName == lowName:
+# for cps in theCP.subsets:
+# if cps.lowName == lowName:
 ##                theCPsubset = cps
-##                break
-##        if theCPsubset == None:
-##            gm.append("The charPartition '%s' has no charPartitionSubset named '%s'" % \
-##                  (charPartitionName, charPartitionSubsetName))
+# break
+# if theCPsubset == None:
+# gm.append("The charPartition '%s' has no charPartitionSubset named '%s'" % \
+# (charPartitionName, charPartitionSubsetName))
 ##            raise P4Error(gm)
 
-##        # Prepare the mask
+# Prepare the mask
 ##        theCP.setSubsetMasks(self.nexusSets, self)
 
-##        if not inverse:
+# if not inverse:
 ##            a = self.subsetUsingMask(theCPsubset.mask, theMaskChar='1')
-##        else:
+# else:
 ##            a = self.subsetUsingMask(theCPsubset.mask, theMaskChar='0')
-##        return a
-
+# return a
 
     def subsetUsingCharSet(self, charSetName, inverse=0):
         """Return a subset of self based on a charSet.
@@ -659,10 +664,11 @@ class Alignment(SequenceList):
           read('myNexusSets.nex') # with a charset named 'foo'
           b = a.subsetUsingCharSet('foo')
           b.writeNexus('myFooSubset.nex')
-          
+
         """
 
-        gm = ['Alignment.subsetUsingCharSet(charSetName=\'%s\', inverse=%s)' % (charSetName, inverse)]
+        gm = ['Alignment.subsetUsingCharSet(charSetName=\'%s\', inverse=%s)' % (
+            charSetName, inverse)]
 
         if not self.nexusSets:
             self.setNexusSets()
@@ -683,15 +689,16 @@ class Alignment(SequenceList):
                     theCS = cs
                     break
         if theCS == None:
-            gm.append("This should not happen -- alignment has no charset named '%s'" % charSetName)
+            gm.append(
+                "This should not happen -- alignment has no charset named '%s'" % charSetName)
             raise P4Error(gm)
         assert theCS.aligNChar
         assert theCS.mask
 
         # prepare the mask
-        #if not theCS.mask:
+        # if not theCS.mask:
         #    theCS.setMask()
-        #print "The mask is: %s" % theCS.mask
+        # print "The mask is: %s" % theCS.mask
         if len(theCS.mask) != self.length:
             gm.append("The length of the mask is %i, the length of the alignment is %i" % (
                 len(theCS.mask), self.length))
@@ -702,8 +709,6 @@ class Alignment(SequenceList):
         else:
             a = self.subsetUsingMask(theCS.mask, theMaskChar='0')
         return a
-
-
 
     def subsetUsingMask(self, theMask, theMaskChar='1', inverse=0):
         """Returns a subset of self based on a mask.
@@ -720,11 +725,13 @@ class Alignment(SequenceList):
 
         gm = ['Alignment.subsetUsingMask()']
 
-        # Make sure theMask is the right length, depending on whether characters have been excluded or not.
+        # Make sure theMask is the right length, depending on whether
+        # characters have been excluded or not.
         if self.excludeDelete:
             if len(theMask) != self.excludeDelete.length:
                 gm.append("The mask length (%i) does not" % len(theMask))
-                gm.append("equal the (pre-exclude charSets) alignment length (%i)" % self.excludeDelete.length)
+                gm.append(
+                    "equal the (pre-exclude charSets) alignment length (%i)" % self.excludeDelete.length)
                 raise P4Error(gm)
         else:
             if len(theMask) != self.length:
@@ -735,7 +742,6 @@ class Alignment(SequenceList):
         if type(theMaskChar) != type('a') or len(theMaskChar) != 1:
             gm.append("theMaskChar needs to be a single-character string")
             raise P4Error(gm)
-
 
         # first, make a copy
         a = copy.deepcopy(self)
@@ -775,17 +781,18 @@ class Alignment(SequenceList):
         for i in range(len(self.sequences)):
             one = ['a'] * a.length
             newList.append(one)
-        #print "newList = ", newList
+        # print "newList = ", newList
 
         # fill the array with slices from the sequences
         k = 0
-        #print "self.length = %i, a.length = %i" % (self.length, a.length)
+        # print "self.length = %i, a.length = %i" % (self.length, a.length)
 
         if self.excludeDelete:
             for i in range(len(theMask2)):
                 if theMask2[i]:
                     for j in range(len(self.excludeDelete.sequences)):
-                        newList[j][k] = self.excludeDelete.sequences[j].sequence[i]
+                        newList[j][k] = self.excludeDelete.sequences[
+                            j].sequence[i]
                     k = k + 1
         else:
             for i in range(len(theMask2)):
@@ -844,7 +851,6 @@ class Alignment(SequenceList):
                 gm.append("file '%s' already exists" % dictFileName)
                 raise P4Error(gm)
 
-        
         theRange = range(self.length)
         for i in range(len(self.sequences))[:-1]:
             if i not in doneDupeSeqNums:
@@ -852,14 +858,15 @@ class Alignment(SequenceList):
                 for j in range(len(self.sequences))[i + 1:]:
                     if j not in doneDupeSeqNums:
                         sj = self.sequences[j].sequence
-                        #print "trying", i, j
+                        # print "trying", i, j
                         isSame = True
                         for k in theRange:
                             if si[k] != sj[k]:
                                 isSame = False
                                 break
 
-                        if hasattr(self.sequences[i], 'parens'):  # xfasta, with RNA structure line.
+                        # xfasta, with RNA structure line.
+                        if hasattr(self.sequences[i], 'parens'):
                             sip = self.sequences[i].parens
                             sjp = self.sequences[j].parens
                             p_isSame = True
@@ -868,20 +875,19 @@ class Alignment(SequenceList):
                                     p_isSame = False
                                     break
                             if isSame and not p_isSame:
-                                print "(One-based) Sequences %i and %i are the same," % (i+1, j+1),
+                                print "(One-based) Sequences %i and %i are the same," % (i + 1, j + 1),
                                 print "but the structures differ."
-                            #else:
+                            # else:
                             #    print 'ok'
-                                    
 
                         if isSame:
-                            dupeNumPairs.append([i,j])
+                            dupeNumPairs.append([i, j])
                             doneDupeSeqNums.add(i)
                             doneDupeSeqNums.add(j)
-        #print dupeNumPairs
+        # print dupeNumPairs
 
         if dupeNumPairs and not removeDupes:
-            print 
+            print
             print "=" * 50
             if self.fName:
                 print " Alignment from file '%s'" % self.fName
@@ -895,12 +901,12 @@ class Alignment(SequenceList):
             print longMessage1
             print "=" * 50
             print
-            
+
         if dupeNumPairs and removeDupes:
             if makeDict:
                 myDict = {}
                 newNameCounter = 1
-                dpNum = 0 # dupe pair index
+                dpNum = 0  # dupe pair index
                 while 1:
                     dp = None
                     try:
@@ -931,7 +937,7 @@ class Alignment(SequenceList):
                 f = file(dictFileName, 'w')
                 f.write("p4DupeSeqRenameDict = %s\n" % myDict)
                 f.close()
-                
+
             # Remove the dupe sequences.
             toRemove = []
             for dp in dupeNumPairs:
@@ -948,9 +954,7 @@ class Alignment(SequenceList):
                 print "So I am removing them."
                 print "-" * 50
                 self.nexusSets.taxSets = []
-                
 
-                    
     def checkForBlankSequences(self, removeBlanks=False, includeN=True, listSeqNumsOfBlanks=False):
         """Like it says, with verbose output.
 
@@ -1002,17 +1006,19 @@ class Alignment(SequenceList):
             if isBlank:
                 blankSeqs.append(seqObj)
                 seqNums.append(seqNum)
-                #print "=" * 50
-                #seqObj.write()
+                # print "=" * 50
+                # seqObj.write()
         if listSeqNumsOfBlanks:
             return seqNums
 
         if blankSeqs and not removeBlanks:
-            gm.append("This alignment has %i blank sequences," % len(blankSeqs))
+            gm.append("This alignment has %i blank sequences," %
+                      len(blankSeqs))
             gm.append("wholly composed of %s." % bChars)
             gm.append("To remove them, re-run this method, with arg")
             gm.append("removeBlanks turned on.")
-            gm.append("To prevent checking, turn var.doCheckForBlankSequences off.")
+            gm.append(
+                "To prevent checking, turn var.doCheckForBlankSequences off.")
             raise P4Error(gm)
 
         if blankSeqs and removeBlanks:
@@ -1028,7 +1034,6 @@ class Alignment(SequenceList):
                 self.nexusSets.taxSets = []
             return len(blankSeqs)
         return 0
-                
 
     def checkForAllGapColumns(self, returnMask=False):
         """Check for alignment columns that are made of only gap or ? chars.
@@ -1078,11 +1083,6 @@ class Alignment(SequenceList):
                 gm.append("(To turn off auto-checking for all-gap columns,")
                 gm.append("turn var.doCheckForAllGapColumns off.)")
                 raise P4Error(gm)
-            
-                
-                        
-
-
 
     def dump(self):
         """Print rubbish about self."""
@@ -1092,9 +1092,9 @@ class Alignment(SequenceList):
             print "  File name '%s'" % self.fName
         if self.length:
             print "  Length is %s" % self.length
-        #if hasattr(self, 'nTax'):
+        # if hasattr(self, 'nTax'):
         #    print "    nTax is %i" % self.nTax
-        #if hasattr(self, 'nChar'):
+        # if hasattr(self, 'nChar'):
         #    print "    nChar is %i" % self.nChar
         if hasattr(self, 'dataType'):
             print "  dataType is '%s'" % self.dataType
@@ -1135,7 +1135,7 @@ class Alignment(SequenceList):
                 print "  There are %i parts" % len(self.parts)
             for p in self.parts:
                 print "          %s, length %i" % (p.name, p.nChar)
-        #SequenceList.dump(self)
+        # SequenceList.dump(self)
         print "  There are %i sequences" % len(self.sequences)
         upper = len(self.sequences)
         if upper > 5:
@@ -1144,15 +1144,13 @@ class Alignment(SequenceList):
             print "  %4i  %s" % (i, self.sequences[i].name)
         if len(self.sequences) > upper:
             print "       <... and more ...>"
-        
-
 
     def setNexusSets(self):
         """Set self.nexusSets from var.nexusSets.
 
         A deepcopy is made of var.nexusSets, and then attached to
         self.  Sometimes other Nexus-set related methods trigger this.
-        
+
         If var.nexusSets does not yet exist, a new blank one is made.
         """
 
@@ -1175,29 +1173,34 @@ class Alignment(SequenceList):
                 cs.setMask()
 
         if self.nexusSets.taxSets:
-            #print "%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets))
+            # print "%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets))
             # Check that no taxSet name is a taxName
-            lowSelfTaxNames = [string.lower(txName) for txName in self.taxNames]
+            lowSelfTaxNames = [string.lower(txName)
+                               for txName in self.taxNames]
             for ts in self.nexusSets.taxSets:
                 if ts.lowName in lowSelfTaxNames:
-                    gm.append("Can't have taxSet names that are the same (case-insensitive) as a tax name")
-                    gm.append("Lowercased taxSet name '%s' is the same as a lowcased taxName." % ts.name)
+                    gm.append(
+                        "Can't have taxSet names that are the same (case-insensitive) as a tax name")
+                    gm.append(
+                        "Lowercased taxSet name '%s' is the same as a lowcased taxName." % ts.name)
                     raise P4Error(gm)
             self.nexusSets.lowTaxNames = lowSelfTaxNames
-            
-            # If it is standard format, 
+
+            # If it is standard format,
             # convert triplets to numberTriplets, and then mask
             for ts in self.nexusSets.taxSets:
                 if ts.format == 'standard':
                     ts.setNumberTriplets()
                     ts.setMask()
-                    #print ts.mask
+                    # print ts.mask
                 elif ts.format == 'vector':
                     assert ts.mask
                     if len(ts.mask) != self.nTax:
                         gm.append("taxSet %s" % ts.name)
-                        gm.append("It is vector format, but the length is wrong.")
-                        gm.append("taxSet mask is length %i, but self nTax is %i" % (len(ts.mask), self.nTax))
+                        gm.append(
+                            "It is vector format, but the length is wrong.")
+                        gm.append(
+                            "taxSet mask is length %i, but self nTax is %i" % (len(ts.mask), self.nTax))
                         raise P4Error(gm)
                 else:
                     gm.append("taxSet %s" % ts.name)
@@ -1205,8 +1208,6 @@ class Alignment(SequenceList):
                     raise P4Error(gm)
         if self.nexusSets.charPartitions:
             pass
-                
-
 
     def setCharPartition(self, charPartitionName):
         """Partition self into Parts based on charPartitionName.
@@ -1235,7 +1236,8 @@ class Alignment(SequenceList):
             if cp.name == charPartitionName:
                 self.nexusSets.charPartition = cp
         if not self.nexusSets.charPartition:
-            gm.append("Could not find a CharPartition with the name '%s'" % charPartitionName)
+            gm.append(
+                "Could not find a CharPartition with the name '%s'" % charPartitionName)
             raise P4Error(gm)
         self.nexusSets.charPartition.setSubsetMasks()
         self.nexusSets.charPartition._checkForOverlaps()
@@ -1260,9 +1262,11 @@ class Alignment(SequenceList):
 
         """
 
-        gm = ['Alignment.changeDataTypeTo(%s, newSymbols=%s)' % (newDataType, newSymbols)]
+        gm = ['Alignment.changeDataTypeTo(%s, newSymbols=%s)' % (
+            newDataType, newSymbols)]
         if newDataType not in ['dna', 'protein', 'standard']:
-            gm.append("newDataType must be one of 'dna', 'protein', 'standard'")
+            gm.append(
+                "newDataType must be one of 'dna', 'protein', 'standard'")
             raise P4Error(gm)
 
         if newDataType == self.dataType:
@@ -1271,27 +1275,30 @@ class Alignment(SequenceList):
 
         if newDataType == 'standard':
             validChars = newSymbols + '-?' + ''.join(newEquates.keys())
-            #print "standard datatype: got validChars '%s'" % validChars
+            # print "standard datatype: got validChars '%s'" % validChars
 
         for s in self.sequences:
             if newDataType == 'dna':
                 for c in s.sequence:
                     if c not in var.validDnaChars:
-                        gm.append("Sequence %s, char %s not a valid DNA character." % (s.name, c))
+                        gm.append(
+                            "Sequence %s, char %s not a valid DNA character." % (s.name, c))
                         raise P4Error(gm)
                 s.dataType = newDataType
 
             elif newDataType == 'protein':
                 for c in s.sequence:
                     if c not in var.validProteinChars:
-                        gm.append("Sequence %s, char %s not a valid protein character." % (s.name, c))
+                        gm.append(
+                            "Sequence %s, char %s not a valid protein character." % (s.name, c))
                         raise P4Error(gm)
                 s.dataType = newDataType
 
             if newDataType == 'standard':
                 for c in s.sequence:
                     if c not in validChars:
-                        gm.append("Sequence %s, char '%s' not in valid chars '%s'." % (s.name, c, validChars))
+                        gm.append(
+                            "Sequence %s, char '%s' not in valid chars '%s'." % (s.name, c, validChars))
                         raise P4Error(gm)
                 s.dataType = newDataType
 
@@ -1299,10 +1306,10 @@ class Alignment(SequenceList):
         if newDataType == 'dna':
             self.symbols = 'acgt'
             self.dim = 4
-            self.equates = {'n': 'acgt', 'm': 'ac', 'k': 'gt', # 'x': 'acgt', 
-                     'h': 'act', 'y': 'ct', 'v': 'acg',
-                     'w': 'at', 'd': 'agt', 'b': 'cgt',
-                     'r': 'ag', 's': 'cg'}
+            self.equates = {'n': 'acgt', 'm': 'ac', 'k': 'gt',  # 'x': 'acgt',
+                            'h': 'act', 'y': 'ct', 'v': 'acg',
+                            'w': 'at', 'd': 'agt', 'b': 'cgt',
+                            'r': 'ag', 's': 'cg'}
         elif newDataType == 'protein':
             self.symbols = 'arndcqeghilkmfpstwyv'
             self.dim = 20
@@ -1349,12 +1356,12 @@ class Alignment(SequenceList):
         mask = array.array('c', self.length * '0')
         for seqPos in range(self.length):
             theSlice = self.sequenceSlice(seqPos)
-            #print "%2i: %s" % (seqPos, theSlice)
+            # print "%2i: %s" % (seqPos, theSlice)
 
             # Is it all gaps and missing?  If so, its constant.
             nGapMiss = theSlice.count('-') + theSlice.count('?')
             if nGapMiss == len(theSlice):
-                #print "    All miss-gap, ==> constant"
+                # print "    All miss-gap, ==> constant"
                 gm = ["Alignment.simpleConstantMask()"]
                 gm.append("All-gap site, position %i." % seqPos)
                 gm.append("Get rid of it.")
@@ -1393,12 +1400,8 @@ class Alignment(SequenceList):
                 elif mask[seqPos] == '1':
                     mask[seqPos] = '0'
 
-        #print "mask = %s" %  mask.tostring()
+        # print "mask = %s" %  mask.tostring()
         return mask.tostring()
-
-
-
-
 
     def constantMask(self, invert=None):
         """Returns a mask string with 1 at constant sites, and 0 otherwise.
@@ -1437,27 +1440,30 @@ class Alignment(SequenceList):
         mask = array.array('c', self.length * '0')
         for seqPos in range(self.length):
             theSlice = self.sequenceSlice(seqPos)
-            #print "%2i: %s" % (seqPos, theSlice)
+            # print "%2i: %s" % (seqPos, theSlice)
 
             # Is it all gaps and missing?  If so, its constant.
             nGapMiss = theSlice.count('-') + theSlice.count('?')
             if nGapMiss == len(theSlice):
-                #print "    All miss-gap, ==> constant"
+                # print "    All miss-gap, ==> constant"
                 mask[seqPos] = '1'
 
-            # if there is only 1 char that is not a gap or missing, then it is constant
+            # if there is only 1 char that is not a gap or missing, then it is
+            # constant
             elif nGapMiss == len(theSlice) - 1:
-                #print "    Only 1 non-miss-gap, ==> constant"
+                # print "    Only 1 non-miss-gap, ==> constant"
                 mask[seqPos] = '1'
 
-            else: # There are at least two non-gap chars
+            else:  # There are at least two non-gap chars
 
                 # Divide up the non-miss-gap chars into symbols and equates
                 nSymbolChars = 0
                 nEquateChars = 0
                 for i in range(nSeq):
                     aChar = theSlice[i]
-                    if aChar not in '-?':  # maybe I should include N? -- but I don't know if it is DNA.
+                    # maybe I should include N? -- but I don't know if it is
+                    # DNA.
+                    if aChar not in '-?':
                         if aChar in self.symbols:
                             symbolsSlice[nSymbolChars] = aChar
                             nSymbolChars += 1
@@ -1467,39 +1473,42 @@ class Alignment(SequenceList):
 
                 # If all the non-gap chars are symbols, then its easy.
                 if not nEquateChars:
-                    #print "    All (non-miss-gap) chars are symbols"
+                    # print "    All (non-miss-gap) chars are symbols"
                     firstSymbol = symbolsSlice[0]
                     symbolsAreAllTheSame = 1
                     for i in range(1, nSymbolChars):
                         if symbolsSlice[i] != firstSymbol:
-                            #print "        ...different symbols ==> not constant"
+                            # print "        ...different symbols ==> not
+                            # constant"
                             symbolsAreAllTheSame = 0
                             break
                     if symbolsAreAllTheSame:
-                        #print "        ... symbols all the same ==> constant"
+                        # print "        ... symbols all the same ==> constant"
                         mask[seqPos] = '1'
 
-                else: # We have equates
-                    #print "    Some (non-miss-gap) chars are equates."
+                else:  # We have equates
+                    # print "    Some (non-miss-gap) chars are equates."
 
                     if nSymbolChars:
-                        # If there are different symbols, then it can't be constant
+                        # If there are different symbols, then it can't be
+                        # constant
                         symbolsAreAllTheSame = 1
                         firstSymbol = symbolsSlice[0]
                         if nSymbolChars > 1:
                             for i in range(1, nSymbolChars):
                                 if symbolsSlice[i] != firstSymbol:
-                                    #print "        ...different symbols ==> not constant"
+                                    # print "        ...different symbols ==>
+                                    # not constant"
                                     symbolsAreAllTheSame = 0
                                     break
                         if symbolsAreAllTheSame:
-                            #print "        ...symbols are all the same"
+                            # print "        ...symbols are all the same"
                             # But we cannot conclude that it is a constant
                             # site until we check the equates.  Which we
                             # now do.
                             symbolIndex = self.symbols.index(firstSymbol)
-                            #print "firstSymbol=%s, symbolIndex = %s" % (firstSymbol, symbolIndex)
-                            #print self.equates
+                            # print "firstSymbol=%s, symbolIndex = %s" % (firstSymbol, symbolIndex)
+                            # print self.equates
 
                             # Here we make an array, eqArray, that
                             # contains coded info about what equates
@@ -1510,35 +1519,37 @@ class Alignment(SequenceList):
                             for eqNum in range(nEquateChars):
                                 eq = equatesSlice[eqNum]
                                 val = list(self.equates[eq])
-                                #print "eq: %s  %s" % (eq, val)
+                                # print "eq: %s  %s" % (eq, val)
                                 oneLine = [0] * self.dim
                                 for symbNum in range(self.dim):
                                     if self.symbols[symbNum] in val:
                                         oneLine[symbNum] = 1
                                 eqArray.append(oneLine)
-                            #print eqArray
+                            # print eqArray
 
-                            allEquatesContainSymbol = 1 # to start
+                            allEquatesContainSymbol = 1  # to start
                             for i in range(nEquateChars):
-                                #print eqArray[i][symbolIndex]
+                                # print eqArray[i][symbolIndex]
                                 if not eqArray[i][symbolIndex]:
                                     allEquatesContainSymbol = 0
                                     break
                             if allEquatesContainSymbol:
-                                #print "        the equates all contain %s ==> constant" % firstSymbol
+                                # print "        the equates all contain %s ==>
+                                # constant" % firstSymbol
                                 mask[seqPos] = '1'
 
                     else:
-                        #print "        No symbols-- its all equates."
+                        # print "        No symbols-- its all equates."
                         firstEquate = equatesSlice[0]
                         equatesAreAllTheSame = 1
                         for i in range(1, nEquateChars):
                             if equatesSlice[i] != firstEquate:
-                                #print "        ...different equates"
+                                # print "        ...different equates"
                                 equatesAreAllTheSame = 0
                                 break
                         if equatesAreAllTheSame:
-                            #print "        ... equates all the same ==> constant"
+                            # print "        ... equates all the same ==>
+                            # constant"
                             mask[seqPos] = '1'
                         else:
                             # Need to test whether all equates "contain"
@@ -1548,13 +1559,13 @@ class Alignment(SequenceList):
                             for eqNum in range(nEquateChars):
                                 eq = equatesSlice[eqNum]
                                 val = list(self.equates[eq])
-                                #print "eq: %s  %s" % (eq, val)
+                                # print "eq: %s  %s" % (eq, val)
                                 oneLine = [0] * self.dim
                                 for symbNum in range(self.dim):
                                     if self.symbols[symbNum] in val:
                                         oneLine[symbNum] = 1
                                 eqArray.append(oneLine)
-                            #print eqArray
+                            # print eqArray
 
                             # Now we go thru the eqArray column by column,
                             # and ask whether any column is all ones.
@@ -1569,7 +1580,8 @@ class Alignment(SequenceList):
                                     aColumnOfOnesExists = 1
                                     break
                             if aColumnOfOnesExists:
-                                #print "        the equates could be constant ==> constant"
+                                # print "        the equates could be constant
+                                # ==> constant"
                                 mask[seqPos] = '1'
 
         if invert:
@@ -1579,10 +1591,8 @@ class Alignment(SequenceList):
                 elif mask[seqPos] == '1':
                     mask[seqPos] = '0'
 
-        #print "mask = %s" %  mask.tostring()
+        # print "mask = %s" %  mask.tostring()
         return mask.tostring()
-
-
 
     def gappedMask(self, invert=None):
         """Returns a mask string with 1 at positions with any gaps, and 0 otherwise."""
@@ -1591,7 +1601,7 @@ class Alignment(SequenceList):
         mask = array.array('c', self.length * '0')
         for i in range(self.length):
             theSlice = self.sequenceSlice(i)
-            #if theSlice.count('-') == len(self.sequences):
+            # if theSlice.count('-') == len(self.sequences):
             if theSlice.count('-'):
                 mask[i] = '1'
 
@@ -1603,7 +1613,6 @@ class Alignment(SequenceList):
                     mask[i] = '0'
 
         return mask.tostring()
-
 
     def getLikelihoodTopologyInformativeSitesMask(self):
         """Make and return a mask for those sites that are likelihood informative about the topology.
@@ -1649,15 +1658,15 @@ class Alignment(SequenceList):
             equateKeys = self.equates.keys()
         else:
             equateKeys = []
-        counts = [0] * self.dim # re-zero every loop
+        counts = [0] * self.dim  # re-zero every loop
         hits = [0] * self.dim
         for sPos in range(len(self)):
             sl = self.sequenceSlice(sPos)
             for chNum in range(self.dim):
                 counts[chNum] = 0
-                #hits[chNum] = 0 done below, only if needed
+                # hits[chNum] = 0 done below, only if needed
             nGaps = 0
-            nAmbigs =0
+            nAmbigs = 0
             for tNum in range(self.nTax):
                 c = sl[tNum]
                 if c in self.symbols:
@@ -1668,7 +1677,8 @@ class Alignment(SequenceList):
                 elif c in equateKeys:  # not n or x -- they have been done.
                     nAmbigs += 1
                 else:
-                    raise P4Error("can't deal with character '%s' at pos %i tax %i" % (c, sPos, tNum))
+                    raise P4Error(
+                        "can't deal with character '%s' at pos %i tax %i" % (c, sPos, tNum))
 
             if not nAmbigs and not nGaps:  # The simple, common case
                 assert sum(counts) == self.nTax
@@ -1679,12 +1689,13 @@ class Alignment(SequenceList):
                         hits[chNum] = 1
                 nDifferentChars = sum(hits)
                 if nDifferentChars == 0:
-                    raise P4Error("no nDifferentChars.  This should not happen.")
+                    raise P4Error(
+                        "no nDifferentChars.  This should not happen.")
                 elif nDifferentChars == 1:
                     # constant, mask stays as zero
                     pass
                 elif nDifferentChars == 2:
-                    if 1 in counts: # a singleton
+                    if 1 in counts:  # a singleton
                         pass
                     else:
                         mask[sPos] = '1'
@@ -1695,7 +1706,8 @@ class Alignment(SequenceList):
                     mask[sPos] = '1'
                 else:
                     totalNCharsInSlice = sum(counts)
-                    if totalNCharsInSlice > 2:  # If 2 or less, mask stays as zero.
+                    # If 2 or less, mask stays as zero.
+                    if totalNCharsInSlice > 2:
                         for chNum in range(self.dim):
                             hits[chNum] = 0
                         for chNum in range(self.dim):
@@ -1703,12 +1715,13 @@ class Alignment(SequenceList):
                                 hits[chNum] = 1
                         nDifferentChars = sum(hits)
                         if nDifferentChars == 0:
-                            raise P4Error("no nDifferentChars.  This should not happen.")
+                            raise P4Error(
+                                "no nDifferentChars.  This should not happen.")
                         elif nDifferentChars == 1:
                             # constant + gaps, mask stays as zero
                             pass
                         elif nDifferentChars == 2:
-                            if 1 in counts: # a singleton, plus gaps
+                            if 1 in counts:  # a singleton, plus gaps
                                 pass
                             else:
                                 mask[sPos] = '1'
@@ -1728,33 +1741,34 @@ class Alignment(SequenceList):
                                 hits[chNum] = 1
                         nDifferentChars = sum(hits)
                         if nDifferentChars == 0:
-                            raise P4Error("no nDifferentChars.  This should not happen.")
+                            raise P4Error(
+                                "no nDifferentChars.  This should not happen.")
                         elif nDifferentChars == 1:
                             # constant + 1 ambig, mask stays as zero
-                            #print "site %i, got constant + 1 ambig-- not topologically informative." % sPos
-                            pass 
+                            # print "site %i, got constant + 1 ambig-- not
+                            # topologically informative." % sPos
+                            pass
                         elif nDifferentChars == 2:
-                            # Sometimes a singleton + an ambig can be informative.
+                            # Sometimes a singleton + an ambig can be
+                            # informative.
                             mask[sPos] = '1'
-                            #if 1 in counts: # a singleton, plus 1 ambig, stays at zero
+                            # if 1 in counts: # a singleton, plus 1 ambig, stays at zero
                             #    #print "site %i, got singleton + 1 ambig -- not topologically informative" % sPos
                             #    mask[sPos] = '1'
-                            #else:
+                            # else:
                             #    mask[sPos] = '1'
                         else:
                             mask[sPos] = '1'
                     else:
                         mask[sPos] = '1'
 
-
-            else:  # We got ambigs and gaps.  Thats complicated.  So say that it is informative.
+            # We got ambigs and gaps.  Thats complicated.  So say that it is
+            # informative.
+            else:
                 mask[sPos] = '1'
-
 
         mask = "".join(mask)
         return mask
-
-
 
     # def addMasks(self, maskA, maskB):
     #     """Given two masks, this adds the string chars as integers.
@@ -1792,7 +1806,6 @@ class Alignment(SequenceList):
     #         andMask[i] = repr(theSum)
     #     return andMask.tostring()
 
-
     def orMasks(self, maskA, maskB):
         """Given two masks, this logically or's the string chars.
 
@@ -1817,22 +1830,21 @@ class Alignment(SequenceList):
         import array
         orMask = array.array('c', self.length * '0')
         for i in range(l):
-            #if maskA[i] == '1' and maskB[i] == '1':
+            # if maskA[i] == '1' and maskB[i] == '1':
             #    orMask[i] = '1'
             try:
                 iA = int(maskA[i])
                 iB = int(maskB[i])
             except ValueError:
-                gm.append("All mask characters must be convertable to integers")
+                gm.append(
+                    "All mask characters must be convertable to integers")
                 raise P4Error(gm)
-            if iA not in [0, 1] or iB not in [0,1]:
+            if iA not in [0, 1] or iB not in [0, 1]:
                 gm.append("All mask characters must be zero or 1")
                 raise P4Error(gm)
             if iA or iB:
                 orMask[i] = '1'
         return orMask.tostring()
-
-
 
     def andMasks(self, maskA, maskB):
         """Given two masks, this logically and's the string chars.
@@ -1858,22 +1870,21 @@ class Alignment(SequenceList):
         import array
         andMask = array.array('c', self.length * '0')
         for i in range(l):
-            #if maskA[i] == '1' and maskB[i] == '1':
+            # if maskA[i] == '1' and maskB[i] == '1':
             #    orMask[i] = '1'
             try:
                 iA = int(maskA[i])
                 iB = int(maskB[i])
             except ValueError:
-                gm.append("All mask characters must be convertable to integers")
+                gm.append(
+                    "All mask characters must be convertable to integers")
                 raise P4Error(gm)
-            if iA not in [0, 1] or iB not in [0,1]:
+            if iA not in [0, 1] or iB not in [0, 1]:
                 gm.append("All mask characters must be zero or 1")
                 raise P4Error(gm)
             if iA and iB:
                 andMask[i] = '1'
         return andMask.tostring()
-
-
 
     def sequenceSlice(self, pos):
         """Returns a list composed of the characters from the alignment at position pos."""
@@ -1886,8 +1897,6 @@ class Alignment(SequenceList):
                 return sList
             else:
                 raise P4Error("Alignment.sequenceSlice().  pos out of range")
-
-
 
     def bluntEndLigate(self, alig, allowDifferentDataTypes=False):
         """Attaches alig to the end of self.
@@ -1912,14 +1921,16 @@ class Alignment(SequenceList):
             raise P4Error(gm)
         if not allowDifferentDataTypes:
             if self.dataType != alig.dataType:
-                gm.append("Arg and self dataTypes are different. (%s and %s)" % (alig.dataType, self.dataType))
-                gm.append("(If you really want this, you can set the arg allowDifferentDataTypes to True.)")
+                gm.append("Arg and self dataTypes are different. (%s and %s)" % (
+                    alig.dataType, self.dataType))
+                gm.append(
+                    "(If you really want this, you can set the arg allowDifferentDataTypes to True.)")
                 raise P4Error(gm)
         for i in range(len(self.sequences)):
             if self.sequences[i].name != alig.sequences[i].name:
                 gm.append("Name mismatch at zero-based sequence %i:" % i)
-                gm.append("'%s' and '%s' don't match." % \
-                      (self.sequences[i].name, alig.sequences[i].name))
+                gm.append("'%s' and '%s' don't match." %
+                          (self.sequences[i].name, alig.sequences[i].name))
                 raise P4Error(gm)
         if self.parts and len(self.parts):
             self.resetSequencesFromParts()
@@ -1927,7 +1938,8 @@ class Alignment(SequenceList):
         if alig.parts and len(alig.parts):
             alig.resetSequencesFromParts()
         for i in range(len(self.sequences)):
-            self.sequences[i].sequence = self.sequences[i].sequence + alig.sequences[i].sequence
+            self.sequences[i].sequence = self.sequences[
+                i].sequence + alig.sequences[i].sequence
 
         self.nexusSets = None
         self.length = len(self.sequences[0].sequence)
@@ -1971,7 +1983,7 @@ class Alignment(SequenceList):
             alig.makeSequenceForNameDict()
         newSequences = []
         for sName in sNames:
-            # print sName, 
+            # print sName,
             selfSeq = self.sequenceForNameDict.get(sName)
             # print selfSeq,
             if not selfSeq:
@@ -1994,8 +2006,6 @@ class Alignment(SequenceList):
         self.length = len(self.sequences[0].sequence)
         self.checkLengthsAndTypes()
 
-
-
     def constantSitesProportion(self):
         """Returns the proportion of the alignment that have possible constant sites.
 
@@ -2003,7 +2013,6 @@ class Alignment(SequenceList):
         """
 
         return float(self.constantSitesCount()) / float(self.length)
-
 
     def constantSitesCount(self):
         """Counts the sites that potentially have the same thing in each sequence.
@@ -2034,8 +2043,6 @@ class Alignment(SequenceList):
             return constCS.mask.count('1')
 
         return self.constantMask().count('1')
-
-
 
     def noGapsOrAmbiguitiesCopy(self):
         """Returns a new Alignment with sites with gaps or ambiguities removed.
@@ -2097,11 +2104,10 @@ class Alignment(SequenceList):
                     for j in range(seqCount):
                         newAlig.sequences[j].sequence.append(theSlice[j])
         for j in range(seqCount):
-            newAlig.sequences[j].sequence = string.join(newAlig.sequences[j].sequence, '')
+            newAlig.sequences[j].sequence = string.join(
+                newAlig.sequences[j].sequence, '')
         newAlig.checkLengthsAndTypes()
         return newAlig
-
-
 
     def hasGapsOrAmbiguities(self):
         """Asks whether self has any gaps or ambiguities."""
@@ -2109,15 +2115,13 @@ class Alignment(SequenceList):
         ambigs = self.equates.keys()
         ambigs.append('-')
         ambigs = string.join(ambigs, '')
-        #print "got ambigs = '%s'" % ambigs
+        # print "got ambigs = '%s'" % ambigs
 
         for s in self.sequences:
             for c in s.sequence:
                 if c in ambigs:
                     return True
         return False
-
-
 
     def bootstrap(self):
         """Returns a new Alignment, a bootstrap resampling of self.
@@ -2129,14 +2133,18 @@ class Alignment(SequenceList):
         gm = ["Alignment.bootstrap()"]
 
         # Check that there is only one partition
-        if not self.nexusSets or not self.nexusSets.charPartition: # its all one part
+        # its all one part
+        if not self.nexusSets or not self.nexusSets.charPartition:
             pass
-        elif self.nexusSets.charPartition and len(self.nexusSets.charPartition.subsets) > 1: # its partitioned.  Bad.
-            gm.append("This only works with Alignments having only one data partition.")
+        # its partitioned.  Bad.
+        elif self.nexusSets.charPartition and len(self.nexusSets.charPartition.subsets) > 1:
+            gm.append(
+                "This only works with Alignments having only one data partition.")
             raise P4Error(gm)
 
         import copy
-        a = copy.deepcopy(self)  # although we will be replacing the sequences...
+        # although we will be replacing the sequences...
+        a = copy.deepcopy(self)
         n = len(self.sequences)
 
         # make a 2D array the same size as the sequences, filled.
@@ -2154,8 +2162,6 @@ class Alignment(SequenceList):
         for i in range(n):
             a.sequences[i].sequence = string.join(newList[i], '')
         return a
-
-
 
     def compositionEuclideanDistanceMatrix(self):
         """This returns a DistanceMatrix based on composition.
@@ -2176,7 +2182,7 @@ class Alignment(SequenceList):
         compList = []
         for i in range(len(self.sequences)):
             compList.append(self.composition([i]))
-        #print compList
+        # print compList
         for i in range(len(self.sequences)):
             for j in range(len(self.sequences))[i:]:
                 s = 0.0
@@ -2187,8 +2193,6 @@ class Alignment(SequenceList):
                 d.matrix[i][j] = s
                 d.matrix[j][i] = s
         return d
-
-
 
     def covarionStats(self, listA, listB, verbose=True):
         """Calculates some covarion statistics.
@@ -2205,7 +2209,7 @@ class Alignment(SequenceList):
         gm = ['Alignment.covarionStats()']
 
         # listA and listB should be lists
-        if type(listA) != type([1,2]) or type(listB) != type([1,2]):
+        if type(listA) != type([1, 2]) or type(listB) != type([1, 2]):
             gm.append("The args should be lists of sequences numbers or names")
             raise P4Error(gm)
         lstA = []
@@ -2223,7 +2227,8 @@ class Alignment(SequenceList):
             elif type(i) == type(1) and i >= 0 and i < len(self.sequences):
                 lstA.append(i)
             else:
-                gm.append("The args should be lists of sequences numbers or names")
+                gm.append(
+                    "The args should be lists of sequences numbers or names")
                 raise P4Error(gm)
 
         for i in listB:
@@ -2239,16 +2244,19 @@ class Alignment(SequenceList):
             elif type(i) == type(1) and i >= 0 and i < len(self.sequences):
                 lstB.append(i)
             else:
-                gm.append("The args should be lists of sequences numbers or names")
+                gm.append(
+                    "The args should be lists of sequences numbers or names")
                 raise P4Error(gm)
 
         for i in lstA:
             if i in lstB:
-                gm.append("The arg lists overlap: sequence %i appears in both" % i)
+                gm.append(
+                    "The arg lists overlap: sequence %i appears in both" % i)
                 raise P4Error(gm)
         for i in lstB:
             if i in lstA:
-                gm.append("The arg lists overlap: sequence %i appears in both" % i)
+                gm.append(
+                    "The arg lists overlap: sequence %i appears in both" % i)
                 raise P4Error(gm)
 
         # c1 = sames overall
@@ -2270,10 +2278,10 @@ class Alignment(SequenceList):
                 b.append(self.sequences[i].sequence[seqPos])
             if a.count(a[0]) == len(a):
                 if b.count(b[0]) == len(b):
-                   if a[0] == b[0]:
-                       c1 = c1 + 1
-                   else:
-                       c2 = c2 + 1
+                    if a[0] == b[0]:
+                        c1 = c1 + 1
+                    else:
+                        c2 = c2 + 1
                 else:
                     c3 = c3 + 1
             else:
@@ -2292,7 +2300,6 @@ class Alignment(SequenceList):
             print format % ('differents in both groups', c5)
 
         return (c1, c2, c3, c4, c5)
-
 
     def pDistances(self, ignoreGaps=True, divideByNPositionsCompared=True):
         """Returns a DistanceMatrix of mean character distances or pDistances.
@@ -2345,15 +2352,14 @@ class Alignment(SequenceList):
                         print "No shared positions between (zero-based) seqs %i and %i.  Setting to 1.0" % (i, j)
                         fDiffs = 1.0
                     else:
-                        fDiffs = float(nDiffs)/float(nPositions)
+                        fDiffs = float(nDiffs) / float(nPositions)
                 else:
-                    fDiffs = float(nDiffs)/float(self.length)
+                    fDiffs = float(nDiffs) / float(self.length)
                 # Uncomment the following to return the number, for just the first 2 sequences.
-                #return fDiffs
+                # return fDiffs
                 d.matrix[i][j] = fDiffs
                 d.matrix[j][i] = fDiffs
         return d
-
 
     def recodeDayhoff(self, firstLetter=False):
         """Recode protein data into Dayhoff groups, in place.
@@ -2419,7 +2425,8 @@ class Alignment(SequenceList):
                 elif c == 'x':
                     s.sequence[i] = '-'
                 else:
-                    print "skipping character '%s'" % c  # Maybe this should raise a P4Error?
+                    # Maybe this should raise a P4Error?
+                    print "skipping character '%s'" % c
             s.sequence = string.join(s.sequence, '')
         self.dataType = 'standard'
         self.equates = {}
@@ -2462,7 +2469,7 @@ class Alignment(SequenceList):
         for s in theseSymbols:
             assert s in self.symbols
             assert theseSymbols.count(s) == 1
-        numeralSymbols = ['%i' % (i+1) for i in range(nGroups)]
+        numeralSymbols = ['%i' % (i + 1) for i in range(nGroups)]
         firstLetters = [gr[0] for gr in myGroups]
 
         for s in self.sequences:
@@ -2486,7 +2493,8 @@ class Alignment(SequenceList):
                     elif c == 'x':
                         s.sequence[i] = '-'
                     else:
-                        print "skipping character '%s'" % c  # Maybe this should raise a P4Error?
+                        # Maybe this should raise a P4Error?
+                        print "skipping character '%s'" % c
             s.sequence = ''.join(s.sequence)
         self.dataType = 'standard'
         self.equates = {}
@@ -2540,11 +2548,10 @@ class Alignment(SequenceList):
         self.dataType = 'standard'
         self.symbols = 'ry'
         if not ambigsBecomeGaps:
-            self.equates = {'n':'ry'}
+            self.equates = {'n': 'ry'}
         else:
             self.equates = {}
         self.dim = 2
-
 
     def checkTranslation(self, theProteinAlignment, transl_table=1, checkStarts=False):
         """Check that self translates to theProteinAlignment.
@@ -2583,29 +2590,31 @@ class Alignment(SequenceList):
             gm.append("Self should be a DNA alignment.")
             raise P4Error(gm)
         if not theProteinAlignment or \
-               type(theProteinAlignment) != type(self) or \
-               theProteinAlignment.dataType != 'protein':
+                type(theProteinAlignment) != type(self) or \
+                theProteinAlignment.dataType != 'protein':
             gm.append("Something wrong with theProteinAlignment")
             raise P4Error(gm)
 
         if len(self.sequences) != len(theProteinAlignment.sequences):
-            gm.append("Self and theProteinAlignment have different numbers of sequences")
+            gm.append(
+                "Self and theProteinAlignment have different numbers of sequences")
             raise P4Error(gm)
 
         for seqNum in range(len(self.sequences)):
             s1 = self.sequences[seqNum]
             s2 = theProteinAlignment.sequences[seqNum]
             if s1.name != s2.name:
-                gm.append("The sequence names of self and theProteinAlignment are not the same")
+                gm.append(
+                    "The sequence names of self and theProteinAlignment are not the same")
                 raise P4Error(gm)
 
         if self.length != (3 * theProteinAlignment.length):
-            gm.append("The length of the DNA alignment should be 3 times that of theProteinAlignment")
-            gm.append("DNA alignment (self):  %i"  % self.length)
-            gm.append("Protein alignment:     %i  ( * 3 = %i)" % \
-                  (theProteinAlignment.length, (3 * theProteinAlignment.length)))
+            gm.append(
+                "The length of the DNA alignment should be 3 times that of theProteinAlignment")
+            gm.append("DNA alignment (self):  %i" % self.length)
+            gm.append("Protein alignment:     %i  ( * 3 = %i)" %
+                      (theProteinAlignment.length, (3 * theProteinAlignment.length)))
             raise P4Error(gm)
-
 
         from geneticcode import GeneticCode
         gc = GeneticCode(transl_table)
@@ -2618,8 +2627,8 @@ class Alignment(SequenceList):
             crimes = 0
             for j in range(pLen):
                 theCodon = s1.sequence[(3 * j) + 0] + \
-                           s1.sequence[(3 * j) + 1] + \
-                           s1.sequence[(3 * j) + 2]
+                    s1.sequence[(3 * j) + 1] + \
+                    s1.sequence[(3 * j) + 2]
                 if theCodon == '---':
                     if s2.sequence[j] != '-':
                         print "    position %4i, codon '---' is '%s', should be '-'" % (j, s2.sequence[j])
@@ -2653,8 +2662,6 @@ class Alignment(SequenceList):
                     break
             if crimes > 6:
                 print "    ... and possibly others, skipped."
-
-
 
     def translate(self, transl_table=1, checkStarts=False, nnn_is_gap=False):
         """Returns a protein alignment from self, a DNA alignment.
@@ -2719,28 +2726,29 @@ class Alignment(SequenceList):
         gc = GeneticCode(transl_table)
 
         dnaEquates = self.equates.keys()
-        #print dnaEquates  # ['b', 'd', 'h', 'k', 'm', 'n', 's', 'r', 'w', 'v', 'y']
+        # print dnaEquates  # ['b', 'd', 'h', 'k', 'm', 'n', 's', 'r', 'w',
+        # 'v', 'y']
 
         for i in range(len(self.sequences)):
             dnaSeq = self.sequences[i].sequence
-            #self.sequences[i].writeFasta()
+            # self.sequences[i].writeFasta()
             protSeq = a.sequences[i].sequence
             for j in range(a.length):
                 theCodon = dnaSeq[(j * 3):(j * 3) + 3]
-                #print theCodon
+                # print theCodon
                 if theCodon == '---':
                     protSeq[j] = '-'
                 elif theCodon.count('-'):
-                    print "    seq %i, position %4i, dnaSeq %4i, codon '%s' is incomplete" % (i, j, (j*3), theCodon)
+                    print "    seq %i, position %4i, dnaSeq %4i, codon '%s' is incomplete" % (i, j, (j * 3), theCodon)
                 elif theCodon == 'nnn':
                     if nnn_is_gap:
-                        print "    seq %i, position %4i, dnaSeq %4i, codon '%s' translating to a gap ('-')" % (i, j, (j*3), theCodon)
+                        print "    seq %i, position %4i, dnaSeq %4i, codon '%s' translating to a gap ('-')" % (i, j, (j * 3), theCodon)
                         protSeq[j] = '-'
                     else:
                         protSeq[j] = 'x'
                 else:
                     protSeq[j] = gc.translate(theCodon)
-                    #print "    seq %i position %4i, dnaSeq %4i, codon '%s' is not a known codon -- using x" % (i, j, (j*3), theCodon)
+                    # print "    seq %i position %4i, dnaSeq %4i, codon '%s' is not a known codon -- using x" % (i, j, (j*3), theCodon)
                     #protSeq[j] = 'x'
                     if checkStarts and j == 0:
                         if theCodon in gc.startList:
@@ -2752,9 +2760,8 @@ class Alignment(SequenceList):
 
         for s in a.sequences:
             s.sequence = string.join(s.sequence, '')
-            #print s.sequence
+            # print s.sequence
         return a
-
 
     def excludeCharSet(self, theCharSetName):
         """Exclude a CharSet."""
@@ -2781,7 +2788,8 @@ class Alignment(SequenceList):
                     break
 
         if theCS == None:
-            gm.append("This alignment has no charset named '%s'" % theCharSetName)
+            gm.append("This alignment has no charset named '%s'" %
+                      theCharSetName)
             raise P4Error(gm)
         if theCS.aligNChar == None:
             if self.excludeDelete:
@@ -2792,7 +2800,7 @@ class Alignment(SequenceList):
         # prepare the mask
         if not theCS.mask:
             theCS.setMask(self.nexusSets, self)
-        #print "The mask is: %s" % theCS.mask
+        # print "The mask is: %s" % theCS.mask
 
         if not self.excludeDelete:
             self.excludeDelete = ExcludeDelete(self)
@@ -2801,30 +2809,23 @@ class Alignment(SequenceList):
             self.excludeDelete.excludedCharSets.append(theCS)
             self.excludeDelete._resetMask()
             self.excludeDelete._resetSequences()
-            #self.excludeDelete.dump()
+            # self.excludeDelete.dump()
         else:
             print gm[0]
             print "    %s has already been excluded." % theCharSetName
         self.parts = []
 
-
-
-
-
-
     def dupe(self):
         """Duplicates self, with no c-pointers.  And no parts"""
         from copy import deepcopy
         theDupe = deepcopy(self)
-        #for p in theDupe.parts:
+        # for p in theDupe.parts:
         #    p.alignment = theDupe
         #    p.cPart = None
         for p in theDupe.parts:
             del(p)
         theDupe.parts = []
         return theDupe
-
-
 
     def putGaps(self, theDnaSequenceList):
         """Insert gaps in theDnaSequenceList based on gaps in self.
@@ -2854,34 +2855,38 @@ class Alignment(SequenceList):
                 raise P4Error(gm)
             if len(s.sequence) % 3 != 0:
                 gm.append("DNA sequence %s" % s.name)
-                gm.append("Length %i is not evenly divisible by 3." % len(s.sequence))
+                gm.append("Length %i is not evenly divisible by 3." %
+                          len(s.sequence))
                 raise P4Error(gm)
             if (len(s.sequence) / 3) > self.length:
                 gm.append("DNA sequence %s" % s.name)
-                gm.append("Length %i is more than 3 times the protein length %i." % (len(s.sequence), self.length))
+                gm.append("Length %i is more than 3 times the protein length %i." % (
+                    len(s.sequence), self.length))
                 raise P4Error(gm)
             if s.dataType != 'dna':
                 gm.append("DNA(?!?) sequence %s" % s.name)
-                gm.append("Appears to not be a DNA sequence.  DataType %s." % s.dataType)
+                gm.append(
+                    "Appears to not be a DNA sequence.  DataType %s." % s.dataType)
                 raise P4Error(gm)
 
         for i in range(len(self.sequences)):
             dnaSeq = theDnaSequenceList.sequences[i]
             protSeq = self.sequences[i]
             if dnaSeq.name != protSeq.name:
-                gm.append("Names for (zero-based) sequence %i don't match." % i)
-                gm.append("Got protein %s, DNA %s." % (protSeq.name, dnaSeq.name))
+                gm.append(
+                    "Names for (zero-based) sequence %i don't match." % i)
+                gm.append("Got protein %s, DNA %s." %
+                          (protSeq.name, dnaSeq.name))
                 raise P4Error(gm)
 
         a = Alignment()
         a.dataType = 'dna'
         a.symbols = 'acgt'
         a.dim = 4
-        a.equates = {'n': 'acgt', 'm': 'ac', 'k': 'gt', # 'x': 'acgt', 
+        a.equates = {'n': 'acgt', 'm': 'ac', 'k': 'gt',  # 'x': 'acgt',
                      'h': 'act', 'y': 'ct', 'v': 'acg',
                      'w': 'at', 'd': 'agt', 'b': 'cgt',
                      'r': 'ag', 's': 'cg'}
-
 
         for i in range(len(self.sequences)):
             dnaSeq = theDnaSequenceList.sequences[i]
@@ -2892,22 +2897,18 @@ class Alignment(SequenceList):
             s.sequence = ['---'] * self.length
             dnaPos = 0
             for j in range(self.length):
-                #print "protSeq[%i] = %s" % (j, protSeq.sequence[j]),
+                # print "protSeq[%i] = %s" % (j, protSeq.sequence[j]),
                 if protSeq.sequence[j] != '-':
                     s.sequence[j] = dnaSeq.sequence[dnaPos:dnaPos + 3]
                     dnaPos = dnaPos + 3
-                #print ", codon %s" %  s.sequence[j]
+                # print ", codon %s" %  s.sequence[j]
             s.sequence = string.join(s.sequence, '')
-            #print s.sequence
+            # print s.sequence
             a.sequences.append(s)
 
         a.checkLengthsAndTypes()
-        #a.writePhylipFile(sys.stdout)
+        # a.writePhylipFile(sys.stdout)
         return a
-
-
-
-
 
     def setGBlocksCharSet(self, b1=None, b2=None, b3=8, b4=10, b5='n', pathToGBlocks="Gblocks", verbose=False, deleteFiles=True):
         """Find conserved regions of an alignment using Gblocks
@@ -2981,54 +2982,69 @@ class Alignment(SequenceList):
         # not treated differently from other positions.
         ##################################################################
 
-        # Some of this code is originally from Cymon, but its been changed considerably.
+        # Some of this code is originally from Cymon, but its been changed
+        # considerably.
 
         gm = ['Alignment.setGBlocksCharSet()']
         #assert self.dataType == 'protein'
         errors = []
-        #if sequenceType not in ['p', 'd', 'c']:
+        # if sequenceType not in ['p', 'd', 'c']:
         #    errors.append("\tsequenceType must be either p(rotein), d(na), or c(odons)")
-        #if sequenceType not in ['p']:
+        # if sequenceType not in ['p']:
         #    errors.append("\tsequenceType must be p(rotein)")
-        #if sequenceType == 'p':
+        # if sequenceType == 'p':
         #    if self.dataType != 'protein':
         #        errors.append("Gblocks sequenceType is p, but this alignment is dataType %s" % self.dataType)
         if isinstance(b1, types.NoneType):
             if not isinstance(b2, types.NoneType):
-                errors.append("\tYou must set b1 and b2 together or not at all")
-                errors.append("\tb1 = Minimum number of sequences for a conserved position")
-                errors.append("\tb2 = Minimum number of sequences for a flank position")
+                errors.append(
+                    "\tYou must set b1 and b2 together or not at all")
+                errors.append(
+                    "\tb1 = Minimum number of sequences for a conserved position")
+                errors.append(
+                    "\tb2 = Minimum number of sequences for a flank position")
             pass
         else:
             if not isinstance(b1, types.IntType):
-                errors.append("\tb1 (Minimum number of sequences for a conserved position)")
+                errors.append(
+                    "\tb1 (Minimum number of sequences for a conserved position)")
                 errors.append("\tmust be None or an integer")
             else:
                 if b1 > self.nTax:
-                    errors.append("\tb1 (Minimum number of sequences for a conserved position)")
-                    errors.append("\tmust be <= to the number of taxa in matrix")
-                elif b1 < self.nTax/2:
-                    errors.append("\tb1 (Minimum number of sequences for a conserved position)")
-                    errors.append("\tmust be > than the number of taxa in matrix /2")
+                    errors.append(
+                        "\tb1 (Minimum number of sequences for a conserved position)")
+                    errors.append(
+                        "\tmust be <= to the number of taxa in matrix")
+                elif b1 < self.nTax / 2:
+                    errors.append(
+                        "\tb1 (Minimum number of sequences for a conserved position)")
+                    errors.append(
+                        "\tmust be > than the number of taxa in matrix /2")
         if isinstance(b2, types.NoneType):
             pass
         else:
             if not isinstance(b2, types.IntType):
-                errors.append("\tb2 (Minimum number of sequences for a flank position)")
+                errors.append(
+                    "\tb2 (Minimum number of sequences for a flank position)")
                 errors.append("\tmust be None or an integer")
             elif b2 < b1:
-                errors.append("\tb2 (Minimum number of sequences for a flank position) must be >= b1")
+                errors.append(
+                    "\tb2 (Minimum number of sequences for a flank position) must be >= b1")
         if not isinstance(b3, types.IntType):
-            errors.append("\tb3 (Maximum Number Of Contiguous Nonconserved Positions) must be an integer")
+            errors.append(
+                "\tb3 (Maximum Number Of Contiguous Nonconserved Positions) must be an integer")
         if not isinstance(b4, types.IntType):
-            errors.append("\tb4 (Minimum Length Of A Block) must be an integer")
+            errors.append(
+                "\tb4 (Minimum Length Of A Block) must be an integer")
         if b5 not in ['n', 'h', 'a']:
-            errors.append("\tb5 (Allowed Gap Positions (None, With Half, All) n,h,a")
+            errors.append(
+                "\tb5 (Allowed Gap Positions (None, With Half, All) n,h,a")
             errors.append("\tmust be either n(one), h(alf), a(ll)")
         if pathToGBlocks != 'Gblocks':
             if not os.path.exists(pathToGBlocks):
-                errors.append("\tUnable to locate Gblocks at %s" % pathToGBlocks)
-        #if b5 in ['n', 'h']:
+                errors.append(
+                    "\tUnable to locate Gblocks at %s" % pathToGBlocks)
+        # if b5 in ['n', 'h']:
         #    if self.allGapsSites():
         #        errors.append("\tSome site have all gaps. Deleted these before using Gblocks")
 
@@ -3041,7 +3057,7 @@ class Alignment(SequenceList):
             seq = self.sequences[seqNum]
             seq.comment = None
 
-        #Write the fasta file
+        # Write the fasta file
         #fastaFileName = sha.new(str(os.getpid())).hexdigest()[-10:] + ".fasta"
         fastaFileName = 'myFaStA_oUtPuT.fasta'
         assert not os.path.isfile(fastaFileName)
@@ -3066,7 +3082,8 @@ class Alignment(SequenceList):
             fh = open(outputTextFileName, 'rU')
         except IOError:
             gm.append("\tUnable to read output from GBlocks")
-            gm.append("\tCheck that Gblocks is in your $PATH or set 'pathToGBlocks'")
+            gm.append(
+                "\tCheck that Gblocks is in your $PATH or set 'pathToGBlocks'")
             os.remove(fastaFileName)
             raise P4Error(gm)
 
@@ -3075,7 +3092,6 @@ class Alignment(SequenceList):
         fh.close()
 
         theAllGapsMask = self.getAllGapsMask()
-
 
         # Get the gblocks mask
         f = file(outputMaskFileName)
@@ -3088,7 +3104,8 @@ class Alignment(SequenceList):
         # make sure its the Gblocks line
         aLine = fLines[spot].rstrip()
         if not aLine.endswith("Gblocks"):
-            gm.append("Something wrong with reading the mask file.  No Gblocks line.")
+            gm.append(
+                "Something wrong with reading the mask file.  No Gblocks line.")
             raise P4Error(gm)
 
         # collect lines until the end of the fLines
@@ -3101,7 +3118,7 @@ class Alignment(SequenceList):
                 break
             mStrings.append(aLine.strip())
         mString = ''.join(mStrings)
-        #print mString
+        # print mString
 
         # The mask from gblocks is based on an alignment that has had its
         # all-gap columns removed.  We can use theAllGapsMask from self to
@@ -3109,31 +3126,32 @@ class Alignment(SequenceList):
         myMask = []
         mStringPos = 0
         for c1 in theAllGapsMask:
-            if c1 == '1': # all sequences are gaps
+            if c1 == '1':  # all sequences are gaps
                 myMask.append('0')
             else:
                 c2 = None
                 while c2 not in ['.', '#']:
                     c2 = mString[mStringPos]
-                    #print "xxx got c2='%s'" % c2
+                    # print "xxx got c2='%s'" % c2
                     mStringPos += 1
-                #print "    got c2='%s'" % c2
+                # print "    got c2='%s'" % c2
                 if c2 == '.':
                     myMask.append('0')
                 elif c2 == '#':
                     myMask.append('1')
                 else:
-                    gm.append("Programming error getting the mask. c2='%s'" % c2)
+                    gm.append(
+                        "Programming error getting the mask. c2='%s'" % c2)
                     raise P4Error(gm)
 
         myMask = ''.join(myMask)
-        #print myMask
-        #print "mask length is %i" % len(myMask)
+        # print myMask
+        # print "mask length is %i" % len(myMask)
 
-        if len(myMask) !=  self.length:
-            gm.append('mask length is %i.  self.length is %i.  Bad.' % (len(myMask), self.length))
+        if len(myMask) != self.length:
+            gm.append('mask length is %i.  self.length is %i.  Bad.' %
+                      (len(myMask), self.length))
             raise P4Error(gm)
-
 
         if deleteFiles:
             os.remove(fastaFileName)
@@ -3143,7 +3161,7 @@ class Alignment(SequenceList):
             if os.path.isfile("p4_renameForPhylip_dict.py"):
                 os.remove("p4_renameForPhylip_dict.py")
 
-        #return myMask
+        # return myMask
         if not self.nexusSets:
             self.setNexusSets()
 
@@ -3158,7 +3176,7 @@ class Alignment(SequenceList):
             theGName = 'gblocks'
         elif len(gNames) == 1:
             theGName = 'gblocks_1'
-        else: 
+        else:
             endBits = [int(gName[8:]) for gName in gNames if len(gName) > 7]
             endBits.sort()
             lastOne = endBits.pop()
@@ -3173,7 +3191,7 @@ class Alignment(SequenceList):
         cs.standardize()
         self.nexusSets.charSets.append(cs)
         self.nexusSets.charSetsDict[theGName] = cs
-        #self.nexusSets.dump()
+        # self.nexusSets.dump()
 
         myNames = []
         for cs in self.nexusSets.charSets:
@@ -3184,7 +3202,7 @@ class Alignment(SequenceList):
             theMyName = 'myblocks'
         elif len(myNames) == 1:
             theMyName = 'myblocks_1'
-        else: 
+        else:
             endBits = [int(gName[9:]) for gName in myNames if len(gName) > 8]
             endBits.sort()
             lastOne = endBits.pop()
@@ -3220,7 +3238,7 @@ class Alignment(SequenceList):
         for c in self.symbols:
             counters[c] = 0
         hits = 0
-        nPos = 0 # the number of sites compared
+        nPos = 0  # the number of sites compared
         for pos in range(len(self)):
             for seq in self.sequences:
                 c = seq.sequence[pos]
@@ -3228,7 +3246,7 @@ class Alignment(SequenceList):
                     counters[c] += 1
             #hits = 0
             hitsAtThisPos = 0
-            for k,v in counters.iteritems():
+            for k, v in counters.iteritems():
                 if v:
                     hitsAtThisPos += 1
                     counters[k] = 0
@@ -3240,7 +3258,7 @@ class Alignment(SequenceList):
                     distro[hitsAtThisPos] += 1
                 else:
                     distro[hitsAtThisPos] = 1
-            #print pos, hits
+            # print pos, hits
         if showDistribution:
             kk = distro.keys()
             kk.sort()
@@ -3248,17 +3266,17 @@ class Alignment(SequenceList):
             theMax = kk[-1]
             print "\nnChars count"
             print "------ -----"
-            #for k in kk:
+            # for k in kk:
             #    print "%2i  %3i" % (k, distro[k])
-            #print 
-            for k in range(theMin, theMax+1):
-                # Tom Williams 7 Feb 2011 bug report and fix (Thanks!). Was 'if distro[k]:' -- no workee if k is not a key.
+            # print
+            for k in range(theMin, theMax + 1):
+                # Tom Williams 7 Feb 2011 bug report and fix (Thanks!). Was 'if
+                # distro[k]:' -- no workee if k is not a key.
                 if k in distro:
                     print "%4i   %4i" % (k, distro[k])
                 else:
                     print "%4i   %4i" % (k, 0)
-        return float(hits)/nPos
-
+        return float(hits) / nPos
 
     def getAllGapsMask(self, andMissing=True):
         """If its all gaps in a site, its 1, else 0.
@@ -3267,7 +3285,6 @@ class Alignment(SequenceList):
         then the mask is 1.  If 'andMissing' is turned off, then it is
         strictly gaps.
         """
-
 
         m = ['0'] * self.length
         gChars = ['-']
@@ -3305,11 +3322,6 @@ class Alignment(SequenceList):
                 m[sPos] = '1'
         return ''.join(m)
 
-
-
-
-
-
     # These methods following are from Ababneh, Jermiin, Ma, and Robinson,
     # 2006.  Matched-pairs tests of homogeneity with applications to
     # homologous nucleotide sequences.  Bioinformatics 22:1225--1231.
@@ -3337,7 +3349,8 @@ class Alignment(SequenceList):
         """
 
         scc = numpy.zeros(self.dim, numpy.float)
-        if seqNum == None: # Of course we cannot test "if seqNum:", as the seqNum might be zero.
+        # Of course we cannot test "if seqNum:", as the seqNum might be zero.
+        if seqNum == None:
             for seq in self.sequences:
                 for posn in range(self.nChar):
                     c = seq.sequence[posn]
@@ -3350,7 +3363,6 @@ class Alignment(SequenceList):
             if c in self.symbols:
                 scc[self.symbols.index(c)] += 1.
         return scc
-
 
     def getSimpleBigF(self, iA, iB):
         """Make and return a simple bigF between two sequences.
@@ -3383,7 +3395,6 @@ class Alignment(SequenceList):
                 bigF[self.symbols.index(cA), self.symbols.index(cB)] += 1.
         return bigF
 
-
     # A function, not an Alignment method.
     def _ababnehEtAlStatsAndProbs(bigF, dim, txNumA, txNumB, doProbs=True):
         """Re-write of Ababneh et al 2006 Testpairs function for a single pair.
@@ -3404,15 +3415,16 @@ class Alignment(SequenceList):
         # those do not contribute to the dof.
         QB = 0.0
         zcount = 0                       # The number of double zeros in bigF
-        dof = ((dim * dim) - dim) / 2    # dof to start.  Half of off-diags of bigF
+        # dof to start.  Half of off-diags of bigF
+        dof = ((dim * dim) - dim) / 2
         for i in range(dim - 1):
             for j in range(i + 1, dim):
                 # Any double zeros?
-                mySum = bigF[i,j] + bigF[j,i]
+                mySum = bigF[i, j] + bigF[j, i]
                 if mySum == 0:
                     zcount += 1
                 else:
-                    diff = (bigF[i,j] - bigF[j,i])
+                    diff = (bigF[i, j] - bigF[j, i])
                     QB += (diff * diff) / mySum
         dof2 = dof - zcount
         assert dof2
@@ -3434,17 +3446,18 @@ class Alignment(SequenceList):
         # Ababneh iterated over all i and j (one-based, i from 1:3, and j
         # from 1:3), but the result is a symmetric matrix, so half those
         # off-diag calcs are not needed.
-        for i in range(dim - 1): # yes, dim-1
+        for i in range(dim - 1):  # yes, dim-1
             d[i] = sumOfRows[i] - sumOfColumns[i]
             for j in range(i, dim - 1):  # yes, i to dim-1
                 if i == j:
-                    V[i, j] = (sumOfRows[i] + sumOfColumns[i]) - (2. * bigF[i,i])
+                    V[i, j] = (sumOfRows[i] + sumOfColumns[i]) - \
+                        (2. * bigF[i, i])
                 else:
-                    theItem = -1 * (bigF[i,j] + bigF[j,i])
+                    theItem = -1 * (bigF[i, j] + bigF[j, i])
                     V[i, j] = theItem
                     V[j, i] = theItem
-        #print d
-        #print V
+        # print d
+        # print V
         try:
             VtoTheMinus1 = numpy.linalg.solve(V, numpy.identity(dim - 1))
         except numpy.linalg.LinAlgError:
@@ -3457,15 +3470,15 @@ class Alignment(SequenceList):
             print 'sumOfColumns = ', sumOfColumns
             print 'sumOfRows = ', sumOfRows
             VtoTheMinus1 = numpy.linalg.solve(V, numpy.identity(dim - 1))
-        #print VtoTheMinus1
-        QS = numpy.dot(numpy.dot(d,VtoTheMinus1),d)
+        # print VtoTheMinus1
+        QS = numpy.dot(numpy.dot(d, VtoTheMinus1), d)
         QR = QB - QS
 
         # We are finished calculating the 3 stats.
         if doProbs:
             # The dof should be an int.
             PB = func.chiSquaredProb(QB, dof2)
-            PS = func.chiSquaredProb(QS, dim-1)
+            PS = func.chiSquaredProb(QS, dim - 1)
             dof_R = (dim - 1) * (dim - 2) / 2
             PR = func.chiSquaredProb(QR, dof_R)
             return (QB, QS, QR, PB, PS, PR)
@@ -3505,12 +3518,14 @@ class Alignment(SequenceList):
 
         for txNumA in range(self.nTax - 1):
             for txNumB in range(txNumA + 1, self.nTax):
-                #print txNumA, txNumB
+                # print txNumA, txNumB
                 bigF = self.getSimpleBigF(txNumA, txNumB)
-                #print bigF
+                # print bigF
                 if doProbs:
-                    QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(bigF, self.dim, txNumA, txNumB, doProbs=True)
-                    #print "%10.2f   %10.2f   %10.2f          |    %.3f   %.3f   %.3f" % (QB, QS, QR, PB, PS, PR) 
+                    QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(
+                        bigF, self.dim, txNumA, txNumB, doProbs=True)
+                    # print "%10.2f   %10.2f   %10.2f          |    %.3f   %.3f
+                    # %.3f" % (QB, QS, QR, PB, PS, PR)
                     QBB.matrix[txNumA][txNumB] = QB
                     QBB.matrix[txNumB][txNumA] = QB
                     QSS.matrix[txNumA][txNumB] = QS
@@ -3524,7 +3539,8 @@ class Alignment(SequenceList):
                     PRR.matrix[txNumA][txNumB] = PR
                     PRR.matrix[txNumB][txNumA] = PR
                 else:
-                    QB, QS, QR = _ababnehEtAlStatsAndProbs(bigF, self.dim, txNumA, txNumB, doProbs=False)
+                    QB, QS, QR = _ababnehEtAlStatsAndProbs(
+                        bigF, self.dim, txNumA, txNumB, doProbs=False)
                     QBB.matrix[txNumA][txNumB] = QB
                     QBB.matrix[txNumB][txNumA] = QB
                     QSS.matrix[txNumA][txNumB] = QS
@@ -3536,12 +3552,6 @@ class Alignment(SequenceList):
         else:
             return QBB, QSS, QRR
 
-
-
-
-
-
-
     def testOverallFromAbabnehEtAl2006(self):
         """Marginal symmetry (Stuarts's) test for more than two matched sequences
 
@@ -3551,16 +3561,18 @@ class Alignment(SequenceList):
         """
 
         # Make the J matrix.
-        J = numpy.zeros((self.dim * (self.nTax - 1), self.dim * (self.nTax - 1)), numpy.float)
+        J = numpy.zeros(
+            (self.dim * (self.nTax - 1), self.dim * (self.nTax - 1)), numpy.float)
         for seqNum in range(self.nTax - 1):
             start = seqNum * self.dim
             for i in range(self.dim):
                 for j in range(self.dim):
                     J[start + i, start + j] = 1.
-        #print J
+        # print J
 
         # Make the L matrix.
-        L = numpy.zeros((self.dim * (self.nTax - 1), self.dim * self.nTax), numpy.float)
+        L = numpy.zeros(
+            (self.dim * (self.nTax - 1), self.dim * self.nTax), numpy.float)
         for seqNum in range(self.nTax - 1):
             start = self.dim * seqNum
             for i in range(self.dim):
@@ -3569,10 +3581,11 @@ class Alignment(SequenceList):
             start = self.dim * seqNum
             for i in range(self.dim):
                 L[start + i, start + self.dim + i] = -1
-        #print L
+        # print L
 
         # Make the v matrix, and the n vector
-        v = numpy.zeros((self.dim * self.nTax, self.dim * self.nTax), numpy.float)
+        v = numpy.zeros(
+            (self.dim * self.nTax, self.dim * self.nTax), numpy.float)
         n = numpy.zeros(self.dim * self.nTax, numpy.float)
 
         # This is inefficient!
@@ -3594,21 +3607,21 @@ class Alignment(SequenceList):
                         for j in range(self.dim):
                             pass
                             v[startA + i, startB + j] = fij[i, j]
-        #print v
-        #print n
+        # print v
+        # print n
         firstBit = numpy.dot(L, n)
         myIdentity = numpy.identity(self.dim * (self.nTax - 1), numpy.float)
-        secondBit = numpy.linalg.solve((numpy.dot(numpy.dot(L, v), L.transpose()) + J), myIdentity)
-        #print secondBit
+        secondBit = numpy.linalg.solve(
+            (numpy.dot(numpy.dot(L, v), L.transpose()) + J), myIdentity)
+        # print secondBit
         Ts = numpy.dot(numpy.dot(firstBit, secondBit), firstBit) * self.nChar
-        #print Ts
+        # print Ts
         df = (self.dim - 1) * (self.nTax - 1)
         pval = func.chiSquaredProb(Ts, df)
         return Ts, df, pval
 
     def getMinmaxChiSqGroups(self, percent_cutoff=0.05, min_bins=2, max_bins=20,
                              n_choices=1000, seed=42, verbose=False):
-
         """An interface for Susko and Roger's minmax-chisq program.
 
         Susko, E. and Roger, A.J. (2007). On reduced amino acid alphabets for
@@ -3624,14 +3637,15 @@ class Alignment(SequenceList):
         """
         gm = ["Alignment.getMinmaxChiSqGroups()"]
 
-        #Unfortunately minmax-chsq only accepts 10 char taxon names and only accepts
-        #data in CAPITALS!?!
+        # Unfortunately minmax-chsq only accepts 10 char taxon names and only accepts
+        # data in CAPITALS!?!
         if self.dataType != "protein":
             gm.append("The data are not protein.")
             raise P4Error(gm)
         maxNameLen = max([len(s.name) for s in self.sequences])
         if maxNameLen > var.phylipDataMaxNameLength:
-            gm.append('The longest name length in this alignment is %i' % maxNameLen)
+            gm.append(
+                'The longest name length in this alignment is %i' % maxNameLen)
             arg = 'var.phylipDataMaxNameLength is now %i' % var.phylipDataMaxNameLength
             gm.append(arg)
             gm.append('Sequence names will be truncated.  Fix it.')
@@ -3646,16 +3660,17 @@ class Alignment(SequenceList):
         for s in self.sequences:
             the_data.append("%-10s %s" % (s.name, s.sequence.upper()))
         data_file = "\n".join(the_data)
-        cmd = "minmax-chisq -l%i -u%i -n%i -s%i" % (min_bins, max_bins, n_choices, seed)
+        cmd = "minmax-chisq -l%i -u%i -n%i -s%i" % (
+            min_bins, max_bins, n_choices, seed)
         child = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE, shell=True)
+                                 stderr=subprocess.PIPE, shell=True)
         stdout, stderr = child.communicate(data_file)
         if stderr != "":
             gm.append("Minmax-chisq returned an error: %s" % stderr)
             raise P4Error(gm)
         results = zip(*[iter(stdout.split("\n"))] * 2)
-        #Need the binning before pvalue falls below percent_cutoff
-        #They could be all <= 0.05 or all >= 0.05 because of the binning range
+        # Need the binning before pvalue falls below percent_cutoff
+        # They could be all <= 0.05 or all >= 0.05 because of the binning range
         pvalues = [float(bin[0].split()[1]) for bin in results]
         if not pvalues[0] >= percent_cutoff:
             print "No p-value <= %s" % percent_cutoff
@@ -3717,7 +3732,7 @@ class Alignment(SequenceList):
         if not n_bins > 1 or not n_bins < 20:
             gm.append("n_bins must be > 1 and < 20")
             raise P4Error(gm)
-        #Init the model
+        # Init the model
         tree.calcLogLike(verbose=0)
         # Write the aa freqs
         f = file('equi', 'w')
@@ -3738,14 +3753,14 @@ class Alignment(SequenceList):
         f.close()
 
         # Get the eigensystem
-        evals,evecs = numpy.linalg.eig(bigQ)
+        evals, evecs = numpy.linalg.eig(bigQ)
 
         # According to the web page, "The right eigenvectors should be ordered
         # according to the absolute value of their eigenvalues."  Well, the
         # output from numpy, which uses lapack, is not so ordered.  So do it.
         sorter = numpy.argsort(evals)
         sorter = sorter[::-1]   # reverse
-        #print sorter
+        # print sorter
 
         f = file('evec', 'w')
         f.write('20\n')
@@ -3757,15 +3772,15 @@ class Alignment(SequenceList):
         commands = "equi\nq\n\nevec\n%i" % n_bins
         n = 0
         while n < 10:
-            #Sometimes ais fails with the error "Warning: Eigenvectors are
-            #perturbed etc" sometime it doesnt we're going to try a maximum of 10
-            #times
+            # Sometimes ais fails with the error "Warning: Eigenvectors are
+            # perturbed etc" sometime it doesnt we're going to try a maximum of 10
+            # times
             child = subprocess.Popen("ais", stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, shell=True)
+                                     stderr=subprocess.PIPE, shell=True)
             stdout, stderr = child.communicate(commands)
             #returncode = child.returncode
             if child.returncode != 0:
-                n+=1
+                n += 1
                 continue
             else:
                 if verbose:
@@ -3783,7 +3798,7 @@ class Alignment(SequenceList):
                     raise P4Error(gm)
                 if remove_files:
                     for f in ["equi", "q", "evec", "%isets.txt" % n_bins,
-                                "graph.txt", "coloring.txt"]:
+                              "graph.txt", "coloring.txt"]:
                         if os.path.exists(f):
                             os.remove(f)
                 return sets
@@ -3810,40 +3825,42 @@ class Alignment(SequenceList):
         # It is difficult to tell whether it is sequential or interleaved.
         # For example, is the following alignment sequential or interleaved?
 
-        ##          2 14
-        ##        acctg     aaaa
-        ##        gaattc    aaaa
-        ##        gaattc    cccc
-        ##        cccccc    cccc
+        # 2 14
+        # acctg     aaaa
+        # gaattc    aaaa
+        # gaattc    cccc
+        # cccccc    cccc
 
-        ##        It might be sequential:
-        ##            acctg    aaaagaattcaaaa
-        ##           gaattc    cccccccccccccc
+        # It might be sequential:
+        # acctg    aaaagaattcaaaa
+        # gaattc    cccccccccccccc
 
-        ##        or it might be interleaved:
-        ##            acctg    aaaagaattccccc
-        ##           gaattc    aaaacccccccccc
+        # or it might be interleaved:
+        # acctg    aaaagaattccccc
+        # gaattc    aaaacccccccccc
 
-        ##        And it is impossible to tell!
+        # And it is impossible to tell!
 
         # Here is the top of a file that I had to read.
 
-        ##     36  209
-        ##    Dvi        flnsfnakleqpvrqhlknvyaclamstmsaalgaaagflsaigalvfff
-        ##    Gsp        finsfnskleqpvrqhlknvyacltmatmaaavgasagflsgigalvffg
-        ##    Tca        flnsfsnsleapvrqhlknvyaclamstmaaaigasagflsgigaliffg
-        ##    Ban        finsfqnrlespvrqhlknvygtlmmtcgaasagvyagilsaiagaalml
-        ##    Bmo        fvnsfqnrleppvrqhlknvyatlmmtcvsasagvyagflsaivgaglml
+        # 36  209
+        # Dvi        flnsfnakleqpvrqhlknvyaclamstmsaalgaaagflsaigalvfff
+        # Gsp        finsfnskleqpvrqhlknvyacltmatmaaavgasagflsgigalvffg
+        # Tca        flnsfsnsleapvrqhlknvyaclamstmaaaigasagflsgigaliffg
+        # Ban        finsfqnrlespvrqhlknvygtlmmtcgaasagvyagilsaiagaalml
+        # Bmo        fvnsfqnrleppvrqhlknvyatlmmtcvsasagvyagflsaivgaglml
 
         # After reading in Dvi, and then the next 3 lines, I had a
         # sequence name (Dvi) and exactly 209 characters, all of which
-        # were aa characters.  So it was decided that it was Sequential!  Wrong!
+        # were aa characters.  So it was decided that it was Sequential!
+        # Wrong!
 
         # Slurp the file into a list of lines, except for the header line.
         # Skip blank lines.
         # If a line startswith '//', stop (its a paml file)
         # If a line is composed wholly of numerals, don't collect it (paml again)
-        # If a line starts with  '[', stop collecting until after a line that starts with ']' (paml again)
+        # If a line starts with  '[', stop collecting until after a line that
+        # starts with ']' (paml again)
 
         # Sometimes paml files have stuff at the end, without any marking.
         # So later we need to stop collecting sequences after nTax.
@@ -3861,7 +3878,7 @@ class Alignment(SequenceList):
             if not aLine:
                 break
             aLine = aLine.strip()
-            if not aLine: # blank line
+            if not aLine:  # blank line
                 pass
             elif aLine.startswith("//"):
                 break
@@ -3887,13 +3904,15 @@ class Alignment(SequenceList):
 
         # Now we have the headerLine separate, and all the non-blank lines
         # in theLines list.  Check the headerLine.
-        # If a paml file is interleaved, it seems to have an I in the header line.
+        # If a paml file is interleaved, it seems to have an I in the header
+        # line.
         splFirstLine = headerLine.split()
         assert len(splFirstLine) >= 2   # More than 2 sometimes
         try:
             firstInt = int(splFirstLine[0])
             secondInt = int(splFirstLine[1])
-        except ValueError:  # This should have been caught before, so this should never happen.
+        # This should have been caught before, so this should never happen.
+        except ValueError:
             gm.append('bad first line %s' % headerLine)
             raise P4Error(gm)
         assert firstInt == nTax
@@ -3902,7 +3921,7 @@ class Alignment(SequenceList):
         # Look for an I as the third symbol in the header line.
         # Not used.
         #gotPamlInterleavedI = False
-        #if len(splFirstLine) > 2:
+        # if len(splFirstLine) > 2:
         #    thirdBit = splFirstLine[2]
         #    if thirdBit == 'I':
         #        gotPamlInterleavedI = True
@@ -3922,7 +3941,8 @@ class Alignment(SequenceList):
         # with multiple blanks -- a single blank will do for both long and
         # short tax names.
 
-        # I am calling the former 'strict' and the latter 'whitespaceSeparatesNames'
+        # I am calling the former 'strict' and the latter
+        # 'whitespaceSeparatesNames'
 
         # First I make a half-assed attempt to determine if it is
         # sequential or interleaved.  The decision could easily be wrong,
@@ -3932,7 +3952,7 @@ class Alignment(SequenceList):
         # sequential.  If it has no spaces, then that will be assumed.
 
         # The first line might be something like
-        # SomeLongName    acgtacgtacgt    
+        # SomeLongName    acgtacgtacgt
         # which probably means interleaved, with a space.  Not strict
         # phylip format -- the name is longer than 10.
 
@@ -3944,12 +3964,13 @@ class Alignment(SequenceList):
         # Short Nameacgtacgtacgt
         # which again implies proper phylip format.
 
-        isSequential = None # undecided to start.
+        isSequential = None  # undecided to start.
         moduloRemainderIsZero = None
-        whitespaceSeparatesNames = True 
+        whitespaceSeparatesNames = True
 
         # Check whether the number of lines is some multiple of nTax -- if
-        # so then it is probably interleaved.  If not, it cannot be interleaved.
+        # so then it is probably interleaved.  If not, it cannot be
+        # interleaved.
         remainder = len(theLines) % nTax
         if remainder == 0:
             moduloRemainderIsZero = True
@@ -3960,9 +3981,8 @@ class Alignment(SequenceList):
         if dbug:
             print "    moduloRemainderIsZero is %s" % moduloRemainderIsZero
 
-
         if isSequential == None:
-            # Look at the first line of stuff, after the numbers.  
+            # Look at the first line of stuff, after the numbers.
             # If the total length of the line is var.phylipDataMaxNameLength
             # (usually 10) or less, then I assume it is all name.
             firstLine = theLines[0]
@@ -3974,19 +3994,19 @@ class Alignment(SequenceList):
             elif not firstLine.count(' '):
                 isSequential = True
 
-
         if isSequential == None:
             isSequential = True
         haveTriedSequential_strict = False
         haveTriedSequential = False
         haveTriedInterleaved_strict = False
         haveTriedInterleaved = False
-        sequentialResult = None    # (None, True, or False, depending on don't know, success, or failure)
+        # (None, True, or False, depending on don't know, success, or failure)
+        sequentialResult = None
         interleavedResult = None
         gotIt = False
 
-        ###############################################################################
-        ###############################################################################
+        #######################################################################
+        #######################################################################
         while not gotIt:
             if dbug:
                 if hasattr(flob, 'name'):
@@ -4011,7 +4031,7 @@ class Alignment(SequenceList):
             if whitespaceSeparatesNames:
                 if isSequential and not haveTriedSequential:
                     ret = self._readPhylipSequential(nTax, nChar, theLines)
-                    #print "a ret = %s" % ret
+                    # print "a ret = %s" % ret
                     if ret:
                         gotIt = True
                     else:
@@ -4027,7 +4047,7 @@ class Alignment(SequenceList):
                                 isSequential = False
                 elif not isSequential and not haveTriedInterleaved:
                     ret = self._readPhylipInterleaved(nTax, nChar, theLines)
-                    #print "b ret = %s" % ret
+                    # print "b ret = %s" % ret
                     if ret:
                         gotIt = True
                     else:
@@ -4043,8 +4063,9 @@ class Alignment(SequenceList):
                                 isSequential = False
             else:
                 if isSequential:
-                    ret = self._readPhylipSequentialStrict(nTax, nChar, theLines)
-                    #print "c ret = %s" % ret
+                    ret = self._readPhylipSequentialStrict(
+                        nTax, nChar, theLines)
+                    # print "c ret = %s" % ret
                     if ret:
                         gotIt = True
                     else:
@@ -4059,8 +4080,9 @@ class Alignment(SequenceList):
                                 whitespaceSeparatesNames = True
                                 isSequential = False
                 else:
-                    ret = self._readPhylipInterleavedStrict(nTax, nChar, theLines)
-                    #print "d ret = %s" % ret
+                    ret = self._readPhylipInterleavedStrict(
+                        nTax, nChar, theLines)
+                    # print "d ret = %s" % ret
                     if ret:
                         gotIt = True
                     else:
@@ -4074,7 +4096,7 @@ class Alignment(SequenceList):
                             elif not haveTriedInterleaved:
                                 whitespaceSeparatesNames = True
                                 isSequential = False
-            #print "x gotIt is now %s" % gotIt
+            # print "x gotIt is now %s" % gotIt
             if gotIt:
                 break
             if haveTriedSequential and haveTriedInterleaved and haveTriedSequential_strict and haveTriedInterleaved_strict:
@@ -4082,8 +4104,8 @@ class Alignment(SequenceList):
                 if not var.verboseRead:
                     gm.append("(For more info, turn var.verboseRead on)")
                 raise P4Error(gm)
-        ###########################################################################################
-        ###########################################################################################
+        #######################################################################
+        #######################################################################
 
         # Paml interleaved files sometimes have dots after the first sequence.
         firstSequence = self.sequences[0]
@@ -4098,7 +4120,8 @@ class Alignment(SequenceList):
         # Set the dataType
         for s in self.sequences:
             ret = None
-            ret = func.isDnaRnaOrProtein(s.sequence) # returns 1,2 or 0, respectively
+            # returns 1,2 or 0, respectively
+            ret = func.isDnaRnaOrProtein(s.sequence)
             if ret == 1:
                 s.dataType = 'dna'
                 s.symbols = 'acgt'
@@ -4117,7 +4140,7 @@ class Alignment(SequenceList):
                     while j < nChar:
                         if s.sequence[j] not in var.validDnaChars:
                             print "Got bad character '%s' in (zero-based) dna sequence %s " % \
-                                                        (s.sequence[j], self.sequences.index(s))
+                                (s.sequence[j], self.sequences.index(s))
                             print "          sequence name: %s" % s.name
                             print "          at (zero-based) position %s" % j
                             bads = bads + 1
@@ -4136,7 +4159,7 @@ class Alignment(SequenceList):
                     while j < nChar:
                         if s.sequence[j] not in var.validProteinChars:
                             print "Got bad character '%s' in (zero-based) protein sequence %s " % \
-                                                        (s.sequence[j], self.sequences.index(s))
+                                (s.sequence[j], self.sequences.index(s))
                             print "          sequence name: %s" % s.name
                             print "          at (zero-based) position %s" % j
                             bads = bads + 1
@@ -4150,11 +4173,10 @@ class Alignment(SequenceList):
                     gm.append("See the list of bad chars above")
                     raise P4Error(gm)
 
-        #for s in self.sequences:
+        # for s in self.sequences:
         #    print s.name
         #    print s.dataType
-        #sys.exit()
-
+        # sys.exit()
 
     def _readPhylipSequential(self, nTax, nChar, theLines):
 
@@ -4184,9 +4206,9 @@ class Alignment(SequenceList):
                     if var.verboseRead:
                         print "    Early termination"
                     return False
-                theSequenceBits.append(func.stringZapWhitespaceAndDigits(aLine))
+                theSequenceBits.append(
+                    func.stringZapWhitespaceAndDigits(aLine))
                 seqLenSoFar += len(theSequenceBits[-1])
-
 
             if seqLenSoFar != nChar:
                 if var.verboseRead:
@@ -4240,7 +4262,7 @@ class Alignment(SequenceList):
                     bBit = func.stringZapWhitespaceAndDigits(aBit)
                     s.theSequenceBits.append(bBit)
                     s.seqLenSoFar += len(bBit)
-            #print "%15s %s" % (s.name, bBit)
+            # print "%15s %s" % (s.name, bBit)
             self.sequences.append(s)
         if len(self.sequences) != nTax:
             if var.verboseRead:
@@ -4256,7 +4278,7 @@ class Alignment(SequenceList):
                 lineNum += 1
             except IndexError:
                 break
-            #print "aLine a: %s" % aLine
+            # print "aLine a: %s" % aLine
             segment = func.stringZapWhitespaceAndDigits(aLine)
             if len(segment):
                 self.sequences[seqNum].theSequenceBits.append(segment)
@@ -4264,14 +4286,13 @@ class Alignment(SequenceList):
                 seqNum += 1
                 if seqNum == nTax:
                     seqNum = 0
-                    #print "aLine b: %s" % aLine
-                    #print "=" * 50
+                    # print "aLine b: %s" % aLine
+                    # print "=" * 50
                     # Finished a cycle.  If we have enough sequence, break
                     if self.sequences[seqNum].seqLenSoFar >= nChar:
                         isDone = True
             else:
                 print '_readPhylipInterleaved() bad line?: %s' % aLine
-
 
         for s in self.sequences:
             s.sequence = string.join(s.theSequenceBits, '')
@@ -4286,8 +4307,8 @@ class Alignment(SequenceList):
 
         isBad = False
         for s in self.sequences:
-            #s.write()
-            #print len(s.sequence), nChar
+            # s.write()
+            # print len(s.sequence), nChar
             if len(s.sequence) != nChar:
                 isBad = True
                 break
@@ -4301,7 +4322,6 @@ class Alignment(SequenceList):
         if var.verboseRead:
             print "    Got a candidate alignment."
         return True
-
 
     def _readPhylipSequentialStrict(self, nTax, nChar, theLines):
 
@@ -4317,7 +4337,8 @@ class Alignment(SequenceList):
             aLine = theLines[lineNum]
             lineNum += 1
             theName = aLine[:var.phylipDataMaxNameLength].strip()
-            aBit = func.stringZapWhitespaceAndDigits(aLine[var.phylipDataMaxNameLength:])
+            aBit = func.stringZapWhitespaceAndDigits(
+                aLine[var.phylipDataMaxNameLength:])
             theSequenceBits.append(aBit)
             seqLenSoFar = len(aBit)
             while seqLenSoFar < nChar:
@@ -4331,7 +4352,6 @@ class Alignment(SequenceList):
                 aBit = func.stringZapWhitespaceAndDigits(aLine)
                 theSequenceBits.append(aBit)
                 seqLenSoFar += len(aBit)
-
 
             if seqLenSoFar != nChar:
                 if var.verboseRead:
@@ -4376,7 +4396,8 @@ class Alignment(SequenceList):
 
             s.name = aLine[:var.phylipDataMaxNameLength].strip()
             s.theSequenceBits = []
-            aBit = func.stringZapWhitespaceAndDigits(aLine[var.phylipDataMaxNameLength:])
+            aBit = func.stringZapWhitespaceAndDigits(
+                aLine[var.phylipDataMaxNameLength:])
             s.theSequenceBits.append(aBit)
             s.seqLenSoFar = len(aBit)
             self.sequences.append(s)
@@ -4394,7 +4415,7 @@ class Alignment(SequenceList):
                 lineNum += 1
             except IndexError:
                 break
-            #print "aLine a: %s" % aLine
+            # print "aLine a: %s" % aLine
             segment = func.stringZapWhitespaceAndDigits(aLine)
             if len(segment):
                 self.sequences[seqNum].theSequenceBits.append(segment)
@@ -4432,7 +4453,6 @@ class Alignment(SequenceList):
         if var.verboseRead:
             print "    Got a candidate alignment."
         return True
-
 
     def _readOpenClustalwFile(self, flob):
 
@@ -4500,7 +4520,8 @@ class Alignment(SequenceList):
                         gm.append("Odd line:\n%s" % aLine)
                         raise P4Error(gm)
                     if s.name != splitLine[0]:
-                        gm.append("Problem: existing name %s does not match new name %s" % (s.name, splitLine[0]))
+                        gm.append(
+                            "Problem: existing name %s does not match new name %s" % (s.name, splitLine[0]))
                         raise P4Error(gm)
                     s.temp.append(string.lower(string.strip(splitLine[1])))
                     if dbug:
@@ -4512,7 +4533,7 @@ class Alignment(SequenceList):
             else:
                 break
 
-        #sys.exit()
+        # sys.exit()
 
         nChar = len(string.join(self.sequences[0].temp, ''))
 
@@ -4522,12 +4543,14 @@ class Alignment(SequenceList):
                 print "got sequence:\n          %s" % s.temp
             s.temp = string.join(s.temp, '')
             if len(s.temp) != nChar:
-                gm.append("Something is wrong with the sequence length of the clustalw file.")
+                gm.append(
+                    "Something is wrong with the sequence length of the clustalw file.")
                 gm.append("(zero-based) sequence %i" % self.sequences.index(s))
                 gm.append("expected %i, got %i" % (nChar, len(s.temp)))
                 raise P4Error(gm)
 
-            if func.isDnaRnaOrProtein(s.temp): # returns 1,2 or 0, respectively
+            # returns 1,2 or 0, respectively
+            if func.isDnaRnaOrProtein(s.temp):
                 s.sequence = s.temp
                 s.dataType = 'dna'
                 s.symbols = 'acgt'
@@ -4546,7 +4569,7 @@ class Alignment(SequenceList):
                     while j < nChar:
                         if s.sequence[j] not in var.validDnaChars:
                             print "bad character '%s' in (zero-based) dna sequence %s " % \
-                                                        (s.sequence[j], self.sequences.index(s))
+                                (s.sequence[j], self.sequences.index(s))
                             print "          sequence name: %s" % s.name
                             print "          at (zero-based) position %s" % j
                             bads = bads + 1
@@ -4564,7 +4587,7 @@ class Alignment(SequenceList):
                     while j < nChar:
                         if s.sequence[j] not in var.validProteinChars:
                             print "bad character '%s' in (zero-based) protein sequence %s " % \
-                                                        (s.sequence[j], self.sequences.index(s))
+                                (s.sequence[j], self.sequences.index(s))
                             print "          sequence name: %s" % s.name
                             print "          at (zero-based) position %s" % j
                             bads = bads + 1
@@ -4584,11 +4607,6 @@ class Alignment(SequenceList):
                 print '%20s  %-30s' % ('sequence', t.sequence)
                 print '%20s  %-30s' % ('type', t.dataType)
                 print ''
-
-
-
-
-
 
     def writeNexus(self, fName=None, writeDataBlock=0,  interleave=0, flat=0, append=0, userText=''):
         """Write self in Nexus format.
@@ -4644,20 +4662,23 @@ class Alignment(SequenceList):
             f.write('  dimensions ntax=%s;\n' % len(self.sequences))
             f.write('  taxlabels')
             for i in range(len(self.sequences)):
-                f.write(' %s' % func.nexusFixNameIfQuotesAreNeeded(self.sequences[i].name))
+                f.write(
+                    ' %s' % func.nexusFixNameIfQuotesAreNeeded(self.sequences[i].name))
             f.write(';\n')
             f.write('end;\n\n')
-        else: # ie writeDataBlock=1
+        else:  # ie writeDataBlock=1
             f.write('begin data;\n')
             if self.excludeDelete:
                 if self.length < self.excludeDelete.length:
-                    f.write('  [%i characters have been excluded]\n' % (self.excludeDelete.length - self.length))
+                    f.write('  [%i characters have been excluded]\n' %
+                            (self.excludeDelete.length - self.length))
             f.write('  dimensions ntax=%s' % len(self.sequences))
         if not writeDataBlock:
             f.write('begin characters;\n')
             if self.excludeDelete:
                 if self.length < self.excludeDelete.length:
-                    f.write('  [%i characters have been excluded]\n' % (self.excludeDelete.length - self.length))
+                    f.write('  [%i characters have been excluded]\n' %
+                            (self.excludeDelete.length - self.length))
             f.write('  dimensions')
 
         f.write(' nChar=%s;\n' % self.length)
@@ -4668,7 +4689,7 @@ class Alignment(SequenceList):
         elif self.dataType == 'protein':
             f.write(' datatype=protein')
         elif self.dataType == 'rna':
-            f.write( ' datatype=rna')
+            f.write(' datatype=rna')
         elif self.dataType == 'standard':
             f.write(' datatype=standard')
             f.write(' symbols=\"%s\"' % self.symbols)
@@ -4679,18 +4700,21 @@ class Alignment(SequenceList):
             elif self.dataType == 'protein':
                 usualset = set(['x', 'b', 'z'])
             else:
-                usualset = set([]) # no usual equates for standard dataType
+                usualset = set([])  # no usual equates for standard dataType
 
-            # kset is the currently defined set. Now we want to get ks, the ones to write.
+            # kset is the currently defined set. Now we want to get ks, the
+            # ones to write.
             kset = set(self.equates.keys())
             if usualset == kset:
                 ks = []   # write none
-            # Does the usualset have items not in the kset?  This would be odd, unexpected, but possible.
+            # Does the usualset have items not in the kset?  This would be odd,
+            # unexpected, but possible.
             elif usualset.difference(kset):
-                ks = list(kset) # write all, as it is so unusual.
+                ks = list(kset)  # write all, as it is so unusual.
             elif kset.difference(usualset):
-                ks = list(kset.difference(usualset)) # inefficient calculating it twice ...
-            #print " [ks=%s]" % ''.join(ks),
+                # inefficient calculating it twice ...
+                ks = list(kset.difference(usualset))
+            # print " [ks=%s]" % ''.join(ks),
 
             if ks:
                 f.write(' equate=\"')
@@ -4711,7 +4735,8 @@ class Alignment(SequenceList):
         f.write('  matrix\n')
         if interleave:
             if flat:
-                gm.append("'interleave' option does not make sense with 'flat' option.")
+                gm.append(
+                    "'interleave' option does not make sense with 'flat' option.")
                 if f != sys.stdout:
                     f.close()
                 raise P4Error(gm)
@@ -4721,9 +4746,12 @@ class Alignment(SequenceList):
                 for i in range(len(self.sequences)):
                     s = self.sequences[i]
                     if len(s.name) > longest:
-                        longest = len(func.nexusFixNameIfQuotesAreNeeded(s.name))
-                #formatString = '    %' + `-longest` + 's '  # boring left-justified
-                formatString = '    %' + `longest` + 's '   # cool right-justified
+                        longest = len(
+                            func.nexusFixNameIfQuotesAreNeeded(s.name))
+                # formatString = '    %' + `-longest` + 's '  # boring
+                # left-justified
+                # cool right-justified
+                formatString = '    %' + `longest` + 's '
                 # print "format string is '%s'" % formatString
                 if longest > 10:
                     wid = 50
@@ -4734,7 +4762,8 @@ class Alignment(SequenceList):
                 while left > 0:
                     for i in range(len(self.sequences)):
                         s = self.sequences[i]
-                        f.write(formatString % func.nexusFixNameIfQuotesAreNeeded(s.name))
+                        f.write(formatString %
+                                func.nexusFixNameIfQuotesAreNeeded(s.name))
                         if left >= wid:
                             f.write('%s\n' % s.sequence[pos: pos + wid])
                         elif left > 0:
@@ -4751,9 +4780,12 @@ class Alignment(SequenceList):
                 for i in range(len(self.sequences)):
                     s = self.sequences[i]
                     if len(s.name) > longest:
-                        longest = len(func.nexusFixNameIfQuotesAreNeeded(s.name))
-                #formatString = '    %' + `-longest` + 's '  # boring left-justified
-                formatString = '    %' + `longest` + 's '   # cool right-justified
+                        longest = len(
+                            func.nexusFixNameIfQuotesAreNeeded(s.name))
+                # formatString = '    %' + `-longest` + 's '  # boring
+                # left-justified
+                # cool right-justified
+                formatString = '    %' + `longest` + 's '
                 # print "format string is '%s'" % formatString
                 for i in range(len(self.sequences)):
                     s = self.sequences[i]
@@ -4763,7 +4795,8 @@ class Alignment(SequenceList):
                 wid = 60
                 for i in range(len(self.sequences)):
                     s = self.sequences[i]
-                    f.write('    %s\n' % func.nexusFixNameIfQuotesAreNeeded(s.name))
+                    f.write('    %s\n' %
+                            func.nexusFixNameIfQuotesAreNeeded(s.name))
                     left = len(s.sequence)
                     pos = 0
                     while left >= wid:
@@ -4777,7 +4810,7 @@ class Alignment(SequenceList):
 
         if self.nexusSets:
             from nexussets import NexusSets
-            #print "self.nexusSets = %s" % self.nexusSets
+            # print "self.nexusSets = %s" % self.nexusSets
             if self.excludeDelete:
                 if self.length < self.excludeDelete.length:
                     f.write('[skipping out-of-sync nexus sets block]\n')
@@ -4786,14 +4819,12 @@ class Alignment(SequenceList):
             else:
                 self.nexusSets.writeNexusToOpenFile(f)
 
-
         if userText:
             f.write(userText)
             f.write("\n")
 
         if f != sys.stdout:
             f.close()
-
 
     def writePhylip(self, fName=None, interleave=True, whitespaceSeparatesNames=True, flat=False):
         """Write the alignment in Phylip format.
@@ -4858,7 +4889,7 @@ class Alignment(SequenceList):
                 maxNameLen = theNameLen
             if s.name.count(' '):
                 namesHaveSpaces = True
-        #print 'The longest name length in this alignment is %i' % maxNameLen
+        # print 'The longest name length in this alignment is %i' % maxNameLen
 
         if whitespaceSeparatesNames and namesHaveSpaces:
             crimes = []
@@ -4876,13 +4907,16 @@ class Alignment(SequenceList):
             doStrictOkAnyway = True
 
         if interleave and flat:
-            gm.append("Both 'interleave' and 'flat' are turned on -- does not work.")
+            gm.append(
+                "Both 'interleave' and 'flat' are turned on -- does not work.")
             raise P4Error(gm)
 
         # Check and complain if any taxNames will be truncated.
         if not whitespaceSeparatesNames and maxNameLen > var.phylipDataMaxNameLength:
-            gm.append('The longest name length in this alignment is %i' % maxNameLen)
-            gm.append('var.phylipDataMaxNameLength is now %i' % var.phylipDataMaxNameLength)
+            gm.append(
+                'The longest name length in this alignment is %i' % maxNameLen)
+            gm.append('var.phylipDataMaxNameLength is now %i' %
+                      var.phylipDataMaxNameLength)
             gm.append('Sequence names will be truncated.  Fix it.')
             gm.append("You may want to use the 'renameForPhylip()' method.")
             raise P4Error(gm)
@@ -4892,8 +4926,7 @@ class Alignment(SequenceList):
         if whitespaceSeparatesNames and (maxNameLen >= nameWid):
             nameWid = maxNameLen + 1
             spacer1 = 11
-        #print 'The nameWid is %i' % nameWid
-
+        # print 'The nameWid is %i' % nameWid
 
         if fName == None or fName == sys.stdout:
             f = sys.stdout
@@ -4943,7 +4976,7 @@ class Alignment(SequenceList):
                 f.write('\n')
         if not interleave:
             if flat:
-                #print "nameWid = ", nameWid
+                # print "nameWid = ", nameWid
                 theFormat = "%-" + "%is" % nameWid
                 for s in self.sequences:
                     f.write(theFormat % s.name[:nameWid])
@@ -4980,7 +5013,6 @@ class Alignment(SequenceList):
 
         if f != sys.stdout:
             f.close()
-
 
     def writeMolphy(self, fName=None):
         """Another phylogenetics program, another format.
@@ -5033,7 +5065,8 @@ class Alignment(SequenceList):
             print aLine
         if aLine[0] != '{':
             gm.append("The first character is not '{' --- not a GDE file??")
-            gm.append("(Note that p4 only reads proper gde files, not gde flat files.)")
+            gm.append(
+                "(Note that p4 only reads proper gde files, not gde flat files.)")
             raise P4Error(gm)
         while aLine:
             s = Sequence()
@@ -5044,17 +5077,19 @@ class Alignment(SequenceList):
                 raise P4Error(gm)
             if aLine[:4] == 'name':
                 # the name line might be like: name    "D.ethanoge"
-                # or it might be like: name    "C.acetobA ", ie with a spurious space.
+                # or it might be like: name    "C.acetobA ", ie with a spurious
+                # space.
                 if dbug:
                     print "got name line: \n%s" % aLine
                 splitLine = string.split(aLine, '\"')
                 s.name = string.strip(splitLine[1])
-                #print s.name
+                # print s.name
                 if not func.nexusCheckName(s.name):
                     gm.append("Bad name '%s'" % s.name)
                     raise P4Error(gm)
             else:
-                gm.append("I was expecting a name line: instead I got line:\n\t%s" % aLine)
+                gm.append(
+                    "I was expecting a name line: instead I got line:\n\t%s" % aLine)
                 raise P4Error(gm)
             aLine = string.strip(flob.readline())
             if aLine[:4] == 'type':
@@ -5062,12 +5097,13 @@ class Alignment(SequenceList):
                     print "get type line: \n%s" % aLine
                 splitLine = string.split(aLine)
                 type = splitLine[1][1:-1]
-                #print type
+                # print type
                 if type not in ['DNA', 'PROTEIN', 'MASK', 'TEXT', 'RNA']:
                     gm.append("Unknown type '%s'" % type)
                     raise P4Error(gm)
             else:
-                gm.append("I was expecting a type line: instead I got line:\n\t%s" % aLine)
+                gm.append(
+                    "I was expecting a type line: instead I got line:\n\t%s" % aLine)
                 raise P4Error(gm)
 
             if type == 'DNA' or type == 'RNA':
@@ -5075,7 +5111,9 @@ class Alignment(SequenceList):
             elif type == 'PROTEIN':
                 s.dataType = 'protein'
             elif type == 'MASK':
-                s.dataType = 'mask'   # a dodgy manoever, letting a Sequence object hold a mask or text.
+                # a dodgy manoever, letting a Sequence object hold a mask or
+                # text.
+                s.dataType = 'mask'
             elif type == 'TEXT':
                 s.dataType = 'text'
 
@@ -5116,10 +5154,10 @@ class Alignment(SequenceList):
             while aLine[0] != '}':
                 thisSeqList.append(aLine)
                 aLine = string.strip(flob.readline())
-            #print "Got thisSeqList: %s" % thisSeqList
+            # print "Got thisSeqList: %s" % thisSeqList
             s.sequence = (offset * '-') + string.join(thisSeqList, '')[1:-1]
-            #print "Finished: name:'%s', dataType %s, sequence = '%s'" % (s.name, s.dataType, s.sequence)
-            #print "Got last line of group: '%s'" % aLine\
+            # print "Finished: name:'%s', dataType %s, sequence = '%s'" % (s.name, s.dataType, s.sequence)
+            # print "Got last line of group: '%s'" % aLine\
             if s.dataType == 'mask':
                 maskList.append(s)
             else:
@@ -5136,9 +5174,11 @@ class Alignment(SequenceList):
         # have a sList containing Sequences, and a maskList containing
         # masks.
 
-        # Make all the sequences the same length.  GDE certainly does not do this.
+        # Make all the sequences the same length.  GDE certainly does not do
+        # this.
         if len(sList) == 0:
-            gm.append("Finished reading file, but got no sequences.  What gives?")
+            gm.append(
+                "Finished reading file, but got no sequences.  What gives?")
             raise P4Error(gm)
         maxSeqLen = 0
         for s in sList:
@@ -5166,7 +5206,7 @@ class Alignment(SequenceList):
             # check lengths
             topLen = len(self.sequences[0].sequence)
             for s in self.sequences:
-                #print "xxx dataType=%s" % s.dataType
+                # print "xxx dataType=%s" % s.dataType
                 if len(s.sequence) != topLen:
                     gm.append("Got sequences of unequal lengths")
                     raise P4Error(gm)
@@ -5183,7 +5223,7 @@ class Alignment(SequenceList):
                 self.symbols = 'acgt'
                 self.dim = 4
                 if not self.equates:
-                    self.equates = {'n': 'acgt', 'm': 'ac', 'k': 'gt', # 'x': 'acgt', 
+                    self.equates = {'n': 'acgt', 'm': 'ac', 'k': 'gt',  # 'x': 'acgt',
                                     'h': 'act', 'y': 'ct', 'v': 'acg',
                                     'w': 'at', 'd': 'agt', 'b': 'cgt',
                                     'r': 'ag', 's': 'cg'}
@@ -5191,14 +5231,15 @@ class Alignment(SequenceList):
                 self.symbols = 'arndcqeghilkmfpstwyv'
                 self.dim = 20
                 if not self.equates:
-                    self.equates = {'b': 'dn', 'x': 'arndcqeghilkmfpstwyv', 'z': 'eq'}
+                    self.equates = {
+                        'b': 'dn', 'x': 'arndcqeghilkmfpstwyv', 'z': 'eq'}
             else:
                 gm.append("Can't deal with dataType '%s'." % self.dataType)
                 raise P4Error(gm)
 
-        #self.dump()
+        # self.dump()
         # Is the following really needed?
-        #for s in self.sequences:
+        # for s in self.sequences:
         #    if s.name not in self.taxNames:
         #        self.taxNames.append(s.name)
         #    else:
@@ -5228,7 +5269,8 @@ class Alignment(SequenceList):
                 c.mask = s.sequence
                 for c1 in self.nexusSets.charSets:
                     if c1.lowName == c.lowName:
-                        gm.append("Duplicated charSet (ie mask) name %s" % c.name)
+                        gm.append(
+                            "Duplicated charSet (ie mask) name %s" % c.name)
                         raise P4Error(gm)
                 self.nexusSets.charSets.append(c)
 
@@ -5250,7 +5292,6 @@ class Alignment(SequenceList):
             else:
                 print "  %25s %s" % (self.taxNames[txNum], ss[txNum])
 
-
     def _initParts(self):
         gm = ['Alignment._initParts()']
 
@@ -5265,7 +5306,7 @@ class Alignment(SequenceList):
         else:
             eqSymb = ''
 
-        if len(self.sequences) and self.length and  self.symbols and self.dim:
+        if len(self.sequences) and self.length and self.symbols and self.dim:
             pass
         else:
             gm.append("Can't allocate part.")
@@ -5279,7 +5320,8 @@ class Alignment(SequenceList):
                 gm.append("-dim not set")
             raise P4Error(gm)
 
-        if not self.nexusSets or not self.nexusSets.charPartition: # its all one part
+        # its all one part
+        if not self.nexusSets or not self.nexusSets.charPartition:
             aPart = Part()
             aPart.alignment = self
             aPart.name = 'all'
@@ -5297,7 +5339,7 @@ class Alignment(SequenceList):
                 print "    symbols=%s" % self.symbols
 
             aPart.cPart = pf.newPart(len(self.sequences), self.length,
-                                         eqSymb, self.symbols)
+                                     eqSymb, self.symbols)
             if not aPart or not aPart.cPart:
                 gm.append("Failed to get memory for part.")
                 raise P4Error(gm)
@@ -5307,20 +5349,25 @@ class Alignment(SequenceList):
             equatesTable = []
             if verbose:
                 print "equates is %s" % self.equates
-                print "eqSymb is %s" % eqSymb # the keys
+                print "eqSymb is %s" % eqSymb  # the keys
                 print "symbols is %s" % self.symbols
             for i in range(len(eqSymb)):
-                if verbose: print "%3s: " % eqSymb[i],
+                if verbose:
+                    print "%3s: " % eqSymb[i],
                 e = self.equates[eqSymb[i]]
-                if verbose: print "%8s : " % e,
+                if verbose:
+                    print "%8s : " % e,
                 for s in self.symbols:
                     if s in e:
-                        if verbose: print "%1i" % 1,
+                        if verbose:
+                            print "%1i" % 1,
                         equatesTable.append('1')
                     else:
-                        if verbose: print "%1i" % 0,
+                        if verbose:
+                            print "%1i" % 0,
                         equatesTable.append('0')
-                if verbose: print ''
+                if verbose:
+                    print ''
             equatesTable = string.join(equatesTable, '')
             if verbose:
                 print "\n\nequatesTable:"
@@ -5335,26 +5382,26 @@ class Alignment(SequenceList):
                 print "sList = %s" % sList
                 print "joined = %s" % string.join(sList, '')
             pf.pokeSequences(aPart.cPart, string.join(sList, ''))
-            #print "about to makePatterns ..."
+            # print "about to makePatterns ..."
             pf.makePatterns(aPart.cPart)
-            #print "about to setInvar"
+            # print "about to setInvar"
             pf.setGlobalInvarSitesVec(aPart.cPart)
 
-            #pf.dumpPart(aPart.cPart)
+            # pf.dumpPart(aPart.cPart)
             self.parts.append(aPart)
 
         elif self.nexusSets.charPartition:
             for cpp in self.nexusSets.charPartition.subsets:
-                #print "Doing subset '%s', mask: %s" % (cpp.name, cpp.mask)
-                #print "About to subsetUsingMask (self length is %i)" % self.length
+                # print "Doing subset '%s', mask: %s" % (cpp.name, cpp.mask)
+                # print "About to subsetUsingMask (self length is %i)" %
+                # self.length
                 b = self.subsetUsingMask(cpp.mask)
-                b._initParts()    # This very method, but now there are no charPartitions in b.
+                # This very method, but now there are no charPartitions in b.
+                b._initParts()
                 b.parts[0].name = cpp.name
                 b.parts[0].lowName = string.lower(cpp.name)
                 self.parts.append(b.parts[0])
-                b.parts = [] # so we don't try free-ing it twice
-
-
+                b.parts = []  # so we don't try free-ing it twice
 
     def initDataParts(self):
         gm = ['Alignment.initDataParts()']
@@ -5364,7 +5411,7 @@ class Alignment(SequenceList):
                 del(p)
         self.parts = []
 
-        if len(self.sequences) and self.length and  self.symbols and self.dim:
+        if len(self.sequences) and self.length and self.symbols and self.dim:
             pass
         else:
             gm.append("Can't allocate part.")
@@ -5378,30 +5425,29 @@ class Alignment(SequenceList):
                 gm.append("-dim not set")
             raise P4Error(gm)
 
-
-        if not self.nexusSets or not self.nexusSets.charPartition: # its all one part
+        # its all one part
+        if not self.nexusSets or not self.nexusSets.charPartition:
             aPart = DataPart(self)
             self.parts.append(aPart)
 
         elif self.nexusSets.charPartition:
             for cpp in self.nexusSets.charPartition.subsets:
-                #print "Doing subset '%s', mask: %s" % (cpp.name, cpp.mask)
-                #print "About to subsetUsingMask (self length is %i)" % self.length
+                # print "Doing subset '%s', mask: %s" % (cpp.name, cpp.mask)
+                # print "About to subsetUsingMask (self length is %i)" %
+                # self.length
                 b = self.subsetUsingMask(cpp.mask)
-                b.initDataParts()    # This very method, but now there are no charPartitions in b.
-                b.parts[0].alignment  = self
+                # This very method, but now there are no charPartitions in b.
+                b.initDataParts()
+                b.parts[0].alignment = self
                 b.parts[0].name = cpp.name
                 b.parts[0].lowName = string.lower(cpp.name)
                 self.parts.append(b.parts[0])
-                b.parts = [] # so we don't try free-ing the new part twice
-
-
-
+                b.parts = []  # so we don't try free-ing the new part twice
 
     def resetSequencesFromParts(self):
         """Gets the sequences from Part.cPart, and installs them in self."""
 
-        #print "Alignment.resetSequencesFromParts() here."
+        # print "Alignment.resetSequencesFromParts() here."
         if (not self.parts) or len(self.parts) == 0:
             gm = ["Alignment.resetSequencesFromParts()"]
             gm.append("No parts.")
@@ -5410,15 +5456,17 @@ class Alignment(SequenceList):
         if not var.doDataPart:
             if len(self.parts) == 1 and self.parts[0].name == 'all':
                 allSeq = pf.symbolSequences(self.parts[0].cPart)
-                #print "allSeq[0:20] = %s" % allSeq[0:20]
+                # print "allSeq[0:20] = %s" % allSeq[0:20]
                 for i in range(len(self.sequences)):
-                    self.sequences[i].sequence = allSeq[(i * self.length): ((i + 1) * self.length)]
+                    self.sequences[i].sequence = allSeq[
+                        (i * self.length): ((i + 1) * self.length)]
             else:
                 for i in range(len(self.sequences)):
-                    self.sequences[i].sequence = list(self.sequences[i].sequence)
+                    self.sequences[i].sequence = list(
+                        self.sequences[i].sequence)
                 for i in range(len(self.parts)):
                     partSeq = pf.symbolSequences(self.parts[i].cPart)
-                    #print partSeq
+                    # print partSeq
                     spot = 0
                     m = self.nexusSets.charPartition.subsets[i].mask
                     for s in self.sequences:
@@ -5427,14 +5475,17 @@ class Alignment(SequenceList):
                                 s.sequence[k] = partSeq[spot]
                                 spot += 1
                 for i in range(len(self.sequences)):
-                    self.sequences[i].sequence = string.join(self.sequences[i].sequence, '')
+                    self.sequences[i].sequence = string.join(
+                        self.sequences[i].sequence, '')
         else:
             if len(self.parts) == 1:
                 for i in range(len(self.sequences)):
-                    self.sequences[i].sequence = self.parts[0].sequenceString(i)
+                    self.sequences[i].sequence = self.parts[
+                        0].sequenceString(i)
             else:
                 for i in range(len(self.sequences)):
-                    self.sequences[i].sequence = list(self.sequences[i].sequence)
+                    self.sequences[i].sequence = list(
+                        self.sequences[i].sequence)
                 for pNum in range(len(self.parts)):
                     for sNum in range(len(self.sequences)):
                         partSeq = self.parts[pNum].sequenceString(sNum)
@@ -5447,9 +5498,8 @@ class Alignment(SequenceList):
                                 s.sequence[k] = partSeq[spot]
                                 spot += 1
                 for i in range(len(self.sequences)):
-                    self.sequences[i].sequence = string.join(self.sequences[i].sequence, '')
-
-
+                    self.sequences[i].sequence = string.join(
+                        self.sequences[i].sequence, '')
 
     def resetPartsContentFromSequences(self):
         """Reset Part.cPart sequences from self.sequences.
@@ -5458,7 +5508,7 @@ class Alignment(SequenceList):
         array.  """
 
         gm = ['Alignment.resetPartsContentFromSequences()']
-        if len(self.parts) == 1: # its all one part
+        if len(self.parts) == 1:  # its all one part
             aPart = self.parts[0]
             if not var.doDataPart:
                 sList = []
@@ -5478,18 +5528,21 @@ class Alignment(SequenceList):
                         if theChar == '?':
                             aPart.seq[sNum, cNum] = var.QMARK_CODE
                         elif aPart.equateSymbols and theChar in aPart.equateSymbols:
-                            aPart.seq[sNum, cNum] = var.EQUATES_BASE + aPart.equateSymbols.index(theChar)
+                            aPart.seq[sNum, cNum] = var.EQUATES_BASE + \
+                                aPart.equateSymbols.index(theChar)
                         else:
-                            aPart.seq[sNum, cNum] = aPart.symbols.index(theChar)
+                            aPart.seq[sNum, cNum] = aPart.symbols.index(
+                                theChar)
 
         elif len(self.parts) > 1:
             # the number of parts is also the length of the subsets list
             if self.nexusSets and self.nexusSets.charPartition and \
-                   self.nexusSets.charPartition.subsets and \
-                   len(self.nexusSets.charPartition.subsets) == len(self.parts):
+                    self.nexusSets.charPartition.subsets and \
+                    len(self.nexusSets.charPartition.subsets) == len(self.parts):
                 pass
             else:
-                gm.append('Something is wrong with the nexusSets or its charPartition')
+                gm.append(
+                    'Something is wrong with the nexusSets or its charPartition')
                 raise P4Error(gm)
             for i in range(len(self.parts)):
                 cpSubset = self.nexusSets.charPartition.subsets[i]
@@ -5513,9 +5566,11 @@ class Alignment(SequenceList):
                             if theChar == '?':
                                 aPart.seq[sNum, cNum] = var.QMARK_CODE
                             elif aPart.equateSymbols and theChar in aPart.equateSymbols:
-                                aPart.seq[sNum, cNum] = var.EQUATES_BASE + aPart.equateSymbols.index(theChar)
+                                aPart.seq[
+                                    sNum, cNum] = var.EQUATES_BASE + aPart.equateSymbols.index(theChar)
                             else:
-                                aPart.seq[sNum, cNum] = aPart.symbols.index(theChar)
+                                aPart.seq[sNum, cNum] = aPart.symbols.index(
+                                    theChar)
 
         else:
             gm.append("No parts.")
@@ -5696,33 +5751,40 @@ class Alignment(SequenceList):
         complaintHead = 'Alignment.logDet()'
         gm = [complaintHead]
 
-        fastFillFxy = True # in c
+        fastFillFxy = True  # in c
 
         # Check that there is only one partition
-        if not self.nexusSets or not self.nexusSets.charPartition: # its all one part
+        # its all one part
+        if not self.nexusSets or not self.nexusSets.charPartition:
             pass
-        elif self.nexusSets.charPartition and len(self.nexusSets.charPartition.subsets) > 1: # its partitioned.  Bad.
+        # its partitioned.  Bad.
+        elif self.nexusSets.charPartition and len(self.nexusSets.charPartition.subsets) > 1:
             gm = [complaintHead]
-            gm.append("This only works with Alignments having only one data partition.")
+            gm.append(
+                "This only works with Alignments having only one data partition.")
             raise P4Error(gm)
 
         # Check the corrections arg
         goodCorrections = ['L94', 'TK02', 'TK02_eqn10']
         if correction not in goodCorrections:
-            gm.append("The corrections arg should be one of: %s" % goodCorrections)
+            gm.append("The corrections arg should be one of: %s" %
+                      goodCorrections)
             gm.append("Got %s" % correction)
             raise P4Error(gm)
 
         # Check the doPInvarOfConstants arg
         if doPInvarOfConstants not in [True, False]:
-            gm.append("doPInvarOfConstants should be set to either True or False")
+            gm.append(
+                "doPInvarOfConstants should be set to either True or False")
             raise P4Error(gm)
 
         # Check the pInvar or pInvarOfConstants args.  If zero, set to None.
         if doPInvarOfConstants:
             if pInvar:
-                gm.append("doPInvarOfConstants is set, which means that pInvar does not apply.")
-                gm.append("To prove that you are not mixed up, set it to None.")
+                gm.append(
+                    "doPInvarOfConstants is set, which means that pInvar does not apply.")
+                gm.append(
+                    "To prove that you are not mixed up, set it to None.")
                 raise P4Error(gm)
             try:
                 pInvarOfConstants = float(pInvarOfConstants)
@@ -5733,12 +5795,15 @@ class Alignment(SequenceList):
             except TypeError:
                 pInvarOfConstants = None
             if pInvarOfConstants and (pInvarOfConstants < 0.0 or pInvarOfConstants > 1.0):
-                gm.append("pInvarOfConstants, if set, should be between zero and 1.0, inclusive.")
+                gm.append(
+                    "pInvarOfConstants, if set, should be between zero and 1.0, inclusive.")
                 raise P4Error(gm)
         else:
             if pInvarOfConstants:
-                gm.append("doPInvarOfConstants is off, which means that pInvarOfConstants does not apply.")
-                gm.append("To prove that you are not mixed up, set it to None.")
+                gm.append(
+                    "doPInvarOfConstants is off, which means that pInvarOfConstants does not apply.")
+                gm.append(
+                    "To prove that you are not mixed up, set it to None.")
                 raise P4Error(gm)
             try:
                 pInvar = float(pInvar)
@@ -5749,7 +5814,8 @@ class Alignment(SequenceList):
             except TypeError:
                 pInvar = None
             if pInvar and (pInvar < 0.0 or pInvar > 1.0):
-                gm.append("pInvar, if set, should be between zero and 1.0, inclusive.")
+                gm.append(
+                    "pInvar, if set, should be between zero and 1.0, inclusive.")
                 raise P4Error(gm)
 
         # Check the missingCharacterStrategy arg
@@ -5757,7 +5823,8 @@ class Alignment(SequenceList):
         if missingCharacterStrategy in goodMissingCharacterStrategies:
             pass
         else:
-            gm.append("Arg missingCharacterStrategy should be one of %s" % goodMissingCharacterStrategies)
+            gm.append("Arg missingCharacterStrategy should be one of %s" %
+                      goodMissingCharacterStrategies)
             gm.append("Got %s" % missingCharacterStrategy)
             raise P4Error(gm)
 
@@ -5766,7 +5833,8 @@ class Alignment(SequenceList):
         if nonPositiveDetStrategy in goodNonPositiveDetStrategies:
             pass
         else:
-            gm.append("Arg nonPositiveDetStrategy should be one of %s" % goodNonPositiveDetStrategies)
+            gm.append("Arg nonPositiveDetStrategy should be one of %s" %
+                      goodNonPositiveDetStrategies)
             gm.append("Got %s" % nonPositiveDetStrategy)
             raise P4Error(gm)
 
@@ -5782,29 +5850,30 @@ class Alignment(SequenceList):
                 for j in range(self.dim):
                     s = self.symbols[j]
                     if s in e:
-                        equatesArray[i,j] = 1
-            #print "equatesArray = "
-            #print equatesArray
+                        equatesArray[i, j] = 1
+            # print "equatesArray = "
+            # print equatesArray
         else:
             equatesArray = numpy.array([-1], numpy.int32)
 
-        # We need a charsLikeN list, showing characters that are fully ambiguous.
+        # We need a charsLikeN list, showing characters that are fully
+        # ambiguous.
         charsLikeN = []
         if self.equates:
             for i in range(self.nEquates):
                 e = self.equateSymbols[i]
                 isNLike = True
                 for j in range(self.dim):
-                    if not equatesArray[i,j]:
+                    if not equatesArray[i, j]:
                         isNLike = False
                         break
                 if isNLike:
                     charsLikeN.append(e)
         charsLikeN.append('-')
         charsLikeN.append('?')
-        #print "charsLikeN = %s" % charsLikeN
+        # print "charsLikeN = %s" % charsLikeN
 
-        # Make a seq, a numpy array, in which to hold the recoded sequences. 
+        # Make a seq, a numpy array, in which to hold the recoded sequences.
         seq = numpy.zeros((self.nTax, self.nChar), numpy.int8)
         for sNum in range(self.nTax):
             s = self.sequences[sNum]
@@ -5813,16 +5882,18 @@ class Alignment(SequenceList):
                 if theChar in charsLikeN:
                     seq[sNum, cNum] = var.N_LIKE
                 elif self.equates and theChar in self.equates:
-                    seq[sNum, cNum] = var.EQUATES_BASE + self.equateSymbols.index(theChar)
+                    seq[sNum, cNum] = var.EQUATES_BASE + \
+                        self.equateSymbols.index(theChar)
                 else:
                     seq[sNum, cNum] = self.symbols.index(theChar)
-        #print seq
+        # print seq
 
         constComps = None
         constCounts = None
         # Deal with pInvar or pInvarOfConstants, if needed.
-        #print "pInvarOfConstants=%s, %s" % (pInvarOfConstants, pInvarOfConstants != None)
-        if (doPInvarOfConstants==False and pInvar != None) or (doPInvarOfConstants==True and pInvarOfConstants != None):
+        # print "pInvarOfConstants=%s, %s" % (pInvarOfConstants,
+        # pInvarOfConstants != None)
+        if (doPInvarOfConstants == False and pInvar != None) or (doPInvarOfConstants == True and pInvarOfConstants != None):
             # If we are going to do something with constants, then we need
             # to know what sites are constant, if only to get the
             # composition.  If the site contains any gaps or ambigs then
@@ -5830,19 +5901,19 @@ class Alignment(SequenceList):
             constants = numpy.ones(self.nChar, numpy.int32)
             constCounts = numpy.zeros(self.dim, numpy.int32)
             for j in range(self.nChar):
-                theRefChar = seq[0,j]
+                theRefChar = seq[0, j]
                 if theRefChar < 0:
                     constants[j] = 0
                 else:
-                    for i in range(1,self.nTax):
-                        theChar = seq[i,j]
+                    for i in range(1, self.nTax):
+                        theChar = seq[i, j]
                         if theRefChar != theChar:
                             constants[j] = 0
                             break
             for j in range(self.nChar):
                 if constants[j]:
-                    #print "j=%i, seq[0][j]=%s" % (j, seq[0][j])
-                    constCounts[seq[0][j]] +=1
+                    # print "j=%i, seq[0][j]=%s" % (j, seq[0][j])
+                    constCounts[seq[0][j]] += 1
             nConstants = numpy.sum(constants)
             sumOfCounts = float(numpy.sum(constCounts))
             if sumOfCounts:
@@ -5857,22 +5928,24 @@ class Alignment(SequenceList):
             # not used further
             del(constants)
 
-        # The 'refUnambigCountMatrix' array is raw counts of changes between the two sequences.
+        # The 'refUnambigCountMatrix' array is raw counts of changes between
+        # the two sequences.
         refUnambigCountMatrix = numpy.zeros((self.dim, self.dim), numpy.int32)
         normUnambig = numpy.zeros((self.dim, self.dim), numpy.float)
         allSymbolNums = range(self.dim)
-        allSymbolNums += range(var.EQUATES_BASE, var.EQUATES_BASE + self.nEquates)
+        allSymbolNums += range(var.EQUATES_BASE,
+                               var.EQUATES_BASE + self.nEquates)
         allSymbolNums.append(var.N_LIKE)
         allSymbolNums = numpy.array(allSymbolNums, numpy.int32)
-        #print "allSymbolNums = ", allSymbolNums
+        # print "allSymbolNums = ", allSymbolNums
         bigDim = self.dim + 1 + len(self.equates)
-        #print "bigDim = %i" % bigDim
-        refAmbigCountMatrix = numpy.zeros((bigDim, bigDim), numpy.int32) # Int, to keep track of ambiguous changes
-        #normUnambig = zeros((self.dim, self.dim), Float) # 'double' type
+        # print "bigDim = %i" % bigDim
+        # Int, to keep track of ambiguous changes
+        refAmbigCountMatrix = numpy.zeros((bigDim, bigDim), numpy.int32)
+        # normUnambig = zeros((self.dim, self.dim), Float) # 'double' type
         bigFxy = numpy.zeros((self.dim, self.dim), numpy.float)
         fudgeCount = 0
         invertCount = 0
-
 
         if missingCharacterStrategy == 'reduce':
             # When this is set, I may use a reduced matrix, where low-freq
@@ -5890,7 +5963,8 @@ class Alignment(SequenceList):
                 # slow
 
                 #ignores = self._logDetSetReduceIgnores_slow(doPInvarOfConstants, pInvar, pInvarOfConstants, minCompCount, seq, constComps, constCounts, refUnambigCountMatrix, allSymbolNums, bigDim, refAmbigCountMatrix, bigFxy)
-                ignores = self._logDetSetReduceIgnores(doPInvarOfConstants, pInvar, pInvarOfConstants, minCompCount, seq, constComps, constCounts)
+                ignores = self._logDetSetReduceIgnores(
+                    doPInvarOfConstants, pInvar, pInvarOfConstants, minCompCount, seq, constComps, constCounts)
                 if numpy.sum(ignores):
                     hasIgnores = True
                 if 0:
@@ -5901,12 +5975,16 @@ class Alignment(SequenceList):
                     for i in range(self.dim):
                         if not ignores[i]:
                             totalNoIgnores += 1
-                    #print "totalNoIgnores = %i" % totalNoIgnores
+                    # print "totalNoIgnores = %i" % totalNoIgnores
                     if totalNoIgnores < 2:
-                        gm.append("The arg 'missingCharacterStrategy' is set to 'reduce'")
-                        gm.append("The arg 'minCompCount' is turned on, and set to %i." % minCompCount)
-                        gm.append("There is not enough variation in these sequences to make a valid distance.")
-                        gm.append("There are too many sites that will be ignored because of low frequency characters.")
+                        gm.append(
+                            "The arg 'missingCharacterStrategy' is set to 'reduce'")
+                        gm.append(
+                            "The arg 'minCompCount' is turned on, and set to %i." % minCompCount)
+                        gm.append(
+                            "There is not enough variation in these sequences to make a valid distance.")
+                        gm.append(
+                            "There are too many sites that will be ignored because of low frequency characters.")
                         raise P4Error(gm)
                 if 0 and hasIgnores:
                     print "missingCharacterStrategy is set to 'reduce'"
@@ -5915,7 +5993,6 @@ class Alignment(SequenceList):
                         if ignores[i]:
                             print " %s" % self.symbols[i],
                     print "\n"
-
 
         nUnambig = numpy.zeros((1), numpy.int32)
         nAmbig = numpy.zeros((1), numpy.int32)
@@ -5948,19 +6025,20 @@ class Alignment(SequenceList):
                     # involve non-n-like ambiguous chars eg "r-gap", "r-a",
                     # "r-n".
 
-                    # Initialize refUnambigCountMatrix and refAmbigCountMatrix to zeros
-                    if 0: # slow, in python
+                    # Initialize refUnambigCountMatrix and refAmbigCountMatrix
+                    # to zeros
+                    if 0:  # slow, in python
                         for i in range(self.dim):
                             for j in range(self.dim):
-                                refUnambigCountMatrix[i,j] = 0
+                                refUnambigCountMatrix[i, j] = 0
                         for i in range(bigDim):
                             for j in range(bigDim):
-                                refAmbigCountMatrix[i,j] = 0
-                    else: # fast, in c
-                        pf.zeroNumPyInts(refUnambigCountMatrix, (self.dim * self.dim))
-                        pf.zeroNumPyInts(refAmbigCountMatrix, (bigDim * bigDim))
-
-
+                                refAmbigCountMatrix[i, j] = 0
+                    else:  # fast, in c
+                        pf.zeroNumPyInts(
+                            refUnambigCountMatrix, (self.dim * self.dim))
+                        pf.zeroNumPyInts(
+                            refAmbigCountMatrix, (bigDim * bigDim))
 
                     if fastFillFxy:
                         pf.logDetFillFxy(nUnambig,
@@ -5984,12 +6062,14 @@ class Alignment(SequenceList):
                         nAmbig[0] = 0
                         nDoubleGap[0] = 0
 
-                        # Fill the refUnambigCountMatrix and refAmbigCountMatrix arrays, based on the sequences.
+                        # Fill the refUnambigCountMatrix and
+                        # refAmbigCountMatrix arrays, based on the sequences.
                         for i in range(self.nChar):
                             firstChar = firstSeq[i]
                             secondChar = secondSeq[i]
-                            if firstChar >= 0 and secondChar >=0:
-                                refUnambigCountMatrix[firstChar, secondChar] += 1
+                            if firstChar >= 0 and secondChar >= 0:
+                                refUnambigCountMatrix[
+                                    firstChar, secondChar] += 1
                                 nUnambig[0] += 1
                             else:
                                 if firstChar == var.N_LIKE and secondChar == var.N_LIKE:
@@ -6005,7 +6085,8 @@ class Alignment(SequenceList):
                                         if allSymbolNums[j1] == secondChar:
                                             secondIndx = j1
                                             break
-                                    refAmbigCountMatrix[firstIndx, secondIndx] += 1
+                                    refAmbigCountMatrix[
+                                        firstIndx, secondIndx] += 1
                                     nAmbig[0] += 1
 
                         if 0:
@@ -6015,21 +6096,24 @@ class Alignment(SequenceList):
                             print refAmbigCountMatrix
                             print "nChar=%s, nAmbig=%s, nDoubleGap=%s, nUnambig=%s" % (
                                 self.nChar, nAmbig, nDoubleGap, nUnambig)
-                        assert nAmbig[0]+nDoubleGap[0]+nUnambig[0] == self.nChar
+                        assert nAmbig[0] + nDoubleGap[0] + \
+                            nUnambig[0] == self.nChar
 
                         # normUnambig is just the refUnambigCountMatrix array, normalized to sum
                         # to 1.0.  It is only used for reference purposes-- it
                         # does not change.
                         if 1:
-                            normUnambig = refUnambigCountMatrix / float(nUnambig[0])
-                            #print "normUnambig="
-                            #print normUnambig
+                            normUnambig = refUnambigCountMatrix / \
+                                float(nUnambig[0])
+                            # print "normUnambig="
+                            # print normUnambig
                         if 0:
                             for i in range(self.dim):
                                 for j in range(self.dim):
-                                    normUnambig[i][j] = refUnambigCountMatrix[i][j] / float(nUnambig[0])
-                            #print "normUnambig="
-                            #print normUnambig
+                                    normUnambig[i][j] = refUnambigCountMatrix[
+                                        i][j] / float(nUnambig[0])
+                            # print "normUnambig="
+                            # print normUnambig
 
                         # Initialize the "bigFxy" array.  The bigFxy array starts
                         # out as a Float version of the refUnambigCountMatrix array.  Then it is
@@ -6039,199 +6123,273 @@ class Alignment(SequenceList):
                         for i in range(self.dim):
                             for j in range(self.dim):
                                 try:
-                                    bigFxy[i,j] = float(refUnambigCountMatrix[i,j])
+                                    bigFxy[i, j] = float(
+                                        refUnambigCountMatrix[i, j])
                                 except:
-                                    print "xxx i=%i, j=%i" % (i,j)
-                                    print "xxx", refUnambigCountMatrix[i,j]
-                                    print "xxx", float(refUnambigCountMatrix[i,j])
-                                    print "xxx", bigFxy[i,j]
+                                    print "xxx i=%i, j=%i" % (i, j)
+                                    print "xxx", refUnambigCountMatrix[i, j]
+                                    print "xxx", float(refUnambigCountMatrix[i, j])
+                                    print "xxx", bigFxy[i, j]
                                     raise P4Error(gm)
-
 
                         if nAmbig[0]:
                             # Long section on resolving ambiguities.
 
-                            #print "equatesArray = "
-                            #print equatesArray
+                            # print "equatesArray = "
+                            # print equatesArray
 
                             for i in range(bigDim):
                                 for j in range(bigDim):
-                                    na = refAmbigCountMatrix[i,j]
+                                    na = refAmbigCountMatrix[i, j]
                                     if na:
-                                        #print "firstChar=%i, secondChar=%i" % (i,j)
+                                        # print "firstChar=%i, secondChar=%i" %
+                                        # (i,j)
                                         fsum = 0.0
-                                        nSlots = 0  # the number of possible combinations of resolved ambigs.
-                                        if i < self.dim: # firstChar is a symbol
+                                        # the number of possible combinations
+                                        # of resolved ambigs.
+                                        nSlots = 0
+                                        # firstChar is a symbol
+                                        if i < self.dim:
                                             firstChar = self.symbols[i]
-                                            #print "a firstChar = %s" % firstChar
-                                            # secondChar must be N_LIKE or an equateSymbol
+                                            # print "a firstChar = %s" % firstChar
+                                            # secondChar must be N_LIKE or an
+                                            # equateSymbol
                                             if j == bigDim - 1:  # N_LIKE
-                                                #print "a secondChar is N_LIKE"
+                                                # print "a secondChar is
+                                                # N_LIKE"
                                                 for j1 in range(self.dim):
                                                     fsum += normUnambig[i, j1]
                                                     nSlots += 1
                                             elif j >= self.dim:  # an equate
                                                 #secondChar = self.equateSymbols[j - self.dim]
-                                                #print "a secondChar = %s" % secondChar
+                                                # print "a secondChar = %s" %
+                                                # secondChar
                                                 for j1 in range(self.dim):
                                                     if equatesArray[j - self.dim, j1]:
-                                                        #print "    %s %i" % (secondChar, j1)
-                                                        fsum += normUnambig[i, j1]
+                                                        # print "    %s %i" %
+                                                        # (secondChar, j1)
+                                                        fsum += normUnambig[i,
+                                                                            j1]
                                                         nSlots += 1
                                             else:
-                                                raise P4Error("This shouldn't happen. Ambig site, but both chars are non-ambig.")
-                                        elif i == bigDim - 1: # firstChar is N_LIKE
-                                            #print "b firstChar is N_LIKE"
-                                            # secondChar must be either a symbol or an equate
-                                            if j < self.dim: # secondChar is a symbol
+                                                raise P4Error(
+                                                    "This shouldn't happen. Ambig site, but both chars are non-ambig.")
+                                        # firstChar is N_LIKE
+                                        elif i == bigDim - 1:
+                                            # print "b firstChar is N_LIKE"
+                                            # secondChar must be either a
+                                            # symbol or an equate
+                                            # secondChar is a symbol
+                                            if j < self.dim:
                                                 secondChar = self.symbols[j]
-                                                #print "b secondChar = %s" % secondChar
+                                                # print "b secondChar = %s" %
+                                                # secondChar
                                                 for i1 in range(self.dim):
                                                     fsum += normUnambig[i1, j]
                                                     nSlots += 1
                                             elif j == bigDim - 1:
-                                                raise P4Error("This shouldn't happen.  Ambig site with 2 N_LIKEs.  Should be a double gap.")
-                                            else: # secondChar is an equate
-                                                secondChar = self.equateSymbols[j - self.dim]
-                                                #print "b secondChar = %s" % secondChar
+                                                raise P4Error(
+                                                    "This shouldn't happen.  Ambig site with 2 N_LIKEs.  Should be a double gap.")
+                                            else:  # secondChar is an equate
+                                                secondChar = self.equateSymbols[
+                                                    j - self.dim]
+                                                # print "b secondChar = %s" %
+                                                # secondChar
                                                 for i1 in range(self.dim):
                                                     for j1 in range(self.dim):
                                                         if equatesArray[j - self.dim, j1]:
-                                                            #print "    %s %i" % (secondChar, j1)
-                                                            fsum += normUnambig[i1, j1]
+                                                            # print "    %s %i"
+                                                            # % (secondChar,
+                                                            # j1)
+                                                            fsum += normUnambig[
+                                                                i1, j1]
                                                             nSlots += 1
 
                                         else:  # firstChar an equateSymbol
-                                            firstChar = self.equateSymbols[i - self.dim]
-                                            #print "c firstChar = %s" % firstChar
+                                            firstChar = self.equateSymbols[
+                                                i - self.dim]
+                                            # print "c firstChar = %s" %
+                                            # firstChar
 
                                             # secondChar could be anything
-                                            if j < self.dim: # secondChar is a symbol
+                                            # secondChar is a symbol
+                                            if j < self.dim:
                                                 secondChar = self.symbols[j]
-                                                #print "c secondChar = %s" % secondChar
+                                                # print "c secondChar = %s" %
+                                                # secondChar
                                                 for i1 in range(self.dim):
                                                     if equatesArray[i - self.dim, i1]:
-                                                        fsum += normUnambig[i1, j]
+                                                        fsum += normUnambig[
+                                                            i1, j]
                                                         nSlots += 1
 
-                                            elif j == bigDim - 1:  # secondChar is N_LIKE
-                                                #print "c secondChar is N_LIKE"
+                                            # secondChar is N_LIKE
+                                            elif j == bigDim - 1:
+                                                # print "c secondChar is
+                                                # N_LIKE"
                                                 for i1 in range(self.dim):
                                                     if equatesArray[i - self.dim, i1]:
-                                                        #print "%s %i" % (firstChar, i1)
+                                                        # print "%s %i" %
+                                                        # (firstChar, i1)
                                                         for j1 in range(self.dim):
-                                                            fsum += normUnambig[i1,j1]
+                                                            fsum += normUnambig[
+                                                                i1, j1]
                                                             nSlots += 1
 
                                             else:  # secondChar is an equate
-                                                secondChar = self.equateSymbols[j - self.dim]
-                                                #print "c secondChar = %s" % secondChar
+                                                secondChar = self.equateSymbols[
+                                                    j - self.dim]
+                                                # print "c secondChar = %s" %
+                                                # secondChar
                                                 for i1 in range(self.dim):
                                                     if equatesArray[i - self.dim, i1]:
-                                                        #print "%s %i" % (firstChar, i1)
+                                                        # print "%s %i" %
+                                                        # (firstChar, i1)
                                                         for j1 in range(self.dim):
                                                             if equatesArray[j - self.dim, j1]:
-                                                                #print "    %s %i" % (secondChar, j1)
-                                                                fsum += normUnambig[i1,j1]
+                                                                # print "    %s
+                                                                # %i" %
+                                                                # (secondChar,
+                                                                # j1)
+                                                                fsum += normUnambig[
+                                                                    i1, j1]
                                                                 nSlots += 1
 
-                                        #print "fsum=%f, nSlots=%i" % (fsum, nSlots)
+                                        # print "fsum=%f, nSlots=%i" % (fsum,
+                                        # nSlots)
 
                                         if fsum == 0.0:
-                                            #print "bigFxy= "
-                                            #print bigFxy
-                                            #print "nSlots = %i" % nSlots
+                                            # print "bigFxy= "
+                                            # print bigFxy
+                                            # print "nSlots = %i" % nSlots
                                             oneOverNSlots = 1.0 / nSlots
-                                            if i < self.dim: # firstChar is a symbol
-                                                # secondChar must be N_LIKE or an equateSymbol
+                                            # firstChar is a symbol
+                                            if i < self.dim:
+                                                # secondChar must be N_LIKE or
+                                                # an equateSymbol
                                                 if j == bigDim - 1:  # N_LIKE
                                                     for j1 in range(self.dim):
-                                                        bigFxy[i,j1] += na * oneOverNSlots
-                                                elif j >= self.dim:  # an equate
+                                                        bigFxy[
+                                                            i, j1] += na * oneOverNSlots
+                                                # an equate
+                                                elif j >= self.dim:
                                                     for j1 in range(self.dim):
                                                         if equatesArray[j - self.dim, j1]:
-                                                            bigFxy[i,j1] += na * oneOverNSlots
+                                                            bigFxy[
+                                                                i, j1] += na * oneOverNSlots
                                                 else:
-                                                    raise P4Error("This shouldn't happen")
-                                            elif i == bigDim - 1: # firstChar is N_LIKE
-                                                # secondChar must be either a symbol or an equate
-                                                if j < self.dim: # secondChar is a symbol
+                                                    raise P4Error(
+                                                        "This shouldn't happen")
+                                            # firstChar is N_LIKE
+                                            elif i == bigDim - 1:
+                                                # secondChar must be either a
+                                                # symbol or an equate
+                                                # secondChar is a symbol
+                                                if j < self.dim:
                                                     for i1 in range(self.dim):
-                                                        bigFxy[i1,j] += na * oneOverNSlots
+                                                        bigFxy[
+                                                            i1, j] += na * oneOverNSlots
                                                 elif j == bigDim - 1:
-                                                    raise P4Error("This shouldn't happen.")
-                                                else: # secondChar is an equate
+                                                    raise P4Error(
+                                                        "This shouldn't happen.")
+                                                # secondChar is an equate
+                                                else:
                                                     for i1 in range(self.dim):
                                                         for j1 in range(self.dim):
                                                             if equatesArray[j - self.dim, j1]:
-                                                                bigFxy[i1,j1] += na * oneOverNSlots
+                                                                bigFxy[
+                                                                    i1, j1] += na * oneOverNSlots
 
                                             else:  # firstChar an equateSymbol
                                                 # secondChar could be anything
-                                                if j < self.dim: # secondChar is a symbol
+                                                # secondChar is a symbol
+                                                if j < self.dim:
                                                     for i1 in range(self.dim):
                                                         if equatesArray[i - self.dim, i1]:
-                                                            bigFxy[i1,j] += na * oneOverNSlots
-                                                elif j == bigDim - 1:  # secondChar is N_LIKE
+                                                            bigFxy[
+                                                                i1, j] += na * oneOverNSlots
+                                                # secondChar is N_LIKE
+                                                elif j == bigDim - 1:
                                                     for i1 in range(self.dim):
                                                         if equatesArray[i - self.dim, i1]:
                                                             for j1 in range(self.dim):
-                                                                bigFxy[i1,j1] += na * oneOverNSlots
+                                                                bigFxy[
+                                                                    i1, j1] += na * oneOverNSlots
 
-                                                else:  # secondChar is an equate
+                                                # secondChar is an equate
+                                                else:
                                                     for i1 in range(self.dim):
                                                         if equatesArray[i - self.dim, i1]:
                                                             for j1 in range(self.dim):
                                                                 if equatesArray[j - self.dim, j1]:
-                                                                    bigFxy[i1,j1] += na * oneOverNSlots
+                                                                    bigFxy[
+                                                                        i1, j1] += na * oneOverNSlots
 
-                                        else: # fsum is not zero
-                                            if i < self.dim: # firstChar is a symbol
-                                                # secondChar must be N_LIKE or an equateSymbol
+                                        else:  # fsum is not zero
+                                            # firstChar is a symbol
+                                            if i < self.dim:
+                                                # secondChar must be N_LIKE or
+                                                # an equateSymbol
                                                 if j == bigDim - 1:  # N_LIKE
                                                     for j1 in range(self.dim):
-                                                        bigFxy[i,j1] += na * normUnambig[i, j1] / fsum
-                                                elif j >= self.dim:  # an equate
+                                                        bigFxy[
+                                                            i, j1] += na * normUnambig[i, j1] / fsum
+                                                # an equate
+                                                elif j >= self.dim:
                                                     for j1 in range(self.dim):
                                                         if equatesArray[j - self.dim, j1]:
-                                                            bigFxy[i,j1] += na * normUnambig[i, j1] / fsum
+                                                            bigFxy[
+                                                                i, j1] += na * normUnambig[i, j1] / fsum
                                                 else:
-                                                    raise P4Error("This shouldn't happen")
-                                            elif i == bigDim - 1: # firstChar is N_LIKE
-                                                # secondChar must be either a symbol or an equate
-                                                if j < self.dim: # secondChar is a symbol
+                                                    raise P4Error(
+                                                        "This shouldn't happen")
+                                            # firstChar is N_LIKE
+                                            elif i == bigDim - 1:
+                                                # secondChar must be either a
+                                                # symbol or an equate
+                                                # secondChar is a symbol
+                                                if j < self.dim:
                                                     for i1 in range(self.dim):
-                                                        bigFxy[i1,j] += na * normUnambig[i1, j] / fsum
+                                                        bigFxy[
+                                                            i1, j] += na * normUnambig[i1, j] / fsum
                                                 elif j == bigDim - 1:
-                                                    raise P4Error("This shouldn't happen.")
-                                                else: # secondChar is an equate
+                                                    raise P4Error(
+                                                        "This shouldn't happen.")
+                                                # secondChar is an equate
+                                                else:
                                                     for i1 in range(self.dim):
                                                         for j1 in range(self.dim):
                                                             if equatesArray[j - self.dim, j1]:
-                                                                bigFxy[i1,j1] += na * normUnambig[i1, j1] / fsum
+                                                                bigFxy[
+                                                                    i1, j1] += na * normUnambig[i1, j1] / fsum
 
                                             else:  # firstChar an equateSymbol
                                                 # secondChar could be anything
-                                                if j < self.dim: # secondChar is a symbol
+                                                # secondChar is a symbol
+                                                if j < self.dim:
                                                     for i1 in range(self.dim):
                                                         if equatesArray[i - self.dim, i1]:
-                                                            bigFxy[i1,j] += na * normUnambig[i1, j] / fsum
-                                                elif j == bigDim - 1:  # secondChar is N_LIKE
+                                                            bigFxy[
+                                                                i1, j] += na * normUnambig[i1, j] / fsum
+                                                # secondChar is N_LIKE
+                                                elif j == bigDim - 1:
                                                     for i1 in range(self.dim):
                                                         if equatesArray[i - self.dim, i1]:
                                                             for j1 in range(self.dim):
-                                                                bigFxy[i1,j1] += na * normUnambig[i1, j1] / fsum
+                                                                bigFxy[
+                                                                    i1, j1] += na * normUnambig[i1, j1] / fsum
 
-                                                else:  # secondChar is an equate
+                                                # secondChar is an equate
+                                                else:
                                                     for i1 in range(self.dim):
                                                         if equatesArray[i - self.dim, i1]:
                                                             for j1 in range(self.dim):
                                                                 if equatesArray[j - self.dim, j1]:
-                                                                    bigFxy[i1,j1] += na * normUnambig[i1, j1] / fsum
+                                                                    bigFxy[
+                                                                        i1, j1] += na * normUnambig[i1, j1] / fsum
                                         if 0:
                                             print "bigFxy= (after partial ambig resolution)"
                                             print bigFxy
-
 
                         # End of the long section on resolving ambiguities.
                     # End of the long "else" clause to "if fastFillFxy:"
@@ -6241,12 +6399,16 @@ class Alignment(SequenceList):
                         print bigFxy
 
                     # pInvar stuff
-                    if doPInvarOfConstants==False and pInvar != None: # paup-like
-                        nSitesToRemove = pInvar * bigFxy.sum() # sums over both axes
-                        #print "pInvar=%s, nSitesToRemove=%s" % (pInvar, nSitesToRemove)
+                    # paup-like
+                    if doPInvarOfConstants == False and pInvar != None:
+                        # sums over both axes
+                        nSitesToRemove = pInvar * bigFxy.sum()
+                        # print "pInvar=%s, nSitesToRemove=%s" % (pInvar,
+                        # nSitesToRemove)
                         for i in range(self.dim):
                             bigFxy[i][i] -= constComps[i] * nSitesToRemove
-                    elif doPInvarOfConstants==True and pInvarOfConstants != None: # LDDist-like
+                    # LDDist-like
+                    elif doPInvarOfConstants == True and pInvarOfConstants != None:
                         for i in range(self.dim):
                             bigFxy[i][i] -= constCounts[i] * pInvarOfConstants
 
@@ -6260,19 +6422,20 @@ class Alignment(SequenceList):
                         # smaller.
                         minPositiveOnDiag = 1.0
                         for i in range(self.dim):
-                            if bigFxy[i,i] > 0.0 and bigFxy[i,i] < minPositiveOnDiag:
-                                minPositiveOnDiag = bigFxy[i,i]
+                            if bigFxy[i, i] > 0.0 and bigFxy[i, i] < minPositiveOnDiag:
+                                minPositiveOnDiag = bigFxy[i, i]
                         minPositiveOnDiag /= 2.0
                         for i in range(self.dim):
-                            if bigFxy[i,i] < minPositiveOnDiag:
-                                bigFxy[i,i] = minPositiveOnDiag
+                            if bigFxy[i, i] < minPositiveOnDiag:
+                                bigFxy[i, i] = minPositiveOnDiag
                                 fudgeCount += 1
                         theFxy = bigFxy
 
                     elif missingCharacterStrategy == 'reduce':
                         if minCompCount and hasIgnores:
                             # make a smaller matrix
-                            smallerFxy = numpy.zeros((totalNoIgnores, totalNoIgnores), numpy.float)
+                            smallerFxy = numpy.zeros(
+                                (totalNoIgnores, totalNoIgnores), numpy.float)
                             i2 = 0
                             for i in range(self.dim):
                                 if ignores[i]:
@@ -6283,12 +6446,13 @@ class Alignment(SequenceList):
                                         if ignores[j]:
                                             pass
                                         else:
-                                            #print "(%i, %i) -> (%i, %i)" % (i,j,i2,j2)
-                                            smallerFxy[i2,j2] = bigFxy[i,j]
+                                            # print "(%i, %i) -> (%i, %i)" %
+                                            # (i,j,i2,j2)
+                                            smallerFxy[i2, j2] = bigFxy[i, j]
                                             j2 += 1
                                     i2 += 1
-                            #print "smallerFxy ="
-                            #print smallerFxy
+                            # print "smallerFxy ="
+                            # print smallerFxy
                             theFxy = smallerFxy
                         else:
                             theFxy = bigFxy
@@ -6305,15 +6469,14 @@ class Alignment(SequenceList):
 
                     # Calculate the logDet, from the theFxy and from the bigPi
                     theDet = numpy.linalg.det(theFxy)
-                    #print "theDet from theFxy is %f" % theDet
+                    # print "theDet from theFxy is %f" % theDet
 
-
-                    #if theDet <= 0.0:
+                    # if theDet <= 0.0:
                     #    print "Got non-positive logDet."
 
                     if nonPositiveDetStrategy == 'invert':
                         theDet = numpy.fabs(theDet)
-                        if theDet < 1e-50: # eg zero
+                        if theDet < 1e-50:  # eg zero
                             theDet = 1e-50
                             invertCount += 1
 
@@ -6329,7 +6492,7 @@ class Alignment(SequenceList):
                             print bigPiY, type(bigPiY)
                         det_bigPiX = numpy.multiply.reduce(bigPiX)
                         det_bigPiY = numpy.multiply.reduce(bigPiY)
-                        #print det_bigPiX, det_bigPiY
+                        # print det_bigPiX, det_bigPiY
                         if det_bigPiX <= 0.0 or det_bigPiY <= 0.0:
                             if missingCharacterStrategy == 'refuse':
                                 d.matrix[sNum1][sNum2] = -1.0
@@ -6339,16 +6502,22 @@ class Alignment(SequenceList):
                                 if 0:
                                     gm.append("sumTheFxy = %f" % sumTheFxy)
                                     if missingCharacterStrategy == 'reduce':
-                                        gm.append("reduce is on. hasIgnores=%s" % hasIgnores)
+                                        gm.append(
+                                            "reduce is on. hasIgnores=%s" % hasIgnores)
                                         gm.append("ignores = %s" % ignores)
-                                    gm.append("sum(bigPiX)=%s, sum(bigPiY)=%s" % (numpy.sum(bigPiX), numpy.sum(bigPiY)))
+                                    gm.append(
+                                        "sum(bigPiX)=%s, sum(bigPiY)=%s" % (numpy.sum(bigPiX), numpy.sum(bigPiY)))
                                     gm.append("symbols = %s" % self.symbols)
-                                    gm.append("sNum1=%i, sNum2=%i" % (sNum1, sNum2))
+                                    gm.append("sNum1=%i, sNum2=%i" %
+                                              (sNum1, sNum2))
                                     gm.append("bigPiX = %s" % bigPiX)
                                     gm.append("bigPiY=%s" % bigPiY)
-                                    gm.append("det_bigPiX = %s, det_bigPiY=%s" % (det_bigPiX, det_bigPiY))
-                                    gm.append("Got bad Pi det due to missing char(s).")
-                                    gm.append("This should not happen-- programming error.")
+                                    gm.append(
+                                        "det_bigPiX = %s, det_bigPiY=%s" % (det_bigPiX, det_bigPiY))
+                                    gm.append(
+                                        "Got bad Pi det due to missing char(s).")
+                                    gm.append(
+                                        "This should not happen-- programming error.")
                                     raise P4Error(gm)
                                 if 1:
                                     i2 = 0
@@ -6364,41 +6533,49 @@ class Alignment(SequenceList):
                                                 hasNewIgnores = True
                                             i2 += 1
                                     assert hasNewIgnores, "If not hasNewIgnores, why are we here?"
-                                    #print "Added a new ignore, starting over ..."
+                                    # print "Added a new ignore, starting over
+                                    # ..."
                                     totalNoIgnores = 0
                                     for i in range(self.dim):
                                         if not ignores[i]:
                                             totalNoIgnores += 1
-                                    #print "totalNoIgnores = %i" % totalNoIgnores
+                                    # print "totalNoIgnores = %i" %
+                                    # totalNoIgnores
                                     if totalNoIgnores < 2:
                                         if 0:
-                                            gm.append("The arg 'missingCharacterStrategy' is set to 'reduce'")
-                                            gm.append("The arg 'minCompCount' is turned on, and set to %i." % minCompCount)
-                                            gm.append("There is not enough variation in these sequences to make a valid distance.")
-                                            gm.append("There are too many sites that will be ignored because of low frequency characters.")
+                                            gm.append(
+                                                "The arg 'missingCharacterStrategy' is set to 'reduce'")
+                                            gm.append(
+                                                "The arg 'minCompCount' is turned on, and set to %i." % minCompCount)
+                                            gm.append(
+                                                "There is not enough variation in these sequences to make a valid distance.")
+                                            gm.append(
+                                                "There are too many sites that will be ignored because of low frequency characters.")
                                             raise P4Error(gm)
                                         else:
                                             return None
                                     break
 
-
-
-
                         else:  # det_bigPiX and det_bigPiY are over zero
-                            # If we have been using a reduced Fxy, then self.dim is no longer appropriate.
+                            # If we have been using a reduced Fxy, then
+                            # self.dim is no longer appropriate.
                             reducedDim = len(bigPiX)
 
                             if 0:
-                                # This section works, but is not very clear.  Re-written below
-                                theLogDet = numpy.log(theDet) - 0.5 * numpy.log(det_bigPiX) - 0.5 * numpy.log(det_bigPiY)
+                                # This section works, but is not very clear.
+                                # Re-written below
+                                theLogDet = numpy.log(
+                                    theDet) - 0.5 * numpy.log(det_bigPiX) - 0.5 * numpy.log(det_bigPiY)
 
                                 if correction == 'L94':
                                     theCorrection = reducedDim
-                                elif correction == 'TK02': # from LDDist
+                                elif correction == 'TK02':  # from LDDist
                                     squareSum = 0.0
                                     for i in range(reducedDim):
-                                        squareSum += (bigPiX[i] + bigPiY[i]) * (bigPiX[i] + bigPiY[i])
-                                    theCorrection = (reducedDim - 1) / (1.0 - squareSum/4.0)
+                                        squareSum += (bigPiX[i] + bigPiY[i]
+                                                      ) * (bigPiX[i] + bigPiY[i])
+                                    theCorrection = (
+                                        reducedDim - 1) / (1.0 - squareSum / 4.0)
                                 if 0:
                                     print "theDet = %g" % theDet
                                     print "theLogDet = %f" % theLogDet
@@ -6408,30 +6585,42 @@ class Alignment(SequenceList):
                                 theLogDet = -theLogDet
 
                             if 1:
-                                if correction == 'L94':  # equation 3, pg 606, in L94
-                                    theLogDet = -numpy.log(theDet) + (numpy.log(det_bigPiX) + numpy.log(det_bigPiY))/2.0
+                                # equation 3, pg 606, in L94
+                                if correction == 'L94':
+                                    theLogDet = - \
+                                        numpy.log(
+                                            theDet) + (numpy.log(det_bigPiX) + numpy.log(det_bigPiY)) / 2.0
                                     theLogDet /= reducedDim
-                                elif correction == 'TK02': # equation 11, page 1729, in TK02
-                                    theLogDet = numpy.log(theDet) - (0.5 *(numpy.log(det_bigPiX) + numpy.log(det_bigPiY)))
+                                # equation 11, page 1729, in TK02
+                                elif correction == 'TK02':
+                                    theLogDet = numpy.log(
+                                        theDet) - (0.5 * (numpy.log(det_bigPiX) + numpy.log(det_bigPiY)))
                                     squareSum = 0.0
                                     for i in range(reducedDim):
-                                        thePi = (bigPiX[i] + bigPiY[i])/2.0
+                                        thePi = (bigPiX[i] + bigPiY[i]) / 2.0
                                         squareSum += thePi * thePi
-                                    theLogDet = -((1.0 - squareSum)/(reducedDim - 1)) * theLogDet
+                                    theLogDet = - \
+                                        ((1.0 - squareSum) /
+                                         (reducedDim - 1)) * theLogDet
                                 elif correction == 'TK02_eqn10':
-                                    theLogDet = -(1./reducedDim)*numpy.log(theDet) - numpy.log(reducedDim)
+                                    theLogDet = - \
+                                        (1. / reducedDim) * numpy.log(theDet) - \
+                                        numpy.log(reducedDim)
 
                             # dset allsitesmean=yes
-                            if doPInvarOfConstants==True and pInvarOfConstants != None:
-                                theLogDet *= 1.0 - (pInvarOfConstants * nConstants)/self.nChar
-                            if doPInvarOfConstants==False and pInvar != None:
+                            if doPInvarOfConstants == True and pInvarOfConstants != None:
+                                theLogDet *= 1.0 - \
+                                    (pInvarOfConstants * nConstants) / \
+                                    self.nChar
+                            if doPInvarOfConstants == False and pInvar != None:
                                 theLogDet *= 1.0 - pInvar
 
                             if theLogDet < 0.0:
-                                gm.append("Got negative logDet (%f).  This should not happen." % theLogDet)
+                                gm.append(
+                                    "Got negative logDet (%f).  This should not happen." % theLogDet)
                                 raise P4Error(gm)
 
-                            #return theLogDet
+                            # return theLogDet
                             d.matrix[sNum1][sNum2] = theLogDet
                             d.matrix[sNum2][sNum1] = theLogDet
                     else:
@@ -6440,11 +6629,11 @@ class Alignment(SequenceList):
                             d.matrix[sNum2][sNum1] = -1.0
                             nUndefinedLogDets += 1
                         else:
-                            gm.append("This should never happen.  Programming error.")
+                            gm.append(
+                                "This should never happen.  Programming error.")
                             raise P4Error(gm)
 
         # End of the main pairwise loop
-
 
         if (missingCharacterStrategy == 'refuse' or nonPositiveDetStrategy == 'refuse') and nUndefinedLogDets:
             if nUndefinedLogDets == ((d.dim * d.dim) - d.dim) / 2:
@@ -6453,7 +6642,8 @@ class Alignment(SequenceList):
                     raise P4Error(gm)
                 else:
                     return None
-            #print "xyz There were %i undefined distances." % nUndefinedLogDets
+            # print "xyz There were %i undefined distances." %
+            # nUndefinedLogDets
             biggest = 0.0
             for sNum1 in range(self.nTax - 1):
                 for sNum2 in range(sNum1 + 1, self.nTax):
@@ -6462,7 +6652,7 @@ class Alignment(SequenceList):
             biggest *= 2.0
             for sNum1 in range(self.nTax - 1):
                 for sNum2 in range(sNum1 + 1, self.nTax):
-                    if numpy.fabs(d.matrix[sNum1][sNum2] -  -1.0) < 1e-10:
+                    if numpy.fabs(d.matrix[sNum1][sNum2] - -1.0) < 1e-10:
                         d.matrix[sNum1][sNum2] = biggest
                         d.matrix[sNum2][sNum1] = biggest
 
@@ -6470,20 +6660,26 @@ class Alignment(SequenceList):
         dMessage.append("Log det distances from p4.")
         dMessage.append("Correction from %s" % correction)
         if doPInvarOfConstants:
-            dMessage.append("doPInvarOfConstants is set, and pInvarOfConstants is %s" % (pInvarOfConstants))
+            dMessage.append(
+                "doPInvarOfConstants is set, and pInvarOfConstants is %s" % (pInvarOfConstants))
         else:
-            dMessage.append("doPInvarOfConstants is off, and pInvar is %s" % (pInvar))
-        dMessage.append("The missingCharacterStrategy is set to '%s'." % missingCharacterStrategy)
+            dMessage.append(
+                "doPInvarOfConstants is off, and pInvar is %s" % (pInvar))
+        dMessage.append(
+            "The missingCharacterStrategy is set to '%s'." % missingCharacterStrategy)
         if missingCharacterStrategy == 'fudge':
             dMessage.append("    Did %i fudges." % fudgeCount)
         if missingCharacterStrategy == 'reduce':
             dMessage.append("    minCompCount = %i" % minCompCount)
             if hasIgnores:
-                theIgnored = [self.symbols[i] for i in range(self.dim) if ignores[i]]
-                dMessage.append("    These symbols were ignored: %s" % theIgnored)
+                theIgnored = [self.symbols[i]
+                              for i in range(self.dim) if ignores[i]]
+                dMessage.append(
+                    "    These symbols were ignored: %s" % theIgnored)
             else:
                 dMessage.append("    No chars were ignored.")
-        dMessage.append("The nonPositiveDetStrategy is set to '%s'." % nonPositiveDetStrategy)
+        dMessage.append(
+            "The nonPositiveDetStrategy is set to '%s'." % nonPositiveDetStrategy)
         if nonPositiveDetStrategy == 'invert':
             dMessage.append("    %i dets were inverted." % invertCount)
         if nonPositiveDetStrategy == 'refuse' or missingCharacterStrategy == 'refuse':
@@ -6496,7 +6692,7 @@ class Alignment(SequenceList):
 
         return d
 
-    def  _logDetSetReduceIgnores(self, doPInvarOfConstants, pInvar, pInvarOfConstants, minCompCount, seq, constComps, constCounts):
+    def _logDetSetReduceIgnores(self, doPInvarOfConstants, pInvar, pInvarOfConstants, minCompCount, seq, constComps, constCounts):
         """Called by logDet when the missingCharactersStrategy is 'reduce'
 
         Make the ignores vector by going thru each sequence, not thru each
@@ -6504,35 +6700,33 @@ class Alignment(SequenceList):
         can miss ignores, but it is a lot faster than the slow version of
         this method.  """
 
-
         ignores = numpy.zeros(self.dim, numpy.int32)
         counts = numpy.zeros(self.dim, numpy.int32)
         for sNum in range(self.nTax):
-            #print "sNum = %i" % sNum
+            # print "sNum = %i" % sNum
             theSeq = seq[sNum]
             for i in range(self.dim):
                 counts[i] = 0
             for cNum in range(self.nChar):
                 if theSeq[cNum] >= 0:
                     counts[theSeq[cNum]] += 1
-            #print "counts = %s" % counts
+            # print "counts = %s" % counts
 
             # pInvar stuff
-            if doPInvarOfConstants==False and pInvar != None: # paup-like
+            if doPInvarOfConstants == False and pInvar != None:  # paup-like
                 nSitesToRemove = pInvar * numpy.sum(counts)
-                #print "pInvar=%s, nSitesToRemove=%s" % (pInvar, nSitesToRemove)
+                # print "pInvar=%s, nSitesToRemove=%s" % (pInvar,
+                # nSitesToRemove)
                 for i in range(self.dim):
                     counts[i] -= constComps[i] * nSitesToRemove
-            elif doPInvarOfConstants==True and pInvarOfConstants != None: # LDDist-like
+            # LDDist-like
+            elif doPInvarOfConstants == True and pInvarOfConstants != None:
                 for i in range(self.dim):
                     counts[i] -= constCounts[i] * pInvarOfConstants
 
-            #print "counts = %s" % counts
+            # print "counts = %s" % counts
 
             for i in range(self.dim):
                 if counts[i] < minCompCount:
                     ignores[i] = 1
         return ignores
-
-
-

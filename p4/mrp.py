@@ -23,7 +23,7 @@ def mrp(trees, taxNames=None):
     This returns an alignment, with a character set for each input tree.
 
     For example, you might say::
-      
+
       read('myTrees.phy')
       a = mrp(var.trees)
       a.writeNexus('a.nex')
@@ -37,7 +37,7 @@ def mrp(trees, taxNames=None):
         if not isinstance(t, Tree):
             gm.append("The 'trees' arg should be a list of p4 tree objects.")
             raise P4Error(gm)
-    
+
     myTaxNames = []
     for t in trees:
         for n in t.iterLeavesNoRoot():
@@ -50,7 +50,8 @@ def mrp(trees, taxNames=None):
             print suppliedTaxNamesSet
             print myTaxNamesSet
             symDiff = myTaxNamesSet.symmetric_difference(suppliedTaxNamesSet)
-            gm.append("The taxNames list supplied does not represent the taxa in the input trees.")
+            gm.append(
+                "The taxNames list supplied does not represent the taxa in the input trees.")
             gm.append("The symmetric difference is:")
             gm.append(symDiff)
             raise P4Error(gm)
@@ -84,7 +85,7 @@ def mrp(trees, taxNames=None):
                             x = x | y
                     except AttributeError:
                         print "t.preAndPostOrderAreValid = %s" % t.preAndPostOrderAreValid
-                        #t.draw()
+                        # t.draw()
                         print "n is nodeNum %i" % n.nodeNum
                         print "childrenNums = %s" % childrenNums
                         raise AttributeError
@@ -106,7 +107,8 @@ def mrp(trees, taxNames=None):
         gm = ["mrp().  No splits were found in the input trees."]
         gm.append("That does not work.")
         raise P4Error(gm)
-    a = func.newEmptyAlignment(dataType='standard', symbols='01', taxNames=taxNames, length=nSplits)
+    a = func.newEmptyAlignment(
+        dataType='standard', symbols='01', taxNames=taxNames, length=nSplits)
     a.setNexusSets()
     for s in a.sequences:
         s.sequence = list(s.sequence)
@@ -149,14 +151,14 @@ def mrp(trees, taxNames=None):
         s.sequence = ''.join(s.sequence)
     return a
 
-                    
+
 def reverseMrp(alignment):
     """Reconstruct trees from a matrix representation.
 
     This needs character sets, one for each tree.
 
     You might say::
-    
+
       read('a.nex')          # read the matrix representation in
       a = var.alignments[0]  # give the alignment a name
       a.setNexusSets()       # apply var.nexusSets to the alignment
@@ -172,22 +174,22 @@ def reverseMrp(alignment):
     tRange = range(len(a.taxNames))
     tt = []
     for cs in a.nexusSets.charSets:
-        #print cs.name
-        #cs.dump()
-        #cs.vectorize()
+        # print cs.name
+        # cs.dump()
+        # cs.vectorize()
         vPos = 0
         while cs.mask[vPos] == '0':
             vPos += 1
         firstVPos = vPos
         firstSite = a.sequenceSlice(vPos)
-        #print firstSite
+        # print firstSite
         thisTNames = []
         tNums = []
         for tPos in tRange:
             if firstSite[tPos] != '?':
                 thisTNames.append(a.taxNames[tPos])
                 tNums.append(tPos)
-        #print thisTNames
+        # print thisTNames
 
         csMaskChar = cs.mask[vPos]
         while 1:
@@ -195,9 +197,11 @@ def reverseMrp(alignment):
                 st = a.sequenceSlice(vPos)
                 for tPos in tRange:
                     if st[tPos] == '?':
-                        assert tPos not in tNums, "bad site %i, taxon %s" % (vPos, a.taxNames[tPos])
+                        assert tPos not in tNums, "bad site %i, taxon %s" % (
+                            vPos, a.taxNames[tPos])
                     else:
-                        assert tPos in tNums, "bad site %i, taxon %s" % (vPos, a.taxNames[tPos])
+                        assert tPos in tNums, "bad site %i, taxon %s" % (
+                            vPos, a.taxNames[tPos])
             vPos += 1
             try:
                 csMaskChar = cs.mask[vPos]
@@ -223,11 +227,9 @@ def reverseMrp(alignment):
                 csMaskChar = cs.mask[vPos]
             except IndexError:
                 break
-        #print partitions
+        # print partitions
         tp = TreePartitions()
         t = tp.makeTreeFromPartitions(partitions, taxNames=thisTNames)
-        t.name = cs.name 
+        t.name = cs.name
         tt.append(t)
     return tt
-        
-

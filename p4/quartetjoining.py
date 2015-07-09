@@ -3,7 +3,7 @@ import func
 from func import read
 from var import var
 from tree import Tree
-from node import Node,NodeBranch
+from node import Node, NodeBranch
 import sys
 import random
 import copy
@@ -13,7 +13,8 @@ import math
 
 # I suppose if there are input trees whose tax sets are equal to or subsets
 # of the current bigT, then they need not ever be considered again and
-# could be removed from the list of input trees also. Or rather put on a list of ignores.
+# could be removed from the list of input trees also. Or rather put on a
+# list of ignores.
 
 # On Mon, Oct 19, 2009 at 2:17 PM, mark wilkinson <mw@bmnh.org> wrote:
 # > Do you have any prioritisation of the order in which leaves are added.  For
@@ -24,7 +25,9 @@ import math
 BIG_T_COLOUR = 'RED'
 INPUT_T_COLOUR = 'blue'
 
+
 class QJTax(object):
+
     def __init__(self, taxName):
         self.num = None
         self.name = taxName
@@ -52,7 +55,7 @@ class QJTax(object):
 # like a taxon in some descriptions below, and so I refer to "kx" for
 # example.  The k there would mean one of the taxa on the
 # k-subtree in bigT, and that subtree would be identified by the
-# k-number.  
+# k-number.
 #
 # Since we know the node in bigT, and we know x, then a quartet is
 # adequately described by a number, one of 0, 1, or 2 -- that is the
@@ -71,21 +74,27 @@ class QJTax(object):
 ####################################################################
 
 
-
 class QJQuartet(object):
     # This is used only when adding x-subtrees.
 
     def __init__(self, theTree, theNode, k, xAndKAreAbove):
         self.tree = theTree  # the input tree, not bigT
-        self.node = theNode  # the node on self.tree, with quartet ij|kx, with ij on one side and kx on the other
-        self.k = k           # The k-number.-- 0, 1, or 2, indicating a subtree in bigT
+        # the node on self.tree, with quartet ij|kx, with ij on one side and kx
+        # on the other
+        self.node = theNode
+        # The k-number.-- 0, 1, or 2, indicating a subtree in bigT
+        self.k = k
         # I am not quite sure that this next bit is useful.  Might be dropped
-        self.xAndKAreAbove = xAndKAreAbove         # True or False.  If kx is above then it would be True.
+        # True or False.  If kx is above then it would be True.
+        self.xAndKAreAbove = xAndKAreAbove
         # These next 2 have to do with making a smaller x-subtree,
         # making sure that it contains no polytomies nor any other
         # taxa from bigT.
-        self.xNode = None    # The node on self.tree at the origin of the x-subtree
-        self.up = None       # Whether the x-subtree goes up or down from the xNode.
+        # The node on self.tree at the origin of the x-subtree
+        self.xNode = None
+        # Whether the x-subtree goes up or down from the xNode.
+        self.up = None
+
     def dump(self):
         print "QJQuartet.dump()."
         print "node is node %i," % self.node.nodeNum,
@@ -93,18 +102,22 @@ class QJQuartet(object):
         print " xAndKAreAbove = %s" % self.xAndKAreAbove
         self.tree.draw()
 
+
 class QJDiagnostics(object):
     # For debugging.  If the QuartetJoining object has diagn set, eg
     # as qj.diagn = 1, then each time the quartetJoining() method is
     # called it instantiates a new QJDiagnostics object.  Completely
     # flexible.  All this will be deleted when everything works.
+
     def __init__(self):
         pass
+
     def dump(self):
         print self.__dict__
 
 
 class QuartetJoining(object):
+
     """Mark Wilkinson's fast supertree method.
 
     You feed this a list of p4 Tree objects.
@@ -121,23 +134,25 @@ class QuartetJoining(object):
     qjt.writeNexus('myQJTree.nex')
 
     """
-    
+
     def __init__(self, theTrees):
 
         gm = ['QuartetJoining.__init__()']
         # Check the input trees.
-        assert type(theTrees) == type([]), "Arg theTrees should be a list of p4 tree objects."
+        assert type(theTrees) == type(
+            []), "Arg theTrees should be a list of p4 tree objects."
         for t in theTrees:
-            assert isinstance(t, Tree), "Input trees should be p4 Tree objects.  Got %s" % t
+            assert isinstance(
+                t, Tree), "Input trees should be p4 Tree objects.  Got %s" % t
             rootNChildren = t.root.getNChildren()
             if rootNChildren == 2:
                 t.write()
-                gm.append('This input tree has a bifurcating root.  Not allowed.')
+                gm.append(
+                    'This input tree has a bifurcating root.  Not allowed.')
                 raise P4Error(gm)
             if not t.taxNames:
                 t.taxNames = [n.name for n in t.iterLeavesNoRoot()]
         self.trees = theTrees
-
 
         # Make a list of taxa that are found in all the trees.  We
         # have a list of names, and a corresponding list of Tax
@@ -164,7 +179,7 @@ class QuartetJoining(object):
                         theQJTax.nTrees = 1
                         self.taxa.append(theQJTax)
                         self.taxaDict[tName] = theQJTax
-        
+
         # Set the bitKey for each Tax object.
         for i in range(len(self.taxa)):
             tx = self.taxa[i]
@@ -182,7 +197,7 @@ class QuartetJoining(object):
             #t.nLosers = 0
 
         # A useful binary number.
-        self.allOnes = 2L**(len(self.taxNames)) - 1
+        self.allOnes = 2L ** (len(self.taxNames)) - 1
 
         # The supertree is made by the quartetJoining() method.
         self.bigT = None
@@ -237,7 +252,7 @@ class QuartetJoining(object):
         self.addHighFrequencyTaxaFirst = False
 
         # Write a dot every time a taxon gets added.
-        self.doPips=True
+        self.doPips = True
 
         # We only get one quartet per tree-- that is a built-in
         # limitation.  However, we can get more than one quartet if
@@ -253,7 +268,7 @@ class QuartetJoining(object):
         # might be overcome by its benefits in speed and accuracy.  Or
         # not.
         self.doAddXSubTree = False
-        
+
         self.kk = []
         self.votes = None
         self.dbug = False
@@ -298,8 +313,8 @@ class QuartetJoining(object):
         #self.doAvoidLoserQuartets = True
         #self.count_foundLosers = 0
 
-        #print "Got %i input trees." % len(self.trees)
-        #print "There are %i taxa in all the input trees." % len(self.taxa)
+        # print "Got %i input trees." % len(self.trees)
+        # print "There are %i taxa in all the input trees." % len(self.taxa)
 
     nTrees = property(lambda self: len(self.trees))
     nTax = property(lambda self: len(self.taxNames))
@@ -307,7 +322,7 @@ class QuartetJoining(object):
     def dump(self, fName=None):
         """Dump info and options about self."""
 
-        #if not fName:
+        # if not fName:
         #    f = sys.stdout
         f = sys.stdout
         f.write("QuartetJoining.dump()\n")
@@ -316,11 +331,14 @@ class QuartetJoining(object):
         f.write("nTax: %i\n" % self.nTax)
         f.write("verbose: %s\n" % self.verbose)
         f.write("doCentralNodeStrategy: %s\n" % self.doCentralNodeStrategy)
-        f.write("useAnInputTreeAsTheStartingTree: %s\n" % self.useAnInputTreeAsTheStartingTree)
+        f.write("useAnInputTreeAsTheStartingTree: %s\n" %
+                self.useAnInputTreeAsTheStartingTree)
         if self.useAnInputTreeAsTheStartingTree:
-            f.write("inapplicable -- useAllTreesInStartingQuartet: %s\n" % self.useAllTreesInStartingQuartet)
+            f.write("inapplicable -- useAllTreesInStartingQuartet: %s\n" %
+                    self.useAllTreesInStartingQuartet)
         else:
-            f.write("useAllTreesInStartingQuartet: %s\n" % self.useAllTreesInStartingQuartet)
+            f.write("useAllTreesInStartingQuartet: %s\n" %
+                    self.useAllTreesInStartingQuartet)
         f.write("doBreakTies: %s\n" % self.doBreakTies)
         if self.doBreakTies:
             f.write("inapplicable -- ifUnfinishedAddUnusedTaxaIfTheyHaveThreeKBrs: %s\n" %
@@ -328,7 +346,8 @@ class QuartetJoining(object):
         else:
             f.write("ifUnfinishedAddUnusedTaxaIfTheyHaveThreeKBrs: %s\n" %
                     self.ifUnfinishedAddUnusedTaxaIfTheyHaveThreeKBrs)
-        f.write("addHighFrequencyTaxaFirst: %s\n" % self.addHighFrequencyTaxaFirst)
+        f.write("addHighFrequencyTaxaFirst: %s\n" %
+                self.addHighFrequencyTaxaFirst)
         f.write("doPips: %s\n" % self.doPips)
         f.write("maxQuartetsPerN: %i\n" % self.maxQuartetsPerN)
         f.write("doAddXSubTree: %s\n" % self.doAddXSubTree)
@@ -339,10 +358,12 @@ class QuartetJoining(object):
             taxaNTrees = [tx.nTrees for tx in self.taxa]
             n = Numbers(taxaNTrees)
             if math.fabs(n.max - n.min) < 0.001:
-                f.write("All %i QJ-wide taxa are each found in %i input trees.\n" % (self.nTax, n.max))
+                f.write(
+                    "All %i QJ-wide taxa are each found in %i input trees.\n" % (self.nTax, n.max))
             else:
                 n.histo(verbose=False, binSize=1)
-                f.write("The following table shows how many input trees have each QJ-wide taxon.\n")
+                f.write(
+                    "The following table shows how many input trees have each QJ-wide taxon.\n")
                 f.write('  taxa    nTrees\n')
                 f.write('  ----    ------\n')
                 for bin in n.bins:
@@ -352,17 +373,18 @@ class QuartetJoining(object):
             treeSizes = [t.nTax for t in self.trees]
             n = Numbers(treeSizes)
             if math.fabs(n.max - n.min) < 0.001:
-                f.write("All %i input trees have %i taxa\n" % (self.nTrees, n.max))
+                f.write("All %i input trees have %i taxa\n" %
+                        (self.nTrees, n.max))
             else:
                 n.histo(verbose=False, binSize=1)
                 f.write('\n')
-                f.write("In the following table, the tree size is the number of taxa in that tree.\n")
+                f.write(
+                    "In the following table, the tree size is the number of taxa in that tree.\n")
                 f.write('  tree size   nTrees\n')
                 f.write('  ---------   ------\n')
                 for bin in n.bins:
                     if bin[1]:
                         f.write("%9i    %5.0f\n" % (bin[0], bin[1]))
-
 
             # Characterize the input trees in terms of resolution.
             # Here I am making up an index to describe how well the
@@ -372,13 +394,16 @@ class QuartetJoining(object):
             # tree has nTax - 2 internal nodes, and a tree with
             # polytomies has less.
 
-            polytomyIndices = [(t.nTax - 2) - t.nInternalNodes for t in self.trees]
-            #print polytomyIndices
+            polytomyIndices = [
+                (t.nTax - 2) - t.nInternalNodes for t in self.trees]
+            # print polytomyIndices
             n = Numbers(polytomyIndices)
             f.write('\n')
-            f.write("Here the 'polytomy index' is the number of nodes that must be added to make the tree fully resolved.\n")
+            f.write(
+                "Here the 'polytomy index' is the number of nodes that must be added to make the tree fully resolved.\n")
             if math.fabs(n.max - n.min) < 0.001:
-                f.write("All %i input trees have a polytomy index of %i\n" % (self.nTrees, n.max))
+                f.write(
+                    "All %i input trees have a polytomy index of %i\n" % (self.nTrees, n.max))
             else:
                 n.histo(verbose=False, binSize=1)
                 f.write('  polytomy index   nTrees\n')
@@ -386,10 +411,10 @@ class QuartetJoining(object):
                 for bin in n.bins:
                     if bin[1]:
                         f.write("%10i        %5.0f\n" % (bin[0], bin[1]))
-            
+
         if f != sys.stdout:
             f.close()
-        
+
     def quartetJoining(self, verbose=True):
         """Do The quartet joining method.
 
@@ -409,7 +434,7 @@ class QuartetJoining(object):
         You can test if you have a complete tree by asking the tree
         that is returned whether it has any unusedTaxa, eg if you call
         your tree 'qt' you can ask
-        
+
             if qt.unusedTaxa:
                 <it is incomplete>
             else:
@@ -420,29 +445,32 @@ class QuartetJoining(object):
 
         # It doesn't make sense if ...
         if self.ifUnfinishedAddUnusedTaxaIfTheyHaveThreeKBrs and self.doBreakTies:
-            gm.append("If ifUnfinishedAddUnusedTaxaIfTheyHaveThreeKBrs is set, it does not make sense to doBreakTies as well.")
+            gm.append(
+                "If ifUnfinishedAddUnusedTaxaIfTheyHaveThreeKBrs is set, it does not make sense to doBreakTies as well.")
             raise P4Error(gm)
-        #if self.ifUnfinishedCollapseNodesAndAddUnusedTaxa and self.doBreakTies:
+        # if self.ifUnfinishedCollapseNodesAndAddUnusedTaxa and self.doBreakTies:
         #    gm.append("If ifUnfinishedCollapseNodesAndAddUnusedTaxa is set, it does not make sense to doBreakTies as well.")
         #    raise P4Error(gm)
 
         if self.useAnInputTreeAsTheStartingTree and self.addHighFrequencyTaxaFirst:
-            gm.append("Sorry - useAnIputTreeAsTheStartingTree and addHighFrequencyTaxaFirst do not work together at the moment.")
+            gm.append(
+                "Sorry - useAnIputTreeAsTheStartingTree and addHighFrequencyTaxaFirst do not work together at the moment.")
             raise P4Error(gm)
 
         if self.addHighFrequencyTaxaFirst and not self.taxFrequenciesDict:
             taxaNTrees = [tx.nTrees for tx in self.taxa]
             n = Numbers(taxaNTrees)
             if math.fabs(n.max - n.min) < 0.001:
-                #print "All %i QJ-wide taxa are each found in %i input trees." % (self.nTax, n.max))
+                # print "All %i QJ-wide taxa are each found in %i input trees."
+                # % (self.nTax, n.max))
                 self.taxFrequenciesNTrees = [n.max]
                 self.taxFrequenciesDict = {n.max: self.taxa[:]}
             else:
                 n.histo(verbose=False, binSize=1)
-                #print "The following table shows how many input trees have each QJ-wide taxon."
-                #print '  taxa    nTrees'
-                #print '  ----    ------'
-                #for bin in n.bins:
+                # print "The following table shows how many input trees have each QJ-wide taxon."
+                # print '  taxa    nTrees'
+                # print '  ----    ------'
+                # for bin in n.bins:
                 #    if bin[1]:
                 #        print "%5i    %6.0f" % (bin[1], bin[0])
                 self.taxFrequenciesNTrees = [int(b[0]) for b in n.bins if b[1]]
@@ -452,10 +480,10 @@ class QuartetJoining(object):
                 for tx in self.taxa:
                     self.taxFrequenciesDict[tx.nTrees].append(tx)
 
-            #print
-            #for nT in self.taxFrequenciesNTrees:
+            # print
+            # for nT in self.taxFrequenciesNTrees:
             #    print "%5i    %6.0f" % (nT, len(self.taxFrequenciesDict[nT]))
-        
+
         # kBrs is an attribute of Tax objects.  If it exists, it is a
         # list of bigT nodes where that tax could be added to bigT as
         # an x.  As such, it is specific to a particular state of
@@ -464,7 +492,7 @@ class QuartetJoining(object):
         # it also needs to be done here, as this might not be the
         # first time that quartetJoining() is called from self.  So
         # initialize ...
-        
+
         for tx in self.taxa:
             tx.kBrs = None
 
@@ -495,14 +523,14 @@ class QuartetJoining(object):
         # that too slow?
         if self.addHighFrequencyTaxaFirst:
             random.shuffle(self.unusedTaxa)
-            self.unusedTaxa = func.sortListOfObjectsOnAttribute(self.unusedTaxa, 'nTrees')
-
+            self.unusedTaxa = func.sortListOfObjectsOnAttribute(
+                self.unusedTaxa, 'nTrees')
 
         self.bigTInternalNodes = [n for n in self.bigT.iterInternalsNoRoot()]
         self.bigTInternalNodes.append(self.bigT.root)
 
         if self.doPips:
-            for i in range(self.bigT.nTax): 
+            for i in range(self.bigT.nTax):
                 sys.stdout.write(".")
                 if i > 0 and i % 50 == 0:
                     print " %4i" % i
@@ -517,9 +545,9 @@ class QuartetJoining(object):
             self.bigT.draw()
             func.unsetTerminalColour()
             print "The tree above is the starting tree, becoming self.bigT"
-            #for n in self.bigT.iterNodesNoRoot():
+            # for n in self.bigT.iterNodesNoRoot():
             #    print "  node %2i %10s  %s" % (n.nodeNum, n.name, self.getTaxBitsString(n.br.bitKey))
-            #print self.taxNames
+            # print self.taxNames
             self.pause()
 
         # Keep adding taxa to it, until the tree is finished, or taxa
@@ -533,16 +561,17 @@ class QuartetJoining(object):
                 func.unsetTerminalColour()
                 print "self.usedTaxa = %s" % [tx.name for tx in self.usedTaxa]
 
-            #if self.doCountTries:
+            # if self.doCountTries:
             #    self.count_xTries = 0
             #    self.count_getQuartetOnTreeTries = 0
             #    self.count_txAdded = 0
 
-            if self.slowCheck: 
+            if self.slowCheck:
                 self.checkBitKeys(self.bigT)
                 for tx in self.unusedTaxa:
                     if tx.kBrs:
-                        gm.append("tx %s has a kBrs before going into tryToAddAnyX()" % tx.name)
+                        gm.append(
+                            "tx %s has a kBrs before going into tryToAddAnyX()" % tx.name)
                         raise P4Error(gm)
 
             # This next method returns self if it manages to add an x,
@@ -550,7 +579,7 @@ class QuartetJoining(object):
             # unused taxon, and failed.
             ret = self.tryToAddAnyX()
 
-            #if self.doCountTries:
+            # if self.doCountTries:
             #    print "xTries=%3i  getQuartetTries=%4i  txAdded=%2i  nTx=%3i" % (
             #        self.count_xTries, self.count_getQuartetOnTreeTries,
             #        self.count_txAdded, len(self.usedTaxa)),
@@ -560,8 +589,8 @@ class QuartetJoining(object):
             #        print
 
             if ret:  # An x was added.
-                #self.bigT.draw()
-                #print "the tree above is the latest bigT"
+                # self.bigT.draw()
+                # print "the tree above is the latest bigT"
                 for tx in self.unusedTaxa:
                     tx.kBrs = None
             else:
@@ -590,18 +619,20 @@ class QuartetJoining(object):
                             self.decorateTreeWithBitKeys(tDupe)
                             self.setTreeTaxBits(tDupe)
                             self.trees.append(tDupe)
-                    #if self.unusedTaxa and self.ifUnfinishedCollapseNodesAndAddUnusedTaxa:
+                    # if self.unusedTaxa and self.ifUnfinishedCollapseNodesAndAddUnusedTaxa:
                     #    self.collapseNodesAndAddUnusedTaxa()
 
                     leftOverTaxNames = [tx.name for tx in self.unusedTaxa]
                     if verbose and self.unusedTaxa:
-                        self.summarizeUnusedTaxa(leftOverTaxNames=leftOverTaxNames)
-                    tnn = [tName for tName in self.taxNames if tName not in leftOverTaxNames]
-                    self.bigT.taxNames = tnn # triggers bigT.checkTaxNames()
+                        self.summarizeUnusedTaxa(
+                            leftOverTaxNames=leftOverTaxNames)
+                    tnn = [
+                        tName for tName in self.taxNames if tName not in leftOverTaxNames]
+                    self.bigT.taxNames = tnn  # triggers bigT.checkTaxNames()
                     self.bigT.unusedTaxa = self.unusedTaxa
-                    self.unusedTaxa = None # needed?
+                    self.unusedTaxa = None  # needed?
                     return self.bigT  # Incomplete
-            if self.slowCheck: 
+            if self.slowCheck:
                 self.checkBitKeys(self.bigT)
 
         if self.doPips:
@@ -609,16 +640,17 @@ class QuartetJoining(object):
         if verbose:
             print "quartetJoining() Got a completed tree."
         self.bigT.taxNames = self.taxNames[:]
-        self.bigT.unusedTaxa = []  # So I do not need to ask hasattr(self.bigT, 'unusedTaxa')
+        # So I do not need to ask hasattr(self.bigT, 'unusedTaxa')
+        self.bigT.unusedTaxa = []
         #self.tNums[self.diagn.treeNum] += 1
 
-        #if self.doAvoidLoserQuartets:
-            # Show how many loser quartets each tree had.
-            #for t in self.trees:
-            #    print t.nLosers,
+        # if self.doAvoidLoserQuartets:
+        # Show how many loser quartets each tree had.
+        # for t in self.trees:
+        #    print t.nLosers,
 
-            # Say how many times we avoided trying to get the same quartet more than once.
-            #print "\ncount_foundLosers = %i" % self.count_foundLosers
+        # Say how many times we avoided trying to get the same quartet more than once.
+        # print "\ncount_foundLosers = %i" % self.count_foundLosers
         #    self.count_foundLosers = 0
         return self.bigT
 
@@ -630,11 +662,11 @@ class QuartetJoining(object):
         print "LeftoverTaxon            could be on the branch on node numbers"
         print "-------------            --------------------------------------"
         for tx in self.unusedTaxa:
-            #tx.dump()
+            # tx.dump()
             if tx.kBrs:
                 print "%-25s%s" % (tx.name, [n.nodeNum for n in tx.kBrs])
             else:
-                print "%-25s Any" % tx.name        
+                print "%-25s Any" % tx.name
 
     def addUnusedTaxaIfTheyHaveThreeKBrs(self):
         gm = ['QuartetJoining.addUnusedTaxaIfTheyHaveThreeKBrs()']
@@ -668,10 +700,11 @@ class QuartetJoining(object):
 
         toDo = []
         for uT in self.unusedTaxa:
-            # kBrs will be either None, implying any location, or a list of nodes.
+            # kBrs will be either None, implying any location, or a list of
+            # nodes.
             if uT.kBrs:
                 if len(uT.kBrs) == 3:
-                    #print uT.name, [n.nodeNum for n in uT.kBrs]
+                    # print uT.name, [n.nodeNum for n in uT.kBrs]
                     parents = set()
                     parentsOutsideKbrs = set()
                     for n in uT.kBrs:
@@ -679,8 +712,9 @@ class QuartetJoining(object):
                             parents.add(n.parent)
                         else:
                             parentsOutsideKbrs.add(n.parent)
-                    #print "got parents", [n.nodeNum for n in parents]
-                    #print "got parentsOutsideKbrs", [n.nodeNum for n in parentsOutsideKbrs]
+                    # print "got parents", [n.nodeNum for n in parents]
+                    # print "got parentsOutsideKbrs", [n.nodeNum for n in
+                    # parentsOutsideKbrs]
 
                     if len(parents) == 1:
                         # The usual case for non-roots.  Like [1,2,3]
@@ -693,15 +727,18 @@ class QuartetJoining(object):
                                 if n.parent != theParent:
                                     othersAreChildren = False
                         if othersAreChildren:
-                            #print "parent node %i, others are children" % theParent.nodeNum
-                            # This would be the case where we have a stem and 2 children, a two-pronged fork.
+                            # print "parent node %i, others are children" % theParent.nodeNum
+                            # This would be the case where we have a stem and 2
+                            # children, a two-pronged fork.
                             toDo.append([uT.name, theParent, uT])
-                            #pass
+                            # pass
                         else:
-                            # This would be the case like [2,3,4] or [6,1,3] above.
+                            # This would be the case like [2,3,4] or [6,1,3]
+                            # above.
                             pass
                     elif len(parents) == 2:
-                        # This would happen in cases like [1,3,5] above.  Two level, so don't do anything.
+                        # This would happen in cases like [1,3,5] above.  Two
+                        # level, so don't do anything.
                         pass
                     elif len(parentsOutsideKbrs) == 1:
                         # Eg [1,6,7]
@@ -712,33 +749,36 @@ class QuartetJoining(object):
                                 if n.parent != theParentOutsideKbrs:
                                     othersAreChildren = False
                             if othersAreChildren:
-                                #print "parentOutsideKbrs is the root, all Kbrs are children."
+                                # print "parentOutsideKbrs is the root, all
+                                # Kbrs are children."
                                 toDo.append([uT.name, self.bigT.root, uT])
                         else:
                             # How would this happen?
                             gm.append("b something wrong! -- fix me!")
                             gm.append("attempting to add taxon %s" % uT.name)
                             gm.append("kBrs %s" % [n.nodeNum for n in uT.kBrs])
-                            gm.append("got parents %s" % [n.nodeNum for n in parents])
-                            gm.append("got parentsOutsideKbrs %s" % [n.nodeNum for n in parentsOutsideKbrs])
+                            gm.append("got parents %s" %
+                                      [n.nodeNum for n in parents])
+                            gm.append("got parentsOutsideKbrs %s" %
+                                      [n.nodeNum for n in parentsOutsideKbrs])
                             self.bigT.draw(width=140)
                             raise P4Error(gm)
                     else:
                         self.bigT.draw(width=140)
                         gm.append("attempting to add taxon %s" % uT.name)
                         gm.append("kBrs %s" % [n.nodeNum for n in uT.kBrs])
-                        gm.append("got parents %s" % [n.nodeNum for n in parents])
-                        gm.append("got parentsOutsideKbrs %s" % [n.nodeNum for n in parentsOutsideKbrs])
+                        gm.append("got parents %s" %
+                                  [n.nodeNum for n in parents])
+                        gm.append("got parentsOutsideKbrs %s" %
+                                  [n.nodeNum for n in parentsOutsideKbrs])
                         gm.append("c something is wrong here ...")
                         raise P4Error(gm)
         for l in toDo:
             self.bigT.addSibLeaf(l[1], l[0])
             self.unusedTaxa.remove(l[2])
         return len(toDo)
-        
 
     def collapseNodesAndAddUnusedTaxa(self):
-
 
         # This is unfinished, obviously.
 
@@ -765,18 +805,20 @@ class QuartetJoining(object):
                         if p not in parents:
                             parents.append(p)
                     if len(parents) != 1:
-                        gm.append("Appears to be discontiguous branches for tx %s" % tx.name)
+                        gm.append(
+                            "Appears to be discontiguous branches for tx %s" % tx.name)
                         raise P4Error(gm)
                     #assert penultimate and penultimate.nodeNum in nodeNums
-                    #print "kBrs %s have parent %i, penultimate %i" % (nodeNums, parents[0].nodeNum, penultimate.nodeNum)
+                    # print "kBrs %s have parent %i, penultimate %i" %
+                    # (nodeNums, parents[0].nodeNum, penultimate.nodeNum)
                     print "kBrs %s have parent %i" % (nodeNums, parents[0].nodeNum)
                     #toCollapse = []
-                    #for n in self.bigT.iterInternalsNoRootPostOrder():
+                    # for n in self.bigT.iterInternalsNoRootPostOrder():
                     #    if n.nodeNum in nodeNums:
                     #        toCollapse.append(n)
-                    #for n in toCollapse[:-1]:
+                    # for n in toCollapse[:-1]:
                     #    self.bigT.collapseNode(n)
-                    #for n in tx.kBrs:
+                    # for n in tx.kBrs:
                     #    if not n.isLeaf:
                     #        self.bigT.collapseNode(n)
         if 1:
@@ -788,14 +830,21 @@ class QuartetJoining(object):
                     comb = True
                     break
                 else:
-                    #for kNode in tx.kBrs:
+                    # for kNode in tx.kBrs:
                     #    if not kNode.isLeaf:
                     #        print "internal node %i" % kNode.nodeNum
                     # The rules:
 
-                    # First do the nodes where the node's parent is not the root.  If the node's parent is not the root, and if any of the children of the node are in tx.kBrs, then do collapse those children.  If none of the children are in tx.kBrs, then don't collapse.
-                    
-                    # If the node's parent is the root, and the other children of the root are not in tx.kBrs, then don't collapse it.  If none of the node's children are in tx.kBrs, then don't collapse.  Otherwise do.
+                    # First do the nodes where the node's parent is not the
+                    # root.  If the node's parent is not the root, and if any
+                    # of the children of the node are in tx.kBrs, then do
+                    # collapse those children.  If none of the children are in
+                    # tx.kBrs, then don't collapse.
+
+                    # If the node's parent is the root, and the other children
+                    # of the root are not in tx.kBrs, then don't collapse it.
+                    # If none of the node's children are in tx.kBrs, then don't
+                    # collapse.  Otherwise do.
 
                     theAttachNode = None
                     for kNode in tx.kBrs:
@@ -834,7 +883,7 @@ class QuartetJoining(object):
                                             doCollapse = True
                                             break
                                 if doCollapse:
-                                    print "b adding kNode %i to collapse set" % kNode.nodeNum 
+                                    print "b adding kNode %i to collapse set" % kNode.nodeNum
                                     toCollapseSet.add(kNode)
                                     theAttachNode = kNode.parent
                     if theAttachNode:
@@ -846,9 +895,7 @@ class QuartetJoining(object):
             elif toCollapseSet:
                 for cNode in toCollapseSet:
                     print "collapse node %i" % cNode.nodeNum
-                    
-            
-            
+
     def getAnInputTreeForTheStartingTree(self):
 
         gm = ['QuartetJoining.getAnInputTreeForTheStartingTree()']
@@ -905,7 +952,8 @@ class QuartetJoining(object):
         if randTree.isFullyBifurcating():
             self.bigT = randTree.dupe()
         else:
-            self.bigT = self._qj_extractFullyBifurcatingTree(randTree)  # this method dupes the randTree first
+            # this method dupes the randTree first
+            self.bigT = self._qj_extractFullyBifurcatingTree(randTree)
         if not self.bigT.taxNames:
             self.bigT.taxNames = [n.name for n in self.bigT.iterLeavesNoRoot()]
         self.decorateTreeWithBitKeys(self.bigT)
@@ -921,10 +969,11 @@ class QuartetJoining(object):
         gm = ['QuartetJoining.getStartingTreeFromQuartet_highFrequencyFirst()']
 
         # self.taxFrequenciesNTrees, a series of ints
-        # self.taxFrequeciesDict, key is an int from self.taxFrequenciesNTrees, vals are lists of Tax objects.
+        # self.taxFrequeciesDict, key is an int from self.taxFrequenciesNTrees,
+        # vals are lists of Tax objects.
 
         nCandidatesWanted = 10
-        
+
         candidates = []
         indx = -1
         while len(candidates) < nCandidatesWanted:
@@ -932,11 +981,11 @@ class QuartetJoining(object):
             thisNTrees = self.taxFrequenciesNTrees[indx]
             candidates += self.taxFrequenciesDict[thisNTrees]
             indx -= 1
-        #print "Got %i candidates" % len(candidates)
+        # print "Got %i candidates" % len(candidates)
         if len(candidates) > nCandidatesWanted:
             candidates = random.sample(candidates, nCandidatesWanted)
         allSubsetsOfFour = self.allChooseFour(candidates)
-        #print "got %i subsetsOfFour" % len(allSubsetsOfFour)
+        # print "got %i subsetsOfFour" % len(allSubsetsOfFour)
         bigT = None
         while allSubsetsOfFour:
             oneSubsetOfFour = random.choice(allSubsetsOfFour)
@@ -944,10 +993,10 @@ class QuartetJoining(object):
             allBits = 0L
             for tx in oneSubsetOfFour:
                 allBits += tx.bitKey
-                #print tx.name, tx.bitKey, tx.nTrees
-            #print allBits
+                # print tx.name, tx.bitKey, tx.nTrees
+            # print allBits
             tt = [t for t in self.trees if (t.taxBits & allBits) == allBits]
-            #print len(tt)
+            # print len(tt)
             if tt:
                 bigT = self.getQuartetForFourTaxaInTrees(oneSubsetOfFour, tt)
             if bigT:
@@ -955,13 +1004,13 @@ class QuartetJoining(object):
         if bigT:
             self.bigT = bigT
             if not self.bigT.taxNames:
-                self.bigT.taxNames = [n.name for n in self.bigT.iterLeavesNoRoot()]
+                self.bigT.taxNames = [
+                    n.name for n in self.bigT.iterLeavesNoRoot()]
             self.decorateTreeWithBitKeys(self.bigT)
             self.setTreeTaxBits(self.bigT)
         else:
             raise P4Error("no bigT!")
 
-        
     def getStartingTreeFromQuartet_randomTaxa(self):
         gm = ['QuartetJoining.getStartingTreeFromQuartet_randomTaxa()']
 
@@ -977,16 +1026,18 @@ class QuartetJoining(object):
         while not gotIt:
             try:
                 randomIndex = indices.pop()
-                #if self.dbug:
+                # if self.dbug:
                 #    randomIndex = 0
             except IndexError:
                 gm.append("useAnInputTreeAsTheStartingTree is not set")
-                gm.append("However, I was unable to find any input trees with internal nodes.")
+                gm.append(
+                    "However, I was unable to find any input trees with internal nodes.")
                 raise P4Error(gm)
             randTree = self.trees[randomIndex]
-            if randTree.nInternalNodes > 1: # root is an internal, but we want more
+            # root is an internal, but we want more
+            if randTree.nInternalNodes > 1:
                 gotIt = True
-        #print "randomIndex=%i" % randomIndex
+        # print "randomIndex=%i" % randomIndex
         if self.diagn:
             self.diagn.randomIndex = randomIndex
         noRootInternals = [n for n in randTree.iterInternalsNoRoot()]
@@ -997,14 +1048,18 @@ class QuartetJoining(object):
         if len(nodesAbove) < 2:
             print
             randTree.draw()
-            gm.append("Something is wrong, maybe with the randomly chosen input tree.")
-            gm.append("There are only %i leaf nodes above node %i" % (len(nodesAbove), aNode.nodeNum))
+            gm.append(
+                "Something is wrong, maybe with the randomly chosen input tree.")
+            gm.append("There are only %i leaf nodes above node %i" %
+                      (len(nodesAbove), aNode.nodeNum))
             raise P4Error(gm)
         if len(nodesBelow) < 2:
             print
             randTree.draw()
-            gm.append("Something is wrong, maybe with the randomly chosen input tree.")
-            gm.append("There are only %i leaf nodes below node %i" % (len(nodesBelow), aNode.nodeNum))
+            gm.append(
+                "Something is wrong, maybe with the randomly chosen input tree.")
+            gm.append("There are only %i leaf nodes below node %i" %
+                      (len(nodesBelow), aNode.nodeNum))
             raise P4Error(gm)
 
         twoNodesAbove = random.sample(nodesAbove, 2)
@@ -1012,14 +1067,14 @@ class QuartetJoining(object):
 
         fourTaxNames = [n.name for n in twoNodesAbove]
         fourTaxNames += [n.name for n in twoNodesBelow]
-        #print "fourTaxNames = %s" % fourTaxNames
-        #if self.dbug:
+        # print "fourTaxNames = %s" % fourTaxNames
+        # if self.dbug:
         #    fourTaxNames = ['A', 'B', 'C', 'X']
 
         fourTaxa = [tx for tx in self.taxa if tx.name in fourTaxNames]
         assert len(fourTaxa) == 4
 
-        #if self.diagn:
+        # if self.diagn:
         #    self.diagn.firstFourTaxa = ''.join([tx.name for tx in fourTaxa])
 
         if self.verbose >= 2:
@@ -1046,20 +1101,19 @@ class QuartetJoining(object):
             self.bigT.nodes[5].name = twoNodesBelow[1].name
 
         else:
-            self.bigT = self.makeStartingQuartetFromAllTrees(randTree, twoNodesAbove, twoNodesBelow, fourTaxa)
+            self.bigT = self.makeStartingQuartetFromAllTrees(
+                randTree, twoNodesAbove, twoNodesBelow, fourTaxa)
 
         assert self.bigT
         self.bigT.taxNames = [n.name for n in self.bigT.iterLeavesNoRoot()]
         self.decorateTreeWithBitKeys(self.bigT)
         self.setTreeTaxBits(self.bigT)
-        #self.bigT.draw()
-        
+        # self.bigT.draw()
 
-        
     def makeStartingQuartetFromAllTrees(self, theOriginalTree, twoNodesAbove, twoNodesBelow, fourTaxa):
         """Having chosen fourTaxa, get quartets from all input trees, and make a staring quartet."""
-        
-        assert  self.useAllTreesInStartingQuartet
+
+        assert self.useAllTreesInStartingQuartet
         bk0 = fourTaxa[0].bitKey
         bk1 = fourTaxa[1].bitKey
         bk2 = fourTaxa[2].bitKey
@@ -1072,7 +1126,7 @@ class QuartetJoining(object):
             if (t.taxBits & allBits) == allBits:
                 treesWithTheFourTaxa.append(t)
         assert treesWithTheFourTaxa
-        #if self.diagn:
+        # if self.diagn:
         #    self.diagn.nTreesWithTheFourTaxa = len(treesWithTheFourTaxa)
 
         if self.verbose:
@@ -1113,7 +1167,7 @@ class QuartetJoining(object):
                     while n:
                         if n.isLeaf:
                             pass
-                        elif allBits & n.br.bitKey: # at least one bit
+                        elif allBits & n.br.bitKey:  # at least one bit
                             bitHits = []
                             nBits = 0
                             for bk in [bk0, bk1, bk2, bk3]:
@@ -1121,7 +1175,8 @@ class QuartetJoining(object):
                                     nBits += 1
                                     bitHits.append(bk)
                                     if nBits > 2:
-                                        #print "nBits is more than 2, so its further up this subtree."
+                                        # print "nBits is more than 2, so its
+                                        # further up this subtree."
                                         break
                             if nBits > biggestNBits:
                                 biggestNBits = nBits
@@ -1134,7 +1189,8 @@ class QuartetJoining(object):
                                 # this should be optional, with a switch.
                                 badBitsBelow = False
                                 bitHitsBelow = []
-                                bitsBelow = (self.allOnes ^ n.br.bitKey) & gT.taxBits
+                                bitsBelow = (
+                                    self.allOnes ^ n.br.bitKey) & gT.taxBits
                                 if 0:
                                     func.setTerminalColour('violet')
                                     gT.draw()
@@ -1153,12 +1209,12 @@ class QuartetJoining(object):
                                     #func.writeInColour("Got %i bitHitsBelow\n" % len(bitHitsBelow), "CYAN")
                                     badBitsBelow = True
 
-                            elif nBits > 2: # Its further up that subtree
+                            elif nBits > 2:  # Its further up that subtree
                                 tNode = n
                                 nBits = 0
                                 break
                         n = n.sibling  # Try the next subtree
-                    if biggestNBits < 2: # useless to go further
+                    if biggestNBits < 2:  # useless to go further
                         break
                     if gotIt:
                         break
@@ -1168,7 +1224,8 @@ class QuartetJoining(object):
                     continue
                 else:
                     # Now we have n, and n.br is the split.
-                    #print "makeStartingQuartetFromAllTrees() gotIt.  node num = %i" % n.nodeNum
+                    # print "makeStartingQuartetFromAllTrees() gotIt.  node num
+                    # = %i" % n.nodeNum
                     assert len(bitHits) == 2   # 2 of [bk0, bk1, bk2, bk3]
                     assert len(bitHitsBelow) == 2   # 2 of [bk0, bk1, bk2, bk3]
                     # bk0 and bk1 => vote 0   (ie bk2 and bk3)
@@ -1198,9 +1255,9 @@ class QuartetJoining(object):
                 print "The votes for all %i trees are" % len(treesWithTheFourTaxa), votes
                 print "Choosing vote at index %s" % myMaxIndex
 
-            #if self.dbug:
+            # if self.dbug:
             #    myMaxIndex = 1
-            #if self.diagn:
+            # if self.diagn:
             #    self.diagn.myMaxIndex = myMaxIndex
 
             savedWarnReadNoFile = var.warnReadNoFile
@@ -1208,26 +1265,27 @@ class QuartetJoining(object):
             read('(A, B, (C, D));')
             var.warnReadNoFile = savedWarnReadNoFile
             t = var.trees.pop()
-            if myMaxIndex == 0: # 0 and 1 go together, so 2 and 3 go together
+            if myMaxIndex == 0:  # 0 and 1 go together, so 2 and 3 go together
                 t.nodes[1].name = fourTaxa[2].name
                 t.nodes[2].name = fourTaxa[3].name
                 t.nodes[4].name = fourTaxa[0].name
                 t.nodes[5].name = fourTaxa[1].name
-            elif myMaxIndex == 1: # 0 and 2 go together, so 1 and 3 go together
+            # 0 and 2 go together, so 1 and 3 go together
+            elif myMaxIndex == 1:
                 t.nodes[1].name = fourTaxa[1].name
                 t.nodes[2].name = fourTaxa[3].name
                 t.nodes[4].name = fourTaxa[0].name
                 t.nodes[5].name = fourTaxa[2].name
-            elif myMaxIndex == 2: # 0 and 3 go together, so 1 and 2 go together
+            # 0 and 3 go together, so 1 and 2 go together
+            elif myMaxIndex == 2:
                 t.nodes[1].name = fourTaxa[0].name
                 t.nodes[2].name = fourTaxa[3].name
                 t.nodes[4].name = fourTaxa[1].name
                 t.nodes[5].name = fourTaxa[2].name
-            
+
             if self.diagn:
                 self.diagn.st = t.dupe()
             return t
-
 
     def breakTie(self):
 
@@ -1235,7 +1293,7 @@ class QuartetJoining(object):
 
         # Redundantly prevent adding a subTree, by zeroing the votes
         self.votes = [0] * 3
-        
+
         smallestKBrs = None
         for tx in self.unusedTaxa:
             if tx.kBrs:
@@ -1247,7 +1305,8 @@ class QuartetJoining(object):
         if smallestKBrs == None:
             txWithSmallestKBrs = self.unusedTaxa
         else:
-            txWithSmallestKBrs = [tx for tx in self.unusedTaxa if tx.kBrs and (len(tx.kBrs) == smallestKBrs)]
+            txWithSmallestKBrs = [
+                tx for tx in self.unusedTaxa if tx.kBrs and (len(tx.kBrs) == smallestKBrs)]
         x = random.choice(txWithSmallestKBrs)
 
         # It is possible that x.kBrs is None, which will give an IndexError
@@ -1268,20 +1327,20 @@ class QuartetJoining(object):
                 print "By breaking a tie, we have only 1 kBr.  We do not add a subtree-- just add the leaf."
             else:
                 print "By breaking a tie, we have only 1 kBr, so we can go on to add the leaf"
-        #if self.doAddXSubTree:
+        # if self.doAddXSubTree:
             # addXSubTreeToBigT() uses self.votes, but self.votes
             # probably does not apply to the chosen x.  It is too much
             # bother to recalculate.  So just add the leaf.
-            
+
             #subTreeTaxNames = self.addXSubTreeToBigT(x.kBrs[0], x)
-            #self.bigT.checkTaxNames()
+            # self.bigT.checkTaxNames()
             #taxaInSubTree = [tx for tx in self.unusedTaxa if tx.name in subTreeTaxNames]
-            ##print "taxaInSubTree = %s" % [tx.name for tx in taxaInSubTree]
+            # print "taxaInSubTree = %s" % [tx.name for tx in taxaInSubTree]
             #self.usedTaxa += taxaInSubTree
             #self.unusedTaxa = [tx for tx in self.unusedTaxa if tx not in taxaInSubTree]
-            ##print "self.unusedTaxa is now %s" % [tx.name for tx in self.unusedTaxa]
-        #else:
-        #if not (x.kBrs[0] in self.bigT.nodes):
+            # print "self.unusedTaxa is now %s" % [tx.name for tx in self.unusedTaxa]
+        # else:
+        # if not (x.kBrs[0] in self.bigT.nodes):
         #    raise P4Error("breakTie().  node %i is not in bigT." % x.kBrs[0].nodeNum)
         self.didBreakTie = True
         self.addLeafToBigT(x.kBrs[0], x)
@@ -1290,9 +1349,7 @@ class QuartetJoining(object):
 
         if self.slowCheck:
             self.checkBitKeys(self.bigT)
-        return self # to the quartetJoining() method.
-
-    
+        return self  # to the quartetJoining() method.
 
     def tryToAddAnyX(self):
         """Add any one of the unused taxa.
@@ -1321,23 +1378,26 @@ class QuartetJoining(object):
         gm = ["QuartetJoining.tryToAddAnyX()"]
 
         if self.verbose >= 2:
-            #if self.dbug:
+            # if self.dbug:
             #    self.unusedTaxa = func.sortListOfObjectsOnAttribute(self.unusedTaxa, 'name')
             print "tryToAddAnyX(), choices = %s" % [tx.name for tx in self.unusedTaxa]
-        #if self.dbug:
+        # if self.dbug:
         #    currTxNames = [tx.name for tx in self.unusedTaxa]
 
         if self.doCentralNodeStrategy:
-            #self.checkBitKeys(self.bigT)
+            # self.checkBitKeys(self.bigT)
             for n in self.bigTInternalNodes:
                 n.pc0 = self.popcount(n.leftChild.br.bitKey)
                 n.pc1 = self.popcount(n.leftChild.sibling.br.bitKey)
                 if n == self.bigT.root:
-                    n.pc2 = self.popcount(n.leftChild.sibling.sibling.br.bitKey) 
+                    n.pc2 = self.popcount(
+                        n.leftChild.sibling.sibling.br.bitKey)
                 else:
-                    n.pc2 = self.popcount(self.bigT.taxBits & (self.allOnes ^ n.br.bitKey))
+                    n.pc2 = self.popcount(
+                        self.bigT.taxBits & (self.allOnes ^ n.br.bitKey))
                 n.pc012 = n.pc0 * n.pc1 * n.pc2
-            self.bigTInternalNodes = func.sortListOfObjectsOnAttribute(self.bigTInternalNodes, 'pc012')
+            self.bigTInternalNodes = func.sortListOfObjectsOnAttribute(
+                self.bigTInternalNodes, 'pc012')
 
             if self.verbose >= 2:
                 print "self.taxa are", [tx.name for tx in self.taxa]
@@ -1350,23 +1410,21 @@ class QuartetJoining(object):
                     print "pc0=%s, " % n.pc0,
                     print "pc1=%s, " % n.pc1,
                     print "pc2=%s, " % n.pc2,
-                    print "pc012=%i"  % n.pc012
-
-            
-            
+                    print "pc012=%i" % n.pc012
 
         indices = range(len(self.unusedTaxa))
         # don't shuffle-- its too expensive!
         while 1:
-                
+
             try:
                 if self.addHighFrequencyTaxaFirst:
-                    # self.unusedTaxa are sorted -- use the ones at the end first, if possible
+                    # self.unusedTaxa are sorted -- use the ones at the end
+                    # first, if possible
                     myIndx = indices.pop()
                 else:
                     myIndx = random.choice(indices)
             except IndexError:
-                #for tx in self.unusedTaxa:
+                # for tx in self.unusedTaxa:
                 #    if tx.kBrs:
                 #        for n in tx.kBrs:
                 #            if n not in self.bigT.nodes:
@@ -1374,8 +1432,8 @@ class QuartetJoining(object):
                 #                            tx.name, n.nodeNum, n))
                 #                raise P4Error(gm)
                 return None
-            
-            if 0: #self.dbug:
+
+            if 0:  # self.dbug:
                 if 'W' in currTxNames:
                     self.bigT.write()
                     if currTxNames.index('W') in indices:
@@ -1385,12 +1443,12 @@ class QuartetJoining(object):
                         if currTxNames.index('Z') in indices:
                             self.bigT.write()
                             myIndx = currTxNames.index('Z')
-                    #print "dbug: considering adding tax 'X'"
+                    # print "dbug: considering adding tax 'X'"
 
-            #print "indices =%s, myIndx = %s" % (indices, myIndx)
+            # print "indices =%s, myIndx = %s" % (indices, myIndx)
 
             if self.addHighFrequencyTaxaFirst:
-                pass # its already pop'ed, above
+                pass  # its already pop'ed, above
             else:
                 indices.remove(myIndx)
             x = self.unusedTaxa[myIndx]
@@ -1404,22 +1462,24 @@ class QuartetJoining(object):
             # of course often with more.
             kBrs = self.tryToAddAParticularX(x)
 
-            if 0: # slow check for debug
+            if 0:  # slow check for debug
                 if kBrs:
                     for n in kBrs:
                         if n not in self.bigT.nodes:
-                            raise P4Error("tryToAddAnyX().  node %i (%s) is not in self.bigT" % (n.nodeNum, n))
+                            raise P4Error(
+                                "tryToAddAnyX().  node %i (%s) is not in self.bigT" % (n.nodeNum, n))
                 for tx in self.unusedTaxa:
                     if tx.kBrs:
                         for n in tx.kBrs:
                             if n not in self.bigT.nodes:
                                 gm.append("current x=%s" % x.name)
-                                gm.append("unusedTaxa=%s" % [tx2.name for tx2 in self.unusedTaxa]) 
+                                gm.append("unusedTaxa=%s" %
+                                          [tx2.name for tx2 in self.unusedTaxa])
                                 gm.append("x unused tx %s kBr %i (%s) is not in self.bigT" % (
-                                        tx.name, n.nodeNum, n))
+                                    tx.name, n.nodeNum, n))
                                 raise P4Error(gm)
-            
-            #if self.diagn:
+
+            # if self.diagn:
             #    if x.name == 'W':
             #        if kBrs:
             #            self.diagn.nKbrsW = len(kBrs)
@@ -1430,7 +1490,7 @@ class QuartetJoining(object):
             #            self.diagn.nKbrsZ = len(kBrs)
             #        else:
             #            self.diagn.nKbrsZ = 0
-                
+
             if kBrs == None:
                 if self.verbose >= 1:
                     if indices:
@@ -1439,7 +1499,8 @@ class QuartetJoining(object):
                         print "  +kBrs is None.  There are no more x candidates. "
                 continue
             if len(kBrs) == 0:
-                raise P4Error("len(kBrs) is zero.  This should not happen.  Programming error.")
+                raise P4Error(
+                    "len(kBrs) is zero.  This should not happen.  Programming error.")
             if len(kBrs) == 1:
                 if self.verbose == 1:
                     print "  +Add it."
@@ -1451,23 +1512,29 @@ class QuartetJoining(object):
                 if self.doAddXSubTree:
                     subTreeTaxNames = self.addXSubTreeToBigT(kBrs[0], x)
                     self.bigT.checkTaxNames()
-                    taxaInSubTree = [tx for tx in self.unusedTaxa if tx.name in subTreeTaxNames]
+                    taxaInSubTree = [
+                        tx for tx in self.unusedTaxa if tx.name in subTreeTaxNames]
                     if self.diagn:
                         if hasattr(self.diagn, 'afters'):
-                            self.diagn.afters.append(''.join([tx.name for tx in taxaInSubTree]))
+                            self.diagn.afters.append(
+                                ''.join([tx.name for tx in taxaInSubTree]))
                         else:
-                            self.diagn.afters = [''.join([tx.name for tx in taxaInSubTree])]
-                    #print "taxaInSubTree = %s" % [tx.name for tx in taxaInSubTree]
+                            self.diagn.afters = [
+                                ''.join([tx.name for tx in taxaInSubTree])]
+                    # print "taxaInSubTree = %s" % [tx.name for tx in
+                    # taxaInSubTree]
                     self.usedTaxa += taxaInSubTree
-                    self.unusedTaxa = [tx for tx in self.unusedTaxa if tx not in taxaInSubTree]
-                    #print "self.unusedTaxa is now %s" % [tx.name for tx in self.unusedTaxa]
+                    self.unusedTaxa = [
+                        tx for tx in self.unusedTaxa if tx not in taxaInSubTree]
+                    # print "self.unusedTaxa is now %s" % [tx.name for tx in
+                    # self.unusedTaxa]
                 else:
                     self.addLeafToBigT(kBrs[0], x)
                     self.usedTaxa.append(x)
                     self.unusedTaxa.remove(x)
-                if self.slowCheck: 
+                if self.slowCheck:
                     self.checkBitKeys(self.bigT)
-                return self # to the quartetJoining() method.
+                return self  # to the quartetJoining() method.
             else:
                 if self.verbose == 1:
                     print "  +Can't add it (x=%s) now." % x.name
@@ -1475,8 +1542,6 @@ class QuartetJoining(object):
                     print "We have more than 1 kBr, so attach that list to x, as x.kBrs"
                 x.kBrs = kBrs
 
-        
-        
     def tryToAddAParticularX(self, x):
         """Given a particular x, try to add it.
 
@@ -1488,8 +1553,7 @@ class QuartetJoining(object):
         The list contains at least 1 item, but may contain more.
         """
 
-
-        #if self.doCountTries:
+        # if self.doCountTries:
         #    self.count_xTries += 1
         #self.diagn.calls += 1
 
@@ -1497,7 +1561,7 @@ class QuartetJoining(object):
         if not self.doCentralNodeStrategy:
             random.shuffle(goodInternalNodeNums)
 
-        #if self.dbug:
+        # if self.dbug:
         #    if x.name == 'W':
         #        print "goodInternalNodeNums", goodInternalNodeNums
         if self.verbose >= 2:
@@ -1515,7 +1579,8 @@ class QuartetJoining(object):
                     print "  node %2i" % i
             if self.verbose >= 3:
                 self.pause()
-        #print "used=%s, choices=%s" % ([tx.name for tx in self.usedTaxa], [tx.name for tx in choices]) 
+        # print "used=%s, choices=%s" % ([tx.name for tx in self.usedTaxa],
+        # [tx.name for tx in choices])
 
         # In case we need to refineKSubTree() below, we keep track of
         # the internalNodesWithNoQuartets, that is nodes from
@@ -1525,7 +1590,8 @@ class QuartetJoining(object):
         # point in looking for them again if they do not exist.
         internalNodesWithNoQuartets = []
 
-        # kk is a list of quartets, either as numbers (0, 1, or 2) or QJQuartet objects.
+        # kk is a list of quartets, either as numbers (0, 1, or 2) or QJQuartet
+        # objects.
         self.kk = []
         while not self.kk:
             if self.verbose >= 2:
@@ -1544,38 +1610,43 @@ class QuartetJoining(object):
                     self.diagn.tZ = self.bigT.dupe()
             else:
                 try:
-                    theNodeNum = goodInternalNodeNums.pop()  # from the end, ie highest pc012.
+                    # from the end, ie highest pc012.
+                    theNodeNum = goodInternalNodeNums.pop()
                     theNode = self.bigT.nodes[theNodeNum]
                 except IndexError:
-                    #print "No more goodInternals.  Not an error. It just means choose another x"
+                    # print "No more goodInternals.  Not an error. It just
+                    # means choose another x"
                     return None  # to tryToAddAnyX(), above.
             if self.verbose >= 1:
                 print "Try to add x=%s 'centered on' node %i" % (x.name, theNode.nodeNum)
                 if self.verbose >= 3:
                     self.pause()
-            #if self.dbug:
+            # if self.dbug:
             #    if x.name == 'W':
             #        print "theNodeNum is", theNodeNum
             self.kk = self.getQuartetsForXForNode(x, theNode)
-            #print "xxxxx got %i kk" % len(self.kk)
-            #if self.dbug:
+            # print "xxxxx got %i kk" % len(self.kk)
+            # if self.dbug:
             #    if x.name == 'W':
             #        if self.kk:
             #            print "theNodeNum %i, len(self.kk) = %i, k=%i" % (theNodeNum, len(self.kk), self.kk[0].k)
             #        else:
-            #            print "theNodeNum %i, self.kk = %s" % (theNodeNum, self.kk)
-            if not self.kk: # unable to find an appropriate tree, so try another theNode
+            # print "theNodeNum %i, self.kk = %s" % (theNodeNum, self.kk)
+            # unable to find an appropriate tree, so try another theNode
+            if not self.kk:
                 internalNodesWithNoQuartets.append(theNode)
                 if self.verbose >= 1:
                     print "  Can't get any quartets centered on that node.  Try another node."
                 if self.verbose >= 2:
                     if not goodInternalNodeNums:
-                        #print "  Failed to get a quartet, at all, for x=%s.  Bad! -- P4Error follows!" % x.name
+                        # print "  Failed to get a quartet, at all, for x=%s.
+                        # Bad! -- P4Error follows!" % x.name
                         print "  ...except that there are no other nodes.  ",
                         print "So we have failed to add x=%s on any node." % x.name
                         return None
                     else:
-                        # This happens a lot, both for qj's that will be successful or will fail.
+                        # This happens a lot, both for qj's that will be
+                        # successful or will fail.
                         print "  Failed to get a quartet, so choose another theNode from goodInternals"
                         if self.verbose >= 3:
                             func.setTerminalColour(BIG_T_COLOUR)
@@ -1583,24 +1654,26 @@ class QuartetJoining(object):
                             func.unsetTerminalColour()
                             print "  (The tree above is the current bigT)"
 
-
-        assert self.kk  # A list, one for each tree that had a k, unless limited by maxQuartetsPerN
-        #print "got %i quartets" % len(self.kk)
-        #print self.kk
-        #for k in self.kk:
+        # A list, one for each tree that had a k, unless limited by
+        # maxQuartetsPerN
+        assert self.kk
+        # print "got %i quartets" % len(self.kk)
+        # print self.kk
+        # for k in self.kk:
         #    k.dump()
-        #sys.exit()
-        
+        # sys.exit()
+
         # We have self.kk, so find kNodes and kBrs.
         if self.verbose >= 1:
             print "  Maybe able to add x=%s.  Got quartets from %i trees.  Now see how big the k-subtree is." % (
                 x.name, len(self.kk))
-            #print " ",
+            # print " ",
         kIntNodes, kBrs = self.getKNodes(theNode)
         if self.verbose >= 2:
             print "    After assessing the first quartet, we have %i kBrs, %s" % (
                 len(kBrs), [n.nodeNum for n in kBrs])
-            #print "    After assessing the first quartet, we have %i kBrs" % len(kBrs)
+            # print "    After assessing the first quartet, we have %i kBrs" %
+            # len(kBrs)
             print "    and %i kIntNodes, %s" % (len(kIntNodes), [n.nodeNum for n in kIntNodes])
             if self.verbose >= 3:
                 func.setTerminalColour(BIG_T_COLOUR)
@@ -1616,80 +1689,83 @@ class QuartetJoining(object):
             elif len(kBrs) == 1:
                 print "    k-subtree is %i kBrs.  Lucky-- can add it right now." % len(kBrs)
 
-        #if self.dbug:
+        # if self.dbug:
         #    if x.name == 'Z':
         #        pass
         #        #print "** len(kBrs)", len(kBrs), "len(kIntNodes)", len(kIntNodes)
 
-        #print "len(kBrs) == %i." % len(kBrs)
-        #sys.exit()
+        # print "len(kBrs) == %i." % len(kBrs)
+        # sys.exit()
         if len(kBrs) == 1:
             return kBrs  # to tryToAddAnyX()
-        elif len(kBrs) > 1 and not kIntNodes: # This can happen with a tie score in getKNodes()
+        # This can happen with a tie score in getKNodes()
+        elif len(kBrs) > 1 and not kIntNodes:
             return kBrs  # to tryToAddAnyX()
         elif not kBrs:
-            raise P4Error("No kBrs.  %i kIntNodes.  Programming error." % len(kIntNodes))
+            raise P4Error(
+                "No kBrs.  %i kIntNodes.  Programming error." % len(kIntNodes))
         else:
-            #if not kIntNodes or not kBrs:
+            # if not kIntNodes or not kBrs:
             #    self.bigT.draw()
             #    print "kIntNodes %s" % [n.nodeNum for n in kIntNodes]
             #    print "kBrs %s" % [n.nodeNum for n in kBrs]
             #    raise P4Error("There are %i kIntNodes and %i kBrs" % (len(kIntNodes), len(kBrs)))
-            kBrs = self.refineKSubTree(kIntNodes, kBrs, x, internalNodesWithNoQuartets)
+            kBrs = self.refineKSubTree(
+                kIntNodes, kBrs, x, internalNodesWithNoQuartets)
             if self.verbose >= 2:
                 print "    refineKSubTree() returned kBrs = %s" % [n.nodeNum for n in kBrs]
                 self.pause()
             assert kBrs, "no kBrs.  Programming error. How did *that* happen?!?"
             return kBrs  # to tryToAddAnyX()
-        
-
-
 
     def refineKSubTree(self, kIntNodes, kBrs, x, internalNodesWithNoQuartets):
-        #print "refineKSubTree() start. got %i kIntNodes, %i kBrs" % (len(kIntNodes), len(kBrs))
+        # print "refineKSubTree() start. got %i kIntNodes, %i kBrs" %
+        # (len(kIntNodes), len(kBrs))
         if self.doCentralNodeStrategy:
             kIntNodes = func.sortListOfObjectsOnAttribute(kIntNodes, 'pc012')
         else:
             random.shuffle(kIntNodes)
-        #print "Starting refineKSubTree() with %i kIntNodes" % len(kIntNodes)
+        # print "Starting refineKSubTree() with %i kIntNodes" % len(kIntNodes)
         while 1:
 
             if self.verbose == 1:
                 print "    Refining. %i kBrs" % len(kBrs)
-                
+
             if self.verbose >= 2:
                 print "      refineKSubTree()  kIntNodes are now %s" % [n.nodeNum for n in kIntNodes]
             try:
-                #print "x%i" % len(kIntNodes),
-                #sys.stdout.flush()
+                # print "x%i" % len(kIntNodes),
+                # sys.stdout.flush()
                 theIntNode = kIntNodes.pop()
             except IndexError:
-                #print "No more kIntNodes.  Don't bother re-looping?"
-                #print "Z"
+                # print "No more kIntNodes.  Don't bother re-looping?"
+                # print "Z"
                 if self.verbose >= 2:
                     print "      refineKSubTree()  no more kIntNodes.  Returning kBrs."
                 return kBrs
             if theIntNode in internalNodesWithNoQuartets:
                 if self.verbose >= 2:
-                    print "      Ignoring node %i -- it is in internalNodesWithNoQuartets" % theIntNode.nodeNum 
+                    print "      Ignoring node %i -- it is in internalNodesWithNoQuartets" % theIntNode.nodeNum
             else:
                 if self.verbose >= 2:
-                    #self.bigT.draw()
+                    # self.bigT.draw()
                     print "      Continue to try to add x=%s, this time via a quartet centered on %i" % (
                         x.name, theIntNode.nodeNum)
                 self.kk = self.getQuartetsForXForNode(x, theIntNode)
                 if not self.kk:
-                    #print "y",
+                    # print "y",
                     if self.verbose >= 2:
                         print "      Failed to get a quartet, so choose another theIntNode from kIntNodes."
                 else:
                     oldKBrs = kBrs
                     oldKIntNodes = kIntNodes
 
-                    # getKNodes gets all of the kBrs and kIntNodes on the k-subtree.
+                    # getKNodes gets all of the kBrs and kIntNodes on the
+                    # k-subtree.
                     newKIntNodes, newKBrs = self.getKNodes(theIntNode)
 
-                    # For both kBrs and kIntNodes, get the intersection of the old and new sets.
+                    # For both kBrs and kIntNodes, get the intersection of the
+                    # old and new sets.
                     kBrs = []
                     for kN in oldKBrs:
                         if kN in newKBrs:
@@ -1699,15 +1775,18 @@ class QuartetJoining(object):
                         if kN in newKIntNodes:
                             kIntNodes.append(kN)
 
-                    # We should be refining here-- making the list smaller. Is it smaller?
-                    if len(kBrs) > len(oldKBrs):  # should it be just >?  No, often it stays the same.
+                    # We should be refining here-- making the list smaller. Is
+                    # it smaller?
+                    # should it be just >?  No, often it stays the same.
+                    if len(kBrs) > len(oldKBrs):
                         print "refineKSubTree().  Added a quartet, but the number of kBrs did not decrease."
 
                     # This next 'else' happens a lot
-                    #if len(kIntNodes) < len(oldKIntNodes):
+                    # if len(kIntNodes) < len(oldKIntNodes):
                     #    pass
-                    #else:
-                    #    print "refineKSubTree().  Added a quartet, but the number of kIntNodes did not decrease."
+                    # else:
+                    # print "refineKSubTree().  Added a quartet, but the number
+                    # of kIntNodes did not decrease."
 
                     if len(kBrs) == 1:
                         return kBrs
@@ -1724,7 +1803,7 @@ class QuartetJoining(object):
         # Add a leaf on the branch on the chosenNode.  That causes
         # 2 nodes to be added -- one internal, and one leaf.  For
         # both, the bitKeys need to be added.
-        #print "adding taxon %s ..." % x.name
+        # print "adding taxon %s ..." % x.name
 
         if self.verbose >= 2:
             print "Before adding the leaf, bigT is:"
@@ -1741,14 +1820,13 @@ class QuartetJoining(object):
 
         theParent = addedNode.parent
         self.bigTInternalNodes.append(theParent)
-        #self.checkBigTInternalNodes() # slow check
+        # self.checkBigTInternalNodes() # slow check
         p = theParent
         while p != self.bigT.root:
             self.calculateBitKeyForInternalNodeFromChildren(p)
             p = p.parent
 
         self.bigT.taxBits = self.bigT.taxBits | x.bitKey
-
 
         if self.verbose:
             print "    addLeafToBigT: Add a leaf x=%s on the branch for node %i." % (
@@ -1760,7 +1838,7 @@ class QuartetJoining(object):
                 print "... resulting in the tree above, with %i leaves." % self.bigT.nTax
                 self.pause()
 
-        #if self.doCountTries:
+        # if self.doCountTries:
         #    self.count_txAdded = 1
 
         if self.doPips:
@@ -1776,7 +1854,8 @@ class QuartetJoining(object):
 
         # theNode is a node in bigT, where an x-subtree may now be added.
 
-        gm = ["addXSubTreeToBigT(theNodeOnBigT=%i, x=%s)" % (theNode.nodeNum, x.name)]
+        gm = ["addXSubTreeToBigT(theNodeOnBigT=%i, x=%s)" % (
+            theNode.nodeNum, x.name)]
         if self.verbose >= 2:
             print "Now doing %s" % gm[0]
         # Use only those trees that had the high vote in the choice of the kBr.
@@ -1784,8 +1863,8 @@ class QuartetJoining(object):
         assert maxVotes
         nMaxs = self.votes.count(maxVotes)
         #maxs = []
-            
-        #for i in range(3):
+
+        # for i in range(3):
         #    if self.votes[i] == maxVotes:
         #        maxs.append(i)
         if nMaxs > 1:
@@ -1794,24 +1873,27 @@ class QuartetJoining(object):
             # in self.votes.  So if we are here, with nMaxs more
             # than 1, we must have made a tie-breaking choice.  And
             # that should have been prevented.
-            gm.append("nMaxs is %i.  Odd.  Programming error. Due to tie-breaking?" % nMaxs)
+            gm.append(
+                "nMaxs is %i.  Odd.  Programming error. Due to tie-breaking?" % nMaxs)
             gm.append("self.votes = %s" % self.votes)
             raise P4Error(gm)
         theMaxNum = self.votes.index(maxVotes)
-        
-        # Find all the quartets that had the maxVote, where theQJQuartet.k == theMaxNum
-        maxVoteQuartets = [q for q in self.kk if q.k == theMaxNum]
 
+        # Find all the quartets that had the maxVote, where theQJQuartet.k ==
+        # theMaxNum
+        maxVoteQuartets = [q for q in self.kk if q.k == theMaxNum]
 
         if not maxVoteQuartets:
             for i in range(len(self.kk)):
                 q = self.kk[i]
-                gm.append("addXSubTreeToBigT(), q.x.name=%s, q.vote=%s" % (q.x.name, q.vote))
-            gm.append("addXSubTreeToBigT()  self.votes=%s, maxVotes=%s" % (self.votes, maxVotes))
+                gm.append(
+                    "addXSubTreeToBigT(), q.x.name=%s, q.vote=%s" % (q.x.name, q.vote))
+            gm.append("addXSubTreeToBigT()  self.votes=%s, maxVotes=%s" %
+                      (self.votes, maxVotes))
             gm.append("addXSubTreeToBigT() maxs = %s" % maxs)
             gm.append("no maxVoteQuartets -- how can that be?")
             raise P4Error(gm)
-                      
+
         if 0:
             for i in range(len(maxVoteQuartets)):
                 q = maxVoteQuartets[i]
@@ -1819,7 +1901,7 @@ class QuartetJoining(object):
                 print "Above is the tree for maxVoteQuartets number %i" % i
             print "got %i maxVoteQuartets" % len(maxVoteQuartets)
             print "adding taxon x=%s, and its subtree." % x.name
-            #sys.exit()
+            # sys.exit()
 
         # Now we want to find the QJQuartet with biggest x-subtree.
         # There might be more than one QJQuartet with a tree with the
@@ -1829,11 +1911,14 @@ class QuartetJoining(object):
         qWithBiggestSubTree = None
         nLeavesInBiggestSubTree = 0
         for q in maxVoteQuartets:
-            if not qWithBiggestSubTree:  # the first one, so it must be the biggest so far
+            # the first one, so it must be the biggest so far
+            if not qWithBiggestSubTree:
                 qWithBiggestSubTree = q
-                nLeavesInBiggestSubTree = self.locateAndCountLeavesInXSubTreeFromQuartet(q, x)
+                nLeavesInBiggestSubTree = self.locateAndCountLeavesInXSubTreeFromQuartet(
+                    q, x)
             else:
-                thisNLeaves = self.locateAndCountLeavesInXSubTreeFromQuartet(q, x)
+                thisNLeaves = self.locateAndCountLeavesInXSubTreeFromQuartet(
+                    q, x)
                 if thisNLeaves > nLeavesInBiggestSubTree:
                     nLeavesInBiggestSubTree = thisNLeaves
                     qWithBiggestSubTree = q
@@ -1844,17 +1929,19 @@ class QuartetJoining(object):
             qWithBiggestSubTree.tree.draw()
             func.unsetTerminalColour()
 
-        theSubTree = qWithBiggestSubTree.tree.dupeSubTree(qWithBiggestSubTree.xNode, up=qWithBiggestSubTree.up)
+        theSubTree = qWithBiggestSubTree.tree.dupeSubTree(
+            qWithBiggestSubTree.xNode, up=qWithBiggestSubTree.up)
         assert theSubTree.isFullyBifurcating()
         self.decorateTreeWithBitKeys(theSubTree)
-        #theSubTree.draw()
-        #print "The above is the subtree."
-        #sys.exit()
+        # theSubTree.draw()
+        # print "The above is the subtree."
+        # sys.exit()
 
         # Calculate the taxBits for theSubTree
         subTreeTaxBits = qWithBiggestSubTree.xNode.br.bitKey
         if not qWithBiggestSubTree.up:
-            subTreeTaxBits = (self.allOnes ^ subTreeTaxBits) & qWithBiggestSubTree.tree.taxBits # flip bits
+            subTreeTaxBits = (
+                self.allOnes ^ subTreeTaxBits) & qWithBiggestSubTree.tree.taxBits  # flip bits
 
         # Slow check of theSubTree.taxBits
         if 1:
@@ -1864,7 +1951,7 @@ class QuartetJoining(object):
             if subTreeTaxBits != checkTaxBits:
                 raise P4Error("subTreeTaxBits are wrong.  Existing=%s, check=%s" % (
                     self.getTaxBitsString(subTreeTaxBits), self.getTaxBitsString(checkTaxBits)))
-        
+
         # theSubTree does not last long -- it is destroyed when it is
         # added to bigT.  But I need the taxNames and the taxBits.  So
         # save them.  And the internalNodes
@@ -1875,7 +1962,7 @@ class QuartetJoining(object):
         subTreeInternalNodes.append(theSubTree.root)
 
         if self.verbose >= 2:
-            #if not qWithBiggestSubTree.up:
+            # if not qWithBiggestSubTree.up:
             if 1:
                 func.setTerminalColour(BIG_T_COLOUR)
                 self.bigT.draw()
@@ -1889,25 +1976,24 @@ class QuartetJoining(object):
                 print "addXSubTreeToBigT().  nLeaves = %2i, up=%5s" % (
                     nLeavesInBiggestSubTree, qWithBiggestSubTree.up)
                 print "subTreeTaxBits = %s" % self.getTaxBitsString(subTreeTaxBits)
-                #sys.exit()
-        
+                # sys.exit()
+
         if self.diagn:
             self.xSubTree = nLeavesInBiggestSubTree
         # Doing the following zaps theSubTree.
         oldBigTNTax = self.bigT.nTax
         self.bigT.addSubTree(theNode, theSubTree, subTreeTaxNames)
-        self.bigTInternalNodes += subTreeInternalNodes # includes root of subtree
-        #self.checkBigTInternalNodes() # slow check
+        # includes root of subtree
+        self.bigTInternalNodes += subTreeInternalNodes
+        # self.checkBigTInternalNodes() # slow check
         theNode.parent.name = None
         theNode.sibling.br.bitKey = subTreeTaxBits
-        
 
-        #self.calculateBitKeyForInternalNodeFromChildren(theNode.parent)
+        # self.calculateBitKeyForInternalNodeFromChildren(theNode.parent)
         p = theNode.parent
         while p != self.bigT.root:
             self.calculateBitKeyForInternalNodeFromChildren(p)
             p = p.parent
-
 
         if 0:
             if qWithBiggestSubTree.up == False:
@@ -1920,8 +2006,8 @@ class QuartetJoining(object):
                 self.bigT.draw()
                 func.unsetTerminalColour()
                 print "The above is bigT, after adding %i nodes" % nLeavesInBiggestSubTree
-            
-        #if qWithBiggestSubTree.up == False:
+
+        # if qWithBiggestSubTree.up == False:
         #    self.checkBitKeys(self.bigT)
 
         if self.verbose >= 2:
@@ -1933,23 +2019,20 @@ class QuartetJoining(object):
         # Need the taxBits from the subTree to add to self.bigT
         self.bigT.taxBits = self.bigT.taxBits | subTreeTaxBits
 
-        #if self.doCountTries:
+        # if self.doCountTries:
         #    self.count_txAdded = nLeavesInBiggestSubTree
-        
+
         if self.doPips:
             pipsWrittenNow = 0
             for pip in range(nLeavesInBiggestSubTree):
                 sys.stdout.write(".")
-                pipsWrittenNow +=1
+                pipsWrittenNow += 1
                 if (oldBigTNTax + pipsWrittenNow) % 50 == 0:
                     print " %4i" % (oldBigTNTax + pipsWrittenNow)
             sys.stdout.flush()
-        #print "adding %i leaves" % nLeavesInBiggestSubTree
+        # print "adding %i leaves" % nLeavesInBiggestSubTree
         return subTreeTaxNames  # to tryToAddAnyX
-    
 
-
-    
     def getQuartetsForXForNode(self, x, theNode):
 
         # Our goal here is to identify k as the subtree on theNode on
@@ -1961,11 +2044,10 @@ class QuartetJoining(object):
         # theNode, but if theNode is the root of bigT then number 2
         # would be the subtree on theNode.sibling.sibling.
 
-
         if self.slowCheck:
             self.checkBitKeys(self.bigT)
- 
-        #if self.verbose >= 1:
+
+        # if self.verbose >= 1:
         #    print "        getQuartetsForXForNode()"
 
         # First find all the 'goodTrees' in the input trees.  It uses
@@ -1978,18 +2060,18 @@ class QuartetJoining(object):
             bk1 = theNode.leftChild.sibling.br.bitKey
             bk2 = theNode.leftChild.sibling.sibling.br.bitKey
             goodTrees = [t for t in self.trees if (
-                t.taxBits & x.bitKey and \
-                t.taxBits & bk0) and \
-                (t.taxBits & bk1) and \
+                t.taxBits & x.bitKey and
+                t.taxBits & bk0) and
+                (t.taxBits & bk1) and
                 (t.taxBits & bk2)]
         else:
             bk0 = theNode.leftChild.br.bitKey
             bk1 = theNode.leftChild.sibling.br.bitKey
             bk2 = (self.allOnes ^ theNode.br.bitKey) & self.bigT.taxBits
             goodTrees = [t for t in self.trees if (
-                t.taxBits & x.bitKey and \
-                t.taxBits & bk0) and \
-                (t.taxBits & bk1) and \
+                t.taxBits & x.bitKey and
+                t.taxBits & bk0) and
+                (t.taxBits & bk1) and
                 (t.taxBits & bk2)]
 
         if not goodTrees:
@@ -2004,14 +2086,14 @@ class QuartetJoining(object):
                     for t in goodTrees:
                         func.setTerminalColour(INPUT_T_COLOUR)
                         sL = t.textDrawList(showInternalNodeNames=False,
-                                           addToBrLen=0.0, width=50,
-                                           autoIncreaseWidth=True,
-                                           showNodeNums=True, partNum=None, model=None)
+                                            addToBrLen=0.0, width=50,
+                                            autoIncreaseWidth=True,
+                                            showNodeNums=True, partNum=None, model=None)
                         for s in sL:
                             print "    ",
                             print s
                         func.unsetTerminalColour()
-                #if self.verbose >= 3:
+                # if self.verbose >= 3:
                 #    self.pause()
 
                 func.setTerminalColour(BIG_T_COLOUR)
@@ -2025,11 +2107,12 @@ class QuartetJoining(object):
                 print "bk0 = %s" % self.getTaxBitsString(bk0)
                 print "bk1 = %s" % self.getTaxBitsString(bk1)
                 print "bk2 = %s" % self.getTaxBitsString(bk2)
-                
-        #sys.exit()
-        kk = []                # k's (quartets) from all the trees.  At most one per tree
+
+        # sys.exit()
+        # k's (quartets) from all the trees.  At most one per tree
+        kk = []
         allBits = x.bitKey | bk0 | bk1 | bk2
-        if 0: #self.dbug:
+        if 0:  # self.dbug:
             if x.name == 'W':
                 func.setTerminalColour(BIG_T_COLOUR)
                 self.bigT.draw()
@@ -2039,24 +2122,24 @@ class QuartetJoining(object):
                 print "bk0 = %s" % self.getTaxBitsString(bk0)
                 print "bk1 = %s" % self.getTaxBitsString(bk1)
                 print "bk2 = %s" % self.getTaxBitsString(bk2)
-                print 
+                print
                 print "allBits = %s" % self.getTaxBitsString(allBits)
-                print "goodTree[0] is ", 
+                print "goodTree[0] is ",
                 goodTrees[0].write()
 
         for gT in goodTrees:
             if self.verbose >= 2:
                 func.setTerminalColour(INPUT_T_COLOUR)
                 sL = gT.textDrawList(showInternalNodeNames=False,
-                                   addToBrLen=0.0, width=50,
-                                   autoIncreaseWidth=True,
-                                   showNodeNums=True, partNum=None, model=None)
+                                     addToBrLen=0.0, width=50,
+                                     autoIncreaseWidth=True,
+                                     showNodeNums=True, partNum=None, model=None)
                 for s in sL:
                     print "    ",
                     print s
                 func.unsetTerminalColour()
                 print "Input tree containing the right bitKeys"
-                
+
             gotIt = False
             badBitsBelow = False
             #mBits = 0
@@ -2065,10 +2148,10 @@ class QuartetJoining(object):
                 biggestNBits = 0
                 n = tNode.leftChild
                 while n:
-                    #print "while n.  Doing node %i" % n.nodeNum 
+                    # print "while n.  Doing node %i" % n.nodeNum
                     if n.isLeaf:
                         pass
-                    elif allBits & n.br.bitKey: # at least one bit
+                    elif allBits & n.br.bitKey:  # at least one bit
                         bitHits = []
                         nBits = 0
                         for bk in [bk0, bk1, bk2, x.bitKey]:
@@ -2076,7 +2159,8 @@ class QuartetJoining(object):
                                 nBits += 1
                                 bitHits.append(bk)
                                 if nBits > 2:
-                                    #print "nBits is more than 2, so its further up this subtree."
+                                    # print "nBits is more than 2, so its
+                                    # further up this subtree."
                                     break
                         if nBits > biggestNBits:
                             biggestNBits = nBits
@@ -2089,7 +2173,8 @@ class QuartetJoining(object):
                             # this should be optional, with a switch.
                             badBitsBelow = False
                             bitHitsBelow = []
-                            bitsBelow = (self.allOnes ^ n.br.bitKey) & gT.taxBits
+                            bitsBelow = (
+                                self.allOnes ^ n.br.bitKey) & gT.taxBits
                             if 0:
                                 func.setTerminalColour('violet')
                                 gT.draw()
@@ -2106,15 +2191,14 @@ class QuartetJoining(object):
                                 # ambiguous!
                                 #func.writeInColour("Got %i bitHitsBelow\n" % len(bitHitsBelow), "CYAN")
                                 badBitsBelow = True
-                                
 
-                        elif nBits > 2: # Its further up that subtree
+                        elif nBits > 2:  # Its further up that subtree
                             tNode = n
                             nBits = 0
                             break
                     n = n.sibling  # Try the next subtree
 
-                if biggestNBits < 2: # useless to go further
+                if biggestNBits < 2:  # useless to go further
                     break
                 if gotIt:
                     break
@@ -2127,15 +2211,14 @@ class QuartetJoining(object):
 
             else:
                 assert len(bitHits) == 2   # 2 of [bk0, bk1, bk2, x.bitKey]
-                assert len(bitHitsBelow) == 2   # 2 of [bk0, bk1, bk2, x.bitKey]
-                    
-
-
+                # 2 of [bk0, bk1, bk2, x.bitKey]
+                assert len(bitHitsBelow) == 2
 
                 if self.verbose >= 2:
                     print "The tree above has a relevant quartet, at node num %i" % n.nodeNum
-                #if self.dbug and x.name == 'W':
-                #    print "The tree above has a relevant quartet, at node num %i" % n.nodeNum
+                # if self.dbug and x.name == 'W':
+                # print "The tree above has a relevant quartet, at node num %i"
+                # % n.nodeNum
                 k = None
                 xAndKAreAbove = None
 
@@ -2163,7 +2246,7 @@ class QuartetJoining(object):
                     elif thirdOne == bk1:
                         k = 1
                     elif thirdOne == bk2:
-                        k = 2 
+                        k = 2
 
                     xAndKAreAbove = False
                 assert k != None
@@ -2181,8 +2264,7 @@ class QuartetJoining(object):
                         print "are above the split at node %i" % n.nodeNum
                     else:
                         print "are below the split at node %i" % n.nodeNum
-                    
-                    
+
                 if self.doAddXSubTree:
                     theQuart = QJQuartet(gT, n, k, xAndKAreAbove)
                 else:
@@ -2192,9 +2274,7 @@ class QuartetJoining(object):
                 if self.maxQuartetsPerN and len(kk) >= self.maxQuartetsPerN:
                     return kk
         return kk
-                    
-            
-       
+
     def getKNodes(self, theNode):
         """Find and return the kIntNodes and kBrs in the k-subtree."""
 
@@ -2202,7 +2282,7 @@ class QuartetJoining(object):
         # list of QJQuartet objects, or ints.  So vote.
         self.votes = [0] * 3  # assume only 3 subtrees on theNode.
         for item in self.kk:
-            if self.doAddXSubTree: # item is a QJQuartet object
+            if self.doAddXSubTree:  # item is a QJQuartet object
                 self.votes[item.k] += 1
 
             else:                # item is an int
@@ -2210,9 +2290,10 @@ class QuartetJoining(object):
 
         if self.verbose >= 2:
             print "  getKNodes(). self.votes = %s" % self.votes
-        
-        # In the following, we take into account the possibility of there being a tie score.
-        maxVotes = max(self.votes)   
+
+        # In the following, we take into account the possibility of there being
+        # a tie score.
+        maxVotes = max(self.votes)
         assert maxVotes
 
         # It may be a tie score.  It happens a fair amount.
@@ -2240,7 +2321,7 @@ class QuartetJoining(object):
                         if not n.isLeaf:
                             kIntNodes.append(n)
                         kBrs.append(n)
-                else: # theNode is not root.
+                else:  # theNode is not root.
                     if theVoteIndx < 2:
                         if theVoteIndx == 0:
                             ch = theNode.leftChild
@@ -2250,20 +2331,20 @@ class QuartetJoining(object):
                             if not n.isLeaf:
                                 kIntNodes.append(n)
                             kBrs.append(n)
-                    else:                                   # theVoteIndx is 2, so its below
+                    # theVoteIndx is 2, so its below
+                    else:
                         for n in theNode.iterDown():
                             if not n.isLeaf:
                                 kIntNodes.append(n)
                             if n.br:
                                 kBrs.append(n)
-                        kIntNodes = kIntNodes[1:] 
+                        kIntNodes = kIntNodes[1:]
 
-        #print "getKNodes() got kIntNodes=%s, kBrs=%s" % (
+        # print "getKNodes() got kIntNodes=%s, kBrs=%s" % (
         #                [n.nodeNum for n in kIntNodes], [n.nodeNum for n in kBrs])
         #assert kIntNodes
         assert kBrs
         return (kIntNodes, kBrs)
-
 
     def getQuartetForFourTaxaInTrees(self, taxa, theTrees):
 
@@ -2278,21 +2359,21 @@ class QuartetJoining(object):
         bk2 = taxa[2].bitKey
         bk3 = taxa[3].bitKey
         allBits = bk0 | bk1 | bk2 | bk3
-        
+
         for gT in theTrees:
 
             if self.verbose >= 2:
                 func.setTerminalColour(INPUT_T_COLOUR)
                 sL = gT.textDrawList(showInternalNodeNames=False,
-                                   addToBrLen=0.0, width=50,
-                                   autoIncreaseWidth=True,
-                                   showNodeNums=True, partNum=None, model=None)
+                                     addToBrLen=0.0, width=50,
+                                     autoIncreaseWidth=True,
+                                     showNodeNums=True, partNum=None, model=None)
                 for s in sL:
                     print "    ",
                     print s
                 func.unsetTerminalColour()
-                #print "Input tree containing the right bitKeys"
-                
+                # print "Input tree containing the right bitKeys"
+
             gotIt = False
             badBitsBelow = False
             #mBits = 0
@@ -2301,10 +2382,10 @@ class QuartetJoining(object):
                 biggestNBits = 0
                 n = tNode.leftChild
                 while n:
-                    #print "while n.  Doing node %i" % n.nodeNum 
+                    # print "while n.  Doing node %i" % n.nodeNum
                     if n.isLeaf:
                         pass
-                    elif allBits & n.br.bitKey: # at least one bit
+                    elif allBits & n.br.bitKey:  # at least one bit
                         bitHits = []
                         nBits = 0
                         for bk in [bk0, bk1, bk2, bk3]:
@@ -2312,7 +2393,8 @@ class QuartetJoining(object):
                                 nBits += 1
                                 bitHits.append(bk)
                                 if nBits > 2:
-                                    #print "nBits is more than 2, so its further up this subtree."
+                                    # print "nBits is more than 2, so its
+                                    # further up this subtree."
                                     break
                         if nBits > biggestNBits:
                             biggestNBits = nBits
@@ -2325,7 +2407,8 @@ class QuartetJoining(object):
                             # this should be optional, with a switch.
                             badBitsBelow = False
                             bitHitsBelow = []
-                            bitsBelow = (self.allOnes ^ n.br.bitKey) & gT.taxBits
+                            bitsBelow = (
+                                self.allOnes ^ n.br.bitKey) & gT.taxBits
                             if 0:
                                 func.setTerminalColour('violet')
                                 gT.draw()
@@ -2342,15 +2425,14 @@ class QuartetJoining(object):
                                 # ambiguous!
                                 #func.writeInColour("Got %i bitHitsBelow\n" % len(bitHitsBelow), "CYAN")
                                 badBitsBelow = True
-                                
 
-                        elif nBits > 2: # Its further up that subtree
+                        elif nBits > 2:  # Its further up that subtree
                             tNode = n
                             nBits = 0
                             break
                     n = n.sibling  # Try the next subtree
 
-                if biggestNBits < 2: # useless to go further
+                if biggestNBits < 2:  # useless to go further
                     break
                 if gotIt:
                     break
@@ -2364,9 +2446,6 @@ class QuartetJoining(object):
             else:
                 assert len(bitHits) == 2   # 2 of [bk0, bk1, bk2, bk3]
                 assert len(bitHitsBelow) == 2   # 2 of [bk0, bk1, bk2, bk3]
-                    
-
-
 
                 if self.verbose >= 2:
                     print "The tree above has a quartet, at node num %i" % n.nodeNum
@@ -2389,8 +2468,7 @@ class QuartetJoining(object):
                         assert bk0 in bitHits and bk3 in bitHits
                         assert bk1 in bitHitsBelow and bk2 in bitHitsBelow
                         votes[2] += 1
-                            
-                            
+
                 else:
                     if bk1 in bitHits:
                         if bk2 in bitHits:
@@ -2405,7 +2483,6 @@ class QuartetJoining(object):
                         assert bk2 in bitHits and bk3 in bitHits
                         assert bk0 in bitHitsBelow and bk1 in bitHitsBelow
                         votes[0] += 1
-                        
 
         theMax = max(votes)
         if not theMax:
@@ -2414,38 +2491,36 @@ class QuartetJoining(object):
         if nMaxs > 1:  # we don't want ambiguity
             return None
         myMaxIndex = votes.index(theMax)
-        #print "taxa names are %s, " % [tx.name for tx in taxa],
-        #print "myMaxIndex is", myMaxIndex
-        
+        # print "taxa names are %s, " % [tx.name for tx in taxa],
+        # print "myMaxIndex is", myMaxIndex
+
         savedWarnReadNoFile = var.warnReadNoFile
         var.warnReadNoFile = 0
         read('(A, B, (C, D));')
         var.warnReadNoFile = savedWarnReadNoFile
         t = var.trees.pop()
-        if myMaxIndex == 0: # 0 and 1 go together, so 2 and 3 go together
+        if myMaxIndex == 0:  # 0 and 1 go together, so 2 and 3 go together
             t.nodes[1].name = taxa[2].name
             t.nodes[2].name = taxa[3].name
             t.nodes[4].name = taxa[0].name
             t.nodes[5].name = taxa[1].name
-        elif myMaxIndex == 1: # 0 and 2 go together, so 1 and 3 go together
+        elif myMaxIndex == 1:  # 0 and 2 go together, so 1 and 3 go together
             t.nodes[1].name = taxa[1].name
             t.nodes[2].name = taxa[3].name
             t.nodes[4].name = taxa[0].name
             t.nodes[5].name = taxa[2].name
-        elif myMaxIndex == 2: # 0 and 3 go together, so 1 and 2 go together
+        elif myMaxIndex == 2:  # 0 and 3 go together, so 1 and 2 go together
             t.nodes[1].name = taxa[0].name
             t.nodes[2].name = taxa[3].name
             t.nodes[4].name = taxa[1].name
             t.nodes[5].name = taxa[2].name
 
         return t
-        
 
     # *************************************************
     # *************************************************
     # *************************************************
     # *************************************************
-
 
     def pause(self):
         if self.verbose >= 3:
@@ -2465,8 +2540,6 @@ class QuartetJoining(object):
                 count += 1
         return count
 
-
-
     def setTreeTaxBits(self, theTree):
         """This needs to have bitKey attributes for nodes already set.
 
@@ -2475,9 +2548,8 @@ class QuartetJoining(object):
 
         theTree.taxBits = 0L
         for ch in theTree.root.iterChildren():
-            #print ch.br.bitKey
-            theTree.taxBits = theTree.taxBits | ch.br.bitKey # bitwise 'or'
-
+            # print ch.br.bitKey
+            theTree.taxBits = theTree.taxBits | ch.br.bitKey  # bitwise 'or'
 
     def decorateTreeWithBitKeys(self, theTree):
         """Put bitKey attributes on all branches of the tree.
@@ -2485,7 +2557,7 @@ class QuartetJoining(object):
         bitKey's are attributes of node branches, and are binary
         numbers that say what taxa are above that branch in the tree.
         """
-        
+
         for n in theTree.iterPostOrder():
             if n != theTree.root:
                 if n.isLeaf:
@@ -2511,7 +2583,6 @@ class QuartetJoining(object):
             for tName in tNames:
                 print " %s" % tName,
             print
-    
 
     def checkBitKeys(self, theTree):
         for n in theTree.iterPostOrder():
@@ -2520,11 +2591,13 @@ class QuartetJoining(object):
                     # order comes from self.taxNames, not from the tree
                     theBitKey = 1L << self.taxNames.index(n.name)
                     # Hard to imagine how this would get messed up.
-                    if n.br.bitKey != theBitKey: #, "checkBitKeys().  node %i is wrong" % n.nodeNum
+                    # , "checkBitKeys().  node %i is wrong" % n.nodeNum
+                    if n.br.bitKey != theBitKey:
                         print
                         theTree.draw()
                         gm = ["checkBitKeys()"]
-                        gm.append("leaf node %i bitKey is %s, should be %s" % (n.nodeNum, n.br.bitKey, theBitKey))
+                        gm.append("leaf node %i bitKey is %s, should be %s" % (
+                            n.nodeNum, n.br.bitKey, theBitKey))
                         raise P4Error(gm)
                 else:
                     childrenNums = theTree.getChildrenNums(n)
@@ -2537,23 +2610,26 @@ class QuartetJoining(object):
                         theTree.draw()
                         gm = ['checkBitKeys()']
                         for ch in n.iterChildren():
-                            gm.append("node %i bitKey is %s" % (ch.nodeNum, ch.br.bitKey))
-                        gm.append("but node %i bitKey is %s -- wrong!" % (n.nodeNum, n.br.bitKey))
+                            gm.append("node %i bitKey is %s" %
+                                      (ch.nodeNum, ch.br.bitKey))
+                        gm.append("but node %i bitKey is %s -- wrong!" %
+                                  (n.nodeNum, n.br.bitKey))
                         gm.append("should be %s" % x)
                         raise P4Error(gm)
         # Check theTree.taxBits
         checkTaxBits = 0L
         for ch in theTree.root.iterChildren():
-            #print ch.br.bitKey
-            checkTaxBits = checkTaxBits | ch.br.bitKey # bitwise 'or'
+            # print ch.br.bitKey
+            checkTaxBits = checkTaxBits | ch.br.bitKey  # bitwise 'or'
         if checkTaxBits != theTree.taxBits:
             gm = ['checkBitKeys()  tcheck tree taxBits']
-            gm.append('theTree.taxBits=%s, check=%s' % (theTree.taxBits, checkTaxBits))
+            gm.append('theTree.taxBits=%s, check=%s' %
+                      (theTree.taxBits, checkTaxBits))
             raise P4Error(gm)
 
-                        
     def checkBigTInternalNodes(self):
-        recalculatedInternalNodesSet = set([n for n in self.bigT.iterInternalsNoRoot()])
+        recalculatedInternalNodesSet = set(
+            [n for n in self.bigT.iterInternalsNoRoot()])
         recalculatedInternalNodesSet.add(self.bigT.root)
         existingSet = set(self.bigTInternalNodes)
         if recalculatedInternalNodesSet != existingSet:
@@ -2562,11 +2638,9 @@ class QuartetJoining(object):
             func.unsetTerminalColour()
             gm = ["checkBigTInternalNodes()"]
             gm.append("existingSet = %s" % [n.nodeNum for n in existingSet])
-            gm.append("recalculated = %s" % [n.nodeNum for n in recalculatedInternalNodesSet])
+            gm.append("recalculated = %s" %
+                      [n.nodeNum for n in recalculatedInternalNodesSet])
             raise P4Error(gm)
-        
-                            
-        
 
     def calculateBitKeyForInternalNodeFromChildren(self, theNode):
         children = [ch for ch in theNode.iterChildren()]
@@ -2575,18 +2649,16 @@ class QuartetJoining(object):
             y = ch.br.bitKey
             x = x | y
         theNode.br.bitKey = x
-        
-        
-        
+
     def getTaxBitsString(self, taxBits):
         sTax = []
         for tx in self.taxa:
             if (taxBits & tx.bitKey) == tx.bitKey:
                 sTax.append(tx.name)
             else:
-                #sTax.append('.')
+                # sTax.append('.')
                 pass
-        #return ' '.join(sTax) + " (small bits on the left)"
+        # return ' '.join(sTax) + " (small bits on the left)"
         return ' '.join(sTax)
 
     def locateAndCountLeavesInXSubTreeFromQuartet(self, q, x):
@@ -2601,7 +2673,7 @@ class QuartetJoining(object):
 
         gm = ['locateAndCountLeavesInXSubTreeFromQuartet()']
         #func.printColour("Now in %s" % gm[0], 'BLUE')
-        #q.dump()                # includes a tree drawing
+        # q.dump()                # includes a tree drawing
 
         # Arg q is a QJQuartet object, and q.tree is an input tree
         # that has a relevant quartet ij|kx.  Here x is the leaf that
@@ -2631,21 +2703,22 @@ class QuartetJoining(object):
         # k-subtree in bigT can be identified, but that is another
         # story.
 
-
         if q.xAndKAreAbove:
             theNode = q.node
-            #if theNode == q.tree.root:
+            # if theNode == q.tree.root:
             #    for n in theNode.iterChildren():
             #        if n.br.bitKey & x.bitKey:
             #            theNode = n
             #            break
             assert theNode != q.tree.root
-            #print "theNode %i, and x (%s) is above." % (theNode.nodeNum, x.name)
+            # print "theNode %i, and x (%s) is above." % (theNode.nodeNum,
+            # x.name)
             if theNode.br.bitKey & self.bigT.taxBits:
                 bigTBitsAreOnTheSameBranch = True
             else:
                 bigTBitsAreOnTheSameBranch = False
-            #print "bigTBitsAreOnTheSameBranch is %s" % bigTBitsAreOnTheSameBranch
+            # print "bigTBitsAreOnTheSameBranch is %s" %
+            # bigTBitsAreOnTheSameBranch
             while bigTBitsAreOnTheSameBranch:
                 if theNode.isLeaf:
                     bigTBitsAreOnTheSameBranch = False
@@ -2653,18 +2726,19 @@ class QuartetJoining(object):
                 if not bigTBitsAreOnTheSameBranch:
                     break
                 for n in theNode.iterChildren():
-                    #print "   ** Looking at node %i" % n.nodeNum
+                    # print "   ** Looking at node %i" % n.nodeNum
                     if n.br.bitKey & x.bitKey:
-                        #print "     ** x is above"
-                        #print "     ** bigT bits above is %s" % (n.br.bitKey & self.bigT.taxBits)
+                        # print "     ** x is above"
+                        # print "     ** bigT bits above is %s" % (n.br.bitKey
+                        # & self.bigT.taxBits)
                         if not (n.br.bitKey & self.bigT.taxBits):
                             bigTBitsAreOnTheSameBranch = False
                         theNode = n
                         break
             assert not bigTBitsAreOnTheSameBranch
             assert theNode.br.bitKey & x.bitKey
-            #print "theNode %i, and x is above, and there are no bigT bits above" % theNode.nodeNum
-            #sys.exit()
+            # print "theNode %i, and x is above, and there are no bigT bits above" % theNode.nodeNum
+            # sys.exit()
 
             # Now we want to make sure that the x-subtree that we have
             # found is fully bifurcating.  If it is not, then follow
@@ -2684,25 +2758,26 @@ class QuartetJoining(object):
                             break
             assert q.tree.subTreeIsFullyBifurcating(theNode, up=True)
 
-            #print "the x subtree (fully bifurcating, and no bigT taxa) is everything from node %i up." % (
+            # print "the x subtree (fully bifurcating, and no bigT taxa) is everything from node %i up." % (
             #    theNode.nodeNum)
-            #sys.exit()
+            # sys.exit()
             q.xNode = theNode
             q.up = True
             if theNode.isLeaf:
                 return 1
             else:
                 return self.popcount(theNode.br.bitKey)
- 
-        else: # xAndK are below
+
+        else:  # xAndK are below
             theNode = q.node
             xIsBelow = True
             bigTBitsAreBelow = True
-            #print 'bigT.taxBits are %s' % self.getTaxBitsString(self.bigT.taxBits) 
-            #print 'theNode %i, theNode.br.bitKey is %s' % (
+            # print 'bigT.taxBits are %s' % self.getTaxBitsString(self.bigT.taxBits)
+            # print 'theNode %i, theNode.br.bitKey is %s' % (
             #    theNode.nodeNum, self.getTaxBitsString(theNode.br.bitKey))
             bitsBelow = (self.allOnes ^ theNode.br.bitKey) & q.tree.taxBits
-            #print '    taxa below are %s' % (self.getTaxBitsString(bitsBelow))
+            # print '    taxa below are %s' %
+            # (self.getTaxBitsString(bitsBelow))
             assert x.bitKey & bitsBelow
             assert self.bigT.taxBits & bitsBelow
             if 0:
@@ -2719,32 +2794,34 @@ class QuartetJoining(object):
                         qn.name = qn.oldName
                         del(qn.oldName)
                 print "x (%s) and at least some bigT taxa (%s)" % (x.name, self.getTaxBitsString(self.bigT.taxBits))
-                print "   are both somewhere down from node %i on the QJQuartet tree" %  q.node.nodeNum
+                print "   are both somewhere down from node %i on the QJQuartet tree" % q.node.nodeNum
 
             while 1:
                 theNode = theNode.parent
-                #print "while 1: theNode=%i" % theNode.nodeNum
+                # print "while 1: theNode=%i" % theNode.nodeNum
                 if theNode == q.tree.root:
                     xIsBelow = False
-                    #print "x (%s) is no longer below" % x.name
+                    # print "x (%s) is no longer below" % x.name
                     break
                 bitsBelow = (self.allOnes ^ theNode.br.bitKey) & q.tree.taxBits
-                #print "theNode %i, bitsBelow = %s" % (theNode.nodeNum, self.getTaxBitsString(bitsBelow))
+                # print "theNode %i, bitsBelow = %s" % (theNode.nodeNum,
+                # self.getTaxBitsString(bitsBelow))
                 if not (x.bitKey & bitsBelow):
                     xIsBelow = False
-                    #print "x (%s) is no longer below" % x.name
+                    # print "x (%s) is no longer below" % x.name
                 if not (self.bigT.taxBits & bitsBelow):
                     bigTBitsAreBelow = False
-                    #print "there are no longer any bigT bits below."
+                    # print "there are no longer any bigT bits below."
                 if xIsBelow and bigTBitsAreBelow:
                     pass
                 else:
                     break
-            #print "*** theNode=%i, xIsBelow is %s, bigTBitsAreBelow = %s" % (
+            # print "*** theNode=%i, xIsBelow is %s, bigTBitsAreBelow = %s" % (
             #    theNode.nodeNum, xIsBelow, bigTBitsAreBelow)
-            #sys.exit()
-            
-            # So we have now found the x-subtree.  It is off of theNode, either above it or below it.  
+            # sys.exit()
+
+            # So we have now found the x-subtree.  It is off of theNode, either
+            # above it or below it.
 
             # Now we want to make sure that the x-subtree that we have
             # found is fully bifurcating.  If it is not, then follow
@@ -2757,10 +2834,12 @@ class QuartetJoining(object):
                     if not xIsBelow:
                         break
                     if q.tree.subTreeIsFullyBifurcating(theNode, up=False):
-                        #print "theSubTree going down from theNode %i is fully bifurcating" % theNode.nodeNum
+                        # print "theSubTree going down from theNode %i is fully
+                        # bifurcating" % theNode.nodeNum
                         break
                     else:
-                        #print "theSubTree going down from theNode %i is not fully bifurcating" % theNode.nodeNum
+                        # print "theSubTree going down from theNode %i is not
+                        # fully bifurcating" % theNode.nodeNum
                         previousNode = theNode
                         theNode = theNode.parent
                         for n in theNode.iterChildren():
@@ -2771,40 +2850,41 @@ class QuartetJoining(object):
                                 break
                 if xIsBelow:
                     assert q.tree.subTreeIsFullyBifurcating(theNode, up=False)
-                    
 
-
-            #print "locateAndCountLeavesInXSubTreeFromQuartet()  x=%s, k=%s.  node with split is %i" % (
+            # print "locateAndCountLeavesInXSubTreeFromQuartet()  x=%s, k=%s.  node with split is %i" % (
             #                                                   x.name, q.k.name, q.node.nodeNum)
-            #print "theNode is now %i" % theNode.nodeNum
-            #print "xIsBelow=%s, bigTBitsAreBelow=%s" % (xIsBelow, bigTBitsAreBelow)
-            #if not xIsBelow:
+            # print "theNode is now %i" % theNode.nodeNum
+            # print "xIsBelow=%s, bigTBitsAreBelow=%s" % (xIsBelow, bigTBitsAreBelow)
+            # if not xIsBelow:
             #    print "(However, the bigTBitsAreBelow value does not matter since x is not below)."
-            #q.tree.draw()
-            #print "Drawing above is q.tree.  theNode is %i" % theNode.nodeNum
-            #print "bigT taxNames is %s" % self.bigT.taxNames
-            #sys.exit()
+            # q.tree.draw()
+            # print "Drawing above is q.tree.  theNode is %i" % theNode.nodeNum
+            # print "bigT taxNames is %s" % self.bigT.taxNames
+            # sys.exit()
             if xIsBelow and not bigTBitsAreBelow:
-                #print "x is everything below node %i (now isolated from bigT taxa)." % theNode.nodeNum
-                flippedBits = q.tree.taxBits  ^ theNode.br.bitKey
-                #print "flippedBits = %s" % self.getTaxBitsString(flippedBits)
+                # print "x is everything below node %i (now isolated from bigT
+                # taxa)." % theNode.nodeNum
+                flippedBits = q.tree.taxBits ^ theNode.br.bitKey
+                # print "flippedBits = %s" % self.getTaxBitsString(flippedBits)
                 assert not flippedBits & self.bigT.taxBits
                 q.xNode = theNode
                 q.up = False
                 return self.popcount(flippedBits)
-            elif not xIsBelow: # At this point, whether bigTBitsAreBelow or not does not matter.
+            # At this point, whether bigTBitsAreBelow or not does not matter.
+            elif not xIsBelow:
                 if theNode == q.tree.root:
                     for n in theNode.iterChildren():
                         if n.br.bitKey & x.bitKey:
                             theNode = n
                             break
-                #print "theNode %i, and x is above." % theNode.nodeNum
+                # print "theNode %i, and x is above." % theNode.nodeNum
 
                 if theNode.br.bitKey & self.bigT.taxBits:
                     bigTBitsAreOnTheSameBranch = True
                 else:
                     bigTBitsAreOnTheSameBranch = False
-                #print "bigTBitsAreOnTheSameBranch is %s" % bigTBitsAreOnTheSameBranch
+                # print "bigTBitsAreOnTheSameBranch is %s" %
+                # bigTBitsAreOnTheSameBranch
                 while bigTBitsAreOnTheSameBranch:
                     if theNode.isLeaf:
                         bigTBitsAreOnTheSameBranch = False
@@ -2812,17 +2892,19 @@ class QuartetJoining(object):
                     if not bigTBitsAreOnTheSameBranch:
                         break
                     for n in theNode.iterChildren():
-                        #print "   ** Looking at node %i" % n.nodeNum
+                        # print "   ** Looking at node %i" % n.nodeNum
                         if n.br.bitKey & x.bitKey:
-                            #print "     ** x is above"
-                            #print "     ** bigT bits above is %s" % (n.br.bitKey & self.bigT.taxBits)
+                            # print "     ** x is above"
+                            # print "     ** bigT bits above is %s" %
+                            # (n.br.bitKey & self.bigT.taxBits)
                             if not (n.br.bitKey & self.bigT.taxBits):
                                 bigTBitsAreOnTheSameBranch = False
                             theNode = n
                             break
                 assert not bigTBitsAreOnTheSameBranch
                 assert theNode.br.bitKey & x.bitKey
-                #print "Found theNode %i, and x is above, and there are no bigT bits above" % theNode.nodeNum
+                # print "Found theNode %i, and x is above, and there are no
+                # bigT bits above" % theNode.nodeNum
                 while 1:
                     if theNode.isLeaf:
                         break
@@ -2834,8 +2916,8 @@ class QuartetJoining(object):
                                 theNode = n
                                 break
                 assert q.tree.subTreeIsFullyBifurcating(theNode, up=True)
-                
-                #print "the x subtree (fully bifurcating, and no bigT taxa) is everything from node %i up." % (
+
+                # print "the x subtree (fully bifurcating, and no bigT taxa) is everything from node %i up." % (
                 #    theNode.nodeNum)
                 q.xNode = theNode
                 q.up = True
@@ -2843,7 +2925,6 @@ class QuartetJoining(object):
                     return 1
                 else:
                     return self.popcount(theNode.br.bitKey)
- 
 
     def _qj_extractFullyBifurcatingTree(self, aTree):
         """Dupe the tree, and remove leaves until it is fully bifurcating.
@@ -2865,7 +2946,7 @@ class QuartetJoining(object):
                 nCh = n.getNChildren()
                 if nCh > 2:
                     PP.append(n)
-        #if PP:
+        # if PP:
         #    print "There are %i polytomies" % len(PP)
         if not PP:
             return theTree
@@ -2873,7 +2954,7 @@ class QuartetJoining(object):
         while PP:
             pN = PP.pop()
             if pN in theTree.nodes:
-                #print "==================== %i ===========" % pN.nodeNum
+                # print "==================== %i ===========" % pN.nodeNum
                 chNN = []
                 sumOfAboves = 0
                 for n in pN.iterChildren():
@@ -2889,9 +2970,8 @@ class QuartetJoining(object):
                 chNN = func.sortListOfListsOnListElementNumber(chNN, 1)
                 chNN.reverse()
 
-                #for chN in chNN:
-                #    print "%2i (%i %i) " % (chN[0].nodeNum, chN[1], chN[2]) 
-
+                # for chN in chNN:
+                #    print "%2i (%i %i) " % (chN[0].nodeNum, chN[1], chN[2])
 
                 if pN == theTree.root:
                     theNChildren = 3
@@ -2902,24 +2982,25 @@ class QuartetJoining(object):
                     if pN.getNChildren() <= theNChildren:
                         break
                     theAction = chNN.pop()
-                    if theAction[2]: # going up -- easy
+                    if theAction[2]:  # going up -- easy
                         pass
                     else:
                         # Going down -- not as easy.
                         # Does this ever happen? -- yes indeed.
-                        #print "_qj_extractFullyBifurcatingTree() ============== ReRooting."
+                        # print "_qj_extractFullyBifurcatingTree()
+                        # ============== ReRooting."
                         theTree.reRoot(pN)
                         theNChildren = 3
                     rNode = theAction[0]
-                    # removeNode() renumbers the nodes and resets pre and post order.
+                    # removeNode() renumbers the nodes and resets pre and post
+                    # order.
                     theTree.removeNode(rNode)
-                    #print "The tree following is after removal of the node, and re-numbering."
-                    #theTree.draw()
+                    # print "The tree following is after removal of the node, and re-numbering."
+                    # theTree.draw()
                     self.decorateTreeWithBitKeys(theTree)
                     self.setTreeTaxBits(theTree)
 
         return theTree
-
 
     def allChooseFour(self, things):
         ttNN = []
@@ -2932,8 +3013,8 @@ class QuartetJoining(object):
         y = 2
         z = 3
         counter = 0
-        #print "%4i | %4i %4i %4i %4i" % (counter, w,x,y,z)
-        tN = [things[w],things[x],things[y],things[z]]
+        # print "%4i | %4i %4i %4i %4i" % (counter, w,x,y,z)
+        tN = [things[w], things[x], things[y], things[z]]
         ttNN.append(tN)
         counter += 1
         while 1:
@@ -2945,16 +3026,16 @@ class QuartetJoining(object):
                     if x >= nTxMinus2:
                         w += 1
                         if w >= nTxMinus3:
-                            #print "w is now %i" % w
+                            # print "w is now %i" % w
                             break
                         x = w + 1
                     y = x + 1
                 z = y + 1
-            #print "%4i | %4i %4i %4i %4i" % (counter, w,x,y,z)
-            tN = [things[w],things[x],things[y],things[z]]
+            # print "%4i | %4i %4i %4i %4i" % (counter, w,x,y,z)
+            tN = [things[w], things[x], things[y], things[z]]
             ttNN.append(tN)
             #thisQNum = self.qNum([w,x,y,z])
             #assert counter == thisQNum
             counter += 1
-        #print "There are %i possible quartets." % counter
+        # print "There are %i possible quartets." % counter
         return ttNN

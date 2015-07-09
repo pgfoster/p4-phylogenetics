@@ -9,7 +9,9 @@ import string
 import cStringIO
 import copy
 
+
 class TreeFileLite(object):
+
     """Get trees in big files without reading the lot into memory.
 
     P4 Tree objects are a little obese, and large tree files will
@@ -48,7 +50,7 @@ class TreeFileLite(object):
 
     or, to write some trees, as text (not as Tree objects), to a new
     file::
-    
+
       from p4.treefilelite import TreeFileLite
       tfl = TreeFileLite('myBigFile.nex')
       f = file('mySmallerFile.nex', 'w')
@@ -62,7 +64,6 @@ class TreeFileLite(object):
     """
 
     def __init__(self, fName=None, verbose=1):
-        
 
         gm = ["TreeFileLite()  init"]
         self.fName = fName
@@ -71,8 +72,8 @@ class TreeFileLite(object):
         self.tLines = []
         self.header = None
         self._readTreeFile()
-        #self._readMrBayesFile()
-        
+        # self._readMrBayesFile()
+
         self.nSamples = len(self.tLines)
         if self.nSamples:
             if self.verbose >= 1:
@@ -80,7 +81,6 @@ class TreeFileLite(object):
         else:
             gm.append("Got 0 tree samples.")
             raise P4Error(gm)
-
 
     def getTree(self, treeNum):
         savedDoFastNextTok = var.nexus_doFastNextTok
@@ -97,7 +97,7 @@ class TreeFileLite(object):
             t.parseNexus(f, translationHash=self.translationHash)
         var.nexus_doFastNextTok = savedDoFastNextTok
         return t
-    
+
     def _readTreeFile(self):
         gm = ["TreeFileLite._readTreeFile()"]
         # Read in the trees
@@ -138,26 +138,24 @@ class TreeFileLite(object):
                 sLine = aLine.lstrip()
                 lowLine = string.lower(sLine)
             except IndexError:
-                headerLines = [] # something went wrong ...
+                headerLines = []  # something went wrong ...
                 break
 
         if headerLines:
             self.header = ''.join(headerLines)
-        
-        
-        
+
         # Get the translate command, if it exists
         translateLines = []
         lNum = 0
         aLine = fLines[0].strip()
         lowLine = string.lower(aLine)
-        #print "a aLine: %s" % aLine
+        # print "a aLine: %s" % aLine
         try:
             while not lowLine.startswith("translate"):
                 lNum += 1
                 aLine = fLines[lNum].strip()
                 lowLine = string.lower(aLine)
-                if lowLine.startswith('tree'): # then we have gone too far
+                if lowLine.startswith('tree'):  # then we have gone too far
                     lNum = 0
                     aLine = fLines[0].strip()
                     lowLine = string.lower(aLine)
@@ -168,8 +166,8 @@ class TreeFileLite(object):
             aLine = fLines[0].strip()
             lowLine = string.lower(aLine)
 
-        #print "b lowLine: %s" % lowLine
-        
+        # print "b lowLine: %s" % lowLine
+
         # If we got a translate line, then parse the translate command.
         assert lowLine
         if lowLine.startswith("translate"):
@@ -183,7 +181,7 @@ class TreeFileLite(object):
             translateFlob = cStringIO.StringIO(' '.join(translateLines))
             nx = Nexus.Nexus()
             self.translationHash = nx.readTranslateCommand(translateFlob)
-            #print self.translationHash
+            # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok
 
         while not aLine.startswith("tree ") and not aLine.startswith("TREE "):
@@ -205,6 +203,3 @@ class TreeFileLite(object):
             aLine = fLines[lNum].strip()
             if aLine.startswith("end;") or aLine.startswith("End;") or aLine.startswith("ENDBLOCK;") or aLine.startswith('END'):
                 break
-        
-
-

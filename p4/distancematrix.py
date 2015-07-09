@@ -3,13 +3,15 @@ import os
 import func
 from var import var
 from p4exceptions import P4Error
-from subprocess import Popen,PIPE
+from subprocess import Popen, PIPE
+
 
 class DistanceMatrix:
+
     """A container for distances between sequences (usually).
 
     The numbers are in self.matrix, a self.dim * self.dim list of lists.
-    
+
     There is also a self.names attribute, which is usually for sequence names.
     """
 
@@ -20,7 +22,7 @@ class DistanceMatrix:
         self.message = None
 
     def setDim(self, dim):
-        #print "setDim here"
+        # print "setDim here"
         self.dim = dim
         self.matrix = []
         for i in range(dim):
@@ -29,7 +31,7 @@ class DistanceMatrix:
 
     def writeNexus(self, fName=None, writeTaxaBlock=1, append=0, digitsAfterDecimal=6):
         """Write out self in Nexus format.
-        
+
         If writeTaxaBlock=1, then a Taxa block is written before the
         Distances block. Append, if 0, writes #NEXUS first.  If 1,
         does not write #NEXUS.  """
@@ -68,10 +70,10 @@ class DistanceMatrix:
                 except IOError:
                     gm.append("Can't open %s for writing." % fName)
                     raise P4Error(gm)
-        self.writeNexusToOpenFile(f, writeTaxaBlock, append, digitsAfterDecimal)
+        self.writeNexusToOpenFile(
+            f, writeTaxaBlock, append, digitsAfterDecimal)
         if f != sys.stdout:
             f.close()
-        
 
     def writeNexusToOpenFile(self, flob, writeTaxaBlock, append, digitsAfterDecimal):
 
@@ -90,15 +92,15 @@ class DistanceMatrix:
             f.write('  dimensions ntax=%s;\n' % self.dim)
             f.write('  taxlabels')
             for i in range(self.dim):
-                f.write(' %s' % func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
+                f.write(' %s' %
+                        func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
             f.write(';\n')
             f.write('end;\n\n')
-
 
         f.write('begin distances;\n')
         if self.message:
             f.write("\n  [%s\n  ]\n" % self.message)
-            
+
         f.write('  format triangle=both;\n')
         f.write('  matrix\n')
 
@@ -133,7 +135,8 @@ class DistanceMatrix:
         for i in range(self.dim):
             if self.names:
                 f.write('  ')
-                f.write(nameFormat % func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
+                f.write(nameFormat %
+                        func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
             for j in range(self.dim):
                 #f.write('%10.6f' % self.matrix[i][j])
                 f.write(numberFormat % self.matrix[i][j])
@@ -180,7 +183,7 @@ class DistanceMatrix:
         self.writePhylipToOpenFile(f, digitsAfterDecimal)
         if f != sys.stdout:
             f.close()
-        
+
     def writePhylipToOpenFile(self, flob, digitsAfterDecimal):
 
         gm = ["DistanceMatrix.writePhylipToOpenFile()"]
@@ -212,7 +215,8 @@ class DistanceMatrix:
         for i in range(self.dim):
             if self.names:
                 f.write('  ')
-                f.write(nameFormat % func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
+                f.write(nameFormat %
+                        func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
             for j in range(self.dim):
                 #f.write('%10.6f' % self.matrix[i][j])
                 f.write(numberFormat % self.matrix[i][j])
@@ -229,7 +233,8 @@ class DistanceMatrix:
         f = open(theFileName, 'r')
         splitString = string.split(f.readline())
         if len(splitString) != 1:
-            gm.append("The first line should have the number of taxa, and thats all.")
+            gm.append(
+                "The first line should have the number of taxa, and thats all.")
             raise P4Error(gm)
         try:
             theDim = int(splitString[0])
@@ -252,12 +257,13 @@ class DistanceMatrix:
                 gm.append("Got: '%s'" % aLine)
                 raise P4Error(gm)
             self.names.append(splitLine[0])
-            #print "got name %s" % splitLine[0]
+            # print "got name %s" % splitLine[0]
             j = 0
             for k in splitLine[1:]:
                 try:
                     self.matrix[i][j] = float(k)
-                    #print "i=%i, j=%i, got dist %f" % (i, j, self.matrix[i][j])
+                    # print "i=%i, j=%i, got dist %f" % (i, j,
+                    # self.matrix[i][j])
                     j = j + 1
                     if j >= theDim:
                         break
@@ -277,7 +283,8 @@ class DistanceMatrix:
                 for k in splitLine:
                     try:
                         self.matrix[i][j] = float(k)
-                        #print "i=%i, j=%i, got dist %f" % (i, j, self.matrix[i][j])
+                        # print "i=%i, j=%i, got dist %f" % (i, j,
+                        # self.matrix[i][j])
                         j = j + 1
                         if j >= theDim:
                             break
@@ -285,7 +292,6 @@ class DistanceMatrix:
                         gm.append("Could not convert %s to a float." % k)
                         raise P4Error(gm)
         f.close()
-
 
     def njUsingPaup(self, paupPath='paup'):
         """Use paup to make a neighbor-joining tree, which is returned.
@@ -307,16 +313,18 @@ class DistanceMatrix:
         #pFName      = os.path.join(pathPrefix, "%s.cmds" % filename)
 
         #tempfile.mkstemp(suffix='', prefix='tmp', dir=None, text=False)
-        #if pathPrefix:
+        # if pathPrefix:
         #    theDir = pathPrefix
-        #else:
+        # else:
         #    theDir = None
         flob_dm, dmFName_fq = func.uniqueFile('tmp.dm')
-        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree') #tempfile.mkstemp(suffix='tree', dir=theDir)
+        # tempfile.mkstemp(suffix='tree', dir=theDir)
+        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree')
         flob_tf.close()
-        flob_pf, pFName = func.uniqueFile('tmp.cmds') # tempfile.mkstemp(suffix='cmds', dir=theDir)
+        # tempfile.mkstemp(suffix='cmds', dir=theDir)
+        flob_pf, pFName = func.uniqueFile('tmp.cmds')
 
-        # Throw the dir and dirname away. 
+        # Throw the dir and dirname away.
         dirname, dmFName = os.path.split(dmFName_fq)
         dirname, treeFName = os.path.split(treeFName_fq)
 
@@ -333,7 +341,7 @@ class DistanceMatrix:
         
         """ % (dmFName, treeFName)
 
-        #print paupCommandString
+        # print paupCommandString
 
         # Write the files, do the analysis
         #writeNexusToOpenFile(self, flob, writeTaxaBlock, append, digitsAfterDecimal)
@@ -351,7 +359,8 @@ class DistanceMatrix:
         if newLen == oldLen + 1:
             pass
         else:
-            gm.append("I was expecting exactly one tree.  Got %i" % (oldLen - newLen))
+            gm.append("I was expecting exactly one tree.  Got %i" %
+                      (oldLen - newLen))
             raise P4Error(gm)
         t = var.trees.pop()
 
@@ -381,10 +390,11 @@ class DistanceMatrix:
         gm = ["DistanceMatrix.bionj()"]
 
         flob_dm, dmFName_fq = func.uniqueFile('tmp.dm')
-        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree') #tempfile.mkstemp(suffix='tree', dir=theDir)
+        # tempfile.mkstemp(suffix='tree', dir=theDir)
+        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree')
         flob_tf.close()
 
-        # Throw the dir and dirname away. 
+        # Throw the dir and dirname away.
         dirname, dmFName = os.path.split(dmFName_fq)
         dirname, treeFName = os.path.split(treeFName_fq)
 
@@ -401,7 +411,8 @@ class DistanceMatrix:
         if newLen == oldLen + 1:
             pass
         else:
-            gm.append("I was expecting exactly one tree.  Got %i" % (oldLen - newLen))
+            gm.append("I was expecting exactly one tree.  Got %i" %
+                      (oldLen - newLen))
             raise P4Error(gm)
         t = var.trees.pop()
 
@@ -414,7 +425,7 @@ class DistanceMatrix:
                 n.br.len = 0.0
 
         return t
-    
+
     def fastme(self):
         """Use fastme to make a minimum-evolution tree, which is returned.
 
@@ -430,10 +441,11 @@ class DistanceMatrix:
         gm = ["DistanceMatrix.fastme()"]
 
         flob_dm, dmFName_fq = func.uniqueFile('tmp.dm')
-        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree') #tempfile.mkstemp(suffix='tree', dir=theDir)
+        # tempfile.mkstemp(suffix='tree', dir=theDir)
+        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree')
         flob_tf.close()
 
-        # Throw the dir and dirname away. 
+        # Throw the dir and dirname away.
         dirname, dmFName = os.path.split(dmFName_fq)
         dirname, treeFName = os.path.split(treeFName_fq)
 
@@ -450,7 +462,8 @@ class DistanceMatrix:
         if newLen == oldLen + 1:
             pass
         else:
-            gm.append("I was expecting exactly one tree.  Got %i" % (oldLen - newLen))
+            gm.append("I was expecting exactly one tree.  Got %i" %
+                      (oldLen - newLen))
             raise P4Error(gm)
         t = var.trees.pop()
 
@@ -465,5 +478,3 @@ class DistanceMatrix:
                 n.name = None
 
         return t
-    
-        

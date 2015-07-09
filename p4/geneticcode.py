@@ -3,6 +3,7 @@ import sys
 
 
 class GeneticCode:
+
     """A container for NCBI translation tables.
 
     See the ncbi translation tables, which this week are at
@@ -31,7 +32,7 @@ class GeneticCode:
     them in, with a little tweaking.
 
     This provides
-    
+
     - **code**  A dictionary.  So you can ask for eg myGC.code['ggg']
     - **codonsForAA**  Another dictionary, where you can ask for eg myGC.codonsForAA['v']
     - **startList**  A list of start codons
@@ -47,116 +48,124 @@ class GeneticCode:
     and the one-letter symbol U for selenocysteine.  The UGA codon is
     made to encode selenocysteine by the presence of a SECIS element
     (SElenoCysteine Insertion Sequence) in the mRNA.
-    
+
     """
-    
+
     def __init__(self, transl_table=1):
         self.transl_table = transl_table
         self.code = {}
         self.codonsForAA = {}
         self.startList = []
 
-        if transl_table == 1: # standard
-            AAs    = 'FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+        if transl_table == 1:  # standard
+            AAs = 'FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
             Starts = '---M---------------M---------------M----------------------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 2: # vertebrate mito
-            AAs      = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSS**VVVVAAAADDEEGGGG'
-            Starts   = '--------------------------------MMMM---------------M------------'
-            Base1    = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2    = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3    = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+        elif transl_table == 2:  # vertebrate mito
+            AAs = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSS**VVVVAAAADDEEGGGG'
+            Starts = '--------------------------------MMMM---------------M------------'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 3:  #3. The Yeast Mitochondrial Code (transl_table=3)
-            AAs    = 'FFLLSSSSYY**CCWWTTTTPPPPHHQQRRRRIIMMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+        # 3. The Yeast Mitochondrial Code (transl_table=3)
+        elif transl_table == 3:
+            AAs = 'FFLLSSSSYY**CCWWTTTTPPPPHHQQRRRRIIMMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
             Starts = '----------------------------------MM----------------------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 4: # Mold, Protozoan,
-                                # and Coelenterate Mitochondrial Code and the Mycoplasma/Spiroplasma Code
-            AAs    = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+        elif transl_table == 4:  # Mold, Protozoan,
+                                # and Coelenterate Mitochondrial Code and the
+                                # Mycoplasma/Spiroplasma Code
+            AAs = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
             Starts = '--MM---------------M------------MMMM---------------M------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 5: # invertebrate mito
-            AAs    = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSSSSVVVVAAAADDEEGGGG'
+        elif transl_table == 5:  # invertebrate mito
+            AAs = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSSSSVVVVAAAADDEEGGGG'
             Starts = '---M----------------------------MMMM---------------M------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 6: # The Ciliate, Dasycladacean and Hexamita Nuclear Code (transl_table=6)
-            AAs    = 'FFLLSSSSYYQQCC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+        # The Ciliate, Dasycladacean and Hexamita Nuclear Code (transl_table=6)
+        elif transl_table == 6:
+            AAs = 'FFLLSSSSYYQQCC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
             Starts = '-----------------------------------M----------------------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
         # tables 7 and 8 have been deleted from NCBI.
-        
-        elif transl_table == 9: # echinoderm and flatworm mito
-            AAs    = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNNKSSSSVVVVAAAADDEEGGGG'
-            Starts = '-----------------------------------M----------------------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 10: # The Euplotid Nuclear Code (transl_table=10)
-            AAs    = 'FFLLSSSSYY**CCCWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+        elif transl_table == 9:  # echinoderm and flatworm mito
+            AAs = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNNKSSSSVVVVAAAADDEEGGGG'
             Starts = '-----------------------------------M----------------------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 11: # The Bacterial and Plant Plastid Code (transl_table=11)
-            AAs    = 'FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+        elif transl_table == 10:  # The Euplotid Nuclear Code (transl_table=10)
+            AAs = 'FFLLSSSSYY**CCCWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+            Starts = '-----------------------------------M----------------------------'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+
+        # The Bacterial and Plant Plastid Code (transl_table=11)
+        elif transl_table == 11:
+            AAs = 'FFLLSSSSYY**CC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
             Starts = '---M---------------M------------MMMM---------------M------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 12: # The Alternative Yeast Nuclear Code (transl_table=12)
-            AAs    = 'FFLLSSSSYY**CC*WLLLSPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
+        # The Alternative Yeast Nuclear Code (transl_table=12)
+        elif transl_table == 12:
+            AAs = 'FFLLSSSSYY**CC*WLLLSPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
             Starts = '-------------------M---------------M----------------------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 13: # The Ascidian Mitochondrial Code (transl_table=13)
-            AAs    = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSSGGVVVVAAAADDEEGGGG'
+        # The Ascidian Mitochondrial Code (transl_table=13)
+        elif transl_table == 13:
+            AAs = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNKKSSGGVVVVAAAADDEEGGGG'
             Starts = '---M------------------------------MM---------------M------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 14: # The Alternative Flatworm Mitochondrial Code (transl_table=14)
-            AAs    = 'FFLLSSSSYYY*CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNNKSSSSVVVVAAAADDEEGGGG'
+        # The Alternative Flatworm Mitochondrial Code (transl_table=14)
+        elif transl_table == 14:
+            AAs = 'FFLLSSSSYYY*CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNNKSSSSVVVVAAAADDEEGGGG'
             Starts = '-----------------------------------M----------------------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
-            
-        elif transl_table == 21: # Trematode Mitochondrial Code (transl_table=21)
-            AAs    = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNNKSSSSVVVVAAAADDEEGGGG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+
+        # Trematode Mitochondrial Code (transl_table=21)
+        elif transl_table == 21:
+            AAs = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIMMTTTTNNNKSSSSVVVVAAAADDEEGGGG'
             Starts = '-----------------------------------M---------------M------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
-        elif transl_table == 24: # Pterobranchia mitochondrial code (transl_table=24)
-            AAs    = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSSKVVVVAAAADDEEGGGG'
+        # Pterobranchia mitochondrial code (transl_table=24)
+        elif transl_table == 24:
+            AAs = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSSKVVVVAAAADDEEGGGG'
             Starts = '---M---------------M---------------M---------------M------------'
-            Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
-            Base2  = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
-            Base3  = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
-
+            Base1 = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
+            Base2 = 'TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG'
+            Base3 = 'TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG'
 
         else:
             print "GeneticCode: I don't know transl_table %i.  Get it from NCBI and add it!" % transl_table
@@ -174,8 +183,10 @@ class GeneticCode:
                 self.startList.append(theCodon)
 
         if 1:
-            self.codonsForAA['b'] = self.codonsForAA['n'] + self.codonsForAA['d']
-            self.codonsForAA['z'] = self.codonsForAA['q'] + self.codonsForAA['e']
+            self.codonsForAA['b'] = self.codonsForAA[
+                'n'] + self.codonsForAA['d']
+            self.codonsForAA['z'] = self.codonsForAA[
+                'q'] + self.codonsForAA['e']
 
         if 1:
             self.codonsForAA['u'] = ['tga']  # selenocysteine
@@ -205,7 +216,7 @@ class GeneticCode:
         option to set the codon table file that you want to use, eg::
 
             genewise -genes -cdna -trans -pep -pretty -silent -codon codon.table5 guideFileName dnaFileName
-            
+
         """
 
         print "! this is a codon table"
@@ -213,13 +224,12 @@ class GeneticCode:
         for first in "tcag":
             for second in "tcag":
                 for third in "tcag":
-                    lcod = "%s%s%s" % (first,second,third)
+                    lcod = "%s%s%s" % (first, second, third)
                     ret = self.code[lcod]
                     if ret == '*':
                         ret = 'X'
                     print lcod.upper(), ret.upper()
-                    
-                    
+
     def translate(self, theCodon, verbose=1):
         """Translate a codon, handling ambiguities.
 
@@ -231,7 +241,7 @@ class GeneticCode:
         This method is used by the methods
         :meth:`Alignment.Alignment.translate` and
         :meth:`Alignment.Alignment.checkTranslation`.
-        
+
         A translation like that from codon ``ggg`` to amino acid ``g``
         is direct and easy.  However, this method will also translate
         ambiguous codons ``ggy`` or ``ggs`` (and so on) to ``g``,
@@ -262,7 +272,7 @@ class GeneticCode:
         ``b``, and codons that ambigously code for either ``q`` or
         ``e``, which return ambiguous amino acid ``z``.  See the
         example below.
-        
+
         If arg *verbose* is 0, it does not speak (except for errors,
         of course).  If its 1, it speaks for ambiguous translations.
         If its 2, it speaks for all translations.  The default is 1::
@@ -273,7 +283,7 @@ class GeneticCode:
                 gc.translate(cdn, verbose=2)
 
         prints::
-        
+
             codon 'gga' translates to 'g'
             codon 'ggy' translates to 'g'
             codon 'ray' translates to ['d', 'n'] -- ambiguous aa 'b'
@@ -285,15 +295,15 @@ class GeneticCode:
         """
 
         gm = ["GeneticCode.translate(), for codon '%s'" % theCodon]
-        #print theCodon
+        # print theCodon
         assert len(theCodon) == 3
         if verbose not in [0, 1, 2]:
             gm.append("Arg verbose should be one of 0, 1, or 2.")
             raise P4Error(gm)
-        
-        dnaEquateKeys =  ['b', 'd', 'h', 'k', 'm', 'n', 's', 'r', 'w', 'v', 'y']
+
+        dnaEquateKeys = ['b', 'd', 'h', 'k', 'm', 'n', 's', 'r', 'w', 'v', 'y']
         equates = {'b': 'cgt', 'd': 'agt', 'h': 'act', 'k': 'gt', 'm': 'ac',
-        'n': 'acgt', 's': 'cg', 'r': 'ag', 'w': 'at', 'v': 'acg', 'y': 'ct'}
+                   'n': 'acgt', 's': 'cg', 'r': 'ag', 'w': 'at', 'v': 'acg', 'y': 'ct'}
         # {'x': 'arndcqeghilkmfpstwyv', 'b': 'dn', 'z': 'eq'}
 
         # If its in self.code, its easy...
@@ -305,21 +315,24 @@ class GeneticCode:
 
         # Ok, so not easy.  Check for valid characters.
         if theCodon[0] not in 'acgtbdhkmnsrwvy':
-            gm.append("The first position of codon '%s' is not a lowercase DNA character." % theCodon)
+            gm.append(
+                "The first position of codon '%s' is not a lowercase DNA character." % theCodon)
             raise P4Error(gm)
         if theCodon[1] not in 'acgtbdhkmnsrwvy':
-            gm.append("The second position of codon '%s' is not a lowercase DNA character." % theCodon)
+            gm.append(
+                "The second position of codon '%s' is not a lowercase DNA character." % theCodon)
             raise P4Error(gm)
         if theCodon[2] not in 'acgtbdhkmnsrwvy':
-            gm.append("The third position of codon '%s' is not a lowercase DNA character." % theCodon)
+            gm.append(
+                "The third position of codon '%s' is not a lowercase DNA character." % theCodon)
             raise P4Error(gm)
 
         # Expand the ambiguities.  Eg 'gcy' becomes ['gcc', 'gct']
         expanded = []
         expanded2 = []
-        dnaEquateKeys =  'bdhkmnsrwvy'
+        dnaEquateKeys = 'bdhkmnsrwvy'
         equates = {'b': 'cgt', 'd': 'agt', 'h': 'act', 'k': 'gt', 'm': 'ac',
-        'n': 'acgt', 's': 'cg', 'r': 'ag', 'w': 'at', 'v': 'acg', 'y': 'ct'}
+                   'n': 'acgt', 's': 'cg', 'r': 'ag', 'w': 'at', 'v': 'acg', 'y': 'ct'}
         bSet = set(['d', 'n'])
         zSet = set(['e', 'q'])
 
@@ -346,7 +359,7 @@ class GeneticCode:
                     expanded2.append("%s%s%s" % (cd[0], cd[1], v))
             expanded = expanded2
 
-        #print expanded
+        # print expanded
         translations = []
         for cd in expanded:
             tr = self.code.get(cd)
@@ -354,7 +367,7 @@ class GeneticCode:
                 gm.append("Could not translate expanded codon '%s'" % cd)
                 raise P4Error(gm)
             translations.append(tr)
-        #print translations
+        # print translations
         if not translations:
             gm.append("Did not get any translations from expanded codons.")
             raise P4Error(gm)
@@ -380,8 +393,7 @@ class GeneticCode:
                     if verbose >= 1:
                         print "    codon '%s' translates to %s -- ambiguous -- returning 'x'" % (theCodon, tList)
                     return 'x'
-            else: # more than 2
+            else:  # more than 2
                 if verbose:
                     print "    codon '%s' translates to %s -- ambiguous -- returning 'x'" % (theCodon, tList)
                 return 'x'
-

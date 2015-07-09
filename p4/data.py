@@ -9,6 +9,7 @@ from p4exceptions import P4Error
 
 
 class Data:
+
     """All the alignments that you want to work with, in one place.
 
     Initialize this with one of
@@ -22,20 +23,21 @@ class Data:
     list to get an empty Data object.
 
     """
-    
-    #def __del__(self, freeData=pf.freeData, dp_freeData=pf.dp_freeData):
+
+    # def __del__(self, freeData=pf.freeData, dp_freeData=pf.dp_freeData):
     def __del__(self, freeData=pf.freeData):
         if self.alignments:
             for a in self.alignments:
                 a.parts = []
         self.alignments = None
         if self.parts:
-            #print len(self.parts)
+            # print len(self.parts)
             for p in self.parts:
-                #if p.cPart:
-                #    freePart(p.cPart)  # this is not as good as p.__del__(), as it leaves some memory un-freed
+                # if p.cPart:
+                # freePart(p.cPart)  # this is not as good as p.__del__(), as
+                # it leaves some memory un-freed
                 p.__del__()
-        #else:
+        # else:
         #    print 0
         if self.cData:
             if self.doDataPart:
@@ -46,9 +48,8 @@ class Data:
         self.parts = None
         self.taxNames = None
 
-
     def __init__(self, alignments=None):
-        
+
         gm = ['Data.__init__()']
         self.nParts = 0
         self.parts = []
@@ -59,17 +60,19 @@ class Data:
         self.unconstrainedLogLikelihood = None
         if alignments:
             if isinstance(alignments, Alignment):
-                #Passed in a single alignment object not a list
+                # Passed in a single alignment object not a list
                 alignments = [alignments]
             else:
                 if type(alignments) != type([]):
-                    gm.append("The 'alignments' arg should be a list or a single Alignment object.")
+                    gm.append(
+                        "The 'alignments' arg should be a list or a single Alignment object.")
                     raise P4Error(gm)
                 for a in alignments:
                     if isinstance(a, Alignment):
                         pass
                     else:
-                        gm.append("Something in the 'alignments' arg was not an Alignment.")
+                        gm.append(
+                            "Something in the 'alignments' arg was not an Alignment.")
                         raise P4Error(gm)
             self._fill(alignments)
         elif alignments == []:
@@ -80,10 +83,9 @@ class Data:
         # temporary!  Only used in __del__()
         self.doDataPart = var.doDataPart
 
-
     def dump(self):
         """Print rubbish about self."""
-        
+
         print "Data dump"
         if self.nParts == 1:
             if var.doDataPart:
@@ -107,7 +109,6 @@ class Data:
         else:
             print "    There are %i alignments" % len(self.alignments)
 
-
         if self.cData:
             print "    The cData is %s" % self.cData
         else:
@@ -118,9 +119,8 @@ class Data:
         else:
             pass
 
-    
     def _fill(self, alignments):
-        
+
         # Fill self with Parts from all alignments.
         #
         # This method is called from __init__(), and it is generally
@@ -129,7 +129,7 @@ class Data:
         # objects. This method calls the Alignment method _initParts()
 
         gm = ["Data._fill()"]
-        
+
         self.alignments = alignments
 
         # Make a part out of the first alignment.
@@ -154,27 +154,34 @@ class Data:
         for aligNum in range(len(self.alignments))[1:]:
             a = self.alignments[aligNum]
             if self.nTax != len(a.sequences):
-                gm.append("Additional alignment is not the same size as the first alignment.")
+                gm.append(
+                    "Additional alignment is not the same size as the first alignment.")
                 if a.fName:
                     gm.append('(New alignment from file %s.)' % a.fName)
                 gm.append("From the first alignment, nTax is %s." % self.nTax)
-                gm.append("However, (zero-based) alignment %i has %i sequences." % (aligNum, len(a.sequences)))
+                gm.append(
+                    "However, (zero-based) alignment %i has %i sequences." % (aligNum, len(a.sequences)))
                 raise P4Error(gm)
             if self.nTax != len(a.taxNames):
-                gm.append("Additional alignment appears to be not the same size as the first alignment.")
+                gm.append(
+                    "Additional alignment appears to be not the same size as the first alignment.")
                 if a.fName:
                     gm.append('(New alignment from file %s.)' % a.fName)
                 gm.append("From the first alignment, nTax is %s." % self.nTax)
-                gm.append("However, (zero-based) alignment %i has %i taxNames." % (aligNum, len(a.taxNames)))
+                gm.append(
+                    "However, (zero-based) alignment %i has %i taxNames." % (aligNum, len(a.taxNames)))
                 raise P4Error(gm)
             for i in range(self.nTax):
                 if self.taxNames[i] != a.taxNames[i]:
-                    gm.append("Name mis-match in (zero-based) taxon number %i," % i)
+                    gm.append(
+                        "Name mis-match in (zero-based) taxon number %i," % i)
                     gm.append("in (zero-based) alignment %i." % aligNum)
                     if a.fName:
                         gm.append('(New alignment from file %s.)' % a.fName)
-                    gm.append("Newly-added alignment taxname %s is not the" % a.taxNames[i])
-                    gm.append("    same as first alignment taxname %s" % self.taxNames[i])
+                    gm.append(
+                        "Newly-added alignment taxname %s is not the" % a.taxNames[i])
+                    gm.append(
+                        "    same as first alignment taxname %s" % self.taxNames[i])
                     raise P4Error(gm)
             if var.doDataPart:
                 a.initDataParts()
@@ -188,9 +195,6 @@ class Data:
             for p in a.parts:
                 self.parts.append(p)
             self.nParts = len(self.parts)
-
-
-
 
     def calcUnconstrainedLogLikelihood1(self):
         """Calculate likelihood under the multinomial model.
@@ -212,10 +216,12 @@ class Data:
 
         if len(self.alignments) > 1:
             gm = ["Data.calcUnconstrainedLogLikelihood()"]
-            gm.append("This method is not implemented for more than one alignment.")
+            gm.append(
+                "This method is not implemented for more than one alignment.")
             raise P4Error(gm)
         if self.nParts == 1:  # no problem
-            self.unconstrainedLogLikelihood = pf.getUnconstrainedLogLike(self.parts[0].cPart)
+            self.unconstrainedLogLikelihood = pf.getUnconstrainedLogLike(
+                self.parts[0].cPart)
         else:
             a = self.alignments[0]
             import copy
@@ -229,10 +235,10 @@ class Data:
                 newAlig.sequences.append(copy.deepcopy(s))
             newAlig.checkLengthsAndTypes()
             newAlig._initParts()
-            #newAlig.dump()
-            self.unconstrainedLogLikelihood = pf.getUnconstrainedLogLike(newAlig.parts[0].cPart)
+            # newAlig.dump()
+            self.unconstrainedLogLikelihood = pf.getUnconstrainedLogLike(
+                newAlig.parts[0].cPart)
             del(newAlig)
-
 
     def calcUnconstrainedLogLikelihood2(self):
         """Calculate likelihood under the multinomial model.
@@ -247,15 +253,16 @@ class Data:
         """
         uncon = 0.0
         for p in self.parts:
-            #print "            %i    %f" % (p.cPart, pf.getUnconstrainedLogLike(p.cPart))
+            # print "            %i    %f" % (p.cPart,
+            # pf.getUnconstrainedLogLike(p.cPart))
             uncon = uncon + pf.getUnconstrainedLogLike(p.cPart)
         self.unconstrainedLogLikelihood = uncon
-
 
     def _setCStuff(self):
         if self.cData:
             gm = ["Data._setCStuff()"]
-            gm.append("This should only be called if self.cData does not exist!")
+            gm.append(
+                "This should only be called if self.cData does not exist!")
             raise P4Error(gm)
         else:
             if var.doDataPart:
@@ -268,9 +275,7 @@ class Data:
                 for i in range(self.nParts):
                     p = self.parts[i]
                     pf.pokePartInData(p.cPart, self.cData, i)
-            #print "Made Data.cData = %s" % self.cData
-
-
+            # print "Made Data.cData = %s" % self.cData
 
     def writeNexus(self, fName=None, writeDataBlock=0, interleave=0, flat=0, append=0):
         """Write all the alignments in self to a Nexus file.
@@ -288,14 +293,14 @@ class Data:
         # alignments are appended for sure.
         if len(self.alignments):
             a = self.alignments[0]
-            #if a.parts and len(a.parts):
-            #    a.resetSequencesFromParts()        # simulate should be responsible for this
+            # if a.parts and len(a.parts):
+            # a.resetSequencesFromParts()        # simulate should be
+            # responsible for this
             a.writeNexus(fName, writeDataBlock, interleave, flat, append)
             for a in self.alignments[1:]:
-                #if a.parts and len(a.parts):
+                # if a.parts and len(a.parts):
                 #    a.resetSequencesFromParts()
                 a.writeNexus(fName, writeDataBlock, interleave, flat, append=1)
-
 
     def resetSequencesFromParts(self):
         for a in self.alignments:
@@ -304,16 +309,15 @@ class Data:
             else:
                 raise P4Error("Alignment has no parts.")
 
-
-
     def compoSummary(self):
         """A verbose composition summary, one for each data partition."""
 
         print "\n\nData composition summary"
         print "========================\n"
 
-        # Make a name format (eg '%12s') that is long enough for the longest name
-        longestNameLen = 7 # to start
+        # Make a name format (eg '%12s') that is long enough for the longest
+        # name
+        longestNameLen = 7  # to start
         for i in self.taxNames:
             if len(i) > longestNameLen:
                 longestNameLen = len(i)
@@ -326,12 +330,12 @@ class Data:
             for j in range(len(p.symbols)):
                 print "%10s" % p.symbols[j],
             print "%10s" % 'nSites'
-            #print ''
+            # print ''
             #cumulativeComps = [0.0] * len(p.symbols)
             grandTotalNSites = 0
             for k in range(p.nTax):
                 c = p.composition([k])
-                #print "tax %s, part.composition() returns %s" % (k, c)
+                # print "tax %s, part.composition() returns %s" % (k, c)
                 nSites = pf.partSequenceSitesCount(p.cPart, k)
                 grandTotalNSites = grandTotalNSites + nSites
                 print nameFormat % self.taxNames[k],
@@ -343,7 +347,7 @@ class Data:
                     for j in range(len(p.symbols)):
                         print "%10.4f" % c[j],
                         #cumulativeComps[j] = cumulativeComps[j] + (c[j] * nSites)
-                else: # Empty sequence, all zeros.  Write dashes.
+                else:  # Empty sequence, all zeros.  Write dashes.
                     for j in range(len(p.symbols)):
                         print "%10s" % '-',
                 print "%10s" % nSites
@@ -351,11 +355,9 @@ class Data:
             print nameFormat % 'mean',
             for j in range(len(p.symbols)):
                 print "%10.4f" % c[j],
-            #print "%10s" % grandTotalNSites
-            print "%10.4f" % (float(grandTotalNSites)/self.nTax)
+            # print "%10s" % grandTotalNSites
+            print "%10.4f" % (float(grandTotalNSites) / self.nTax)
             print "\n"
-
-
 
     def compoChiSquaredTest(self, verbose=1, skipColumnZeros=0, useConstantSites=1, skipTaxNums=None, getRows=0):
         """A chi square composition test for each data partition.
@@ -374,7 +376,7 @@ class Data:
 
             # With verbose on, it might print something like ---
             # Part 0: Chi-square = 145.435278, (dof=170) P = 0.913995
-            
+
             print ret
             # The list of lists that it returns might be something like ---
             # [[145.43527849758556, 170, 0.91399521077908041]]
@@ -453,8 +455,9 @@ class Data:
             newData = Data([])
             aligs = []
             for a in self.alignments:
-                #aligs.append(a.removeConstantSites())
-                aligs.append(a.subsetUsingMask(a.constantMask(), theMaskChar='1', inverse=1))
+                # aligs.append(a.removeConstantSites())
+                aligs.append(
+                    a.subsetUsingMask(a.constantMask(), theMaskChar='1', inverse=1))
             newData._fill(aligs)
             theResult = newData.compoChiSquaredTest(verbose=verbose,
                                                     skipColumnZeros=skipColumnZeros,
@@ -473,7 +476,8 @@ class Data:
                 gm.append("skipTaxNums should be a list of lists.")
                 raise P4Error(gm)
             if len(skipTaxNums) != self.nParts:
-                gm.append("skipTaxNums should be a list of lists, nParts long.")
+                gm.append(
+                    "skipTaxNums should be a list of lists, nParts long.")
                 raise P4Error(gm)
             for s in skipTaxNums:
                 if type(s) != type([]):
@@ -481,7 +485,8 @@ class Data:
                     raise P4Error(gm)
                 for i in s:
                     if type(i) != type(1):
-                        gm.append("skipTaxNums inner list items should be tax numbers.")
+                        gm.append(
+                            "skipTaxNums inner list items should be tax numbers.")
                         gm.append("Got %s" % i)
                         raise P4Error(gm)
 
@@ -495,18 +500,19 @@ class Data:
                 if skipTaxNums and skipTaxNums[partNum] and taxNum in skipTaxNums[partNum]:
                     pass
                 else:
-                    nSites = pf.partSequenceSitesCount(p.cPart, taxNum) # no gaps, no missings
+                    nSites = pf.partSequenceSitesCount(
+                        p.cPart, taxNum)  # no gaps, no missings
                     if not nSites:
                         partBlankSeqNums.append(taxNum)
             if partBlankSeqNums:
                 hasBlanks = True
             blankSeqNums.append(partBlankSeqNums)
         if hasBlanks:
-            gm.append("These sequence numbers were found to be blank. They should be excluded.")
+            gm.append(
+                "These sequence numbers were found to be blank. They should be excluded.")
             gm.append("%s" % blankSeqNums)
             gm.append("Set the arg skipTaxNums to this list.")
             raise P4Error(gm)
-                      
 
         for partNum in range(self.nParts):
             gm = ['Data.compoChiSquaredTest()  Part %i' % partNum]
@@ -517,30 +523,36 @@ class Data:
                     pass
                 else:
                     oneComp = p.composition([taxNum])
-                    nSites = pf.partSequenceSitesCount(p.cPart, taxNum) # no gaps, no missings
-                    #print "tax %i, nSites=%i, oneComp=%s" % (taxNum, nSites, oneComp)
+                    nSites = pf.partSequenceSitesCount(
+                        p.cPart, taxNum)  # no gaps, no missings
+                    # print "tax %i, nSites=%i, oneComp=%s" % (taxNum, nSites,
+                    # oneComp)
                     if nSites:
                         for k in range(len(oneComp)):
                             oneComp[k] = oneComp[k] * nSites
                         comps.append(oneComp)
                     else:
-                        gm.append("(Zero-based) sequence %i is blank, and should be excluded." % taxNum)
-                        gm.append("You need to add the number %i to the arg skipTaxNums list of lists." % taxNum)
-                        gm.append("(I could do that automatically, but it is best if *you* do it, explicitly.)")
-                        gm.append("You can use the Alignment method checkForBlankSequences(listSeqNumsOfBlanks=True)")
+                        gm.append(
+                            "(Zero-based) sequence %i is blank, and should be excluded." % taxNum)
+                        gm.append(
+                            "You need to add the number %i to the arg skipTaxNums list of lists." % taxNum)
+                        gm.append(
+                            "(I could do that automatically, but it is best if *you* do it, explicitly.)")
+                        gm.append(
+                            "You can use the Alignment method checkForBlankSequences(listSeqNumsOfBlanks=True)")
                         gm.append("to help you get those inner lists.")
                         raise P4Error(gm)
-            #print "comps=", comps
-
+            # print "comps=", comps
 
             # Here we calculate the X^2 stat.  But we want to check
             # for columns summing to zero.  So we can't use
             # func.xSquared()
             nRows = len(comps)
             nCols = len(comps[0])
-            theSumOfRows = func._sumOfRows(comps) # I could have just kept nSites, above
+            # I could have just kept nSites, above
+            theSumOfRows = func._sumOfRows(comps)
             theSumOfCols = func._sumOfColumns(comps)
-            #print theSumOfCols
+            # print theSumOfCols
             isOk = 1
             columnZeros = []
             for j in range(len(theSumOfRows)):
@@ -560,8 +572,8 @@ class Data:
                         nColumnZeros += 1
 
             theExpected = func._expected(theSumOfRows, theSumOfCols)
-            #print "theExpected = ", theExpected
-            #print "columnZeros = ", columnZeros
+            # print "theExpected = ", theExpected
+            # print "columnZeros = ", columnZeros
             if isOk:
                 if getRows:
                     xSq_rows = []
@@ -571,8 +583,11 @@ class Data:
                 for taxNum in range(self.nTax):
                     if skipTaxNums and skipTaxNums[partNum] and taxNum in skipTaxNums[partNum]:
                         if getRows:
-                            xSq_rows.append(0.0)  # this taxon is not in comps.  Add a placeholder
-                    else:  # k is the counter for comps and theExpected, taxNum without the skips
+                            # this taxon is not in comps.  Add a placeholder
+                            xSq_rows.append(0.0)
+                    # k is the counter for comps and theExpected, taxNum
+                    # without the skips
+                    else:
                         xSq_row = 0.0
                         for j in range(nCols):
                             if j in columnZeros:
@@ -586,22 +601,24 @@ class Data:
                                     raise P4Error(gm)
                             else:
                                 theDiff = comps[k][j] - theExpected[k][j]
-                                xSq_row += (theDiff * theDiff) / theExpected[k][j]
+                                xSq_row += (theDiff * theDiff) / \
+                                    theExpected[k][j]
                         xSq += xSq_row
                         if getRows:
                             xSq_rows.append(xSq_row)
                         k += 1
-                #print xSq_rows
+                # print xSq_rows
                 dof = (p.dim - len(columnZeros) - 1) * (len(comps) - 1)
                 prob = pf.chiSquaredProb(xSq, dof)
                 if verbose:
                     print "Part %i: Chi-square = %f, (dof=%i) P = %f" % (partNum, xSq, dof, prob)
                     if getRows:
-                        #print "        rows = %s" % xSq_rows
+                        # print "        rows = %s" % xSq_rows
                         print "%20s  %7s  %s" % ('taxName', 'xSq_row', 'P (like puzzle)')
                         for tNum in range(self.nTax):
                             if not skipTaxNums or tNum not in skipTaxNums[partNum]:
-                                thisProb = pf.chiSquaredProb(xSq_rows[tNum], self.parts[partNum].dim - 1)
+                                thisProb = pf.chiSquaredProb(
+                                    xSq_rows[tNum], self.parts[partNum].dim - 1)
                                 print "%20s  %7.5f  %7.5f" % (self.taxNames[tNum], xSq_rows[tNum], thisProb)
                             else:
                                 print "%20s    ---      ---" % self.taxNames[tNum]
@@ -609,12 +626,12 @@ class Data:
                     results.append([xSq, dof, prob, xSq_rows])
                 else:
                     results.append([xSq, dof, prob])
-            else: # ie not isOk, ie there is a zero in a column sum
-                results.append(None) # Maybe a bad idea.  Maybe it should just die, above.
+            else:  # ie not isOk, ie there is a zero in a column sum
+                # Maybe a bad idea.  Maybe it should just die, above.
+                results.append(None)
         if nColumnZeros and verbose:
             print "There were %i column zeros." % nColumnZeros
         return results
-
 
     def simpleBigXSquared(self):
         """No frills calculation of bigXSquared.
@@ -632,7 +649,7 @@ class Data:
         for p in self.parts:
             l.append(pf.partBigXSquared(p.cPart))
         return l
-        
+
     def simpleConstantSitesCount(self):
         """No frills constant sites count.
 
@@ -649,28 +666,21 @@ class Data:
         for p in self.parts:
             l.append(pf.partSimpleConstantSitesCount(p.cPart))
         return l
-        
-
-                
-                
-            
-
 
     def dupe(self):
         """Copy, making new cParts."""
-        
+
         import copy
         aligListCopy = copy.deepcopy(self.alignments)
         for alig in aligListCopy:
-            # We do not want the cPart's, but neither do we want to free the originals.
+            # We do not want the cPart's, but neither do we want to free the
+            # originals.
             for p in alig.parts:
                 p.cPart = None
             del(alig.parts)
             alig.parts = []
 
-        return  Data(aligListCopy)
-
-
+        return Data(aligListCopy)
 
     def bootstrap(self, seed=None):
         """Returns a new data object, filled with bootstrapped data.
@@ -685,7 +695,8 @@ class Data:
         import copy
         aligListCopy = copy.deepcopy(self.alignments)
         for alig in aligListCopy:
-            # We do not want the cPart's, but neither do we want to free the originals.
+            # We do not want the cPart's, but neither do we want to free the
+            # originals.
             for p in alig.parts:
                 p.cPart = None
             del(alig.parts)
@@ -709,7 +720,7 @@ class Data:
         if not var.gsl_rng:
             var.gsl_rng = pf.get_gsl_rng()
             isNewGSL_RNG = 1
-            #print "got var.gsl_rng = %i" % var.gsl_rng
+            # print "got var.gsl_rng = %i" % var.gsl_rng
 
         # Set the GSL random number generator seed, only if it is a new GSL_RNG
         if isNewGSL_RNG:
@@ -735,7 +746,6 @@ class Data:
         d.resetSequencesFromParts()
         return d
 
-
     def meanNCharsPerSite(self):
         """Mean number of different characters per site, of variable sites only.
 
@@ -746,10 +756,9 @@ class Data:
         parts (which also optionally gives you a distribution in
         addition to the mean); see
         :meth:`Alignment.Alignment.meanNCharsPerSite`.
-        
+
         """
         l = []
         for p in self.parts:
             l.append(pf.partMeanNCharsPerSite(p.cPart))
         return l
-    

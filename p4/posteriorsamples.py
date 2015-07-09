@@ -8,7 +8,9 @@ import string
 import cStringIO
 import copy
 
+
 class PosteriorSamples(object):
+
     """A container for mcmc samples from files.
 
     This would be useful if you wanted to do eg posterior predictive
@@ -27,7 +29,7 @@ class PosteriorSamples(object):
     tree-hetero models.
 
     **Args**
-    
+
 
     tree
              A p4 tree, with model attached.  It must also have
@@ -87,30 +89,32 @@ class PosteriorSamples(object):
             t2.data = d
             t2.simulate()
             myStats.append(t2.data.simpleBigXSquared()[0])
-    
+
     """
+
     def __init__(self, tree, runNum, program='p4', mbBaseName=None, directory='.', verbose=1):
-        
 
         gm = ["PosteriorSamples()  init"]
         if not isinstance(tree, Tree) or not tree.model:
             gm.append("Instantiate with a p4 tree with a model attached.")
             raise P4Error(gm)
         if not tree.taxNames:
-            gm.append("The tree should have taxNames (in proper order!) attached.")
+            gm.append(
+                "The tree should have taxNames (in proper order!) attached.")
             raise P4Error(gm)
-                      
+
         self.tree = tree
 
         # Check the tree, by calculating the likelihood
-        #self.tree.calcLogLike(verbose=False)
+        # self.tree.calcLogLike(verbose=False)
         self.model = copy.deepcopy(self.tree.model)
         for pNum in range(self.model.nParts):
             for compNum in range(self.model.parts[pNum].nComps):
                 if self.model.parts[pNum].comps[compNum].spec == 'empirical':
                     self.model.parts[pNum].comps[compNum].spec = 'specified'
                 if not self.model.parts[pNum].comps[compNum].val:
-                    gm.append("Comp %i in partition %i has no val set." % (compNum, pNum))
+                    gm.append(
+                        "Comp %i in partition %i has no val set." % (compNum, pNum))
                     gm.append("Maybe fix by calculating a likelihood before?")
                     raise P4Error(gm)
         self.model.cModel = None
@@ -118,13 +122,14 @@ class PosteriorSamples(object):
         self.goodPrograms = ['p4', 'mrbayes']
         lowProgram = string.lower(program)
         if program not in self.goodPrograms:
-            gm.append("The program generating the files should be one of %s" % self.goodPrograms)
+            gm.append(
+                "The program generating the files should be one of %s" % self.goodPrograms)
             raise P4Error(gm)
         self.program = lowProgram
         self.verbose = verbose
         assert os.path.isdir(directory)
         self.directory = directory
-        
+
         if self.program == 'p4':
             self._readP4Files()
         elif self.program == 'mrbayes':
@@ -138,12 +143,12 @@ class PosteriorSamples(object):
                 if self.verbose >= 1:
                     print "Got %i samples." % self.nSamples
             else:
-                gm.append("Got %i tree samples, but %i parameter samples." % (self.nSamples, nPLines))
+                gm.append(
+                    "Got %i tree samples, but %i parameter samples." % (self.nSamples, nPLines))
                 raise P4Error(gm)
         else:
-            #print "Got %i samples. (no free parameters)" % self.nSamples
+            # print "Got %i samples. (no free parameters)" % self.nSamples
             pass
-        
 
     def getSample(self, sampNum):
         if self.program == 'p4':
@@ -184,10 +189,11 @@ class PosteriorSamples(object):
         translateFlob = cStringIO.StringIO(' '.join(translateLines))
         nx = Nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
-        #print self.translationHash
+        # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok
 
-        # Get the models definition, if it exists.  Move to the first tree line.
+        # Get the models definition, if it exists.  Move to the first tree
+        # line.
         while not aLine.startswith("tree t_"):
             if aLine.startswith("[&&p4 models"):
                 self.modelLine = aLine
@@ -236,13 +242,12 @@ class PosteriorSamples(object):
             try:
                 loc = {}
                 execfile(fName, {}, loc)
-                #loc =locals()  no workee.
-                #print "loc = %s" % loc
+                # loc =locals()  no workee.
+                # print "loc = %s" % loc
                 self.nPrams = loc['nPrams']
                 self.pramsProfile = loc['pramsProfile']
             except IOError:
                 print "The file '%s' cannot be found." % fName
-            
 
     def _getP4SampleTree(self, sampNum):
         savedDoFastNextTok = var.nexus_doFastNextTok
@@ -252,13 +257,14 @@ class PosteriorSamples(object):
             print tLine
         f = cStringIO.StringIO(tLine)
         t = Tree()
-        t.parseNexus(f, translationHash=self.translationHash, doModelComments=self.tree.model.nParts)
+        t.parseNexus(f, translationHash=self.translationHash,
+                     doModelComments=self.tree.model.nParts)
         var.nexus_doFastNextTok = savedDoFastNextTok
         t.taxNames = self.tree.taxNames
 
         for n in t.iterLeavesNoRoot():
             n.seqNum = t.taxNames.index(n.name)
-        
+
         t.model = copy.deepcopy(self.model)
 
         if self.tree.model.nFreePrams:
@@ -271,11 +277,12 @@ class PosteriorSamples(object):
             splitTName = t.name.split('_')
             tGenNum = int(splitTName[1])
             if tGenNum != pGenNum:
-                raise P4Error("something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
+                raise P4Error(
+                    "something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
             if self.verbose >= 2:
                 print "(zero-based) sample %i is gen %i" % (sampNum, tGenNum)
 
-            #t.model.dump()
+            # t.model.dump()
 
             splIndx = 1
             for pNum in range(len(self.pramsProfile)):
@@ -284,8 +291,9 @@ class PosteriorSamples(object):
                 gdasrvNum = 0
                 for desc in self.pramsProfile[pNum]:
                     if desc[0] == 'relRate':
-                        t.model.parts[pNum].relRate = float(splitPLine[splIndx])
-                        splIndx += 1                    
+                        t.model.parts[pNum].relRate = float(
+                            splitPLine[splIndx])
+                        splIndx += 1
                     elif desc[0] == 'comp':
                         vv = []
                         for i in range(desc[1]):
@@ -295,9 +303,10 @@ class PosteriorSamples(object):
                             if vv[i] < var.PIVEC_MIN:
                                 vv[i] = var.PIVEC_MIN * 1.1
                         thisSum = sum(vv)
-                        factor = 1.0 / thisSum # must sum to one
+                        factor = 1.0 / thisSum  # must sum to one
                         for i in range(desc[1]):
-                            t.model.parts[pNum].comps[compNum].val[i] = vv[i] * factor
+                            t.model.parts[pNum].comps[
+                                compNum].val[i] = vv[i] * factor
                         compNum += 1
                     elif desc[0] == 'rMatrix':
                         vv = []
@@ -306,31 +315,34 @@ class PosteriorSamples(object):
                             splIndx += 1
                         if len(vv) == 1:
                             # its a '2p' model, with a kappa
-                            t.model.parts[pNum].rMatrices[rMatrixNum].val[0] = vv[0]
+                            t.model.parts[pNum].rMatrices[
+                                rMatrixNum].val[0] = vv[0]
                         else:
                             # gtr
                             for i in range(desc[1]):
                                 if vv[i] < var.RATE_MIN:
                                     vv[i] = var.RATE_MIN * 1.1
                             thisSum = sum(vv)
-                            factor = 1.0 / thisSum # must sum to one
+                            factor = 1.0 / thisSum  # must sum to one
                             for i in range(desc[1]):
-                                t.model.parts[pNum].rMatrices[rMatrixNum].val[i] = vv[i] * factor
+                                t.model.parts[pNum].rMatrices[
+                                    rMatrixNum].val[i] = vv[i] * factor
                         rMatrixNum += 1
                     elif desc[0] == 'gdasrv':
-                        t.model.parts[pNum].gdasrvs[gdasrvNum].val[0] = float(splitPLine[splIndx])
+                        t.model.parts[pNum].gdasrvs[gdasrvNum].val[
+                            0] = float(splitPLine[splIndx])
                         splIndx += 1
                         gdasrvNum += 1
                     elif desc[0] == 'pInvar':
-                        t.model.parts[pNum].pInvar.val = float(splitPLine[splIndx])
+                        t.model.parts[pNum].pInvar.val = float(
+                            splitPLine[splIndx])
                         splIndx += 1
 
             if splIndx != len(splitPLine):
                 raise P4Error("Something is wrong.  After reading, splIndx=%i, but len split pram line=%i" % (
                     splIndx, len(splitPLine)))
         return t
-        
-        
+
     def _readMrBayesFiles(self):
         gm = ["PosteriorSamples._readMrBayesFiles()"]
         # Read in the trees
@@ -364,7 +376,7 @@ class PosteriorSamples(object):
         translateFlob = cStringIO.StringIO(' '.join(translateLines))
         nx = Nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
-        #print self.translationHash
+        # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok
 
         # Get the models definition, if it exists.  Move to the first tree line.
@@ -379,7 +391,7 @@ class PosteriorSamples(object):
             self.tLines.append(aLine[5:])
             lNum += 1
             aLine = fLines[lNum].strip()
-        
+
         # Read in the prams
         fName = "%s.run%i.p" % (self.mbBaseName, self.runNum)
         if self.directory != '.':
@@ -411,7 +423,7 @@ class PosteriorSamples(object):
                 aLine = fLines[lNum].strip()
             except IndexError:
                 break
-        #print self.pLines
+        # print self.pLines
         self.nPrams = len(self.pramsHeader)
         if self.verbose >= 2:
             print "pram line length is %i" % self.nPrams
@@ -424,13 +436,14 @@ class PosteriorSamples(object):
             print tLine
         f = cStringIO.StringIO(tLine)
         t = Tree()
-        t.parseNexus(f, translationHash=self.translationHash, doModelComments=self.tree.model.nParts) # doModelComments is nParts
+        t.parseNexus(f, translationHash=self.translationHash,
+                     doModelComments=self.tree.model.nParts)  # doModelComments is nParts
         var.nexus_doFastNextTok = savedDoFastNextTok
         t.taxNames = self.tree.taxNames
 
         for n in t.iterLeavesNoRoot():
             n.seqNum = t.taxNames.index(n.name)
-        
+
         t.model = copy.deepcopy(self.model)
 
         pLine = self.pLines[sampNum]
@@ -442,20 +455,23 @@ class PosteriorSamples(object):
         splitTName = t.name.split('.')
         tGenNum = int(splitTName[1])
         if tGenNum != pGenNum:
-            raise P4Error("something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
+            raise P4Error(
+                "something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
         if self.verbose >= 2:
             print "(zero-based) sample %i is gen %i" % (sampNum, tGenNum)
 
-        #t.model.dump()
+        # t.model.dump()
 
         splIndx = 3
         while splIndx < self.nPrams:
             pNum = 0
-            #print "splIndx = %i, pramsHeader = %s" % (splIndx, self.pramsHeader[splIndx])
+            # print "splIndx = %i, pramsHeader = %s" % (splIndx,
+            # self.pramsHeader[splIndx])
             if self.pramsHeader[splIndx].startswith('r(A<->C)'):
                 if self.tree.model.nParts > 1:
                     try:
-                        splitPramHeader = self.pramsHeader[splIndx].split('{')[1][:-1]
+                        splitPramHeader = self.pramsHeader[
+                            splIndx].split('{')[1][:-1]
                         pNum = int(splitPramHeader)
                         pNum -= 1
                     except:
@@ -472,7 +488,8 @@ class PosteriorSamples(object):
             elif self.pramsHeader[splIndx].startswith('pi(A)'):
                 if self.tree.model.nParts > 1:
                     try:
-                        splitPramHeader = self.pramsHeader[splIndx].split('{')[1][:-1]
+                        splitPramHeader = self.pramsHeader[
+                            splIndx].split('{')[1][:-1]
                         pNum = int(splitPramHeader)
                         pNum -= 1
                     except:
@@ -483,25 +500,29 @@ class PosteriorSamples(object):
                     t.model.parts[pNum].comps[0].val[i] = theFloat
                     thisSum += theFloat
                     splIndx += 1
-                factor = 1.0 / thisSum # must sum to one
+                factor = 1.0 / thisSum  # must sum to one
                 for i in range(4):
                     t.model.parts[pNum].comps[0].val[i] *= factor
             elif self.pramsHeader[splIndx].startswith('alpha'):
                 if self.tree.model.nParts > 1:
                     try:
-                        splitPramHeader = self.pramsHeader[splIndx].split('{')[1][:-1]
+                        splitPramHeader = self.pramsHeader[
+                            splIndx].split('{')[1][:-1]
                         pNum = int(splitPramHeader)
                         pNum -= 1
                     except:
                         raise P4Error("could not get the part number")
-                #print "got pNum = %i" % pNum
-                #print "got splitPLine[%i] = %s" % (splIndx, splitPLine[splIndx])
-                t.model.parts[pNum].gdasrvs[0].val[0] = float(splitPLine[splIndx])
+                # print "got pNum = %i" % pNum
+                # print "got splitPLine[%i] = %s" % (splIndx,
+                # splitPLine[splIndx])
+                t.model.parts[pNum].gdasrvs[0].val[
+                    0] = float(splitPLine[splIndx])
                 splIndx += 1
             elif self.pramsHeader[splIndx].startswith('pinvar'):
                 if self.tree.model.nParts > 1:
                     try:
-                        splitPramHeader = self.pramsHeader[splIndx].split('{')[1][:-1]
+                        splitPramHeader = self.pramsHeader[
+                            splIndx].split('{')[1][:-1]
                         pNum = int(splitPramHeader)
                         pNum -= 1
                     except:
@@ -511,7 +532,8 @@ class PosteriorSamples(object):
             elif self.pramsHeader[splIndx].startswith('m'):
                 if self.tree.model.nParts > 1:
                     try:
-                        splitPramHeader = self.pramsHeader[splIndx].split('{')[1][:-1]
+                        splitPramHeader = self.pramsHeader[
+                            splIndx].split('{')[1][:-1]
                         pNum = int(splitPramHeader)
                         pNum -= 1
                     except:
@@ -521,11 +543,8 @@ class PosteriorSamples(object):
             else:
                 print "splIndx=%i.  Got unknown pram %s.  Fix me!" % (splIndx, self.pramsHeader[splIndx])
                 splIndx += 1
-                
 
         if splIndx != len(splitPLine):
             raise P4Error("Something is wrong.  After reading, splIndx=%i, but len split pram line=%i" % (
                 splIndx, len(splitPLine)))
         return t
-    
-        

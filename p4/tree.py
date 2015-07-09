@@ -10,7 +10,7 @@ import time
 import glob
 from var import var
 from p4exceptions import P4Error
-from node import Node,NodePart,NodeBranchPart
+from node import Node, NodePart, NodeBranchPart
 import nexustoken
 from distancematrix import DistanceMatrix
 
@@ -19,10 +19,12 @@ import pf
 from model import Model
 from data import Data
 from alignment import Part
-from node import NodeBranch,NodePart,NodeBranchPart
+from node import NodeBranch, NodePart, NodeBranchPart
 import random
 
+
 class Tree(object):
+
     """A phylogenetic tree.
 
 
@@ -37,7 +39,7 @@ class Tree(object):
     * ``nexusSets``, if it exists, a NexusSets object.
 
 **Properties**
-    
+
     * ``taxNames``, a list of names.  Usually the order is important!
     * ``data``, a :class:`Data.Data` object
     * ``model``, a :class:`Model.Model` object
@@ -66,7 +68,7 @@ class Tree(object):
 **Describe, draw, and get information about the tree**
 
      .. autosummary::
-     
+
         Tree.dump
         Tree.draw
         Tree.textDrawList
@@ -95,7 +97,7 @@ class Tree(object):
        Tree.writeNexus
        Tree.writePhylip
        Tree.tPickle
-        
+
     See also Trees methods :meth:`Trees.Trees.writeNexus` and
     :meth:`Trees.Trees.writeNewick` for doing trees by the bunch.
 
@@ -123,11 +125,11 @@ class Tree(object):
        Tree.nextNode
 
     See also Node methods that do similar things starting from a given node.
-    
+
 **Copy**
 
      .. autosummary::
-     
+
         Tree.dupe
         Tree.copyToTree
         Tree.dupeSubTree
@@ -197,7 +199,7 @@ class Tree(object):
 **Misc**
 
      .. autosummary::
-     
+
         Tree.checkDupedTaxonNames
         Tree.checkSplitKeys
         Tree.checkTaxNames
@@ -213,7 +215,7 @@ class Tree(object):
         Tree.inputTreesToSuperTreeDistances
 
 
-    
+
     """
 
     def __init__(self):
@@ -221,17 +223,24 @@ class Tree(object):
         self.name = None
         self.root = None
         self.nodes = []
-        self.preOrder = None                # nodeNums of nodes root -> tips   A numpy array
-        self.postOrder = None               # nodeNums of nodes tips -> root   A numpy array
+        # nodeNums of nodes root -> tips   A numpy array
+        self.preOrder = None
+        # nodeNums of nodes tips -> root   A numpy array
+        self.postOrder = None
         self.preAndPostOrderAreValid = 0
-        self.recipWeight = None           # Usually weight is 1/N, so the reciprocal looks nicer
-        #self.weight = None               # Only for floating point weights, so not usually ...
-        self._taxNames = []               # An ordered list.  self.taxNames is a property
-        self._data = None                 # A Data object.  self.data is a property
+        # Usually weight is 1/N, so the reciprocal looks nicer
+        self.recipWeight = None
+        # self.weight = None               # Only for floating point weights,
+        # so not usually ...
+        # An ordered list.  self.taxNames is a property
+        self._taxNames = []
+        # A Data object.  self.data is a property
+        self._data = None
         self.cTree = None                 # A pointer to a c-struct
         self.logLike = None
         self.partLikes = None
-        self._model = None                # A Model object.  self.model is a property
+        # A Model object.  self.model is a property
+        self._model = None
         # self.nTax, a property
         self._nTax = 0
         self._nInternalNodes = -1
@@ -240,16 +249,13 @@ class Tree(object):
         self.nexusSets = None
         self.nodeForSplitKeyDict = None
 
-
     #########################################################
     # Properties: data, model in Tree_model
     #########################################################
-    
 
     #########################################################
     # Properties: taxNames, nTax, nInternalNodes
     #########################################################
-    
 
     def _setTaxNames(self, theTaxNames):
         gm = ['Tree._setTaxNames()']
@@ -258,22 +264,26 @@ class Tree(object):
             gm.append("Got attempt to set to '%s'" % theTaxNames)
             raise P4Error(gm)
         self._taxNames = theTaxNames
-        if theTaxNames: # and not var.allowTreesWithDifferingTaxonSets:  # Peter commented out until it is sorted. Why is it here?
+        # and not var.allowTreesWithDifferingTaxonSets:  # Peter commented out
+        # until it is sorted. Why is it here?
+        if theTaxNames:
             self.checkTaxNames()
-    
+
     def _setTaxNamesFromLeaves(self):
         tax = []
         for n in self.iterNodes():
             if n.isLeaf and n.name:
                 tax.append(n.name)
-            # This next line should not be needed, as root leaves should be leaves.
-            elif n == self.root and n.name and n.getNChildren() < 2:  # terminal root that has a taxName
+            # This next line should not be needed, as root leaves should be
+            # leaves.
+            # terminal root that has a taxName
+            elif n == self.root and n.name and n.getNChildren() < 2:
                 tax.append(n.name)
             tax.sort()
         self._taxNames = tax
         if self._taxNames:
             self.checkTaxNames()
-    
+
     def _delTaxNames(self):
         gm = ['Tree._delTaxNames()']
         gm.append("    Caught an attempt to delete self.taxNames, but")
@@ -281,11 +291,12 @@ class Tree(object):
         gm.append("But you can set it to an empty list if you like.")
         raise P4Error(gm)
 
-    taxNames = property(lambda self: self._taxNames, _setTaxNames, _delTaxNames)
+    taxNames = property(
+        lambda self: self._taxNames, _setTaxNames, _delTaxNames)
 
     def _getNTax(self):
         # We can't rely on len(self.taxNames), cuz it might not exist.
-        #if hasattr(self, '_nTax') and self._nTax:
+        # if hasattr(self, '_nTax') and self._nTax:
         if self._nTax:
             return self._nTax
         else:
@@ -296,8 +307,8 @@ class Tree(object):
                         nTax += 1
             self._nTax = nTax
             return nTax
-    
-    nTax = property(_getNTax) 
+
+    nTax = property(_getNTax)
 
     def _getNInternalNodes(self):
         if self._nInternalNodes >= 0:
@@ -313,15 +324,15 @@ class Tree(object):
     def _setNInternalNodes(self, theNInternalNodes):
         gm = ['Tree._setNInternalNodes()']
         gm.append("Caught an attempt to set self.nInternalNodes, but")
-        gm.append("self.nInternalNodes is a property, so you shouldn't do that.")
+        gm.append(
+            "self.nInternalNodes is a property, so you shouldn't do that.")
         raise P4Error(gm)
 
     def _delNInternalNodes(self):
         self._nInternalNodes = -1
 
-    nInternalNodes = property(_getNInternalNodes, _setNInternalNodes, _delNInternalNodes)
-
-
+    nInternalNodes = property(
+        _getNInternalNodes, _setNInternalNodes, _delNInternalNodes)
 
     ##################################################
     ##################################################
@@ -335,9 +346,11 @@ class Tree(object):
         storedData = None
         if self.data:
             storedData = self.data
-            self.data = None  # We don't want to have to copy a big data object, now do we?
+            # We don't want to have to copy a big data object, now do we?
+            self.data = None
         dupe = copy.deepcopy(self)
-        #print 'Tree.dupe()   self.root=%s, dupe.root=%s' % (self.root, dupe.root) 
+        # print 'Tree.dupe()   self.root=%s, dupe.root=%s' % (self.root,
+        # dupe.root)
 
         # Delete cPointers
         for n in dupe.nodes:
@@ -351,31 +364,25 @@ class Tree(object):
             self.data = storedData
         return dupe
 
-
-        
-
-
     def parseNexus(self, flob, translationHash=None, doModelComments=0):
         """Start parsing nexus format newick tree description.
 
         From just after the command word 'tree', to the first paren of
         the Newick part of the tree."""
 
-        gm  = ['Tree.parseNexus()'] # re-defined below
+        gm = ['Tree.parseNexus()']  # re-defined below
         if 0:
             print 'Tree.parseNexus() translationHash = %s' % translationHash
             print '    doModelComments = %s (nParts)' % doModelComments
             print '    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok
 
         if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok,safeNextTok
+            from nexustoken2 import nextTok, safeNextTok
         else:
-            from nexustoken import nextTok,safeNextTok
-
-
+            from nexustoken import nextTok, safeNextTok
 
         tok = safeNextTok(flob, 'Tree.parseNexus()')
-        #print 'parseNexus() tok = %s' % tok
+        # print 'parseNexus() tok = %s' % tok
         tok = func.nexusUnquoteName(tok)
         if tok == '*':
             print gm[0]
@@ -385,9 +392,9 @@ class Tree(object):
             gm.append("Bad tree name: '%s'" % tok)
             raise P4Error(gm)
         self.name = tok
-        #print "got name: '%s'" % tok
-        #print "%s" % tok
-        gm = ["Tree.parseNexus() '%s'" % self.name] # re-defining
+        # print "got name: '%s'" % tok
+        # print "%s" % tok
+        gm = ["Tree.parseNexus() '%s'" % self.name]  # re-defining
         tok = safeNextTok(flob, gm[0])
         if tok != '=':
             gm.append("Tree name must be followed by '='")
@@ -395,11 +402,11 @@ class Tree(object):
 
         # Generally this is the beginning of the newick tree
         # description.  But we have to look ahead to see if there is a
-        # weight comment.        
+        # weight comment.
         savedPos = flob.tell()
         while 1:
             tok = safeNextTok(flob, gm[0])
-            #print "parseNexus: tok after '=' is '%s'" % tok
+            # print "parseNexus: tok after '=' is '%s'" % tok
 
             # This next bit will only happen if either var.nexus_getWeightCommandComments
             # or var nexus_getAllCommandComments is set.
@@ -408,7 +415,7 @@ class Tree(object):
             elif tok == '(':
                 flob.seek(-1, 1)
                 self.parseNewick(flob, translationHash, doModelComments)
-                #self._initFinish()
+                # self._initFinish()
                 break
             elif tok == ';':
                 gm.append("Got ';' before any tree description.")
@@ -416,13 +423,13 @@ class Tree(object):
             elif tok[0] in string.letters + string.digits + '_' + '\'':
                 flob.seek(savedPos, 0)
                 self.parseNewick(flob, translationHash, doModelComments)
-                #self._initFinish()
+                # self._initFinish()
                 break
             else:
                 gm.append('Expecting a newick tree description.')
                 raise P4Error(gm)
         self._initFinish()
-        #print 'finished Tree.parseNexus()'
+        # print 'finished Tree.parseNexus()'
 
     def getWeightCommandComment(self, tok):
         if 0:
@@ -430,16 +437,17 @@ class Tree(object):
             print 'var.nexus_getAllCommandComments = %s' % var.nexus_getAllCommandComments
             print "Got comment '%s', checking if it is a 'weight' comment." % tok
         gm = ["Tree.getWeightCommandComment()"]
-        from nexustoken import nextTok,safeNextTok  # python, not c, so I can use StringIO
+        # python, not c, so I can use StringIO
+        from nexustoken import nextTok, safeNextTok
         cFlob = cStringIO.StringIO(tok)
-        cFlob.seek(1) # The [
+        cFlob.seek(1)  # The [
         cTok = nextTok(cFlob)
         if not cTok:
-            #print "no cTok -- returning nothing"
+            # print "no cTok -- returning nothing"
             return
         lowCTok = string.lower(cTok)
         if lowCTok in ['&r', '&u']:
-            #print "got %s -- returning nothing" % cTok
+            # print "got %s -- returning nothing" % cTok
             return
         if lowCTok != '&w':
             gm.append('Expecting a weight comment.  Got %s' % tok)
@@ -451,7 +459,8 @@ class Tree(object):
             try:
                 self.weight = float(cTok)
             except:
-                gm.append("I can't grok '%s' in weight comment %s" % (cTok, tok))
+                gm.append("I can't grok '%s' in weight comment %s" %
+                          (cTok, tok))
                 raise P4Error(gm)
 
         # Should check for scientific notation?
@@ -460,9 +469,10 @@ class Tree(object):
             try:
                 theNumerator = int(cTok)
                 if theNumerator != 1:
-                    gm.append('Expecting a numerator 1 in weight comment %s' % tok)
+                    gm.append(
+                        'Expecting a numerator 1 in weight comment %s' % tok)
                     raise P4Error(gm)
-                #print 'got theNumerator %i' % theNumerator
+                # print 'got theNumerator %i' % theNumerator
             except ValueError:
                 gm.append('Expecting a numerator 1 in weight comment %s' % tok)
                 raise P4Error(gm)
@@ -475,23 +485,22 @@ class Tree(object):
                     gm.append('Bad denominator in weight comment %s' % tok)
                     raise P4Error(gm)
             elif cTok == ']':
-                #self.recipWeight = theNumerator # ie 1, might as well leave it as None
+                # self.recipWeight = theNumerator # ie 1, might as well leave
+                # it as None
                 pass
             else:
-                gm.append("I can't grok '%s' in weight comment %s" % (cTok, tok))
+                gm.append("I can't grok '%s' in weight comment %s" %
+                          (cTok, tok))
                 raise P4Error(gm)
         cFlob.close()
-        #print 'got recipWeight = %s' % self.recipWeight
-        
+        # print 'got recipWeight = %s' % self.recipWeight
 
 
-
-
-##    def printStack(self, theStack):  # only used for debugging parseNewick()
-##        print 'stack = ',
-##        for n in theStack:
-##            print "%i['%s'] " % (n.nodeNum, n.name),
-##        print ''
+# def printStack(self, theStack):  # only used for debugging parseNewick()
+# print 'stack = ',
+# for n in theStack:
+# print "%i['%s'] " % (n.nodeNum, n.name),
+# print ''
 
     def parseNewick(self, flob, translationHash, doModelComments=0):
         """Parse Newick tree descriptions.
@@ -499,9 +508,10 @@ class Tree(object):
         This is stack-based, and does not use recursion.
         """
 
-        #print 'parseNewick here. var.nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
-        #print 'parseNewick here. doModelComments=%s' % doModelComments
-        #print "parseNewick()  translationHash=%s, self.taxNames=%s" % (translationHash, self.taxNames)
+        # print 'parseNewick here. var.nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
+        # print 'parseNewick here. doModelComments=%s' % doModelComments
+        # print "parseNewick()  translationHash=%s, self.taxNames=%s" %
+        # (translationHash, self.taxNames)
 
         if self.name:
             gm = ["Tree.parseNewick(), tree '%s'" % self.name]
@@ -513,40 +523,44 @@ class Tree(object):
             gm[0] += ", File %s" % self.fName
 
         if doModelComments:
-            savedP4Nexus_getAllCommandComments = var.nexus_getAllCommandComments # restore at end
+            # restore at end
+            savedP4Nexus_getAllCommandComments = var.nexus_getAllCommandComments
             var.nexus_getAllCommandComments = 1
 
         stack = []
-        isAfterParen = 1 # to start, even tho its not true
+        isAfterParen = 1  # to start, even tho its not true
         isAfterComma = 0
         parenNestLevel = 0
         lastPopped = None
 
         if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok,safeNextTok
+            from nexustoken2 import nextTok, safeNextTok
         else:
-            from nexustoken import nextTok,safeNextTok
+            from nexustoken import nextTok, safeNextTok
 
         tok = nextTok(flob)
         if not tok:
             return
-        
-        tok = func.nexusUnquoteName(tok)  # Should generally be the opening paren, except if its a single-node tree.
+
+        # Should generally be the opening paren, except if its a single-node
+        # tree.
+        tok = func.nexusUnquoteName(tok)
         while tok != ';':
-            #print "top of loop tok '%s', tok[0] is '%s'" % (tok, tok[0])
-            
+            # print "top of loop tok '%s', tok[0] is '%s'" % (tok, tok[0])
+
             if tok == '(':
-                #print "Got '(': new node (%i)." % len(self.nodes)
+                # print "Got '(': new node (%i)." % len(self.nodes)
                 if not (isAfterParen or isAfterComma):
-                    gm.append('Got badly-placed paren, not after a paren or comma.')
+                    gm.append(
+                        'Got badly-placed paren, not after a paren or comma.')
                     raise P4Error(gm)
                 newNode = Node()
                 if doModelComments:
                     for pNum in range(doModelComments):
                         newNode.parts.append(NodePart())
                         newNode.br.parts.append(NodeBranchPart())
-                        
-                #self.printStack(stack)
+
+                # self.printStack(stack)
                 if len(stack):
                     newNode.parent = stack[-1]
                     if newNode.parent.leftChild == None:
@@ -556,7 +570,8 @@ class Tree(object):
                 else:
                     if len(self.nodes) == 0:
                         self.root = newNode
-                        newNode.isLeaf = 1  # Sometimes. Generally not true-- corrected at the end.
+                        # Sometimes. Generally not true-- corrected at the end.
+                        newNode.isLeaf = 1
                     else:
                         gm.append('Something is wrong. Stack is empty.')
                         gm.append('Extra paren?')
@@ -574,7 +589,7 @@ class Tree(object):
                 elif isAfterComma:
                     gm.append('Got comma after comma.')
                     raise P4Error(gm)
-                #self.printStack(stack)
+                # self.printStack(stack)
                 try:
                     lastPopped = stack.pop()
                 except IndexError:
@@ -603,54 +618,63 @@ class Tree(object):
                     raise P4Error(gm)
 
             elif tok[0] in string.letters or tok[0] in string.digits or tok[0] == "'" or tok[0] in [
-                '_', '#', '\\', '/', '"', '(', ')']:
-                if len(self.nodes) == 0: # A single-node tree, not ()aName, rather just aName.
+                    '_', '#', '\\', '/', '"', '(', ')']:
+                # A single-node tree, not ()aName, rather just aName.
+                if len(self.nodes) == 0:
                     isAfterParen = 1
                 if not (isAfterParen or isAfterComma):
                     # Probably a name of an internal node.
                     if len(stack):
-                        #if stack[-1].isLeaf and stack[-1].name != '(':
+                        # if stack[-1].isLeaf and stack[-1].name != '(':
                         if stack[-1].name:
                             if not var.newick_allowSpacesInNames:
                                 # a second name after a node name, eg (A foo, B)   =>foo is bad
                                 # or eg (A, B)foo bar    => bar is bad
                                 gm.append("Badly placed token '%s'." % tok)
-                                gm.append("Appears to be a second node name, after '%s'" % stack[-1].name)
-                                gm.append('Missing comma maybe?  Or punctuation or spaces in an unquoted name?')
-                                gm.append("To allow reading Newick (or Nexus) with spaces, ")
-                                gm.append("turn var.newick_allowSpacesInNames on")
+                                gm.append(
+                                    "Appears to be a second node name, after '%s'" % stack[-1].name)
+                                gm.append(
+                                    'Missing comma maybe?  Or punctuation or spaces in an unquoted name?')
+                                gm.append(
+                                    "To allow reading Newick (or Nexus) with spaces, ")
+                                gm.append(
+                                    "turn var.newick_allowSpacesInNames on")
                                 raise P4Error(gm)
                             else:
                                 stack[-1].name += ' '
                                 stack[-1].name += tok
                         else:
                             # Usually this...
-                            #print "naming node %i as '%s'" % (stack[-1].nodeNum, tok)
-                            # We allow bad names on internal nodes, ie we do not nexusCheckName(tok)
+                            # print "naming node %i as '%s'" % (stack[-1].nodeNum, tok)
+                            # We allow bad names on internal nodes, ie we do
+                            # not nexusCheckName(tok)
                             stack[-1].name = tok
 
                     else:    # len(stack) == 0
-                        if lastPopped and lastPopped.name == None: # ()A
-                            #print "naming lastPopped node %i with '%s'" % (lastPopped.nodeNum, tok)
+                        if lastPopped and lastPopped.name == None:  # ()A
+                            # print "naming lastPopped node %i with '%s'" %
+                            # (lastPopped.nodeNum, tok)
                             lastPopped.isLeaf = 1
                             #lastPopped.label = tok
                             lastPopped.name = tok
                         else:
-                            gm.append("Badly placed token '%s' in tree description." % tok)
+                            gm.append(
+                                "Badly placed token '%s' in tree description." % tok)
                             raise P4Error(gm)
-
 
                 else:
                     # A new terminal node.
                     if tok[0] in string.letters or tok[0] in ['_']:
                         if translationHash and translationHash.has_key(tok):
-                            #print 'got key %s, val is %s' % (tok, translationHash[tok])
+                            # print 'got key %s, val is %s' % (tok,
+                            # translationHash[tok])
                             tok = translationHash[tok]
 
                     elif tok[0] in string.digits:
                         if var.nexus_allowAllDigitNames:
                             if translationHash and translationHash.has_key(tok):
-                                #print 'got key %s, val is %s' % (tok, translationHash[tok])
+                                # print 'got key %s, val is %s' % (tok,
+                                # translationHash[tok])
                                 tok = translationHash[tok]
                         else:
                             try:
@@ -658,36 +682,49 @@ class Tree(object):
                                 if translationHash and translationHash.has_key(`tok`):
                                     tok = translationHash[`tok`]
                                 elif translationHash and not translationHash.has_key(`tok`):
-                                    gm.append("There is a 'translation' for this tree, but the")
-                                    gm.append("number '%i' in the tree description" % tok)
-                                    gm.append('is not included in that translate command.')
+                                    gm.append(
+                                        "There is a 'translation' for this tree, but the")
+                                    gm.append(
+                                        "number '%i' in the tree description" % tok)
+                                    gm.append(
+                                        'is not included in that translate command.')
                                     raise P4Error(gm)
                                 elif self.taxNames:
                                     try:
                                         tok = self.taxNames[tok - 1]
                                     except IndexError:
-                                        gm.append("Can't make sense out of token '%s' for a new terminal node." % tok)
-                                        gm.append('There is no translate command, and the taxNames does not')
-                                        gm.append('have a value for that number.')
+                                        gm.append(
+                                            "Can't make sense out of token '%s' for a new terminal node." % tok)
+                                        gm.append(
+                                            'There is no translate command, and the taxNames does not')
+                                        gm.append(
+                                            'have a value for that number.')
                                         raise P4Error(gm)
                                 else:
-                                    gm.append("We have a taxon name '%s', composed only of numerals." % tok)
+                                    gm.append(
+                                        "We have a taxon name '%s', composed only of numerals." % tok)
                                     gm.append(" ")
-                                    gm.append('The Nexus format allows tree specifications with no')
-                                    gm.append('translate command to use integers to refer to taxa.')
-                                    gm.append('That is possible because in a proper Nexus file the')
-                                    gm.append('taxa are defined before the trees.  P4, however, does')
-                                    gm.append('not require definition of taxa before the trees, and in')
-                                    gm.append('the present case no definition was made.  Deal with it.')
+                                    gm.append(
+                                        'The Nexus format allows tree specifications with no')
+                                    gm.append(
+                                        'translate command to use integers to refer to taxa.')
+                                    gm.append(
+                                        'That is possible because in a proper Nexus file the')
+                                    gm.append(
+                                        'taxa are defined before the trees.  P4, however, does')
+                                    gm.append(
+                                        'not require definition of taxa before the trees, and in')
+                                    gm.append(
+                                        'the present case no definition was made.  Deal with it.')
                                     raise P4Error(gm)
                             except ValueError:
                                 if translationHash and translationHash.has_key(`tok`):
                                     tok = translationHash[`tok`]
-                                #else:  # starts with a digit, but it is not an int.
+                                # else:  # starts with a digit, but it is not an int.
                                 #    gm.append('Problem token %s' % tok)
                                 #    raise P4Error(gm)
 
-                    #print "Got terminal node '%s'" % tok
+                    # print "Got terminal node '%s'" % tok
                     newNode = Node()
                     if doModelComments:
                         for pNum in range(doModelComments):
@@ -697,7 +734,7 @@ class Tree(object):
                     newNode.isLeaf = 1
                     if func.nexusCheckName(tok):
                         newNode.name = tok
-                        #print 'got newNode.name = %s' % tok
+                        # print 'got newNode.name = %s' % tok
                     else:
                         gm.append("Bad name '%s'" % tok)
                         raise P4Error(gm)
@@ -715,18 +752,18 @@ class Tree(object):
                     isAfterParen = 0
                     isAfterComma = 0
 
-
             elif tok == ':':
                 #  Looking for a br.len number, which might be eg 0.234 or -1.23e-05
-                #  It might be a multi-token operation.  Accumulate tok's in theNum
+                # It might be a multi-token operation.  Accumulate tok's in
+                # theNum
                 theNum = nextTok(flob)
                 if not theNum:
                     gm.append('Tree description ended with a colon.  Bad!')
                     raise P4Error(gm)
-                #print "  Got token after colon:  '%s'" % theNum
+                # print "  Got token after colon:  '%s'" % theNum
                 if theNum == '-' or theNum == '+':
                     tok = nextTok(flob)
-                    #print "  Got tok: '%s' after '%s'" % (tok, theNum)
+                    # print "  Got tok: '%s' after '%s'" % (tok, theNum)
                     if not tok:
                         gm.append('Trying to deal with a branch length.')
                         gm.append("It didn't work, tho.")
@@ -735,19 +772,24 @@ class Tree(object):
                         raise P4Error(gm)
                     theNum += tok
                 try:
-                    # If it is a simple number like 0.123 or -23, then we are finished.
-                    stack[-1].br.len = float(theNum) # Won't work if it ends in 'e'
-                    #print '  Successfully got br.len %f' % stack[-1].br.len
+                    # If it is a simple number like 0.123 or -23, then we are
+                    # finished.
+                    # Won't work if it ends in 'e'
+                    stack[-1].br.len = float(theNum)
+                    # print '  Successfully got br.len %f' % stack[-1].br.len
                 except ValueError:
-                    # The first bit after the colon is hopefully something like +1.23e
+                    # The first bit after the colon is hopefully something like
+                    # +1.23e
                     if theNum[-1] not in ['e', 'E']:
-                        gm.append('Trying to deal with a branch length after a colon, but I am totally confused.')
+                        gm.append(
+                            'Trying to deal with a branch length after a colon, but I am totally confused.')
                         gm.append("Can't make sense out of '%s'" % theNum)
                         raise P4Error(gm, 'newick_badBranchLength')
                     try:
                         float(theNum[:-1])
                     except ValueError:
-                        gm.append('Trying to deal with a branch length after a colon, but I am totally confused.')
+                        gm.append(
+                            'Trying to deal with a branch length after a colon, but I am totally confused.')
                         gm.append("Can't make sense out of '%s'" % theNum)
                         raise P4Error(gm, 'newick_badBranchLength')
 
@@ -757,25 +799,34 @@ class Tree(object):
                     # The first thing must be a '+' or a '-'.
                     c = flob.read(1)
                     if not c:
-                        gm.append('Trying to deal with a branch length, possibly in scientific notation.')
-                        gm.append("Got '%s' after the colon, but then nothing." % theNum)
+                        gm.append(
+                            'Trying to deal with a branch length, possibly in scientific notation.')
+                        gm.append(
+                            "Got '%s' after the colon, but then nothing." % theNum)
                         raise P4Error(gm)
                     if c not in ['+', '-']:
-                        gm.append('Trying to deal with a branch length, possibly in scientific notation.')
+                        gm.append(
+                            'Trying to deal with a branch length, possibly in scientific notation.')
                         gm.append("Got '%s' after the colon." % theNum)
-                        gm.append("Expecting a '+' or '-' after that (no spaces allowed).")
+                        gm.append(
+                            "Expecting a '+' or '-' after that (no spaces allowed).")
                         gm.append("Got '%s'." % c)
                         raise P4Error(gm)
-                    # Accumulate characters in 'theExp'.  We need at least one digit.
+                    # Accumulate characters in 'theExp'.  We need at least one
+                    # digit.
                     theExp = c
                     c = flob.read(1)
                     if not c:
-                        gm.append('Trying to deal with a branch length, possibly in scientific notation.')
-                        gm.append("Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
+                        gm.append(
+                            'Trying to deal with a branch length, possibly in scientific notation.')
+                        gm.append(
+                            "Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
                         raise P4Error(gm)
                     if c not in string.digits:
-                        gm.append("Trying to deal with a branch length, possibly in scientific notation.")
-                        gm.append("Got '%s%s' after the colon." % (theNum, theExp))
+                        gm.append(
+                            "Trying to deal with a branch length, possibly in scientific notation.")
+                        gm.append("Got '%s%s' after the colon." %
+                                  (theNum, theExp))
                         gm.append('Expecting one or more digits.')
                         gm.append("Got '%s'" % c)
                         raise P4Error(gm)
@@ -784,8 +835,10 @@ class Tree(object):
                     while 1:
                         c = flob.read(1)
                         if not c:
-                            gm.append('Trying to deal with a branch length, possibly in scientific notation.')
-                            gm.append("Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
+                            gm.append(
+                                'Trying to deal with a branch length, possibly in scientific notation.')
+                            gm.append(
+                                "Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
                             raise P4Error(gm)
                         # We got something.  If its a digit, add it to
                         # theExp.  If its anything else, back up one
@@ -795,34 +848,43 @@ class Tree(object):
                         else:
                             flob.seek(-1, 1)
                             break
-                    #print "  At this point, theNum='%s' and theExp='%s'" % (theNum, theExp)
+                    # print "  At this point, theNum='%s' and theExp='%s'" %
+                    # (theNum, theExp)
                     try:
-                        #print "  Trying to see if theExp '%s' can be converted to an int." % theExp
+                        # print "  Trying to see if theExp '%s' can be
+                        # converted to an int." % theExp
                         int(theExp)
                         try:
                             theBrLen = float(theNum + theExp)
-                            #print '  Successfully got br.len %g (from %s%s)' % (theBrLen, theNum, theExp)
+                            # print '  Successfully got br.len %g (from %s%s)'
+                            # % (theBrLen, theNum, theExp)
                             stack[-1].br.len = theBrLen
                         except ValueError:
-                            gm.append('Trying to deal with a branch length, possibly in scientific notation.')
+                            gm.append(
+                                'Trying to deal with a branch length, possibly in scientific notation.')
                             gm.append("It didn't work, tho.")
-                            gm.append("Got these after colon: '%s' and '%s'" % (theNum, theExp))
-                            gm.append('And they could not be converted to an exponential float.')
+                            gm.append(
+                                "Got these after colon: '%s' and '%s'" % (theNum, theExp))
+                            gm.append(
+                                'And they could not be converted to an exponential float.')
                             raise P4Error(gm)
                     except ValueError:
-                        gm.append('Trying to deal with a branch length, possibly in scientific notation.')
+                        gm.append(
+                            'Trying to deal with a branch length, possibly in scientific notation.')
                         gm.append("It didn't work, tho.")
-                        gm.append("Got these after colon: '%s' and '%s'." % (theNum, theExp))
-                        gm.append('And the latter does not appear to be an int.')
+                        gm.append(
+                            "Got these after colon: '%s' and '%s'." % (theNum, theExp))
+                        gm.append(
+                            'And the latter does not appear to be an int.')
                         raise P4Error(gm)
 
             elif tok[0] == '[':
-                #print "openSquareBracket.  Got tok '%s'" % tok
+                # print "openSquareBracket.  Got tok '%s'" % tok
                 # if doModelComments is set, it should be set to nParts.
                 if doModelComments:
                     # eg [& c0.1 r0.0]
                     n = stack[-1]
-                    #print 'got comment %s, node %i' % (tok, n.nodeNum)
+                    # print 'got comment %s, node %i' % (tok, n.nodeNum)
                     cFlob = cStringIO.StringIO(tok)
                     cFlob.seek(2)
                     tok2 = NexusToken.safeNextTok(cFlob)
@@ -837,7 +899,7 @@ class Tree(object):
                                 secondNum = int(splitEnding[1])
                             except ValueError:
                                 gm.append('Bad command comment %s' % tok)
-                                raise P4Error(gm) 
+                                raise P4Error(gm)
                             if tok2[0] == 'c':
                                 n.parts[firstNum].compNum = secondNum
                             if tok2[0] == 'r':
@@ -858,7 +920,7 @@ class Tree(object):
                     assert not myNode.isLeaf
                     assert not myNode.name
                     mySupportString = tok[2:-1]
-                    #print mySupportString
+                    # print mySupportString
                     myNode.name = mySupportString
                 elif var.nexus_readBeastTreeCommandComments:
                     n = stack[-1]
@@ -868,7 +930,7 @@ class Tree(object):
                         inBraces = False
                         while 1:
                             j += 1
-                            #print tok[j]
+                            # print tok[j]
                             if tok[j] == ']':
                                 break
                             if tok[j] == '{':
@@ -880,7 +942,7 @@ class Tree(object):
                                 if tok[j] == ',':
                                     break
                         substring = tok[i:j]
-                        #print substring
+                        # print substring
                         splSS = substring.split('=')
                         theNameString = splSS[0].strip()
                         if '%' in theNameString:
@@ -895,57 +957,72 @@ class Tree(object):
                             theVal = False
                         else:
                             theVal = eval(theValString)
-                        assert type(theVal) in [types.FloatType, types.TupleType, types.BooleanType]
-                        n.__setattr__(theNameString, theVal) 
+                        assert type(theVal) in [
+                            types.FloatType, types.TupleType, types.BooleanType]
+                        n.__setattr__(theNameString, theVal)
                         i = j + 1
-                    
 
             else:
                 gm.append("I can't make sense of the token '%s'" % tok)
                 if len(tok) == 1:
                     if tok[0] in var.punctuation:
-                        gm.append("The token is in var.punctuation. If you don't think it should")
-                        gm.append("be, you can modify what p4 thinks that punctuation is.")
+                        gm.append(
+                            "The token is in var.punctuation. If you don't think it should")
+                        gm.append(
+                            "be, you can modify what p4 thinks that punctuation is.")
                         if var.nexus_doFastNextTok:
-                            gm.append("But to do that you can't use nexus_doFastNextToken, so you ")
+                            gm.append(
+                                "But to do that you can't use nexus_doFastNextToken, so you ")
                             gm.append("need to turn that off, temporarily.  ")
-                            gm.append("(var.nexus_doFastNextTok is currently on.)")
+                            gm.append(
+                                "(var.nexus_doFastNextTok is currently on.)")
                             gm.append("So you might do this:")
                             gm.append("var.nexus_doFastNextTok = False ")
-                            gm.append("var.punctuation = var.phylip_punctuation")
-                            gm.append("(or use your own definition -- see Var.py)")
+                            gm.append(
+                                "var.punctuation = var.phylip_punctuation")
+                            gm.append(
+                                "(or use your own definition -- see Var.py)")
                             gm.append("read('yourWackyTreeFile.phy')")
                             gm.append("That might work.")
                         else:
-                            gm.append("(Doing that does not work if nexus_doFastNextToken is turned on,")
-                            gm.append("but var.nexus_doFastNextTok is currently off.)")
+                            gm.append(
+                                "(Doing that does not work if nexus_doFastNextToken is turned on,")
+                            gm.append(
+                                "but var.nexus_doFastNextTok is currently off.)")
                             gm.append("So you might do this:")
-                            gm.append("var.punctuation = var.phylip_punctuation")
-                            gm.append("(or use your own definition -- see Var.py)")
+                            gm.append(
+                                "var.punctuation = var.phylip_punctuation")
+                            gm.append(
+                                "(or use your own definition -- see Var.py)")
                             gm.append("read('yourWackyTreeFile.phy')")
                             gm.append("That might work.")
                     if tok[0] not in var.punctuation:
-                        gm.append("The token is not in your current var.punctuation.")
+                        gm.append(
+                            "The token is not in your current var.punctuation.")
                         if var.nexus_doFastNextTok:
-                            gm.append("var.nexus_doFastNextTok is currently on.")
-                            gm.append("It uses a hard-wired list of punctuation, and so you may need to ")
-                            gm.append("need to turn var.nexus_doFastNextTok off, temporarily.  ")
+                            gm.append(
+                                "var.nexus_doFastNextTok is currently on.")
+                            gm.append(
+                                "It uses a hard-wired list of punctuation, and so you may need to ")
+                            gm.append(
+                                "need to turn var.nexus_doFastNextTok off, temporarily.  ")
                             gm.append("So you might do this:")
                             gm.append("var.nexus_doFastNextTok = False ")
                             gm.append("read('yourWackyTreeFile.phy')")
                             gm.append("That might work.")
                         else:
-                            gm.append("var.nexus_doFastNextTok is currently off.")
-                            
-                            
+                            gm.append(
+                                "var.nexus_doFastNextTok is currently off.")
+
                 #gm.append("tok[0] is '%s'" % tok[0])
                 raise P4Error(gm)
 
-            tok = func.nexusUnquoteName(safeNextTok(flob, 'Tree init, reading tree string'))
-            #print 'got tok for next round = %s' % tok
+            tok = func.nexusUnquoteName(
+                safeNextTok(flob, 'Tree init, reading tree string'))
+            # print 'got tok for next round = %s' % tok
             # This is the end of the "while tok != ';':" loop
 
-        #print '\n*** Stack len = %i ***' % len(stack)
+        # print '\n*** Stack len = %i ***' % len(stack)
 
         if parenNestLevel > 0:
             gm.append('Unmatched paren.')
@@ -958,12 +1035,14 @@ class Tree(object):
             if len(self.nodes) == 1:
                 pass
             else:
-                gm.append("Got an oddly-placed ';' in the tree %s description." % self.name)
+                gm.append(
+                    "Got an oddly-placed ';' in the tree %s description." % self.name)
                 self.dump(treeInfo=0, nodeInfo=1)
                 raise P4Error(gm)
         elif len(stack) > 1:
-            gm.append("Got an oddly-placed ';' in the tree %s description." % self.name)
-            #gm.append('(stack len = %i)' % len(stack)
+            gm.append(
+                "Got an oddly-placed ';' in the tree %s description." % self.name)
+            # gm.append('(stack len = %i)' % len(stack)
             #self.dump(tree=0, node=1)
             raise P4Error(gm)
 
@@ -979,18 +1058,19 @@ class Tree(object):
         # you are doing and what you want, and how to modify things to
         # get it.
 
-        # Uncomment this next line to make it always non-leaf, even if it is a leaf.
-        
-        #self.root.isLeaf = 0 # do this to always have a non-leaf root-on-a-stick   <-- Potential Trouble!!!
+        # Uncomment this next line to make it always non-leaf, even if it is a
+        # leaf.
+
+        # self.root.isLeaf = 0 # do this to always have a non-leaf
+        # root-on-a-stick   <-- Potential Trouble!!!
         self.root.br = None
-        #self.draw()
+        # self.draw()
         #self.dump(tree=0, node=1, treeModel=0)
 
         if doModelComments:
-            # restore the value of var.nexus_getAllCommandComments, which was saved above.
+            # restore the value of var.nexus_getAllCommandComments, which was
+            # saved above.
             var.nexus_getAllCommandComments = savedP4Nexus_getAllCommandComments
-
-
 
     def _initFinish(self):
 
@@ -1007,7 +1087,7 @@ class Tree(object):
         # Check that all terminal nodes have names
         for item in self.nodes:
             if item.isLeaf:
-                #print 'leaf name %s' % item.name
+                # print 'leaf name %s' % item.name
                 if not item.name:
                     if item == self.root:
                         if var.warnAboutTerminalRootWithNoName:
@@ -1019,12 +1099,13 @@ class Tree(object):
                         gm.append('Got a terminal node with no name.')
                         raise P4Error(gm)
 
-        self.preOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
-        self.postOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
-            
+        self.preOrder = numpy.array(
+            [var.NO_ORDER] * len(self.nodes), numpy.int32)
+        self.postOrder = numpy.array(
+            [var.NO_ORDER] * len(self.nodes), numpy.int32)
+
         if len(self.nodes) > 1:
             self.setPreAndPostOrder()
-
 
     def checkDupedTaxonNames(self):
 
@@ -1036,7 +1117,7 @@ class Tree(object):
             gm = ['Tree.checkDupedTaxonNames()']
         if self.fName:
             gm[0] += ' file=%s' % self.fName
-        
+
         hasDupedName = 0
         loNames = []
         for n in self.nodes:
@@ -1047,8 +1128,10 @@ class Tree(object):
                 if var.allowDupedTaxonNames:
                     pass
                 elif not var.doRepairDupedTaxonNames:
-                    gm.append("Got duplicated taxon (lowercased) name '%s'." % loName)
-                    gm.append('Since var.doRepairDupedTaxonNames is not turned on, p4 will not fix duplications.')
+                    gm.append(
+                        "Got duplicated taxon (lowercased) name '%s'." % loName)
+                    gm.append(
+                        'Since var.doRepairDupedTaxonNames is not turned on, p4 will not fix duplications.')
                     gm.append('To repair duplications verbosely, set ')
                     gm.append('var.doRepairDupedTaxonNames = 1')
                     gm.append('To repair duplications silently, set')
@@ -1058,7 +1141,7 @@ class Tree(object):
                 break
 
         if hasDupedName:
-            #print self.name
+            # print self.name
             if var.allowDupedTaxonNames:
                 # more hacking ...
                 if var.allowDupedTaxonNames == 2:  # ie silently.
@@ -1101,9 +1184,6 @@ class Tree(object):
                                     self.taxNames[tNameNum] = newName
                                     repairCounter2 += 1
                             assert repairCounter == repairCounter2, "Got a problem with re-naming duped taxa."
-                        
-
-        
 
     ##############
     ##############
@@ -1195,7 +1275,6 @@ class Tree(object):
         else:
             print '    There is no cTree.'
 
-
     def _doNodeInfo(self):
         """Basic rubbish about nodes."""
 
@@ -1235,7 +1314,6 @@ class Tree(object):
                 print '  %s' % 'None'
         print '--------------------------------------------------------\n'
 
-
         doMore = 0
         for n in self.iterNodesNoRoot():
             if hasattr(n.br, 'name') and n.br.name:
@@ -1247,7 +1325,7 @@ class Tree(object):
             elif hasattr(n.br, 'support') and n.br.support:
                 doMore = 1
                 break
-            
+
         if doMore:
             print '\n-------- more node stuff -------------------------------'
             print '%7s   %10s %10s %10s   %4s' % ('nodeNum', 'br.name', 'br.uName', 'br.support', 'name')
@@ -1274,7 +1352,6 @@ class Tree(object):
                 else:
                     print '    %s' % 'None'
             print '--------------------------------------------------------\n'
-
 
         doMore = 0
         for n in self.nodes:
@@ -1315,14 +1392,6 @@ class Tree(object):
                 else:
                     print '    %s' % 'None'
             print '--------------------------------------------------------\n'
-
-
-
-
-
-
-
-
 
     def _doNodeModelInfo(self):
         if not self.model:
@@ -1378,14 +1447,11 @@ class Tree(object):
                     print '%8i' % n.br.parts[i].gdasrvNum,
                 print ''
 
-
-
     ###########################
     #
     # Set a NexusSets object, for taxSets ...
     #
     ###########################
-
 
     def setNexusSets(self):
         """Set self.nexusSets from var.nexusSets.
@@ -1396,7 +1462,7 @@ class Tree(object):
         made).
 
         Important!  This method depends on a correct taxNames.
-        
+
         """
 
         assert self.taxNames, "This method requires correct taxNames, in the correct order."
@@ -1412,45 +1478,45 @@ class Tree(object):
         self.nexusSets.charPartitions = []
 
         if self.nexusSets.taxSets:
-            #print "%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets))
+            # print "%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets))
             # Check that no taxSet name is a taxName
-            lowSelfTaxNames = [string.lower(txName) for txName in self.taxNames]
+            lowSelfTaxNames = [string.lower(txName)
+                               for txName in self.taxNames]
             for ts in self.nexusSets.taxSets:
                 if ts.lowName in lowSelfTaxNames:
-                    gm.append("Can't have taxSet names that are the same (case-insensitive) as a tax name")
-                    gm.append("Lowercased taxSet name '%s' is the same as a lowcased taxName." % ts.name)
+                    gm.append(
+                        "Can't have taxSet names that are the same (case-insensitive) as a tax name")
+                    gm.append(
+                        "Lowercased taxSet name '%s' is the same as a lowcased taxName." % ts.name)
                     raise P4Error(gm)
             self.nexusSets.lowTaxNames = lowSelfTaxNames
-            
-            # If it is standard format, 
+
+            # If it is standard format,
             # convert triplets to numberTriplets, and then mask
             for ts in self.nexusSets.taxSets:
                 if ts.format == 'standard':
                     ts.setNumberTriplets()
                     ts.setMask()
-                    #print ts.mask
+                    # print ts.mask
                 elif ts.format == 'vector':
                     assert ts.mask
                     if len(ts.mask) != self.nTax:
                         gm.append("taxSet %s" % ts.name)
-                        gm.append("It is vector format, but the length is wrong.")
-                        gm.append("taxSet mask is length %i, but self nTax is %i" % (len(ts.mask), self.nTax))
+                        gm.append(
+                            "It is vector format, but the length is wrong.")
+                        gm.append(
+                            "taxSet mask is length %i, but self nTax is %i" % (len(ts.mask), self.nTax))
                         raise P4Error(gm)
                 else:
                     gm.append("taxSet %s" % ts.name)
                     gm.append("unknown format %s" % ts.format)
                     raise P4Error(gm)
 
-                    
-
-
-
     ###########################
     #
     # Get lists of nodeNums ...
     #
     ###########################
-
 
     def getNodeNumsAbove(self, nodeSpecifier, leavesOnly=0):
         """Gets a list of nodeNums, in postOrder, above nodeSpecifier.
@@ -1466,7 +1532,6 @@ class Tree(object):
             return tOnly
         return y[:-1]
 
-
     def getSeqNumsAbove(self, nodeSpecifier):
         """Gets a list of seqNums above nodeSpecifier."""
         x, y = self.getPreAndPostOrderAbove(nodeSpecifier)
@@ -1476,7 +1541,6 @@ class Tree(object):
             if n.isLeaf:
                 seqNums.append(n.seqNum)
         return seqNums
-
 
     # def getAllChildrenNums(self, specifier):
     #     """Returns a list of the nodeNums of all children of the specified node
@@ -1492,7 +1556,7 @@ class Tree(object):
     #     for i in y[:-1]:
     #         ret.append(self.nodes[i].nodeNum)
     #     return ret
-    
+
     def getAllLeafNames(self, specifier):
         """Returns a list of the leaf names of all children 
         """
@@ -1527,17 +1591,14 @@ class Tree(object):
             else:
                 return ret
 
-
-
     def setPreAndPostOrder(self):
         """Sets or re-sets self.preOrder and self.postOrder lists of node numbers.
 
         PreOrder starts from the root and goes to the tips; postOrder
         starts from the tips and goes to the root."""
-        
+
         self.getPreAndPostOrderAboveRoot()
         self.preAndPostOrderAreValid = 1
-
 
     def getPreAndPostOrderAbove(self, nodeSpecifier):
         """Returns 2 lists of node numbers, preOrder and postOrder.
@@ -1550,7 +1611,7 @@ class Tree(object):
 
         gm = ['Tree.getPreAndPostOrderAbove()']
         theNode = self.node(nodeSpecifier)
-        preOrder = [] # nodeNum's
+        preOrder = []  # nodeNum's
         postOrder = []
         if not theNode.leftChild:
             preOrder.append(theNode.nodeNum)
@@ -1562,32 +1623,36 @@ class Tree(object):
         while len(stack):
 
             if stack[-1].leftChild:
-                #print 'leftChild: %i' % stack[-1].leftChild.nodeNum
+                # print 'leftChild: %i' % stack[-1].leftChild.nodeNum
                 theNodeNum = stack[-1].leftChild.nodeNum
                 stack.append(stack[-1].leftChild)
                 preOrder.append(theNodeNum)
             elif stack[-1].sibling:
-                #print 'sibling: %i' % stack[-1].sibling.nodeNum
+                # print 'sibling: %i' % stack[-1].sibling.nodeNum
                 theNodeNum = stack[-1].sibling.nodeNum
                 theSib = stack[-1].sibling
-                #print '                 postOrder appending u %i' % stack[-1].nodeNum
+                # print '                 postOrder appending u %i' %
+                # stack[-1].nodeNum
                 postOrder.append(stack[-1].nodeNum)
                 stack.pop()
                 stack.append(theSib)
                 preOrder.append(theNodeNum)
             else:
-                #print '                 postOrder appending  v %i' % stack[-1].nodeNum
+                # print '                 postOrder appending  v %i' %
+                # stack[-1].nodeNum
                 postOrder.append(stack[-1].nodeNum)
                 stack.pop()
                 if len(stack) == 0:
                     break
-                #print '                 postOrder appending  w %i' % stack[-1].nodeNum
+                # print '                 postOrder appending  w %i' %
+                # stack[-1].nodeNum
                 postOrder.append(stack[-1].nodeNum)
                 theNode = stack.pop()
                 while not theNode.sibling:
                     if len(stack) == 0:
                         break
-                    #print '                 postOrder appending x %i' % stack[-1].nodeNum
+                    # print '                 postOrder appending x %i' %
+                    # stack[-1].nodeNum
                     postOrder.append(stack[-1].nodeNum)
                     theNode = stack.pop()
                 if len(stack) == 0:
@@ -1615,10 +1680,12 @@ class Tree(object):
         preOrdIndx = 0
         postOrdIndx = 0
         if type(self.preOrder) == types.NoneType or type(self.postOrder) == types.NoneType or len(self.preOrder) != len(self.nodes) or len(self.postOrder) != len(self.nodes):
-            self.preOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
-            self.postOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
+            self.preOrder = numpy.array(
+                [var.NO_ORDER] * len(self.nodes), numpy.int32)
+            self.postOrder = numpy.array(
+                [var.NO_ORDER] * len(self.nodes), numpy.int32)
 
-        #print "xx self.preOrder=%s" % self.preOrder
+        # print "xx self.preOrder=%s" % self.preOrder
         if not theNode.leftChild:
             self.preOrder[preOrdIndx] = theNode.nodeNum
             preOrdIndx += 1
@@ -1632,16 +1699,19 @@ class Tree(object):
             while len(stack):
 
                 if stack[-1].leftChild:
-                    #print 'leftChild: %i  (%s)' % (stack[-1].leftChild.nodeNum, [n.nodeNum for n in stack])
+                    # print 'leftChild: %i  (%s)' %
+                    # (stack[-1].leftChild.nodeNum, [n.nodeNum for n in stack])
                     theNodeNum = stack[-1].leftChild.nodeNum
                     stack.append(stack[-1].leftChild)
                     self.preOrder[preOrdIndx] = theNodeNum
                     preOrdIndx += 1
                 elif stack[-1].sibling:
-                    #print 'sibling: %i  (%s)' % (stack[-1].sibling.nodeNum, [n.nodeNum for n in stack])
+                    # print 'sibling: %i  (%s)' % (stack[-1].sibling.nodeNum,
+                    # [n.nodeNum for n in stack])
                     theNodeNum = stack[-1].sibling.nodeNum
                     theSib = stack[-1].sibling
-                    #print '                 postOrder appending u %i' % stack[-1].nodeNum
+                    # print '                 postOrder appending u %i' %
+                    # stack[-1].nodeNum
                     self.postOrder[postOrdIndx] = stack[-1].nodeNum
                     postOrdIndx += 1
                     stack.pop()
@@ -1649,25 +1719,29 @@ class Tree(object):
                     try:
                         self.preOrder[preOrdIndx] = theNodeNum
                     except IndexError:
-                        gm.append("preOrdIndx=%s, theNodeNum=%i" % (preOrdIndx, theNodeNum))
+                        gm.append("preOrdIndx=%s, theNodeNum=%i" %
+                                  (preOrdIndx, theNodeNum))
                         gm.append("preOrder = %s" % self.preOrder)
                         raise P4Error(gm)
                     preOrdIndx += 1
                 else:
-                    #print '                 postOrder appending  v %i' % stack[-1].nodeNum
+                    # print '                 postOrder appending  v %i' %
+                    # stack[-1].nodeNum
                     self.postOrder[postOrdIndx] = stack[-1].nodeNum
                     postOrdIndx += 1
                     stack.pop()
                     if len(stack) == 0:
                         break
-                    #print '                 postOrder appending  w %i' % stack[-1].nodeNum
+                    # print '                 postOrder appending  w %i' %
+                    # stack[-1].nodeNum
                     self.postOrder[postOrdIndx] = stack[-1].nodeNum
                     postOrdIndx += 1
                     theNode = stack.pop()
                     while not theNode.sibling:
                         if len(stack) == 0:
                             break
-                        #print '                 postOrder appending x %i' % stack[-1].nodeNum
+                        # print '                 postOrder appending x %i' %
+                        # stack[-1].nodeNum
                         self.postOrder[postOrdIndx] = stack[-1].nodeNum
                         postOrdIndx += 1
                         theNode = stack.pop()
@@ -1675,7 +1749,8 @@ class Tree(object):
                         break
                     if theNode.sibling:
                         stack.append(theNode.sibling)
-                        #print "self.preOrder = %s, preOrdIndx=%i" % (self.preOrder, preOrdIndx)
+                        # print "self.preOrder = %s, preOrdIndx=%i" %
+                        # (self.preOrder, preOrdIndx)
                         self.preOrder[preOrdIndx] = theNode.sibling.nodeNum
                         preOrdIndx += 1
                     else:
@@ -1684,7 +1759,8 @@ class Tree(object):
                         raise P4Error(gm)
         if 1:
             assert preOrdIndx == postOrdIndx
-            #print "a preOrdIndx = %i, len(self.nodes) = %i" % (preOrdIndx, len(self.nodes))
+            # print "a preOrdIndx = %i, len(self.nodes) = %i" % (preOrdIndx,
+            # len(self.nodes))
             if preOrdIndx != len(self.nodes):
                 pOI = preOrdIndx
                 for i in range(preOrdIndx, len(self.nodes)):
@@ -1692,9 +1768,9 @@ class Tree(object):
                     self.postOrder[i] = var.NO_ORDER
                     preOrdIndx += 1
                     postOrdIndx += 1
-            #print "b preOrdIndx = %i, len(self.nodes) = %i" % (preOrdIndx, len(self.nodes))
+            # print "b preOrdIndx = %i, len(self.nodes) = %i" % (preOrdIndx,
+            # len(self.nodes))
         assert preOrdIndx == len(self.nodes) and postOrdIndx == len(self.nodes)
-
 
     def iterPreOrder(self):
         """Node generator.  Assumes preAndPostOrderAreValid."""
@@ -1702,9 +1778,9 @@ class Tree(object):
         for i in self.preOrder:
             j = int(i)           # this speeds things up a lot!  Two-fold!
             if j != var.NO_ORDER:
-                #yield self.nodes[int(i)]
+                # yield self.nodes[int(i)]
                 yield self.nodes[j]
-    
+
     def iterPostOrder(self):
         """Node generator.  Assumes preAndPostOrderAreValid."""
 
@@ -1712,7 +1788,7 @@ class Tree(object):
             j = int(i)
             if j != var.NO_ORDER:
                 yield self.nodes[j]
-    
+
     def iterNodes(self):
         """Node generator, in preOrder.  Assumes preAndPostOrderAreValid."""
 
@@ -1730,7 +1806,7 @@ class Tree(object):
                 n = self.nodes[j]
                 if n != self.root:
                     yield n
-                    
+
     def iterLeavesNoRoot(self):
         """Leaf node generator, skipping the root.  PreOrder."""
 
@@ -1740,16 +1816,16 @@ class Tree(object):
                 n = self.nodes[j]
                 if n != self.root and n.isLeaf:
                     yield n
-                
+
     def iterLeavesPreOrder(self):
 
         for i in self.preOrder:
             j = int(i)
             if j != var.NO_ORDER:
                 n = self.nodes[j]
-                if n.isLeaf:         
+                if n.isLeaf:
                     yield n
-                
+
     def iterLeavesPostOrder(self):
 
         for i in self.postOrder:
@@ -1758,7 +1834,6 @@ class Tree(object):
                 n = self.nodes[j]
                 if n.isLeaf:
                     yield n
-   
 
     def iterInternalsNoRootPreOrder(self):
         """Internal post order node generator, skipping the root.  Assumes preAndPostOrderAreValid."""
@@ -1779,7 +1854,7 @@ class Tree(object):
                 n = self.nodes[j]
                 if n != self.root and not n.isLeaf:
                     yield n
-                
+
     def iterInternalsPostOrder(self):
         """Internal post order node generator.  Assumes preAndPostOrderAreValid."""
 
@@ -1799,7 +1874,7 @@ class Tree(object):
                 n = self.nodes[j]
                 if n != self.root and not n.isLeaf:
                     yield n
-            
+
     def iterInternals(self):
         """Internal node generator. PreOrder.  Including the root, if it is internal."""
 
@@ -1843,14 +1918,14 @@ class Tree(object):
 
     # def stemminess(self):
     #     """Ratio of internal branches to overall tree length.
-        
+
     #     Also called 'treeness'.  Via Phillips and Penny, MPE 2003, but
     #     they cite Lanyon 1988."""
 
     #     total = self.len()
     #     internals = self.lenInternals()
     #     return internals/total
-    
+
     def _makeRCSplitKeys(self, splitList=None):
         """Make long integer-valued split keys.
         This is dependent on that the leaf bitkeys are already set, ie this method should only 
@@ -1859,16 +1934,16 @@ class Tree(object):
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
 
-        #self.draw()
+        # self.draw()
 
 #        allOnes = 2L**(self.nTax) - 1
-        #print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
+        # print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
 
 #        for n in self.iterInternalsPostOrder():
         for n in self.iterInternalsNoRootPostOrder():
-#            if n != self.root:
-                #print 'doing node %s' % n.nodeNum
-#            if not n.isLeaf():
+            #            if n != self.root:
+                # print 'doing node %s' % n.nodeNum
+            #            if not n.isLeaf():
             if n.leftChild:
 
                 childrenNums = self.getChildrenNums(n)
@@ -1879,7 +1954,7 @@ class Tree(object):
 #                        x = x | i
                 n.br.rc = x
                 if splitList != None:
-                    splitList.append([x,0])
+                    splitList.append([x, 0])
                 n.br.rcList = [n.br.rc]
 
     def makeSplitKeys(self, makeNodeForSplitKeyDict=False):
@@ -1934,7 +2009,7 @@ class Tree(object):
         has 2 internal splits, on nodes 1 and 5.
 
         ::
-        
+
             Node      n.br.rawSplitKey     n.br.splitKey
             1             6                    6
             5             9                   22
@@ -1948,7 +2023,7 @@ class Tree(object):
         If arg *makeNodeForSplitKeyDict* is set, then it will make a
         dictionary ``nodeForSplitKeyDict`` where the keys are the
         splitKeys and the values are the corresponding nodes.
-        
+
         """
 
         gm = ['Tree.makeSplitKeys()']
@@ -1960,37 +2035,41 @@ class Tree(object):
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
 
-        #self.draw()
+        # self.draw()
         if makeNodeForSplitKeyDict:
             self.nodeForSplitKeyDict = {}
 
-        allOnes = 2L**(self.nTax) - 1
-        #print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
+        allOnes = 2L ** (self.nTax) - 1
+        # print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
 
         for n in self.iterPostOrder():
             if n != self.root:
-                #print 'doing node %s' % n.nodeNum
+                # print 'doing node %s' % n.nodeNum
 
                 if not n.leftChild:
                     # A long int, eg 1L, has no upper limit on its value
                     try:
-                        n.br.rawSplitKey = 1L << self.taxNames.index(n.name)  # "<<" is left-shift
+                        n.br.rawSplitKey = 1L << self.taxNames.index(
+                            n.name)  # "<<" is left-shift
                     except ValueError:
                         gm.append('node.name %s' % n.name)
                         gm.append('is not in taxNames %s' % self.taxNames)
                         raise P4Error(gm)
-                    #n.br.rawSplitKey = 1L << self.taxNames.index(n.name)  # "<<" is left-shift
-                    
+                    # n.br.rawSplitKey = 1L << self.taxNames.index(n.name)  #
+                    # "<<" is left-shift
+
                     if n.br.rawSplitKey == 1:
                         n.br.splitKey = allOnes - 1
                     else:
                         n.br.splitKey = n.br.rawSplitKey
 
-                    #print 'upward leaf   node %s, rawSplitKey %s, splitKey %s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
+                    # print 'upward leaf   node %s, rawSplitKey %s, splitKey
+                    # %s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
                 else:
                     childrenNums = self.getChildrenNums(n)
                     if len(childrenNums) == 1:
-                        gm.append('Internal node has only one child.  That will make a duped split.')
+                        gm.append(
+                            'Internal node has only one child.  That will make a duped split.')
                         raise P4Error(gm)
                     x = self.nodes[childrenNums[0]].br.rawSplitKey
                     for i in childrenNums[1:]:
@@ -2001,14 +2080,17 @@ class Tree(object):
                     # Make node.br.splitKey's in "standard form", ie
                     # without the first taxon, ie without a 1.  To do that
                     # we use the '&' operator, to bitwise "and" with 1.
-                    if 1 & n.br.rawSplitKey: # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey odd?"
-                        n.br.splitKey = allOnes ^ n.br.rawSplitKey # "^" is xor, a bit-flipper.
+                    # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey
+                    # odd?"
+                    if 1 & n.br.rawSplitKey:
+                        # "^" is xor, a bit-flipper.
+                        n.br.splitKey = allOnes ^ n.br.rawSplitKey
                     else:
                         n.br.splitKey = n.br.rawSplitKey
-                    #print 'intern node %s, rawSplitKey %s, splitKey %s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
+                    # print 'intern node %s, rawSplitKey %s, splitKey %s' %
+                    # (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
                 if makeNodeForSplitKeyDict:
                     self.nodeForSplitKeyDict[n.br.splitKey] = n
-
 
         if 0:
             # There should be no duped rawSplitKeys
@@ -2043,37 +2125,39 @@ class Tree(object):
                 print '%7s     %4s       %4s        %s' % (
                     n.nodeNum, n.br.rawSplitKey, n.br.splitKey, func.getSplitStringFromKey(n.br.splitKey, self.nTax))
 
-
     def recalculateSplitKeysOfNodeFromChildren(self, aNode, allOnes):
         children = [n for n in aNode.iterChildren()]
         x = children[0].br.rawSplitKey
         for n in children[1:]:
             x = x | n.br.rawSplitKey   # '|' is bitwise "OR".
         aNode.br.rawSplitKey = x
-        if 1 & aNode.br.rawSplitKey: # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey odd?"
-            aNode.br.splitKey = allOnes ^ aNode.br.rawSplitKey # "^" is xor, a bit-flipper.
+        # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey odd?"
+        if 1 & aNode.br.rawSplitKey:
+            # "^" is xor, a bit-flipper.
+            aNode.br.splitKey = allOnes ^ aNode.br.rawSplitKey
         else:
             aNode.br.splitKey = aNode.br.rawSplitKey
-        
 
     def checkSplitKeys(self, useOldName=False, glitch=True, verbose=True):
         gm = ['Tree.checkSplitKeys()']
-        
-        allOnes = 2L**(self.nTax) - 1
-        #print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
+
+        allOnes = 2L ** (self.nTax) - 1
+        # print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
 
         isBad = False
         for n in self.iterPostOrder():
             if n != self.root:
-                #print 'doing node %s' % n.nodeNum
+                # print 'doing node %s' % n.nodeNum
 
                 if not n.leftChild:
                     # A long int, eg 1L, has no upper limit on its value
                     try:
                         if useOldName:
-                            rawSplitKey = 1L << self.taxNames.index(n.oldName)  # "<<" is left-shift
+                            rawSplitKey = 1L << self.taxNames.index(
+                                n.oldName)  # "<<" is left-shift
                         else:
-                            rawSplitKey = 1L << self.taxNames.index(n.name)  # "<<" is left-shift
+                            rawSplitKey = 1L << self.taxNames.index(
+                                n.name)  # "<<" is left-shift
                     except ValueError:
                         if useOldName:
                             gm.append('node.name %s' % n.oldName)
@@ -2081,18 +2165,21 @@ class Tree(object):
                             gm.append('node.name %s' % n.name)
                         gm.append('is not in taxNames %s' % self.taxNames)
                         raise P4Error(gm)
-                    #n.br.rawSplitKey = 1L << self.taxNames.index(n.name)  # "<<" is left-shift
+                    # n.br.rawSplitKey = 1L << self.taxNames.index(n.name)  #
+                    # "<<" is left-shift
 
                     if rawSplitKey == 1:
                         splitKey = allOnes - 1
                     else:
                         splitKey = rawSplitKey
 
-                    #print 'upward leaf   node %s, rawSplitKey %s, splitKey %s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
+                    # print 'upward leaf   node %s, rawSplitKey %s, splitKey
+                    # %s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
                 else:
                     childrenNums = self.getChildrenNums(n)
                     if len(childrenNums) == 1:
-                        gm.append('Internal node has only one child.  That will make a duped split.')
+                        gm.append(
+                            'Internal node has only one child.  That will make a duped split.')
                         raise P4Error(gm)
                     x = self.nodes[childrenNums[0]].br.rawSplitKey
                     for i in childrenNums[1:]:
@@ -2103,11 +2190,15 @@ class Tree(object):
                     # Make node.br.splitKey's in "standard form", ie
                     # without the first taxon, ie without a 1.  To do that
                     # we use the '&' operator, to bitwise "and" with 1.
-                    if 1 & rawSplitKey: # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey odd?"
-                        splitKey = allOnes ^ rawSplitKey # "^" is xor, a bit-flipper.
+                    # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey
+                    # odd?"
+                    if 1 & rawSplitKey:
+                        # "^" is xor, a bit-flipper.
+                        splitKey = allOnes ^ rawSplitKey
                     else:
                         splitKey = rawSplitKey
-                    #print 'intern node %s, rawSplitKey %s, splitKey %s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
+                    # print 'intern node %s, rawSplitKey %s, splitKey %s' %
+                    # (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
                 if n.br.rawSplitKey != rawSplitKey:
                     print "checkSplitKeys node %2i rawSplitKey: existing %s, calculated %s" % (n.nodeNum, n.br.rawSplitKey, rawSplitKey)
                     isBad = True
@@ -2118,7 +2209,6 @@ class Tree(object):
             raise P4Error(gm)
         if verbose and not isBad:
             print "checkSplitKeys().  ok"
-
 
     def taxSetIsASplit(self, taxSetName):
 
@@ -2132,49 +2222,47 @@ class Tree(object):
                 theTS = ts
                 break
         assert theTS, "Could not find the taxSet named %s" % taxSetName
-        #theTS.dump()
+        # theTS.dump()
         assert theTS.mask
         rawSplitKey = 0L
         for i in range(len(theTS.mask)):
-            #print i, theTS.mask[i]
+            # print i, theTS.mask[i]
             if theTS.mask[i] == '1':
                 rawSplitKey += (1L << i)
-        if 1 & rawSplitKey: # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey odd?"
-            allOnes = 2L**(self.nTax) - 1
-            splitKey = allOnes ^ rawSplitKey # "^" is xor, a bit-flipper.
+        # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey odd?"
+        if 1 & rawSplitKey:
+            allOnes = 2L ** (self.nTax) - 1
+            splitKey = allOnes ^ rawSplitKey  # "^" is xor, a bit-flipper.
         else:
             splitKey = rawSplitKey
-        #print "got splitKey %s" % splitKey
+        # print "got splitKey %s" % splitKey
 
         for n in self.nodes:
             if n.br and not n.isLeaf:
-                #print "  %2i  %s  %s" % (n.nodeNum, n.br.splitKey, splitKey)
+                # print "  %2i  %s  %s" % (n.nodeNum, n.br.splitKey, splitKey)
                 if n.br.splitKey == splitKey:
-                    #self.draw()
-                    #return n.nodeNum
+                    # self.draw()
+                    # return n.nodeNum
                     return n
-        return None    # Was -1 before, when n.nodeNum was returned for hits.  Now a node is returned.
-        
-        
-                
-
+        # Was -1 before, when n.nodeNum was returned for hits.  Now a node is
+        # returned.
+        return None
 
     def checkTaxNames(self):
         """Check that all taxNames are in the tree, and vice versa."""
 
-        #If var.allowTreesWithDifferingTaxonSets is set to True we will not check
-        #the taxnames. This is primarily used to read trees for supertree and 
-        #leafstability calcuations.
+        # If var.allowTreesWithDifferingTaxonSets is set to True we will not check
+        # the taxnames. This is primarily used to read trees for supertree and
+        # leafstability calcuations.
 
         # Peter comments that Tobias added this, but it is not needed,
         # and messes other things up -- so comment out until it is
         # sorted.
-        #if var.allowTreesWithDifferingTaxonSets:
+        # if var.allowTreesWithDifferingTaxonSets:
         #     return
-         
 
         # self.taxNames is a property, so when it is set, it calls this method
-        
+
         if self.name:
             gm = ['Tree.checkTaxNames()   tree %s' % self.name]
         else:
@@ -2188,24 +2276,27 @@ class Tree(object):
         for n in self.iterNodes():
             if n.isLeaf and n.name:
                 tax.append(n.name)
-            # This next line should not be needed, as root leaves should be leaves.
-            elif n == self.root and n.name and n.getNChildren() < 2:  # terminal root that has a taxName
+            # This next line should not be needed, as root leaves should be
+            # leaves.
+            # terminal root that has a taxName
+            elif n == self.root and n.name and n.getNChildren() < 2:
                 tax.append(n.name)
 
-        #print 'tax from tree = %s' % tax
-        #print 'self.taxNames = %s' % self.taxNames
+        # print 'tax from tree = %s' % tax
+        # print 'self.taxNames = %s' % self.taxNames
 
         # Check for same number of taxa
         if len(tax) != len(self.taxNames):
-            #self.draw()
-            #self.dump(node=1)
+            # self.draw()
+            # self.dump(node=1)
             gm.append('Mismatch.  Length of self.taxNames is wrong.')
             gm.append('The tree has %i leaves with names, but len(self.taxNames) = %i' % (
                 len(tax), len(self.taxNames)))
             gm.append('leaves on the tree = %s' % tax)
             gm.append('self.taxNames = %s' % self.taxNames)
-            gm.append('symmetric_difference is %s' % set(tax).symmetric_difference(set(self.taxNames)))
-            #print '    Setting invalid taxNames to an empty list.'
+            gm.append('symmetric_difference is %s' %
+                      set(tax).symmetric_difference(set(self.taxNames)))
+            # print '    Setting invalid taxNames to an empty list.'
             #self.taxNames = []
             raise P4Error(gm, 'tree_badTaxNamesLength')
 
@@ -2232,7 +2323,6 @@ class Tree(object):
         if isBad:
             raise P4Error(gm, 'tree_taxNamesMisMatch')
 
-
     ################################################
     # Copy and Verify
 
@@ -2253,21 +2343,22 @@ class Tree(object):
             if selfNode.parent:
                 otherNode.parent = otherTree.nodes[selfNode.parent.nodeNum]
             else:
-                #print "otherNode.parent", otherNode.parent
+                # print "otherNode.parent", otherNode.parent
                 otherNode.parent = None
 
             # leftChild
             if selfNode.leftChild:
-                otherNode.leftChild = otherTree.nodes[selfNode.leftChild.nodeNum]
+                otherNode.leftChild = otherTree.nodes[
+                    selfNode.leftChild.nodeNum]
             else:
-                #print "otherNode.leftChild", otherNode.leftChild
+                # print "otherNode.leftChild", otherNode.leftChild
                 otherNode.leftChild = None
 
             # sibling
             if selfNode.sibling:
                 otherNode.sibling = otherTree.nodes[selfNode.sibling.nodeNum]
             else:
-                #print "otherNode.sibling", otherNode.sibling
+                # print "otherNode.sibling", otherNode.sibling
                 otherNode.sibling = None
 
         # root
@@ -2279,10 +2370,13 @@ class Tree(object):
         for nNum in range(len(self.nodes)):
             if self.nodes[nNum] != self.root:
                 otherTree.nodes[nNum].br.len = self.nodes[nNum].br.len
-                otherTree.nodes[nNum].br.lenChanged = self.nodes[nNum].br.lenChanged
+                otherTree.nodes[nNum].br.lenChanged = self.nodes[
+                    nNum].br.lenChanged
                 #otherTree.nodes[nNum].br.flag = self.nodes[nNum].flag
-                otherTree.nodes[nNum].br.splitKey = self.nodes[nNum].br.splitKey
-                otherTree.nodes[nNum].br.rawSplitKey = self.nodes[nNum].br.rawSplitKey
+                otherTree.nodes[nNum].br.splitKey = self.nodes[
+                    nNum].br.splitKey
+                otherTree.nodes[nNum].br.rawSplitKey = self.nodes[
+                    nNum].br.rawSplitKey
 
         # model usage numbers
         if self.model:
@@ -2290,10 +2384,13 @@ class Tree(object):
                 selfNode = self.nodes[nNum]
                 otherNode = otherTree.nodes[nNum]
                 for pNum in range(self.model.nParts):
-                    otherNode.parts[pNum].compNum = selfNode.parts[pNum].compNum
+                    otherNode.parts[pNum].compNum = selfNode.parts[
+                        pNum].compNum
                     if selfNode != self.root:
-                        otherNode.br.parts[pNum].rMatrixNum = selfNode.br.parts[pNum].rMatrixNum
-                        otherNode.br.parts[pNum].gdasrvNum = selfNode.br.parts[pNum].gdasrvNum
+                        otherNode.br.parts[pNum].rMatrixNum = selfNode.br.parts[
+                            pNum].rMatrixNum
+                        otherNode.br.parts[
+                            pNum].gdasrvNum = selfNode.br.parts[pNum].gdasrvNum
 
         # pre- and postOrder
         for i in range(len(self.preOrder)):
@@ -2310,7 +2407,7 @@ class Tree(object):
     def verifyIdentityWith(self, otherTree, doSplitKeys):
         """For MCMC debugging.  Verifies that two trees are identical."""
 
-        complaintHead = '\nTree.verifyIdentityWith()' # keep
+        complaintHead = '\nTree.verifyIdentityWith()'  # keep
 
         if len(self.nodes) != len(otherTree.nodes):
             print complaintHead
@@ -2371,7 +2468,7 @@ class Tree(object):
         # brLens, lenChanged, and node.flag. and splitKeys
         for nNum in range(len(self.nodes)):
             if self.nodes[nNum] != self.root:
-                #if self.nodes[nNum].br.len != otherTree.nodes[nNum].br.len:
+                # if self.nodes[nNum].br.len != otherTree.nodes[nNum].br.len:
                 if math.fabs(self.nodes[nNum].br.len - otherTree.nodes[nNum].br.len) > 1.e-8:
                     print complaintHead
                     print '    BrLens differ.'
@@ -2434,14 +2531,14 @@ class Tree(object):
 
         # partLikes
         for pNum in range(self.model.nParts):
-            #if otherTree.partLikes[pNum] != self.partLikes[pNum]:
+            # if otherTree.partLikes[pNum] != self.partLikes[pNum]:
             if math.fabs(otherTree.partLikes[pNum] - self.partLikes[pNum]) > 1.e-8:
                 print complaintHead
                 print "    partLikes differ.  (%.5f, (%g) %.5f (%g)" % (
                     otherTree.partLikes[pNum], otherTree.partLikes[pNum], self.partLikes[pNum], self.partLikes[pNum])
                 return var.DIFFERENT
 
-        if 0: # some more
+        if 0:  # some more
             for nNum in range(len(self.nodes)):
                 selfNode = self.nodes[nNum]
                 otherNode = otherTree.nodes[nNum]
@@ -2462,20 +2559,17 @@ class Tree(object):
                     print '    isLeaf differs'
                     return var.DIFFERENT
 
-        
         return var.SAME
-
 
     ############################################
 
-
     def isFullyBifurcating(self, verbose=False):
         """Returns True if the tree is fully bifurcating.  Else False. """
-        
+
         if self.root and self.root.leftChild and self.root.leftChild.sibling and self.root.leftChild.sibling.sibling:
             if self.root.leftChild.sibling.sibling.sibling:
                 if verbose:
-                    print "isFullyBifurcating() returning False, due to root with 4 or more children." 
+                    print "isFullyBifurcating() returning False, due to root with 4 or more children."
                 return False
         elif self.root and self.root.isLeaf:
             pass
@@ -2495,7 +2589,8 @@ class Tree(object):
                 return False
         return True
 
-    # These next two are for the eTBR implementation that I got from Jason Evans' Crux.  Thanks Jason!
+    # These next two are for the eTBR implementation that I got from Jason
+    # Evans' Crux.  Thanks Jason!
     def getDegree(self, nodeSpecifier):
         n = self.node(nodeSpecifier)
         if n.isLeaf:
@@ -2505,7 +2600,7 @@ class Tree(object):
                 return 0
         else:
             #assert n.leftChild
-            deg = 1 # the leftChild
+            deg = 1  # the leftChild
             if n.parent:
                 deg += 1
             s = n.leftChild.sibling
@@ -2538,7 +2633,7 @@ class Tree(object):
 
         spoke = self.node(spokeSpecifier)
         hub = self.node(hubSpecifier)
-        
+
         if spoke.parent == hub or hub == spoke:
             if spoke == hub:
                 if spoke.leftChild:
@@ -2556,11 +2651,11 @@ class Tree(object):
         else:
             print "*=" * 25
             self.draw()
-            gm = ["Tree.nextNode() spoke=%i, hub=%i" % (spoke.nodeNum, hub.nodeNum)]
-            gm.append("Need to have either spoke.parent == hub or hub == spoke.")
+            gm = ["Tree.nextNode() spoke=%i, hub=%i" %
+                  (spoke.nodeNum, hub.nodeNum)]
+            gm.append(
+                "Need to have either spoke.parent == hub or hub == spoke.")
             raise P4Error(gm)
-            
-        
 
     def topologyDistance(self, tree2, metric='sd', resetSplitKeySet=False):
         """Compares the topology of self with tree2.
@@ -2607,7 +2702,7 @@ class Tree(object):
         If you calculate a distance and then make a topology change, a
         subsequent sd topologyDistance calculation will be wrong, as it
         uses previous splits.  So then you need to 'resetSplitKeySet'.
- 
+
         The 'scqdist' metric also gives quartet distances.  It was
         written by Anders Kabell Kristensen for his Masters degree at
         Aarhus University, 2010.  http://www.cs.au.dk/~dalko/thesis/
@@ -2619,17 +2714,20 @@ class Tree(object):
         """
 
         gm = ['Tree.topologyDistance()']
-        
+
         if metric not in var.topologyDistanceMetrics:
             gm.append("Got a request for unknown metric '%s'" % metric)
-            gm.append("The 'metric' arg should be one of %s" % var.topologyDistanceMetrics)
+            gm.append("The 'metric' arg should be one of %s" %
+                      var.topologyDistanceMetrics)
             raise P4Error(gm)
-        if metric == 'scqdist': # no need for taxNames
+        if metric == 'scqdist':  # no need for taxNames
             try:
                 import scqdist
             except ImportError:
-                gm.append("Could not find the 'scqdist' module needed for this metric.")
-                gm.append("See the instructions for making it in the p4 source, in the Qdist directory.")
+                gm.append(
+                    "Could not find the 'scqdist' module needed for this metric.")
+                gm.append(
+                    "See the instructions for making it in the p4 source, in the Qdist directory.")
                 raise P4Error(gm)
             tsSelf = self.writeNewick(toString=True)
             tsTree2 = tree2.writeNewick(toString=True)
@@ -2642,11 +2740,11 @@ class Tree(object):
             gm.append("Self:  %s" % self.taxNames)
             gm.append("tree2: %s" % tree2.taxNames)
             raise P4Error(gm)
-        if (self.root.getNChildren() == 2 or tree2.root.getNChildren() == 2) and ( metric in ['wrf', 'bld']):
+        if (self.root.getNChildren() == 2 or tree2.root.getNChildren() == 2) and (metric in ['wrf', 'bld']):
             gm.append('One of the input trees has a bifurcating root.')
-            gm.append('Weighted tree distance calculations do not work on bi-rooted trees.')
+            gm.append(
+                'Weighted tree distance calculations do not work on bi-rooted trees.')
             raise P4Error(gm)
-
 
         # I might be doing a lot of these, and I don't want to make
         # splitKeys and make the splitKeys set over and over again.
@@ -2660,16 +2758,19 @@ class Tree(object):
 
         if not hasattr(self, 'splitKeySet'):
             self.makeSplitKeys()
-            self.splitKeySet = set([n.br.splitKey for n in self.iterNodesNoRoot()])
+            self.splitKeySet = set(
+                [n.br.splitKey for n in self.iterNodesNoRoot()])
 
         if not hasattr(tree2, 'splitKeySet'):
             tree2.makeSplitKeys()
-            tree2.splitKeySet = set([n.br.splitKey for n in tree2.iterNodesNoRoot()])
+            tree2.splitKeySet = set(
+                [n.br.splitKey for n in tree2.iterNodesNoRoot()])
 
         if metric == 'sd':
             # Symmetric difference.  The symmetric_difference method
             # returns all elements that are in exactly one of the sets.
-            theSD = len(self.splitKeySet.symmetric_difference(tree2.splitKeySet))
+            theSD = len(
+                self.splitKeySet.symmetric_difference(tree2.splitKeySet))
             return theSD
 
         # The difference method returns the difference of two sets as
@@ -2679,7 +2780,7 @@ class Tree(object):
         tree2HasButSelfDoesNot = tree2.splitKeySet.difference(self.splitKeySet)
 
         if metric == 'diffs':
-            return len(selfHasButTree2DoesNot),len(tree2HasButSelfDoesNot)
+            return len(selfHasButTree2DoesNot), len(tree2HasButSelfDoesNot)
 
         if metric in ['wrf', 'bld']:
             self.splitKeyHash = {}
@@ -2688,34 +2789,37 @@ class Tree(object):
             tree2.splitKeyHash = {}
             for n in tree2.iterNodesNoRoot():
                 tree2.splitKeyHash[n.br.splitKey] = n
-            
+
         if metric == 'wrf':
             theSum = 0.0
             for k in self.splitKeySet.intersection(tree2.splitKeySet):
-                #print '%s - %s' % (self.splitKeyHash[k].br.len, tree2.splitKeyHash[k].br.len)
-                theSum += abs(self.splitKeyHash[k].br.len - tree2.splitKeyHash[k].br.len)
+                # print '%s - %s' % (self.splitKeyHash[k].br.len,
+                # tree2.splitKeyHash[k].br.len)
+                theSum += abs(self.splitKeyHash[k].br.len -
+                              tree2.splitKeyHash[k].br.len)
             for k in selfHasButTree2DoesNot:
-                #print 'x %s' % self.splitKeyHash[k].br.len
+                # print 'x %s' % self.splitKeyHash[k].br.len
                 theSum += self.splitKeyHash[k].br.len
             for k in tree2HasButSelfDoesNot:
-                #print 'y %s' % tree2.splitKeyHash[k].br.len
+                # print 'y %s' % tree2.splitKeyHash[k].br.len
                 theSum += tree2.splitKeyHash[k].br.len
             return theSum
         elif metric == 'bld':
             theSum = 0.0
             for k in self.splitKeySet.intersection(tree2.splitKeySet):
-                theDiff = self.splitKeyHash[k].br.len - tree2.splitKeyHash[k].br.len
+                theDiff = self.splitKeyHash[
+                    k].br.len - tree2.splitKeyHash[k].br.len
                 theSum += theDiff * theDiff
             for k in selfHasButTree2DoesNot:
-                theSum += self.splitKeyHash[k].br.len * self.splitKeyHash[k].br.len
+                theSum += self.splitKeyHash[k].br.len * \
+                    self.splitKeyHash[k].br.len
             for k in tree2HasButSelfDoesNot:
-                theSum += tree2.splitKeyHash[k].br.len * tree2.splitKeyHash[k].br.len
-            #print 'branch score =', theSum
+                theSum += tree2.splitKeyHash[k].br.len * \
+                    tree2.splitKeyHash[k].br.len
+            # print 'branch score =', theSum
             return math.sqrt(theSum)
 
-
     ##################################################
-    
 
     def tv(self):
         """Tree Viewer. Show the tree in a gui window.
@@ -2728,7 +2832,7 @@ class Tree(object):
         #import os
         #os.environ['PYTHONINSPECT'] = '1'
         TV(self)
-    
+
     def btv(self):
         """Big Tree Viewer. Show the tree in a gui window.
 
@@ -2745,7 +2849,6 @@ class Tree(object):
         #import os
         #os.environ['PYTHONINSPECT'] = '1'
         BTV(self)
-    
 
     def tvTopologyCompare(self, treeB):
         """Graphically show topology differences.
@@ -2755,14 +2858,14 @@ class Tree(object):
 
         (If the red lines don't show up right away, try adjusting the
         size of the windows slightly.)
-        
+
         """
-        
+
         sd = self.topologyDistance(treeB)
         if sd == 0:
             print "The trees are the same. No tv."
             return
-        #for sk in self.splitKeyHash.iterkeys():
+        # for sk in self.splitKeyHash.iterkeys():
         #    if not treeB.splitKeyHash.has_key(sk):
         #        print "self has sk
 
@@ -2807,18 +2910,22 @@ class Tree(object):
             if specifier in self.nodes:
                 return specifier
             else:
-                gm.append("The specifier is a node object, but is not part of self.")
+                gm.append(
+                    "The specifier is a node object, but is not part of self.")
                 raise P4Error(gm)
         elif type(specifier) == types.StringType:   # if its a string
             for n in self.iterNodes():
                 if n.name == specifier:
                     return n
-            if nodeNum == None:    # if we haven't found a node matching the specier...
-                gm.append("Specifier string '%s' is not a node name.  What gives?" % specifier)
+            # if we haven't found a node matching the specier...
+            if nodeNum == None:
+                gm.append(
+                    "Specifier string '%s' is not a node name.  What gives?" % specifier)
                 raise P4Error(gm)
 
         else:
-            gm.append("I don't understand the specifier '%s', type '%s'." % (specifier, type(specifier)))
+            gm.append("I don't understand the specifier '%s', type '%s'." % (
+                specifier, type(specifier)))
             raise P4Error(gm)
 
         if nodeNum < 0 or nodeNum >= len(self.nodes):
@@ -2826,7 +2933,6 @@ class Tree(object):
             raise P4Error(gm)
 
         return self.nodes[nodeNum]
-
 
     def rotateAround(self, specifier):
         """Rotate a clade around a node.
@@ -2848,8 +2954,9 @@ class Tree(object):
         # set up to unattach the rightmost child, and reattach at the left
         oldLeftChild = rotateNode.leftChild
         oldRightmostChild = rotateNode.rightmostChild()
-        # we need to know the node second from the right, which will become the newRightmostChild
-        newRightmostChild = rotateNode.leftChild # as a first guess...
+        # we need to know the node second from the right, which will become the
+        # newRightmostChild
+        newRightmostChild = rotateNode.leftChild  # as a first guess...
         while newRightmostChild.sibling != oldRightmostChild:
             newRightmostChild = newRightmostChild.sibling
         # now the newRightmostChild is indeed the second from the right
@@ -2858,9 +2965,6 @@ class Tree(object):
         oldRightmostChild.sibling = oldLeftChild
         oldLeftChild.parent.leftChild = oldRightmostChild
         self.preAndPostOrderAreValid = 0
-
-
-
 
     def reRoot(self, specifier, moveInternalName=True, stompRootName=True, checkBiRoot=True, fixRawSplitKeys=False):
         """Re-root the tree to the node described by the specifier.
@@ -2945,17 +3049,23 @@ class Tree(object):
 
         gm = ['Tree.reRoot()']
 
-        # The user probably does not want to reRoot if the current root is bifurcating.  So check that.
+        # The user probably does not want to reRoot if the current root is
+        # bifurcating.  So check that.
         if checkBiRoot:
             if self.root.getNChildren() == 2:
-                gm.append("The tree has a bifurcating root, so you probably do not")
-                gm.append("want to reRoot() it.  You can remove the bifurcating root")
-                gm.append("with yourTree.removeRoot().  If you really want to reRoot()")
-                gm.append("with a bifurcating root, set checkBiRoot=False in the reRoot() args.")
+                gm.append(
+                    "The tree has a bifurcating root, so you probably do not")
+                gm.append(
+                    "want to reRoot() it.  You can remove the bifurcating root")
+                gm.append(
+                    "with yourTree.removeRoot().  If you really want to reRoot()")
+                gm.append(
+                    "with a bifurcating root, set checkBiRoot=False in the reRoot() args.")
                 raise P4Error(gm)
         if self.root.isLeaf and not self.root.name:
             gm.append("The root is a leaf, but has no name.")
-            gm.append("So when you reRoot() it, some other leaf will have no name.")
+            gm.append(
+                "So when you reRoot() it, some other leaf will have no name.")
             gm.append("That is a recipe for trouble, and is not allowed.")
             raise P4Error(gm)
 
@@ -2972,18 +3082,23 @@ class Tree(object):
                         print "(Set stompRootName=2 to do this silently ...)"
                     self.root.name = None
                 else:
-                    gm.append("Setting 'moveInternalName' implies keeping node names with their branches.")
-                    gm.append("The root in this tree has a name, but has no branch.")
+                    gm.append(
+                        "Setting 'moveInternalName' implies keeping node names with their branches.")
+                    gm.append(
+                        "The root in this tree has a name, but has no branch.")
                     gm.append("So that does not work.")
                     gm.append("Set arg stompRootName to work around this.")
                     raise P4Error(gm)
             if self.root.isLeaf and self.root.leftChild.name:
                 assert self.root.name
                 gm.append("The current root is a leaf, with a name.")
-                gm.append("Its sole child has a name also, which is an 'internal' node name.")
+                gm.append(
+                    "Its sole child has a name also, which is an 'internal' node name.")
                 gm.append("Arg moveInternalName is turned on.")
-                gm.append("So when the tree gets re-rooted, that internal node name  should stay with its branch, not its node.")
-                gm.append("But the rerooted branch will already have a name-- the current root name.")
+                gm.append(
+                    "So when the tree gets re-rooted, that internal node name  should stay with its branch, not its node.")
+                gm.append(
+                    "But the rerooted branch will already have a name-- the current root name.")
                 gm.append("So that does not work.")
                 raise P4Error(gm)
 
@@ -3002,26 +3117,24 @@ class Tree(object):
             # Start there-- its to be called the 'swivelNode'
             # print "Rooting on node %i..." % path[-1].nodeNum
 
-            ##               +----------2:A
-            ##    +----------1
-            ##    |          +----------3:B
-            ##    0
-            ##    +----------4:C
-            ##    |
-            ##    +----------5:D
+            # +----------2:A
+            # +----------1
+            # |          +----------3:B
+            # 0
+            # +----------4:C
+            # |
+            # +----------5:D
 
+            # +----------2:A
+            # |
+            # 1----------3:B
+            # |
+            # |          +----------4:C
+            # +----------0
+            # +----------5:D
 
-            ##    +----------2:A
-            ##    |
-            ##    1----------3:B
-            ##    |
-            ##    |          +----------4:C
-            ##    +----------0
-            ##               +----------5:D
-
-
-
-            oldRoot = self.root   # in case this is not the first time around this loop...
+            # in case this is not the first time around this loop...
+            oldRoot = self.root
             swivelNode = path.pop()
 
             # Move the old root around the swivel node to the right.
@@ -3067,11 +3180,10 @@ class Tree(object):
                     for n in oldRoot.iterChildren():
                         oldRoot.br.rawSplitKey += n.br.rawSplitKey
                 else:
-                    oldRoot.br.rawSplitKey = 1L << self.taxNames.index(oldRoot.name)  # "<<" is left-shift
+                    oldRoot.br.rawSplitKey = 1L << self.taxNames.index(
+                        oldRoot.name)  # "<<" is left-shift
 
         self.preAndPostOrderAreValid = 0
-
-
 
     def removeRoot(self):
         """Removes the root if self.root is mono- or bifurcating.
@@ -3114,7 +3226,7 @@ class Tree(object):
             # The root has exactly two children.  This would be the usual,
             # expected, case.  We want to find the first child (of the
             # oldRoot) with more than one child (of the child).
-            newRoot = oldRoot.leftChild # Try this one first:
+            newRoot = oldRoot.leftChild  # Try this one first:
             # Ideally, and usually, the new root should have two or more
             # children.  Imagine what would happen if this tree
             #
@@ -3135,8 +3247,8 @@ class Tree(object):
             # enough?
             while newRoot:
                 if newRoot.getNChildren() >= 2:
-                    break # its good enough, use it
-                newRoot = newRoot.sibling # its not good, try its sib
+                    break  # its good enough, use it
+                newRoot = newRoot.sibling  # its not good, try its sib
 
             # If we got this far an failed to find a good root, then
             # newRoot is None.  We are dealing with a tree where all the
@@ -3146,7 +3258,7 @@ class Tree(object):
             # on.
             if not newRoot:
                 newRoot = oldRoot.leftChild
-                #print "x Re-rooting on node number %i" % newRoot.nodeNum
+                # print "x Re-rooting on node number %i" % newRoot.nodeNum
                 if newRoot.leftChild:
                     newCh = newRoot.leftChild
                     newCh.sibling = newRoot.sibling
@@ -3159,9 +3271,10 @@ class Tree(object):
                 newCh.br.len = newCh.br.len + newRoot.br.len
                 newRoot.br = None
             else:   # We found a good new root, with two or more children
-                #print "y reRooting on nodeNum %i" % newRoot.nodeNum
+                # print "y reRooting on nodeNum %i" % newRoot.nodeNum
                 if newRoot == oldRoot.leftChild:
-                    newRoot.sibling.br.len = newRoot.sibling.br.len + newRoot.br.len
+                    newRoot.sibling.br.len = newRoot.sibling.br.len + \
+                        newRoot.br.len
                     newRoot.br = None
                     newRoot.rightmostChild().sibling = newRoot.sibling
                     newRoot.sibling.parent = newRoot
@@ -3180,10 +3293,10 @@ class Tree(object):
 
         else:
             gm.append("The root has more than two children.")
-            gm.append("Removing the root with more than two children is not implemented.")
+            gm.append(
+                "Removing the root with more than two children is not implemented.")
             gm.append("Are you even sure you want to do that?")
             raise P4Error(gm)
-
 
         oldRoot.wipe()
         self.nodes.remove(oldRoot)
@@ -3200,7 +3313,6 @@ class Tree(object):
         self.preAndPostOrderAreValid = 0
         self.setPreAndPostOrder()
         self._nTax = 0
-
 
     def removeNode(self, specifier, alsoRemoveSingleChildParentNode=True, alsoRemoveBiRoot=True, alsoRemoveSingleChildRoot=True):
         """Remove a node, together with everything above it.
@@ -3274,9 +3386,9 @@ class Tree(object):
             print "    Removing everything above the root would leave nothing."
             print "    I assume that you do not want to do that."
             print "    So I'm not doing that."
-            #self.draw()
-            #print "the specifier was %s" % specifier
-            #print "the specified node was node number %i" % rNode.nodeNum
+            # self.draw()
+            # print "the specifier was %s" % specifier
+            # print "the specified node was node number %i" % rNode.nodeNum
             #raise P4Error
             return
         rNodeParnt = rNode.parent
@@ -3290,22 +3402,24 @@ class Tree(object):
         if not self.root.leftChild.sibling:
             isOriginallySingleChildRoot = True
 
-        # For cases where we originally have a bi-Root, that we would like to keep.
+        # For cases where we originally have a bi-Root, that we would like to
+        # keep.
         isOriginallyBiRoot = False
         if self.root.getNChildren() == 2:
             isOriginallyBiRoot = True
 
-
-        #print "Removing node number", rNode.nodeNum
+        # print "Removing node number", rNode.nodeNum
         #hitList = []
         #self.recursivelyListNodeIndicesDownTo(hitList, rNode)
 
-        # getNodeNumsAbove does not require setting self.preAndPostOrderAreValid = 0.  Its irrelevant.
-        hitList = self.getNodeNumsAbove(rNode.nodeNum) # does not include rNode
+        # getNodeNumsAbove does not require setting
+        # self.preAndPostOrderAreValid = 0.  Its irrelevant.
+        # does not include rNode
+        hitList = self.getNodeNumsAbove(rNode.nodeNum)
         hitList.append(rNode.nodeNum)
-        #hitList.sort()
-        #hitList.reverse()
-        #print "Hit list is", hitList
+        # hitList.sort()
+        # hitList.reverse()
+        # print "Hit list is", hitList
         hitNodes = []
         for i in hitList:
             hitNodes.append(self.nodes[i])
@@ -3322,7 +3436,7 @@ class Tree(object):
             leftSib = rNode.leftSibling()
             if 1:
                 if leftSib:
-                    #print "leftSib is node %i" % leftSib.nodeNum
+                    # print "leftSib is node %i" % leftSib.nodeNum
                     leftSib.sibling = rNode.sibling
                 else:
                     gm.append("leftSib is None.  This shouldn't happen")
@@ -3349,14 +3463,12 @@ class Tree(object):
         if 1:
             for i in range(len(self.nodes)):
                 self.nodes[i].nodeNum = i
-            #self.dump(node=1)
+            # self.dump(node=1)
             self.preOrder = None
             self.postOrder = None
             self.preAndPostOrderAreValid = 0
-            #self.draw()  # This won't work unless preAndPostOrderAreValid set to 0
-
-
-
+            # self.draw()  # This won't work unless preAndPostOrderAreValid set
+            # to 0
 
         # the parent of the removed node may now only have one child,
         # in which case it (the parent) should be removed
@@ -3364,8 +3476,10 @@ class Tree(object):
         if alsoRemoveSingleChildParentNode or alsoRemoveBiRoot or haveRemovedSingleChildRoot:
 
             ignoreBrLens = True
-            self.preOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
-            self.postOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
+            self.preOrder = numpy.array(
+                [var.NO_ORDER] * len(self.nodes), numpy.int32)
+            self.postOrder = numpy.array(
+                [var.NO_ORDER] * len(self.nodes), numpy.int32)
 
             if len(self.nodes) > 1:
                 self.setPreAndPostOrder()
@@ -3374,17 +3488,16 @@ class Tree(object):
                     ignoreBrLens = False
                     break
 
-
         if alsoRemoveSingleChildParentNode:
 
             if rNodeParnt and rNodeParnt.leftChild and not rNodeParnt.leftChild.sibling:
                 if rNodeParnt.parent:
                     # rNodeParnt is a left, middle, or right child
                     if rNodeParnt.parent.leftChild == rNodeParnt:
-                        #print 'rNodeParnt is a left child'
+                        # print 'rNodeParnt is a left child'
                         rNodeParnt.parent.leftChild = rNodeParnt.leftChild
                     else:
-                        #print 'rNodeParnt is a middle or right child'
+                        # print 'rNodeParnt is a middle or right child'
                         rNodeParnt.leftSibling().sibling = rNodeParnt.leftChild
                     rNodeParnt.leftChild.sibling = rNodeParnt.sibling
                     if not ignoreBrLens:
@@ -3403,8 +3516,10 @@ class Tree(object):
 
         for i in range(len(self.nodes)):
             self.nodes[i].nodeNum = i
-        self.preOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
-        self.postOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
+        self.preOrder = numpy.array(
+            [var.NO_ORDER] * len(self.nodes), numpy.int32)
+        self.postOrder = numpy.array(
+            [var.NO_ORDER] * len(self.nodes), numpy.int32)
 
         if len(self.nodes) > 1:
             self.setPreAndPostOrder()
@@ -3416,13 +3531,12 @@ class Tree(object):
         assert rNode != self.root
         assert not rNode.isLeaf
         toDelete = [n for n in rNode.iterPostOrder() if n != rNode]
-        #print [n.nodeNum for n in toDelete]
+        # print [n.nodeNum for n in toDelete]
         for n in toDelete:
-            #print 'deleting node %i' % n.nodeNum
+            # print 'deleting node %i' % n.nodeNum
             self.removeNode(n, alsoRemoveSingleChildParentNode=False)
         rNode.name = newName
         rNode.isLeaf = 1
-
 
     def collapseNode(self, specifier):
         """Collapse the specified node to make a polytomy, and remove it from the tree.
@@ -3435,9 +3549,9 @@ class Tree(object):
         theNode = self.node(specifier)
         assert theNode in self.nodes, "The specified Node is not in the tree."
         #assert theNode.leftChild and theNode.leftChild.sibling, "The specified node must have at least 2 children."
-        assert not theNode.isLeaf, "The specified node must not be a leaf." 
+        assert not theNode.isLeaf, "The specified node must not be a leaf."
         assert theNode is not self.root, "The specified node must not be the tree root."
-        #print "Collapsing node %i" % theNode.nodeNum
+        # print "Collapsing node %i" % theNode.nodeNum
 
         theNewParent = theNode.parent
         theRightmostChild = theNode.rightmostChild()
@@ -3452,13 +3566,11 @@ class Tree(object):
         theNode.wipe()
 
         # The following does not work well.
-        #self.nodes.remove(theNode)
-        #del(theNode)
+        # self.nodes.remove(theNode)
+        # del(theNode)
 
         self.setPreAndPostOrder()
         self._nInternalNodes -= 1
-
-
 
     def pruneSubTreeWithoutParent(self, specifier, allowSingleChildNode=False):
         """Remove and return a node, together with everything above it.
@@ -3484,25 +3596,26 @@ class Tree(object):
         rNodeParnt = rNode.parent
         if not allowSingleChildNode:
             if rNodeParnt.getNChildren() < 3:
-                #self.draw()
+                # self.draw()
                 gm.append("The arg allowSingleChildNode is turned off.")
-                gm.append("This would be for those cases where the parent of the subTree has more than 2 children.")
+                gm.append(
+                    "This would be for those cases where the parent of the subTree has more than 2 children.")
                 raise P4Error(gm)
 
-        #self.deleteCStuff()
+        # self.deleteCStuff()
 
-        #print "rNode is node %i" % rNode.nodeNum
-        #print "rNodeParnt is node %i" % rNodeParnt.nodeNum
+        # print "rNode is node %i" % rNode.nodeNum
+        # print "rNodeParnt is node %i" % rNodeParnt.nodeNum
 
         # Disconnect it from the tree.
         # the rNode is the left, middle, or right child of the parent
         if rNodeParnt.leftChild == rNode:
-            #print "its the left child"
+            # print "its the left child"
             rNodeParnt.leftChild = rNode.sibling
             rNode.sibling = None
             rNode.parent = None
         else:
-            #print "its a middle or a right child"
+            # print "its a middle or a right child"
             leftSib = rNode.leftSibling()
             assert leftSib
             leftSib.sibling = rNode.sibling
@@ -3538,7 +3651,8 @@ class Tree(object):
         else:
             bNode = self.node(beforeNode)
             if bNode.parent != newParent:
-                gm.append("The parent of the 'beforeNode' should be the newParent.")
+                gm.append(
+                    "The parent of the 'beforeNode' should be the newParent.")
                 raise P4Error(gm)
             if newParent.leftChild == bNode:
                 newParent.leftChild = stNode
@@ -3550,7 +3664,6 @@ class Tree(object):
             stNode.sibling = bNode
 
         self._nTax = 0
-
 
     def addNodeBetweenNodes(self, specifier1, specifier2):
         """Add a node between 2 exisiting nodes, which should be parent-child.
@@ -3576,7 +3689,8 @@ class Tree(object):
             aNode1 = aNode2
             aNode2 = temp
         else:
-            gm.append("The 2 specified nodes should have a parent-child relationship")
+            gm.append(
+                "The 2 specified nodes should have a parent-child relationship")
             raise P4Error(gm)
 
         self.deleteCStuff()
@@ -3612,14 +3726,14 @@ class Tree(object):
             aNode2.br.len = halfBrLen
             newNode.br.len = halfBrLen
 
-
         if 1:
-            self.preOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
-            self.postOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
+            self.preOrder = numpy.array(
+                [var.NO_ORDER] * len(self.nodes), numpy.int32)
+            self.postOrder = numpy.array(
+                [var.NO_ORDER] * len(self.nodes), numpy.int32)
             if len(self.nodes) > 1:
                 self.setPreAndPostOrder()
         return newNode
-
 
     def allBiRootedTrees(self):
         """Returns a Trees object containing all possible bi-rootings of self.
@@ -3654,9 +3768,6 @@ class Tree(object):
         from trees import Trees
         tt = Trees(trees=tList, taxNames=self.taxNames)
         return tt
-
-
-
 
     def ladderize(self, biggerGroupsOnBottom=True):
         """Rotate nodes for a staircase effect.
@@ -3713,18 +3824,17 @@ class Tree(object):
 
         """
 
-        #self.draw()
+        # self.draw()
         self.root._ladderize(biggerGroupsOnBottom)
         self.preAndPostOrderAreValid = 0
-        #self.draw()
-
-
+        # self.draw()
 
     def randomizeTopology(self, randomBrLens=True):
 
         gm = ["Tree.randomizeTopology()"]
         if self.root.getNChildren() != 3 or not self.isFullyBifurcating():
-            gm.append("Should be a fully bifurcating tree, this week.  Fix me?")
+            gm.append(
+                "Should be a fully bifurcating tree, this week.  Fix me?")
             raise P4Error(gm)
         if self.cTree:
             self.deleteCStuff()
@@ -3791,24 +3901,23 @@ class Tree(object):
                     ssNodes.append(n)
             lChild = random.choice(ssNodes)
 
-            #print "lChild = node %i" % lChild.nodeNum
+            # print "lChild = node %i" % lChild.nodeNum
 
-            ##    +----------1:oldLeftSib
-            ##    |
-            ##    +----------2:lChild
-            ##    0
-            ##    +----------3:lChildSib
-            ##    |
-            ##    +----------4:oldLChildSibSib
+            # +----------1:oldLeftSib
+            # |
+            # +----------2:lChild
+            # 0
+            # +----------3:lChildSib
+            # |
+            # +----------4:oldLChildSibSib
 
-
-            ##    +----------1:oldLeftSib
-            ##    |
-            ##    |          +----------3:lChild
-            ##    0----------2(n)
-            ##    |          +----------4:lChildSib
-            ##    |
-            ##    +----------5:oldLChildSibSib
+            # +----------1:oldLeftSib
+            # |
+            # |          +----------3:lChild
+            # 0----------2(n)
+            # |          +----------4:lChildSib
+            # |
+            # +----------5:oldLChildSibSib
 
             n = internals[iIndx]
             iIndx += 1
@@ -3818,8 +3927,8 @@ class Tree(object):
             n.nodeNum = nodeNum
             nodeNum += 1
             lChildSib = lChild.sibling  # guarranteed to have one
-            oldLChildSibSib = lChildSib.sibling # ditto
-            oldLeftSib = lChild.parent.leftChild # first guess ...
+            oldLChildSibSib = lChildSib.sibling  # ditto
+            oldLeftSib = lChild.parent.leftChild  # first guess ...
             if oldLeftSib != lChild:
                 while oldLeftSib.sibling != lChild:
                     oldLeftSib = oldLeftSib.sibling
@@ -3849,14 +3958,13 @@ class Tree(object):
             lChildSib.sibling = None
             self.nodes.append(n)
 
-
-        #self.dump(all=True)
-        #self.draw()
+        # self.dump(all=True)
+        # self.draw()
 
         # The way it is now, the root rightmost child is always a
         # leaf.  Not really random, then, right?  So choose a random
         # internal node, and re-root it there.
-        #print "nTax=%i, len(t.nodes)=%i" % (nTax, len(t.nodes))
+        # print "nTax=%i, len(t.nodes)=%i" % (nTax, len(t.nodes))
         if nTax > 3:
             n = self.nodes[random.randrange(nTax + 1, len(self.nodes))]
             self.reRoot(n, moveInternalName=False)
@@ -3873,15 +3981,8 @@ class Tree(object):
                     else:
                         n.br.len = 0.02 + (random.random() * 0.03)
 
-
-
         self.preAndPostOrderAreValid = 0
-        #self.dump(all=True)
-
-
-
-
-
+        # self.dump(all=True)
 
     def readBipartitionsFromPaupLogFile(self, thePaupLogFileName):
         """Assigns support to the tree, from the PAUP bipartitions table.
@@ -3915,9 +4016,8 @@ class Tree(object):
                 gm.append("No Bipartitions line in %s?" % thePaupLogFileName)
                 raise P4Error(gm)
             if aLine.startswith('Bipartitions found'):
-                #print aLine
+                # print aLine
                 break
-
 
         # The splits table might be all in one piece, or it might be split
         # into sections (CYCLEs).  Only the last section has the Freq or
@@ -3940,20 +4040,19 @@ class Tree(object):
         theKeys = []
         hasFreqOnly = None
 
-
         while 1:
             prevLine = aLine
             aLine = f.readline()
-            #print "a Got Line ==>%s<==" % aLine
+            # print "a Got Line ==>%s<==" % aLine
             if not aLine:
                 gm.append('Unexpected end of file.')
                 raise P4Error(gm)
             aLine = aLine.rstrip()
-            #print "b Got Line ==>%s<==" % aLine
+            # print "b Got Line ==>%s<==" % aLine
             if len(aLine):
                 if aLine[0] == '-':
-                    #print prevLine
-                    #print aLine
+                    # print prevLine
+                    # print aLine
                     if prevLine.endswith('Freq') or prevLine.endswith('%'):
                         if prevLine.endswith('Freq'):
                             hasFreqOnly = 1
@@ -3961,12 +4060,13 @@ class Tree(object):
                             hasFreqOnly = 0
 
                         cycleType = LAST_CYCLE
-                        #print "We are now in the last cycle.  hasFreqOnly=%s" % hasFreqOnly
+                        # print "We are now in the last cycle.  hasFreqOnly=%s"
+                        # % hasFreqOnly
                         splitLine = string.split(prevLine)
                         thisKeyLength = len(splitLine[0])
                         keyCounter = 0
                     elif cycleType == MIDDLE_CYCLE:
-                        #print "We are now in a middle cycle"
+                        # print "We are now in a middle cycle"
                         thisKeyLength = len(prevLine)
                         keyCounter = 0
                     elif cycleType == FIRST_CYCLE:
@@ -3974,9 +4074,8 @@ class Tree(object):
                         raise P4Error(gm)
                     else:
                         cycleType = FIRST_CYCLE
-                        #print "We are now in the first cycle"
+                        # print "We are now in the first cycle"
                         thisKeyLength = len(prevLine)
-
 
                 elif aLine[0] in ['.', '*']:
                     if cycleType in [FIRST_CYCLE, MIDDLE_CYCLE] and len(aLine) != thisKeyLength:
@@ -3995,14 +4094,16 @@ class Tree(object):
                             raise P4Error(gm)
                     elif cycleType == LAST_CYCLE:
                         # It will usually be a line like: ...*....*.     67.83  67.9%
-                        # But it will sometimes be a line like: ...*....*.        68
+                        # But it will sometimes be a line like: ...*....*.
+                        # 68
                         splitLine = string.split(aLine)
                         theKey = splitLine[0]
                         if hasFreqOnly:
                             theSupport = float(splitLine[-1])
                             theSupport /= 100.0
                         else:
-                            theSupport = float(splitLine[-1][:-1]) # don't read the % sign
+                            # don't read the % sign
+                            theSupport = float(splitLine[-1][:-1])
                             theSupport /= 100.0
 
                         if len(theKey) != thisKeyLength:
@@ -4017,27 +4118,30 @@ class Tree(object):
                             if keyCounter > nKeys:
                                 gm.append("Too many keys.")
                                 raise P4Error(gm)
-                        else:  # LAST_CYCLE is also the FIRST_CYCLE, ie the table is in one section.
+                        # LAST_CYCLE is also the FIRST_CYCLE, ie the table is
+                        # in one section.
+                        else:
                             theKeys.append(theKey)
                             theHash[theKey] = theSupport
                     else:
                         gm.append("This should never happen.")
                         raise P4Error(gm)
                 else:
-                    pass # Skip lines with numbers
-            else: # a blank line
+                    pass  # Skip lines with numbers
+            else:  # a blank line
                 if cycleType == FIRST_CYCLE:
                     cycleType = MIDDLE_CYCLE
                     nKeys = len(theKeys)
-                    #print "At the end of the first cycle, got %i keys" % nKeys
+                    # print "At the end of the first cycle, got %i keys" %
+                    # nKeys
                     accumulatedKeyLength = thisKeyLength
                 elif cycleType == MIDDLE_CYCLE:
                     accumulatedKeyLength += thisKeyLength
                 elif cycleType == LAST_CYCLE:
                     accumulatedKeyLength += thisKeyLength
                     nKeys = len(theKeys)
-                    #print "finished"
-                    #print theKeys[0]
+                    # print "finished"
+                    # print theKeys[0]
                     break
                 else:
                     pass
@@ -4048,7 +4152,7 @@ class Tree(object):
             print "Got %i items in the hash" % len(theHash)
             print "accumulatedKeyLength = %i" % accumulatedKeyLength
             print "nKeys = %i" % nKeys
-            #self.draw()
+            # self.draw()
 
         # I will need to make splitStrings (in dot-star notation) from
         # splitKeys.  To do that, I can use the
@@ -4058,16 +4162,19 @@ class Tree(object):
         for n in self.nodes:
             if n != self.root:
                 if not n.isLeaf:
-                    theNodeSplitString = func.getSplitStringFromKey(n.br.splitKey, self.nTax)
+                    theNodeSplitString = func.getSplitStringFromKey(
+                        n.br.splitKey, self.nTax)
                     if theHash.has_key(theNodeSplitString):
                         if hasattr(n.br, 'support') and n.br.support is not None:
-                            gm.append("Node %i already has a br.support." % n.nodeNum)
-                            gm.append("I am refusing to clobber it with the split support.")
-                            gm.append("Either fix the tree or fix this method.")
+                            gm.append(
+                                "Node %i already has a br.support." % n.nodeNum)
+                            gm.append(
+                                "I am refusing to clobber it with the split support.")
+                            gm.append(
+                                "Either fix the tree or fix this method.")
                             raise P4Error(gm)
                         n.br.support = float(theHash[theNodeSplitString])
         return theHash
-
 
     def renameForPhylip(self, dictFName='p4_renameForPhylip_dict.py'):
         """Rename with phylip-friendly short boring names.
@@ -4120,9 +4227,9 @@ class Tree(object):
                 self.root.name = newName
 
         f = file(dictFName, 'w')
-        f.write("p4_renameForPhylip_originalNames = %s\np4_renameForPhylip_dict = %s\n" % (originalNames,d))
+        f.write("p4_renameForPhylip_originalNames = %s\np4_renameForPhylip_dict = %s\n" % (
+            originalNames, d))
         f.close()
-
 
     def restoreNamesFromRenameForPhylip(self, dictFName='p4_renameForPhylip_dict.py'):
         """Given the dictionary file, restore proper names.
@@ -4136,7 +4243,7 @@ class Tree(object):
         if os.path.exists(dictFName):
             import __main__
             execfile(dictFName, __main__.__dict__,  __main__.__dict__)
-            from __main__ import p4_renameForPhylip_dict,p4_renameForPhylip_originalNames
+            from __main__ import p4_renameForPhylip_dict, p4_renameForPhylip_originalNames
         else:
             gm.append("The dictionary file '%s' can't be found." % dictFName)
             raise P4Error(gm)
@@ -4145,7 +4252,8 @@ class Tree(object):
                 if p4_renameForPhylip_dict.has_key(n.name):
                     n.name = p4_renameForPhylip_dict[n.name]
                 else:
-                    gm.append("The dictionary does not contain a key for '%s'." % n.name)
+                    gm.append(
+                        "The dictionary does not contain a key for '%s'." % n.name)
                     raise P4Error(gm)
         if p4_renameForPhylip_originalNames:
             self.taxNames = p4_renameForPhylip_originalNames
@@ -4156,7 +4264,6 @@ class Tree(object):
                 raise P4Error(gm)
         del(__main__.p4_renameForPhylip_dict)
         del(__main__.p4_renameForPhylip_originalNames)
-
 
     def restoreDupeTaxa(self, dictFileName='p4DupeSeqRenameDict.py', asMultiNames=True):
         """Restore previously removed duplicate taxa from a dict file.
@@ -4187,11 +4294,12 @@ class Tree(object):
         try:
             p4DupeSeqRenameDict = loc['p4DupeSeqRenameDict']
         except KeyError:
-            gm.append("Can't get the dictionary named 'p4DupeSeqRenameDict' from the dict file.")
-        #print p4DupeSeqRenameDict
+            gm.append(
+                "Can't get the dictionary named 'p4DupeSeqRenameDict' from the dict file.")
+        # print p4DupeSeqRenameDict
 
         kk = p4DupeSeqRenameDict.keys()
-        #print kk
+        # print kk
 
         if asMultiNames:
             for oldName in kk:
@@ -4230,7 +4338,6 @@ class Tree(object):
         self.setPreAndPostOrder()
         self._nTax = 0
 
-
     def lineUpLeaves(self, rootToLeaf=1.0, overWriteBrLens=True):
         """Make the leaves line up, as in a cladogram.
 
@@ -4250,7 +4357,7 @@ class Tree(object):
                 nodeCount += 1
             if nodeCount > levels:
                 levels = nodeCount
-        #print "levels = %i" % levels
+        # print "levels = %i" % levels
         for n1 in self.iterLeavesNoRoot():
             n1.lul_pos = levels
             ch = n1
@@ -4269,9 +4376,10 @@ class Tree(object):
         for n in self.iterNodesNoRoot():
             p = n.parent
             if p == self.root:
-                n.br.lenL = float(n.lul_pos)/float(levels) * rootToLeaf
+                n.br.lenL = float(n.lul_pos) / float(levels) * rootToLeaf
             else:
-                n.br.lenL = float(n.lul_pos - p.lul_pos)/float(levels) * rootToLeaf
+                n.br.lenL = float(n.lul_pos - p.lul_pos) / \
+                    float(levels) * rootToLeaf
 
         # Clean up
         for n in self.iterNodes():
@@ -4281,7 +4389,6 @@ class Tree(object):
                 if n.br and hasattr(n.br, 'lenL'):
                     n.br.len = n.br.lenL
                     del(n.br.lenL)
-
 
     def removeEverythingExceptCladeAtNode(self, specifier):
         """Like it says.  Leaves a tree with a root-on-a-stick."""
@@ -4296,9 +4403,8 @@ class Tree(object):
             if ch != theNode:
                 toRemoves.append(ch)
         for ch in toRemoves:
-            self.removeNode(ch, alsoRemoveSingleChildParentNode=False, alsoRemoveBiRoot=False)
-
-
+            self.removeNode(
+                ch, alsoRemoveSingleChildParentNode=False, alsoRemoveBiRoot=False)
 
     def dupeSubTree(self, dupeNodeSpecifier, up, doBrLens=True, doSupport=True):
         """Makes and returns a new Tree object, duping part of self.
@@ -4389,19 +4495,19 @@ class Tree(object):
                 for selfNode in dupeNode.iterPreOrder():
                     if selfNode.leftChild:
                         st.nodes[nodeNumDict[selfNode.nodeNum]].leftChild = \
-                                 st.nodes[nodeNumDict[selfNode.leftChild.nodeNum]]
+                            st.nodes[nodeNumDict[selfNode.leftChild.nodeNum]]
                     if selfNode == dupeNode:
-                        pass # skip parent and sibling
+                        pass  # skip parent and sibling
                     else:
                         # parents and siblings.  There will always be a parent.
                         st.nodes[nodeNumDict[selfNode.nodeNum]].parent = \
-                               st.nodes[nodeNumDict[selfNode.parent.nodeNum]]
+                            st.nodes[nodeNumDict[selfNode.parent.nodeNum]]
                         if selfNode.sibling:
                             st.nodes[nodeNumDict[selfNode.nodeNum]].sibling = \
-                               st.nodes[nodeNumDict[selfNode.sibling.nodeNum]]
+                                st.nodes[nodeNumDict[selfNode.sibling.nodeNum]]
                 st.root.leftChild = st.nodes[nodeNumDict[dupeNode.nodeNum]]
                 st.root.leftChild.parent = st.root
-        else: # down
+        else:  # down
             i = 0  # nodeNum counter
             nodeNumDict = {}
             mostRecentDown = None
@@ -4425,14 +4531,14 @@ class Tree(object):
                 # parents and siblings.
                 if selfNode.parent:
                     st.nodes[nodeNumDict[selfNode.nodeNum]].parent = \
-                            st.nodes[nodeNumDict[selfNode.parent.nodeNum]]
+                        st.nodes[nodeNumDict[selfNode.parent.nodeNum]]
                 else:
                     # Its the root
                     st.root = st.nodes[nodeNumDict[selfNode.nodeNum]]
                     st.root.br = None
                 if selfNode.sibling:
                     st.nodes[nodeNumDict[selfNode.nodeNum]].sibling = \
-                            st.nodes[nodeNumDict[selfNode.sibling.nodeNum]]
+                        st.nodes[nodeNumDict[selfNode.sibling.nodeNum]]
                 if selfNode == dupeNode:
                     st.nodes[nodeNumDict[dupeNode.nodeNum]].leftChild = None
                     st.nodes[nodeNumDict[dupeNode.nodeNum]].isLeaf = 1
@@ -4447,10 +4553,6 @@ class Tree(object):
         st.setPreAndPostOrder()
         return st
 
-
-
-
-
     def addSubTree(self, selfNode, theSubTree, subTreeTaxNames=None):
         """Add a subtree to a tree.
 
@@ -4462,7 +4564,6 @@ class Tree(object):
         """
 
         #    subTreeRootNode:0-------1:oldSubTreeRootNodeLeftChild
-
 
         #                      +-------1:A
         #    oldSelfNodeParent:0
@@ -4488,7 +4589,8 @@ class Tree(object):
 
         assert selfNode in self.nodes
         assert selfNode.parent
-        assert theSubTree.root.leftChild and not theSubTree.root.leftChild.sibling # its a root on a stick
+        # its a root on a stick
+        assert theSubTree.root.leftChild and not theSubTree.root.leftChild.sibling
         if not subTreeTaxNames:
             subTreeTaxNames = [n.name for n in theSubTree.iterLeavesNoRoot()]
 
@@ -4525,22 +4627,21 @@ class Tree(object):
         for i in range(nSelfNodes, len(self.nodes)):
             n = self.nodes[i]
             n.nodeNum = i
-        #print 
-        #for n in self.nodes:
+        # print
+        # for n in self.nodes:
         #    print n.nodeNum
-        #print "self.taxNames is %s" % self.taxNames
-        #print "subTreeTaxNames %s" % subTreeTaxNames
+        # print "self.taxNames is %s" % self.taxNames
+        # print "subTreeTaxNames %s" % subTreeTaxNames
         if self.taxNames:
             self._taxNames += subTreeTaxNames
 
         if self._nTax:
             self._nTax += len(subTreeTaxNames)
-        self.preAndPostOrderAreValid=False
+        self.preAndPostOrderAreValid = False
         self.preOrder = None
         self.postOrder = None
         self.setPreAndPostOrder()
         del(theSubTree)
-
 
     def addLeaf(self, attachmentNode, taxName):
         """Add a leaf to a tree.
@@ -4552,8 +4653,8 @@ class Tree(object):
 
         assert attachmentNode in self.nodes
         aNode = attachmentNode
-        #self.draw()
-        #print "attachmentNode is %i" % aNode.nodeNum
+        # self.draw()
+        # print "attachmentNode is %i" % aNode.nodeNum
         #bNode = self.addNodeBetweenNodes(aNode, aNode.parent)
         aNodeP = attachmentNode.parent
         bNode = Node()
@@ -4573,10 +4674,9 @@ class Tree(object):
             bNode.sibling = aNode.sibling
             aNode.sibling = None
 
-
         aNode.br.len = 0.1
         bNode.br.len = 0.1
-        #self.draw()
+        # self.draw()
         n = Node()
         n.nodeNum = len(self.nodes)
         n.name = taxName
@@ -4588,16 +4688,15 @@ class Tree(object):
         self.nodes.append(n)
         if self.taxNames:
             self.taxNames.append(n.name)
-        self.preAndPostOrderAreValid=False
+        self.preAndPostOrderAreValid = False
         self.preOrder = None
         self.postOrder = None
         self.getPreAndPostOrderAboveRoot()
-        #self.dump(node=True)
-        #self.draw()
+        # self.dump(node=True)
+        # self.draw()
         if self._nTax:
             self._nTax += 1
         return n
-
 
     def addSibLeaf(self, attachmentNode, taxName):
         """Add a leaf to a tree as a sibling, by specifying its parent.
@@ -4613,8 +4712,8 @@ class Tree(object):
         assert attachmentNode in self.nodes
         assert not attachmentNode.isLeaf
         aNode = attachmentNode
-        #self.draw()
-        #print "attachmentNode is %i" % aNode.nodeNum
+        # self.draw()
+        # print "attachmentNode is %i" % aNode.nodeNum
         n = Node()
         n.nodeNum = len(self.nodes)
         n.name = taxName
@@ -4627,18 +4726,15 @@ class Tree(object):
         self.nodes.append(n)
         if self.taxNames:
             self.taxNames.append(n.name)
-        self.preAndPostOrderAreValid=False
+        self.preAndPostOrderAreValid = False
         self.preOrder = None
         self.postOrder = None
         self.getPreAndPostOrderAboveRoot()
-        #self.dump(node=True)
-        #self.draw()
+        # self.dump(node=True)
+        # self.draw()
         if self._nTax:
             self._nTax += 1
         return n
-
-
-
 
     def subTreeIsFullyBifurcating(self, theNode, up=True):
         """Is theNode and everything above it (or below it) bifurcating?
@@ -4649,8 +4745,9 @@ class Tree(object):
         # don't use getNChildren() -- too slow!
         assert theNode != self.root
         if up:
-            for n in theNode.iterInternals(): # Includes theNode, which we want
-                #if n.getNChildren() != 2:
+            # Includes theNode, which we want
+            for n in theNode.iterInternals():
+                # if n.getNChildren() != 2:
                 #    return False
                 if n.leftChild and n.leftChild.sibling:
                     if n.leftChild.sibling.sibling:
@@ -4659,11 +4756,12 @@ class Tree(object):
                     return False
             return True
         else:
-            for n in theNode.iterDown():  # Includes theNode, which we do not want
+            # Includes theNode, which we do not want
+            for n in theNode.iterDown():
                 if n != theNode:
                     if not n.isLeaf:
                         if n == self.root:
-                            #if n.getNChildren() != 3:
+                            # if n.getNChildren() != 3:
                             #    return False
                             if n.leftChild and n.leftChild.sibling and n.leftChild.sibling.sibling:
                                 if n.leftChild.sibling.sibling.sibling:
@@ -4671,7 +4769,7 @@ class Tree(object):
                             else:
                                 return False
                         else:
-                            #if n.getNChildren() != 2:
+                            # if n.getNChildren() != 2:
                             #    return False
                             if n.leftChild and n.leftChild.sibling:
                                 if n.leftChild.sibling.sibling:
@@ -4679,7 +4777,6 @@ class Tree(object):
                             else:
                                 return False
             return True
-
 
     def nni(self, upperNodeSpec=None):
         """Simple nearest-neighbor interchange.
@@ -4700,11 +4797,11 @@ class Tree(object):
 
         gm = ["Tree.nni()"]
         if upperNodeSpec:
-            upperNode = self.node(upperNodeSpec) # This makes sure that upperNode is part of self.
+            # This makes sure that upperNode is part of self.
+            upperNode = self.node(upperNodeSpec)
         else:
             candidates = [n for n in self.iterInternalsNoRoot()]
             upperNode = random.choice(candidates)
-
 
         # Want the upperNode to have at least 2 children
         upperChildren = [n for n in upperNode.iterChildren()]
@@ -4721,28 +4818,32 @@ class Tree(object):
             if lowerNode.parent:
                 if len(lowerChildren) < 1:
                     gm.append("The lower node has a parent.")
-                    gm.append("It needs at least one more child besides the upperNode.")
+                    gm.append(
+                        "It needs at least one more child besides the upperNode.")
                     raise P4Error(gm)
             else:
                 if len(lowerChildren) < 2:
                     gm.append("The lower node does not have a parent.")
-                    gm.append("It needs at least 2 children besides the upperNode.")
+                    gm.append(
+                        "It needs at least 2 children besides the upperNode.")
                     raise P4Error(gm)
         if len(lowerChildren) < 1:
-            gm.append("The lower node needs at least one more child besides the upperNode.")
+            gm.append(
+                "The lower node needs at least one more child besides the upperNode.")
             raise P4Error(gm)
 
         upperSubTreeNode = random.choice(upperChildren)
         lowerSubTreeNode = random.choice(lowerChildren)
 
-        upperSubTree = self.pruneSubTreeWithoutParent(upperSubTreeNode, allowSingleChildNode=True)
-        lowerSubTree = self.pruneSubTreeWithoutParent(lowerSubTreeNode, allowSingleChildNode=True)
+        upperSubTree = self.pruneSubTreeWithoutParent(
+            upperSubTreeNode, allowSingleChildNode=True)
+        lowerSubTree = self.pruneSubTreeWithoutParent(
+            lowerSubTreeNode, allowSingleChildNode=True)
 
         self.reconnectSubTreeWithoutParent(upperSubTree, lowerNode)
         self.reconnectSubTreeWithoutParent(lowerSubTree, upperNode)
 
         self.setPreAndPostOrder()
-
 
     def checkThatAllSelfNodesAreInTheTree(self, verbose=False, andRemoveThem=False):
         """Check that all self.nodes are actually part of the tree.
@@ -4769,15 +4870,16 @@ class Tree(object):
                 self.nodes.remove(n)
             for i in range(len(self.nodes)):
                 self.nodes[i].nodeNum = i
-            self.preOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
-            self.postOrder = numpy.array([var.NO_ORDER] * len(self.nodes), numpy.int32)
+            self.preOrder = numpy.array(
+                [var.NO_ORDER] * len(self.nodes), numpy.int32)
+            self.postOrder = numpy.array(
+                [var.NO_ORDER] * len(self.nodes), numpy.int32)
 
             if len(self.nodes) > 1:
                 self.setPreAndPostOrder()
 
             return
         return list(inSelfNodesButNotInTree)
-
 
     def spr(self, pruneNode=None, above=True, graftNode=None):
         """Subtree pruning and reconnection.
@@ -4840,7 +4942,7 @@ class Tree(object):
         pnNode = self.node(pruneNode)
         grNode = self.node(graftNode)
 
-        #self.draw()
+        # self.draw()
 
         self.deleteCStuff()
 
@@ -4856,7 +4958,7 @@ class Tree(object):
         subTreeNodes = [n for n in pnNode.iterPreOrder()]
         pnNodeParnt = pnNode.parent
         subTreeNodes.append(pnNodeParnt)
-        #print [n.nodeNum for n in subTreeNodes]
+        # print [n.nodeNum for n in subTreeNodes]
         if grNode in subTreeNodes:
             if above:
                 gm.append("grNode %i is part of the pruned subtree from %i-%i up.  No workee!" % (
@@ -4869,8 +4971,9 @@ class Tree(object):
 
         # Prune it from the tree.
         if pnNodeParnt == self.root:
-            if grNode.parent == self.root: # as well,
-                gm.append("prune node and graft node both have root as parent -- ie same origin and destination.")
+            if grNode.parent == self.root:  # as well,
+                gm.append(
+                    "prune node and graft node both have root as parent -- ie same origin and destination.")
                 raise P4Error(gm)
             # Check if removal of the subtree will result in only 2 taxa
             singles = 0
@@ -4879,7 +4982,8 @@ class Tree(object):
                     if not ch.leftChild:
                         singles += 1
             if singles == 2:
-                gm.append("Removing subtree at %i will leave only 2 taxa." % pnNode.nodeNum)
+                gm.append(
+                    "Removing subtree at %i will leave only 2 taxa." % pnNode.nodeNum)
                 raise P4Error(gm)
 
             newRoot = None
@@ -4888,9 +4992,9 @@ class Tree(object):
                     if ch.leftChild:
                         newRoot = ch
                         break
-            #print "rerooting to node %i" % newRoot.nodeNum
+            # print "rerooting to node %i" % newRoot.nodeNum
             self.reRoot(newRoot)
-            #self.draw()
+            # self.draw()
 
         # pnNodeParnt is not the root, and so we can be sure pnNodeParnt has a parent.
         # the pnNode is the left, middle, or right child of the parent
@@ -4912,7 +5016,9 @@ class Tree(object):
                 pnNodeParnt.parent.leftChild = pnNode.sibling
             elif pnNodeParnt.parent.leftChild.sibling == pnNodeParnt:
                 pnNodeParnt.parent.leftChild.sibling = pnNode.sibling
-            else: # if pnNodeParnt.parent is the root, it can have 3 children, and maybe this ...
+            # if pnNodeParnt.parent is the root, it can have 3 children, and
+            # maybe this ...
+            else:
                 pnNodeParnt.parent.leftChild.sibling.sibling = pnNode.sibling
             pnNode.sibling.sibling = pnNodeParnt.sibling
             #pnNode.sibling = None
@@ -4935,7 +5041,9 @@ class Tree(object):
                 pnNodeParnt.parent.leftChild = pnNodeLeftSib
             elif pnNodeParnt.parent.leftChild.sibling == pnNodeParnt:
                 pnNodeParnt.parent.leftChild.sibling = pnNodeLeftSib
-            else: # if pnNodeParnt.parent is the root, it can have 3 children, and maybe this ...
+            # if pnNodeParnt.parent is the root, it can have 3 children, and
+            # maybe this ...
+            else:
                 pnNodeParnt.parent.leftChild.sibling.sibling = pnNodeLeftSib
 
         # To look at the pruned tree, before grafting ...
@@ -4943,7 +5051,8 @@ class Tree(object):
             print "removal of subtree at %i-%i gives .." % (pnNodeParnt.nodeNum, pnNode.nodeNum)
             self._nTax = 0
             self.preAndPostOrderAreValid = 0
-            self.draw()  # This won't work unless preAndPostOrderAreValid set to 0
+            # This won't work unless preAndPostOrderAreValid set to 0
+            self.draw()
 
         # Now graft it back on ...
 
@@ -4954,7 +5063,7 @@ class Tree(object):
         #             |
         #             +-------3:grNode.sibling
 
-        # (grNode, grNode.sibling)grNodeParnt;    
+        # (grNode, grNode.sibling)grNodeParnt;
 
         #             +-------1:grNode
         # grNodeParnt:0
@@ -4987,17 +5096,16 @@ class Tree(object):
             print "grafting the subtree at grNode %i gives ..." % grNode.nodeNum
             self._nTax = 0
             self.preAndPostOrderAreValid = 0
-            self.draw()  # This won't work unless preAndPostOrderAreValid set to 0
+            # This won't work unless preAndPostOrderAreValid set to 0
+            self.draw()
 
         self.preAndPostOrderAreValid = 0
         self.setPreAndPostOrder()
-
 
     def randomSpr(self):
         """Do a random spr move.
 
         """
-
 
         myAbove = random.choice([True, False])
         tNodes = [n for n in self.iterNodesNoRoot()]
@@ -5006,7 +5114,7 @@ class Tree(object):
                 pNode = random.choice(tNodes)
             except IndexError:
                 # we have run out of choices, all were unsuitable.
-                return 
+                return
             tNodes.remove(pNode)
             if pNode == self.root:
                 continue
@@ -5017,14 +5125,14 @@ class Tree(object):
                 if len(nodesDown) <= 4:
                     continue
             else:
-                # iterPostOrder() ends with the pNode.  We need at least the pNode and 3 others, so total 3 is too few.
+                # iterPostOrder() ends with the pNode.  We need at least the
+                # pNode and 3 others, so total 3 is too few.
                 nodesUp = [n2 for n2 in pNode.iterPostOrder()]
-                #self.draw()
-                #print "--", pNode.nodeNum, [n2.nodeNum for n2 in nodesUp]
+                # self.draw()
+                # print "--", pNode.nodeNum, [n2.nodeNum for n2 in nodesUp]
                 if len(nodesUp) <= 3:
                     continue
             break
-
 
         if myAbove:
             #pNode = self.node(pNNum)
@@ -5035,7 +5143,7 @@ class Tree(object):
         else:
             #pNode = self.node(pNNum)
             possibles = [n2.nodeNum for n2 in pNode.iterPreOrder()
-                         if n2.parent is not pNode and 
+                         if n2.parent is not pNode and
                          pNode is not n2]
         if 0:
             self.draw()
@@ -5054,8 +5162,9 @@ class Tree(object):
                 continue
             if gNNum == self.root.nodeNum:
                 continue
-            #print "===", "pNode=%i" % pNode.nodeNum, "gNNum=%i" % gNNum, subtreeNodeNums
-            if pNode.parent==self.root and self.node(gNNum).parent==self.root:
+            # print "===", "pNode=%i" % pNode.nodeNum, "gNNum=%i" % gNNum,
+            # subtreeNodeNums
+            if pNode.parent == self.root and self.node(gNNum).parent == self.root:
                 continue
             if not myAbove and self.node(gNNum).parent == pNode:
                 continue
@@ -5064,7 +5173,8 @@ class Tree(object):
             print "pNode is %i, above=%s" % (pNode.nodeNum, myAbove)
             self.draw()
             raise P4Error
-        #print "spr()  pruneNum %i, above=%s, graftNum %i" % (pNode.nodeNum, myAbove, gNNum)
+        # print "spr()  pruneNum %i, above=%s, graftNum %i" % (pNode.nodeNum,
+        # myAbove, gNNum)
 
         self.spr(pruneNode=pNode, above=myAbove, graftNode=gNNum)
 
@@ -5080,7 +5190,7 @@ class Tree(object):
         for inTree in inputTrees:
             if not inTree.taxNames:
                 inTree.taxNames = [n.name for n in inTree.iterLeavesNoRoot()]
-            #inTree.makeSplitKeys()
+            # inTree.makeSplitKeys()
 
         totalSd = 0
         totalScqdist = 0
@@ -5094,7 +5204,8 @@ class Tree(object):
                 sDupe.removeNode(n)
             sDupe.taxNames = inTree.taxNames
             if doSd:
-                rfDist = sDupe.topologyDistance(inTree, metric='sd', resetSplitKeySet=True)
+                rfDist = sDupe.topologyDistance(
+                    inTree, metric='sd', resetSplitKeySet=True)
                 totalSd += rfDist
             if doScqdist:
                 qd = sDupe.topologyDistance(inTree, metric='scqdist')
@@ -5128,7 +5239,7 @@ class Tree(object):
         d = DistanceMatrix()
         d.names = self.taxNames
         d.dim = len(d.names)
-        #print d.names
+        # print d.names
         d.matrix = []
         for i in range(d.dim):
             d.matrix.append([0.0] * d.dim)
@@ -5144,11 +5255,11 @@ class Tree(object):
                 while n2 != n1:
                     sum = sum + n2.br.len
                     n2 = n2.parent
-                #print "Dist from %s to %s is %f" % (d.names[i], d.names[j], sum)
+                # print "Dist from %s to %s is %f" % (d.names[i], d.names[j],
+                # sum)
                 d.matrix[i][j] = sum
                 d.matrix[j][i] = sum
         return d
-
 
     def tPickle(self, fName=None):
         """Pickle self to a file with a 'p4_tPickle' suffix.
@@ -5193,11 +5304,10 @@ class Tree(object):
             else:
                 fN = self.name + suffix
         f = file(fN, 'w')
-        cPickle.dump(self.dupe(), f, 1) # 1 for binary
-        #cPickle.dump(self, f, 1) # Don't do this -- has pointers that would not have been malloc'ed!  And data!
+        cPickle.dump(self.dupe(), f, 1)  # 1 for binary
+        # cPickle.dump(self, f, 1) # Don't do this -- has pointers that would
+        # not have been malloc'ed!  And data!
         f.close()
-
-
 
     def writeNexus(self, fName=None, append=0, writeTaxaBlockIfTaxNamesIsSet=1, message=None):
         """Write the tree out in Nexus format, in a trees block.
@@ -5258,9 +5368,11 @@ class Tree(object):
         if message:
             f.write('  [%s\n  ]\n' % message)
         if self.logLike:
-            f.write('  [logLike for tree %s is %f]\n' % (self.name, self.logLike))
+            f.write('  [logLike for tree %s is %f]\n' %
+                    (self.name, self.logLike))
 
-        f.write('  tree %s = [&U] ' % func.nexusFixNameIfQuotesAreNeeded(self.name))
+        f.write('  tree %s = [&U] ' %
+                func.nexusFixNameIfQuotesAreNeeded(self.name))
         if self.recipWeight:
             if self.recipWeight == 1:
                 f.write('[&W 1] ')
@@ -5274,9 +5386,6 @@ class Tree(object):
         if f != sys.stdout:
             f.close()
 
-
-
-
     def write(self):
         """This writes out the Newick tree description to sys.stdout."""
         self.writeNewick(sys.stdout)
@@ -5289,7 +5398,8 @@ class Tree(object):
 
         fName may also be an open file object.
         """
-        self.writeNewick(fName, withTranslation, translationHash, doMcmcCommandComments)
+        self.writeNewick(
+            fName, withTranslation, translationHash, doMcmcCommandComments)
 
     def writeNewick(self, fName=None, withTranslation=0, translationHash=None, doMcmcCommandComments=0, toString=False, append=False):
         """Write the tree in Newick, aka Phylip, format.
@@ -5314,7 +5424,8 @@ class Tree(object):
             raise P4Error(gm)
 
         if fName and toString:
-            gm.append("You cannot write to a file and string at the same time.")
+            gm.append(
+                "You cannot write to a file and string at the same time.")
             raise P4Error(gm)
 
         if doMcmcCommandComments:
@@ -5323,27 +5434,31 @@ class Tree(object):
                 gm.append("Set doMcmcCommandComments=0")
                 raise P4Error(gm)
 
-
-        #print 'self.preAndPostOrderAreValid = %s' % self.preAndPostOrderAreValid
+        # print 'self.preAndPostOrderAreValid = %s' %
+        # self.preAndPostOrderAreValid
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
-        #print "self.preOrder = %s" % self.preOrder
+        # print "self.preOrder = %s" % self.preOrder
 
-        nNodes = len([n for n in self.iterNodes()]) # Don't count un-used nodes.
-        #print "nNodes = %i" % nNodes
+        # Don't count un-used nodes.
+        nNodes = len([n for n in self.iterNodes()])
+        # print "nNodes = %i" % nNodes
 
         if nNodes == 1:
-            #print "Single node.  isLeaf=%s, name=%s" % (self.root.isLeaf, self.root.name)
+            # print "Single node.  isLeaf=%s, name=%s" % (self.root.isLeaf,
+            # self.root.name)
             if self.root.isLeaf:
                 if withTranslation:
                     sList.append('%s' % translationHash[self.root.name])
                 elif self.root.name:
-                    sList.append('%s' % func.nexusFixNameIfQuotesAreNeeded(self.root.name))
+                    sList.append(
+                        '%s' % func.nexusFixNameIfQuotesAreNeeded(self.root.name))
                 else:
                     sList.append('()')
             else:
                 # Will this ever happen?
-                gm.append("Something is wrong.  There is only one node, and it is not terminal.")
+                gm.append(
+                    "Something is wrong.  There is only one node, and it is not terminal.")
                 raise P4Error(gm)
 
         elif nNodes > 1:
@@ -5362,7 +5477,7 @@ class Tree(object):
 
                 while len(stack):
                     n1 = stack.pop()
-                    #print "stacklen=%i, n1 name=%s" % (len(stack), n1.name)
+                    # print "stacklen=%i, n1 name=%s" % (len(stack), n1.name)
                     if n1.isLeaf:
                         if n1 == self.root:
                             sList.append(')')
@@ -5370,7 +5485,8 @@ class Tree(object):
                             sList.append('%s' % (translationHash[n1.name]))
                         else:
                             if n1.name:
-                                sList.append('%s' % func.nexusFixNameIfQuotesAreNeeded(n1.name))
+                                sList.append(
+                                    '%s' % func.nexusFixNameIfQuotesAreNeeded(n1.name))
                             else:
                                 if n1 != self.root:
                                     gm.append("Terminal node with no name?")
@@ -5378,7 +5494,8 @@ class Tree(object):
                     else:
                         sList.append(')')
                         if n1.name:
-                            sList.append('%s' % func.nexusFixNameIfQuotesAreNeeded(n1.name))
+                            sList.append(
+                                '%s' % func.nexusFixNameIfQuotesAreNeeded(n1.name))
                     if writeBrLens:
                         if n1 != self.root:
                             sList.append(':%g' % n1.br.len)
@@ -5391,7 +5508,7 @@ class Tree(object):
         if toString:
             return "".join(sList)
         elif fName == None:
-            print  "".join(sList)
+            print "".join(sList)
         elif type(fName) == type('string'):
             if append:
                 fName2 = file(fName, 'a')
@@ -5402,12 +5519,12 @@ class Tree(object):
             fName2.close()
         elif hasattr(fName, 'write'):
             fName.write(string.join(sList, ''))
-            #fName.write('\n')
+            # fName.write('\n')
             # Somebody else opened the fName, so somebody else can close it.
         else:
-            gm.append("I don't understand (%s) passed to me to write to." % fName)
+            gm.append(
+                "I don't understand (%s) passed to me to write to." % fName)
             raise P4Error(gm)
-
 
     def _getMcmcCommandComment(self, theNode):
         sList = [' [&']
@@ -5416,13 +5533,13 @@ class Tree(object):
                 sList.append(' c%i.%i' % (pNum, theNode.parts[pNum].compNum))
             if theNode != self.root:
                 if self.model.parts[pNum].nRMatrices > 1:
-                    sList.append(' r%i.%i' % (pNum, theNode.br.parts[pNum].rMatrixNum))
+                    sList.append(' r%i.%i' %
+                                 (pNum, theNode.br.parts[pNum].rMatrixNum))
                 if self.model.parts[pNum].nGdasrvs > 1:
-                    sList.append(' g%i.%i' % (pNum, theNode.br.parts[pNum].gdasrvNum))
+                    sList.append(' g%i.%i' %
+                                 (pNum, theNode.br.parts[pNum].gdasrvNum))
         sList.append(']')
         return string.join(sList, '')
-
-
 
     def draw(self, showInternalNodeNames=1, addToBrLen=0.2, width=None, showNodeNums=1, partNum=0, model=None):
         """Draw the tree to the screen.
@@ -5450,11 +5567,10 @@ class Tree(object):
                               showNodeNums=showNodeNums, partNum=partNum, model=model)
         print string.join(s, '\n')
 
-
     def textDrawList(self, showInternalNodeNames=1, addToBrLen=0.2, width=None, autoIncreaseWidth=True, showNodeNums=1, partNum=0, model=False):
 
         if len(self.nodes) == 0:
-            return  ['']
+            return ['']
         elif len(self.nodes) == 1:
             if showNodeNums:
                 return ['%i:%s' % (self.nodes[0].nodeNum, self.nodes[0].name)]
@@ -5485,24 +5601,24 @@ class Tree(object):
 
         # If the width is not specified, make a guess
         if width == None:
-            tLen = 0 # Longest number of horizontal sections to draw
+            tLen = 0  # Longest number of horizontal sections to draw
             longestNameLen = 0
             for n in self.nodes:
                 if n.isLeaf and n != self.root:
-                    if n.name: # This assumes short internal node name lengths
+                    if n.name:  # This assumes short internal node name lengths
                         if len(n.name) > longestNameLen:
                             longestNameLen = len(n.name)
                     thisLen = 0
                     n1 = n
-                    #print "x n1 is node %i" % n1.nodeNum
+                    # print "x n1 is node %i" % n1.nodeNum
                     while n1 != self.root:
                         n1 = n1.parent
-                        #print "y n1 is node %i" % n1.nodeNum
+                        # print "y n1 is node %i" % n1.nodeNum
                         thisLen += 1
                     if thisLen > tLen:
                         tLen = thisLen
-            #print "tLen =", tLen
-            #print "longestNameLen =", longestNameLen
+            # print "tLen =", tLen
+            # print "longestNameLen =", longestNameLen
             rootNameLen = 0
             if self.root.name:
                 rootNameLen = len(self.root.name) + 1
@@ -5510,7 +5626,7 @@ class Tree(object):
             if p.width > 100:
                 p.width = 100
 
-        #print "p.width =", p.width
+        # print "p.width =", p.width
         #import sys; sys.exit()
 
         # Make sure the names fit.
@@ -5518,9 +5634,9 @@ class Tree(object):
             for n in self.nodes:
                 if n.isLeaf and n != self.root:
                     if n.name and len(n.name) > p.width:
-                        gm.append("There are long names, and the given width is not enough.")
+                        gm.append(
+                            "There are long names, and the given width is not enough.")
                         raise P4Error(gm)
-
 
         if model:
             try:
@@ -5532,7 +5648,8 @@ class Tree(object):
                 gm.append("If model arg is set, then self.model must exist.")
                 raise P4Error(gm)
             if partNum < 0 or partNum >= self.model.nParts:
-                gm.append("Zero-based partNum %i is out of range of %s parts." % (partNum, self.model.nParts))
+                gm.append(
+                    "Zero-based partNum %i is out of range of %s parts." % (partNum, self.model.nParts))
                 raise P4Error(gm)
             p.partNum = partNum
             p.doModel = 1
@@ -5547,7 +5664,8 @@ class Tree(object):
             if not doComps and not doRMatrices:
                 p._setPos(autoIncreaseWidth)
                 s = p.textString(returnAsList=True)
-                s.append("Both the composition of the model and the rate matrix are homogeneous in part %i.\n" % partNum)
+                s.append(
+                    "Both the composition of the model and the rate matrix are homogeneous in part %i.\n" % partNum)
                 return s
 
             # First do compositions
@@ -5561,7 +5679,7 @@ class Tree(object):
                 p.textDrawModelThing = var.TEXTDRAW_COMP
                 p._setPos(autoIncreaseWidth)
                 s = p.textString(returnAsList=True)
-                #print s
+                # print s
 
             # Then do RMatrices
             if doRMatrices:
@@ -5577,9 +5695,11 @@ class Tree(object):
                 else:
                     s = p.textString(returnAsList=True)
                 if self.model.parts[partNum].nComps == 1:
-                    s.append("The composition of the model is homogeneous in part %i\n" % partNum)
+                    s.append(
+                        "The composition of the model is homogeneous in part %i\n" % partNum)
             elif self.model.parts[partNum].nRMatrices == 1:
-                s.append("The rate matrix is homogeneous in part %i\n" % partNum)
+                s.append(
+                    "The rate matrix is homogeneous in part %i\n" % partNum)
             # Don't bother with GDASRV, yet
             return s
 
@@ -5588,9 +5708,8 @@ class Tree(object):
             s = p.textString(returnAsList=True)
             return s
 
-
-
-    # outFileName=None, width=500, heightFactor=0.85, pointsPerLetter=6.0, textSize=11, labelSize=9, putInternalNodeNamesOnBranches=0)
+    # outFileName=None, width=500, heightFactor=0.85, pointsPerLetter=6.0,
+    # textSize=11, labelSize=9, putInternalNodeNamesOnBranches=0)
 
     def eps(self, fName=None, width=500, putInternalNodeNamesOnBranches=0):
         """Make a basic eps drawing of self.
@@ -5615,8 +5734,8 @@ class Tree(object):
         p.yScale = 17.0
         p.xScale = None
         p.pointsPerLetter = 6.0
-        p.textSize=11
-        p.labelTextSize=8
+        p.textSize = 11
+        p.labelTextSize = 8
         p.putInternalNodeNamesOnBranches = putInternalNodeNamesOnBranches
         p.xOrigin = 5.0
         p._setPos()
@@ -5627,16 +5746,15 @@ class Tree(object):
                 fName = '%s.eps' % self.name
             else:
                 fName = '%i.eps' % os.getpid()
-        #if not fName.endswith('.eps'):
+        # if not fName.endswith('.eps'):
         #    fName = '%s.eps' % fName
         f = file(fName, 'w')
         f.write(s)
         f.close()
 
     #############################################
-    #### Various Tree methods for defining models
+    # Various Tree methods for defining models
     #############################################
-
 
     def _setData(self, theData):
         """Sets self.data, and self.nParts"""
@@ -5674,10 +5792,11 @@ class Tree(object):
             # We have seen a data object before (otherwise we would not
             # have been able to set the model).  Check for compatibility.
 
-            #print "_setData() here.   self.model exits."
+            # print "_setData() here.   self.model exits."
 
             if not self.taxNames:
-                gm.append("Self has model, but no taxNames.  Programming error.")
+                gm.append(
+                    "Self has model, but no taxNames.  Programming error.")
                 raise P4Error(gm)
 
             # Check for same number of taxa
@@ -5705,10 +5824,12 @@ class Tree(object):
                 self.taxNames.sort()
                 theData.taxNames.sort()
                 for i in range(len(self.taxNames)):
-                    if theData.taxNames[i] ==  self.taxNames[i]:
-                        gm.append("    %25s    %25s" % (theData.taxNames[i], self.taxNames[i]))
+                    if theData.taxNames[i] == self.taxNames[i]:
+                        gm.append("    %25s    %25s" %
+                                  (theData.taxNames[i], self.taxNames[i]))
                     else:
-                        gm.append("    %25s    %25s  ***" % (theData.taxNames[i], self.taxNames[i]))
+                        gm.append("    %25s    %25s  ***" %
+                                  (theData.taxNames[i], self.taxNames[i]))
                 raise P4Error(gm)
 
             # Same number of parts
@@ -5769,10 +5890,12 @@ class Tree(object):
                 treeTaxNames.sort()
                 theData.taxNames.sort()
                 for i in range(len(treeTaxNames)):
-                    if theData.taxNames[i] ==  treeTaxNames[i]:
-                        gm.append("    %25s  %25s" % (theData.taxNames[i], treeTaxNames[i]))
+                    if theData.taxNames[i] == treeTaxNames[i]:
+                        gm.append("    %25s  %25s" %
+                                  (theData.taxNames[i], treeTaxNames[i]))
                     else:
-                        gm.append("*** %25s  %25s" % (theData.taxNames[i], treeTaxNames[i]))
+                        gm.append("*** %25s  %25s" %
+                                  (theData.taxNames[i], treeTaxNames[i]))
                 raise P4Error(gm)
 
             # attach
@@ -5781,8 +5904,9 @@ class Tree(object):
             #self.nParts = len(theData.parts)
 
             # Now that nParts is known ...
-            #print "_setData.  len(theData.parts) = %s" % len(theData.parts)
-            self.model = Model(len(theData.parts))         # calls self.deleteCStuff()
+            # print "_setData.  len(theData.parts) = %s" % len(theData.parts)
+            # calls self.deleteCStuff()
+            self.model = Model(len(theData.parts))
             for n in self.nodes:
                 if n.parts:
                     n.parts = []
@@ -5799,7 +5923,8 @@ class Tree(object):
                 self.model.parts[pNum].dim = theData.parts[pNum].dim
                 self.model.parts[pNum].symbols = theData.parts[pNum].symbols
 
-            # There is intentionally no default pInvar, forcing the user to be explicit.
+            # There is intentionally no default pInvar, forcing the user to be
+            # explicit.
             for p in self.model.parts:
                 p.pInvar = None
 
@@ -5808,29 +5933,27 @@ class Tree(object):
                 if n.isLeaf:
                     n.seqNum = self.taxNames.index(n.name)
 
-
-
-
     data = property(lambda self: self._data, _setData)
 
     def _setModel(self, theModel):
         gm = ['Tree._setModel()']
-        #print gm[0]
-        #print "    Got '%s'" % theModel
+        # print gm[0]
+        # print "    Got '%s'" % theModel
         if isinstance(theModel, Model) or theModel == None:
             pass
         else:
             gm.append("Attempt to set Tree.model to '%s'.  " % theModel)
-            gm.append("Don't set the model to anything other than 'None' or a Model, ok?  ")
+            gm.append(
+                "Don't set the model to anything other than 'None' or a Model, ok?  ")
             gm.append("(And generally the user only sets it to None.)  ")
             raise P4Error(gm)
-        #if theModel and self._model:  # Why do I do this?
+        # if theModel and self._model:  # Why do I do this?
         #    gm.append("The tree already has a model object; I am refusing to clobber it.")
         #    gm.append("Perhaps use a (perhaps duplicate) tree with no model.")
         #    raise P4Error(gm)
         if self.model or self.data:
             self.deleteCStuff()
-            #print 'Tree._setModel()  finished deleteCStuff()'
+            # print 'Tree._setModel()  finished deleteCStuff()'
         self._model = theModel
 
     def _delModel(self):
@@ -5841,9 +5964,6 @@ class Tree(object):
         raise P4Error(gm)
 
     model = property(lambda self: self._model, _setModel, _delModel)
-
-
-
 
     def _checkModelThing(self, partNum, symbol, complaintHead):
         gm = [complaintHead]
@@ -5859,7 +5979,8 @@ class Tree(object):
             self._setData(self.data)
 
         if partNum < 0 or partNum >= self.model.nParts:
-            gm.append("Zero-based partNum (%s) is out of range (of %s parts)" % (partNum, self.model.nParts))
+            gm.append("Zero-based partNum (%s) is out of range (of %s parts)" %
+                      (partNum, self.model.nParts))
             raise P4Error(gm)
 
         if symbol:
@@ -5868,10 +5989,9 @@ class Tree(object):
                 raise P4Error(gm)
             if symbol == '?':
                 gm.append("Got assigned text drawing symbol '?'.")
-                gm.append("Don't use it-- it is reserved for missing modelThings")
+                gm.append(
+                    "Don't use it-- it is reserved for missing modelThings")
                 raise P4Error(gm)
-
-
 
     def newComp(self, partNum=0, free=0, spec='empirical', val=None, symbol=None):
         """Make, attach, and return a new Comp object.
@@ -5910,7 +6030,6 @@ class Tree(object):
         allowed.  Any zeros are converted to var.PIVEC_MIN, which is 1e-18
         this week.  Hopefully close enough to zero for you.
         """
-
 
         gm = ['Tree.newComp()']
 
@@ -5957,7 +6076,8 @@ class Tree(object):
             if len(val) == dim or len(val) == dim - 1:
                 pass
             else:
-                gm.append("Bad length for val arg.  Should be dim or dim-1 long.")
+                gm.append(
+                    "Bad length for val arg.  Should be dim or dim-1 long.")
                 gm.append("(Dim for this part is %i)" % dim)
                 raise P4Error(gm)
 
@@ -5970,7 +6090,7 @@ class Tree(object):
                     gm.append("Bad comp vals %s" % val)
                     gm.append("sum to 1.0 or more.")
                     raise P4Error(gm)
-            else: # len = dim
+            else:  # len = dim
                 theSum = sum(val)
                 theDiff = math.fabs(theSum - 1.0)
                 # How big to make the delta?  With reasonably good,
@@ -6000,21 +6120,23 @@ class Tree(object):
                 theSum = sum(val)
                 for i in range(len(val)):
                     val[i] /= theSum
-                if math.fabs(sum(val) - 1.0) > 5.e-16: 
+                if math.fabs(sum(val) - 1.0) > 5.e-16:
                     gm.append("Bad comp vals %s" % val)
                     gm.append("does not sum to 1.0")
                     raise P4Error(gm)
-            #print "sum(val) - 1.0 = %f (%g)" % (sum(val) - 1.0, sum(val) - 1.0)
+            # print "sum(val) - 1.0 = %f (%g)" % (sum(val) - 1.0, sum(val) -
+            # 1.0)
             mt.val = val
 
-        # Empirical protein comps are from the dat files in PAML.  Thanks, Ziheng!
+        # Empirical protein comps are from the dat files in PAML.  Thanks,
+        # Ziheng!
         elif spec == 'cpREV':
             mt.val = [0.0755, 0.0621, 0.0410, 0.0371, 0.0091,
                       0.0382, 0.0495, 0.0838, 0.0246, 0.0806,
                       0.1011, 0.0504, 0.0220, 0.0506, 0.0431,
                       0.0622, 0.0543, 0.0181, 0.0307, 0.0660]
             #theSum = sum(mt.val)
-            #for i in range(len(mt.val)):
+            # for i in range(len(mt.val)):
             #    mt.val[i] /= theSum
         elif spec == 'd78':
             # These first values have a couple more decimal places.  I
@@ -6022,19 +6144,20 @@ class Tree(object):
             # the NCBI ftp site.  I believe it is obtainable by raising
             # the d78 matrix to a high power.  It is a more precise comp,
             # but is not used here because it is not standard.
-            #mt.val = [0.08713, 0.04090, 0.04043, 0.04687, 0.03347,
+            # mt.val = [0.08713, 0.04090, 0.04043, 0.04687, 0.03347,
             #          0.03826, 0.04953, 0.08861, 0.03362, 0.03689,
             #          0.08536, 0.08048, 0.01475, 0.03977, 0.05068,
             #          0.06958, 0.05854, 0.01049, 0.02992, 0.06472]
 
             # This next set of values is from her paper, and is the set
             # that everybody uses.
-            #mt.val = [0.087, 0.041, 0.040, 0.047, 0.033,
+            # mt.val = [0.087, 0.041, 0.040, 0.047, 0.033,
             #          0.038, 0.05, 0.089, 0.034, 0.037,
             #          0.085, 0.08, 0.015, 0.04, 0.051,
             #          0.07, 0.058, 0.01, 0.03, 0.065]
 
-            # These values are from Goldman's recommendations (Kosiol & Goldman)
+            # These values are from Goldman's recommendations (Kosiol &
+            # Goldman)
             mt.val = [0.087127, 0.040904, 0.040432, 0.046872, 0.033474,
                       0.038255, 0.049530, 0.088612, 0.033619, 0.036886,
                       0.085357, 0.080481, 0.014753, 0.039772, 0.050680,
@@ -6043,7 +6166,7 @@ class Tree(object):
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
         elif spec == 'jtt':
-            #mt.val = [0.077,0.051, 0.043, 0.052, 0.02,
+            # mt.val = [0.077,0.051, 0.043, 0.052, 0.02,
             #          0.041, 0.062, 0.074, 0.023, 0.052,
             #          0.091, 0.059, 0.024, 0.04, 0.051,
             #          0.069, 0.059, 0.014, 0.032, 0.066]
@@ -6074,9 +6197,9 @@ class Tree(object):
                 mt.val[i] /= theSum
         elif spec == 'wag':
             mt.val = [0.0866279, 0.043972, 0.0390894, 0.0570451, 0.0193078,
-                   0.0367281, 0.0580589, 0.0832518, 0.0244313, 0.048466,
-                   0.086209,  0.0620286, 0.0195027, 0.0384319, 0.0457631,
-                   0.0695179, 0.0610127, 0.0143859, 0.0352742, 0.0708956]
+                      0.0367281, 0.0580589, 0.0832518, 0.0244313, 0.048466,
+                      0.086209,  0.0620286, 0.0195027, 0.0384319, 0.0457631,
+                      0.0695179, 0.0610127, 0.0143859, 0.0352742, 0.0708956]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
@@ -6084,7 +6207,7 @@ class Tree(object):
             mt.val = [0.0646, 0.0453, 0.0376, 0.0422, 0.0114, 0.0606,
                       0.0607, 0.0639, 0.0273, 0.0679, 0.1018, 0.0751,
                       0.0150, 0.0287, 0.0681, 0.0488, 0.0622, 0.0251,
-                      0.0318, 0.0619] 
+                      0.0318, 0.0619]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
@@ -6094,7 +6217,7 @@ class Tree(object):
                       0.021893432, 0.014095771, 0.009697091, 0.075777267,
                       0.016794962, 0.118764371, 0.163450965, 0.011196641,
                       0.033290013, 0.077676697, 0.025992202, 0.056782965,
-                      0.052284315, 0.022293312, 0.032390283, 0.119464161] 
+                      0.052284315, 0.022293312, 0.032390283, 0.119464161]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
@@ -6115,51 +6238,50 @@ class Tree(object):
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
         elif spec == 'blosum62':
-            mt.val =  [0.074, 0.052, 0.045, 0.054, 0.025,
-                       0.034, 0.054, 0.074, 0.026, 0.068,
-                       0.099, 0.058, 0.025, 0.047, 0.039,
-                       0.057, 0.051, 0.013, 0.032, 0.073]
+            mt.val = [0.074, 0.052, 0.045, 0.054, 0.025,
+                      0.034, 0.054, 0.074, 0.026, 0.068,
+                      0.099, 0.058, 0.025, 0.047, 0.039,
+                      0.057, 0.051, 0.013, 0.032, 0.073]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
         elif spec == 'hivb':
-            mt.val =  [0.060490222, 0.066039665, 0.044127815, 0.042109048, 0.020075899,
-                       0.053606488, 0.071567447, 0.072308239, 0.022293943, 0.069730629,
-                       0.098851122, 0.056968211, 0.019768318, 0.028809447, 0.046025282,
-                       0.05060433, 0.053636813, 0.033011601, 0.028350243, 0.061625237]          
+            mt.val = [0.060490222, 0.066039665, 0.044127815, 0.042109048, 0.020075899,
+                      0.053606488, 0.071567447, 0.072308239, 0.022293943, 0.069730629,
+                      0.098851122, 0.056968211, 0.019768318, 0.028809447, 0.046025282,
+                      0.05060433, 0.053636813, 0.033011601, 0.028350243, 0.061625237]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
         elif spec == 'mtart':
-            mt.val =  [0.054116, 0.018227, 0.039903, 0.020160, 0.009709,
-                       0.018781, 0.024289, 0.068183, 0.024518, 0.092638,
-                       0.148658, 0.021718, 0.061453, 0.088668, 0.041826,
-                       0.091030, 0.049194, 0.029786, 0.039443, 0.057700]          
+            mt.val = [0.054116, 0.018227, 0.039903, 0.020160, 0.009709,
+                      0.018781, 0.024289, 0.068183, 0.024518, 0.092638,
+                      0.148658, 0.021718, 0.061453, 0.088668, 0.041826,
+                      0.091030, 0.049194, 0.029786, 0.039443, 0.057700]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
         elif spec == 'mtzoa':
-            mt.val =  [0.068880,    0.021037,    0.030390,    0.020696,    0.009966,
-                       0.018623,    0.024989,    0.071968,    0.026814,    0.085072,
-                       0.156717,    0.019276,    0.050652,    0.081712,    0.044803,
-                       0.080535,    0.056386,    0.027998,    0.037404,    0.066083]          
+            mt.val = [0.068880,    0.021037,    0.030390,    0.020696,    0.009966,
+                      0.018623,    0.024989,    0.071968,    0.026814,    0.085072,
+                      0.156717,    0.019276,    0.050652,    0.081712,    0.044803,
+                      0.080535,    0.056386,    0.027998,    0.037404,    0.066083]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
-        #Cymon was here!  gcpREV (green chloroplast plant REV seeing how
-        #is estimated from green plant chloroplasts alone rather than all
-        #chloroplasts).
+        # Cymon was here!  gcpREV (green chloroplast plant REV seeing how
+        # is estimated from green plant chloroplasts alone rather than all
+        # chloroplasts).
         elif spec == 'gcpREV':
-            mt.val =  [0.079510, 0.056001, 0.040459, 0.033220, 0.009051,
-                       0.037505, 0.049675, 0.080233, 0.021880, 0.080496,
-                       0.107512, 0.049324, 0.020776, 0.047731, 0.039916,
-                       0.073820, 0.053615, 0.016705, 0.030790, 0.071781]
+            mt.val = [0.079510, 0.056001, 0.040459, 0.033220, 0.009051,
+                      0.037505, 0.049675, 0.080233, 0.021880, 0.080496,
+                      0.107512, 0.049324, 0.020776, 0.047731, 0.039916,
+                      0.073820, 0.053615, 0.016705, 0.030790, 0.071781]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
-                mt.val[i] /= theSum            
+                mt.val[i] /= theSum
 
         return mt
-
 
     def newRMatrix(self, partNum=0, free=0, spec='ones', val=None, symbol=None):
         """Make, attach, and return a new RMatrix instance.
@@ -6192,10 +6314,10 @@ class Tree(object):
         (((dim * dim) - dim) / 2) - 1, so for DNA, where dim=4, you would
         specify a list containing 5 numbers.  """
 
-        ##    not implemented:
-        ##       'blosum62a'
-        ##       'blosum62b'
-        ##       'phat70'
+        # not implemented:
+        # 'blosum62a'
+        # 'blosum62b'
+        # 'phat70'
 
         complaintHead = '\nTree.newRMatrix()'
         gm = [complaintHead]
@@ -6229,19 +6351,24 @@ class Tree(object):
         v = None
         if spec == 'specified':
             if val:
-                if len(val) == goodLen: # should check that values are all floats
+                # should check that values are all floats
+                if len(val) == goodLen:
                     v = numpy.array(val, numpy.float)
                     if var.rMatrixNormalizeTo1:
                         v /= v.sum()
                 elif var.rMatrixNormalizeTo1 and len(val) == goodLen - 1:
-                    gm.append("var.rMatrixNormalizeTo1 is set, val length should be %i, got %i" % (goodLen, len(val)))
+                    gm.append("var.rMatrixNormalizeTo1 is set, val length should be %i, got %i" % (
+                        goodLen, len(val)))
                     raise P4Error(gm)
                 else:
-                    gm.append("Bad length for arg val.  Length %i, should be %i" % (len(val), goodLen))
+                    gm.append(
+                        "Bad length for arg val.  Length %i, should be %i" % (len(val), goodLen))
                     raise P4Error(gm)
             else:
-                gm.append("spec is 'specified', but there are no specified rMatrix values.")
-                gm.append("Specify rMatrix values by eg val=[2.0, 3.0, 4.0, 5.0,6.0]")
+                gm.append(
+                    "spec is 'specified', but there are no specified rMatrix values.")
+                gm.append(
+                    "Specify rMatrix values by eg val=[2.0, 3.0, 4.0, 5.0,6.0]")
                 raise P4Error(gm)
         elif spec == 'ones':
             v = numpy.array([1.0] * goodLen)
@@ -6251,10 +6378,12 @@ class Tree(object):
             try:
                 v = float(val)
             except (ValueError, TypeError):
-                gm.append("Kappa ('val' arg) should be a float.  Setting to 2.0")
+                gm.append(
+                    "Kappa ('val' arg) should be a float.  Setting to 2.0")
                 v = 2.0
             if v < var.KAPPA_MIN:
-                gm.append("Kappa is too small.   Setting to %f" % var.KAPPA_MIN)
+                gm.append("Kappa is too small.   Setting to %f" %
+                          var.KAPPA_MIN)
                 v = var.KAPPA_MIN
             elif v > var.KAPPA_MAX:
                 gm.append("Kappa is too big.  Setting to %f" % var.KAPPA_MAX)
@@ -6266,14 +6395,12 @@ class Tree(object):
                     partNum, self.data.parts[partNum].dataType))
                 raise P4Error(gm)
             if free:
-                gm.append('The rMatrix should not be free if it is an empirical protein matrix.')
+                gm.append(
+                    'The rMatrix should not be free if it is an empirical protein matrix.')
                 raise P4Error(gm)
 
         mt.val = v  # type numpy.ndarray, or None for protein
         return mt
-
-
-
 
     def newGdasrv(self, partNum=0, free=0, val=None, symbol=None):
         gm = ['Tree.newGdasrv()']
@@ -6287,9 +6414,11 @@ class Tree(object):
 
         # check if there is an nGammaCat > 1:
         if self.model.parts[partNum].nGammaCat == 1:
-            gm.append("For this part (%s), the number of nGammaCat has been set to 1." % partNum)
+            gm.append(
+                "For this part (%s), the number of nGammaCat has been set to 1." % partNum)
             gm.append("So gdasrv won't work.")
-            gm.append("You can set the nGammaCat with yourTree.setNGammaCat(partNum=x, nGammaCat=y)")
+            gm.append(
+                "You can set the nGammaCat with yourTree.setNGammaCat(partNum=x, nGammaCat=y)")
             raise P4Error(gm)
 
         # check val
@@ -6303,12 +6432,11 @@ class Tree(object):
             raise P4Error(gm)
 
         # This week, we have in defines.h
-        #define GAMMA_SHAPE_MIN 0.000001
-        #define GAMMA_SHAPE_MAX 300.0
+        # define GAMMA_SHAPE_MIN 0.000001
+        # define GAMMA_SHAPE_MAX 300.0
         if v <= 0.000001 or v >= 300.0:
             gm.append("Arg val must be between 0.000001 and 300.  Got %f" % v)
             raise P4Error(gm)
-
 
         self._checkModelThing(partNum, symbol, gm[0])
 
@@ -6334,8 +6462,6 @@ class Tree(object):
         mt.calcRates()
         return mt
 
-
-
     def setPInvar(self, partNum=0, free=0, val=0.0):
         complaintHead = '\nTree.setPInvar()'
         gm = [complaintHead]
@@ -6348,7 +6474,8 @@ class Tree(object):
             raise P4Error(gm)
 
         if v < 0.0 or v >= 1.0:
-            gm.append("Arg val must be zero or more, and less than 1.  Got %f" % v)
+            gm.append(
+                "Arg val must be zero or more, and less than 1.  Got %f" % v)
             raise P4Error(gm)
 
         self._checkModelThing(partNum, None, complaintHead)
@@ -6359,7 +6486,6 @@ class Tree(object):
         mt.free = free
         mt.val = v
         self.model.parts[partNum].pInvar = mt
-
 
     def setRelRate(self, partNum=0, val=0.0):
         complaintHead = '\nTree.setRelRate()'
@@ -6373,14 +6499,14 @@ class Tree(object):
             raise P4Error(gm)
 
         if v <= 0.0 or v >= 1000.0:
-            gm.append("Arg val must be more than zero, and less than 1000 (arbitrarily).  Got %f" % v)
+            gm.append(
+                "Arg val must be more than zero, and less than 1000 (arbitrarily).  Got %f" % v)
             raise P4Error(gm)
 
         self._checkModelThing(partNum, None, complaintHead)
         if self.model.cModel:
             self.deleteCStuff()
         self.model.parts[partNum].relRate = v
-
 
     def setRjComp(self, partNum=0, val=True):
         if self.model.cModel:
@@ -6401,8 +6527,8 @@ class Tree(object):
             raise P4Error(gm)
 
         if theModelThing and \
-               (isinstance(theModelThing, Comp) or \
-                isinstance(theModelThing, RMatrix) or \
+            (isinstance(theModelThing, Comp) or
+                isinstance(theModelThing, RMatrix) or
                 isinstance(theModelThing, Gdasrv)):
             pass
         else:
@@ -6431,11 +6557,12 @@ class Tree(object):
         elif isinstance(theModelThing, Gdasrv):
             if theModelThing != self.model.parts[partNum].gdasrvs[theModelThing.num]:
                 isBad = 1
-        else: # This will never happen-- we checked above.  Overkill.
+        else:  # This will never happen-- we checked above.  Overkill.
             gm.append("I don't recognise theModelThing.")
             raise P4Error(gm)
         if isBad:
-            gm.append("The modelThing can only be set on the tree that made it.")
+            gm.append(
+                "The modelThing can only be set on the tree that made it.")
             raise P4Error(gm)
 
         # For the root, we set comps and nothing else.  For other nodes we
@@ -6451,17 +6578,17 @@ class Tree(object):
             elif isinstance(theModelThing, Gdasrv):
                 theNode.br.parts[partNum].gdasrvNum = theModelThing.num
 
-
         if clade:
             aboves = self.getNodeNumsAbove(theNode, leavesOnly=0)
             for i in aboves:
                 if isinstance(theModelThing, Comp):
                     self.nodes[i].parts[partNum].compNum = theModelThing.num
                 elif isinstance(theModelThing, RMatrix):
-                    self.nodes[i].br.parts[partNum].rMatrixNum = theModelThing.num
+                    self.nodes[i].br.parts[
+                        partNum].rMatrixNum = theModelThing.num
                 elif isinstance(theModelThing, Gdasrv):
-                    self.nodes[i].br.parts[partNum].gdasrvNum = theModelThing.num
-
+                    self.nodes[i].br.parts[
+                        partNum].gdasrvNum = theModelThing.num
 
     def setModelThingsRandomly(self, forceRepresentation=2):
         """Place model things (semi-)randomly on the tree.
@@ -6490,17 +6617,17 @@ class Tree(object):
 
         if self.model.cModel:
             self.deleteCStuff()
-        #self.model.dump()
+        # self.model.dump()
 
         if type(forceRepresentation) != type(1) or forceRepresentation < 1:
             gm.append("Arg 'forceRepresentation' should be 1 or more.")
             gm.append("Got forceRepresentation = %s" % forceRepresentation)
             raise P4Error(gm)
 
-
         for i in self.preOrder:
             if i == var.NO_ORDER:
-                gm.append("This method does not work if any nodes are not used in the tree.")
+                gm.append(
+                    "This method does not work if any nodes are not used in the tree.")
                 raise P4Error(gm)
 
         for pNum in range(self.model.nParts):
@@ -6514,8 +6641,10 @@ class Tree(object):
                 nNodes = len(self.nodes)
                 if (mp.nComps * forceRepresentation) > nNodes:
                     gm.append("Part %i" % pNum)
-                    gm.append("There are not enough nodes (%i) to put %i" % (nNodes, mp.nComps))
-                    gm.append("comps on at least forceRepresentation (%i) nodes." % forceRepresentation)
+                    gm.append(
+                        "There are not enough nodes (%i) to put %i" % (nNodes, mp.nComps))
+                    gm.append(
+                        "comps on at least forceRepresentation (%i) nodes." % forceRepresentation)
                     raise P4Error(gm)
                 nList = self.nodes[:]
                 random.shuffle(nList)
@@ -6540,8 +6669,10 @@ class Tree(object):
                 nNodes = len(self.nodes) - 1
                 if (mp.nRMatrices * forceRepresentation) > nNodes:
                     gm.append("Part %i" % pNum)
-                    gm.append("There are not enough nodes (%i) to put %i" % (nNodes, mp.nRMatrices))
-                    gm.append("rMatrices on at least forceRepresentation (%i) nodes." % forceRepresentation)
+                    gm.append(
+                        "There are not enough nodes (%i) to put %i" % (nNodes, mp.nRMatrices))
+                    gm.append(
+                        "rMatrices on at least forceRepresentation (%i) nodes." % forceRepresentation)
                     raise P4Error(gm)
                 nList = self.nodes[:]
                 nList.remove(self.root)
@@ -6553,7 +6684,8 @@ class Tree(object):
                         n.br.parts[pNum].rMatrixNum = mtNum
                 # Now do the rest
                 for n in nList:
-                    n.br.parts[pNum].rMatrixNum = random.randrange(mp.nRMatrices)
+                    n.br.parts[pNum].rMatrixNum = random.randrange(
+                        mp.nRMatrices)
 
             else:
                 gm.append("No rMatrices in part %i" % pNum)
@@ -6569,8 +6701,10 @@ class Tree(object):
                     nNodes = len(self.nodes) - 1
                     if (mp.nGdasrvs * forceRepresentation) > nNodes:
                         gm.append("Part %i" % pNum)
-                        gm.append("There are not enough nodes (%i) to put %i" % (nNodes, mp.nGdasrvs))
-                        gm.append("gdasrvs on at least forceRepresentation (%i) nodes." % forceRepresentation)
+                        gm.append(
+                            "There are not enough nodes (%i) to put %i" % (nNodes, mp.nGdasrvs))
+                        gm.append(
+                            "gdasrvs on at least forceRepresentation (%i) nodes." % forceRepresentation)
                         raise P4Error(gm)
                     nList = self.nodes[:]
                     nList.remove(self.root)
@@ -6582,15 +6716,14 @@ class Tree(object):
                             n.br.parts[pNum].gdasrvNum = mtNum
                     # Now do the rest
                     for n in nList:
-                        n.br.parts[pNum].gdasrvNum = random.randrange(mp.nGdasrvs)
+                        n.br.parts[pNum].gdasrvNum = random.randrange(
+                            mp.nGdasrvs)
                 else:
-                    gm.append("No gdasrvs in part %i and yet nGammaCat > 1" % pNum)
+                    gm.append(
+                        "No gdasrvs in part %i and yet nGammaCat > 1" % pNum)
                     raise P4Error(gm)
 
-        #self.dump(model=True)
-
-
-
+        # self.dump(model=True)
 
     def setModelThingsNNodes(self):
         """Set nNodes for all modelThings"""
@@ -6622,7 +6755,6 @@ class Tree(object):
                     mp.comps[mtNum].nNodes = 0
                 for n in self.iterNodes():
                     mp.comps[n.parts[pNum].compNum].nNodes += 1
-
 
             # Second do rMatrices
             if mp.nRMatrices == 1:
@@ -6677,9 +6809,10 @@ class Tree(object):
                 pass
             elif mp.nComps > 1:
                 for mtNum in range(mp.nComps):
-                    #print "  comp %i nNodes=%i" % (mtNum, mp.comps[mtNum].nNodes)
+                    # print "  comp %i nNodes=%i" % (mtNum,
+                    # mp.comps[mtNum].nNodes)
                     print "%16s %i %s = %i" % ("composition", mtNum, "nNodes",
-                                                mp.comps[mtNum].nNodes)
+                                               mp.comps[mtNum].nNodes)
 
             # Second do rMatrices
             if mp.nRMatrices == 1:
@@ -6687,7 +6820,7 @@ class Tree(object):
             elif mp.nRMatrices > 1:
                 for mtNum in range(mp.nRMatrices):
                     print "%16s %i %s = %i" % ("rate matrix", mtNum,
-                        "nNodes", mp.rMatrices[mtNum].nNodes)
+                                               "nNodes", mp.rMatrices[mtNum].nNodes)
 
             # Third do gdasrvs
             if mp.nGammaCat > 1:
@@ -6699,8 +6832,6 @@ class Tree(object):
                 else:
                     gm.append("No gdasrvs in part %i" % pNum)
                     raise P4Error(gm)
-
-
 
     def setTextDrawSymbol(self, theSymbol='-', node=None, clade=1):
         gm = ['\nTree.setTextDrawString()']
@@ -6724,7 +6855,6 @@ class Tree(object):
             for i in aboves:
                 self.nodes[i].br.textDrawSymbol = theSymbol
 
-
     def setNGammaCat(self, partNum=0, nGammaCat=1):
         gm = ['\nTree.setNGammaCat()']
         if not self.data or not self.model:
@@ -6733,7 +6863,8 @@ class Tree(object):
         if self.model.cModel:
             self.deleteCStuff()
         if partNum < 0 or partNum >= self.model.nParts:
-            gm.append("PartNum %s is out of range of %s parts." % (partNum, self.model.nParts))
+            gm.append("PartNum %s is out of range of %s parts." %
+                      (partNum, self.model.nParts))
             raise P4Error(gm)
         if self.model.parts[partNum].isMixture:
             gm.append("Don't do this if the part uses a mixture model.")
@@ -6751,7 +6882,6 @@ class Tree(object):
             gm.append("nGammaCat '%s' exceeds the arbitrary limit of 16." % x)
             raise P4Error(gm)
         self.model.parts[partNum].nGammaCat = nGammaCat
-
 
     # def setMixture(self, partNum=0, free=0, freqs=None, rates=None):
     #     complaintHead = '\nTree.setMixture()'
@@ -6802,8 +6932,6 @@ class Tree(object):
     #         gm.append('Args freqs and rates should be sequences of floats, each nComps * nMatrices long.')
     #         raise P4Error(gm)
 
-
-
     def modelSanityCheck(self, resetEmpiricalComps=True):
         """Check that the tree, data, and model specs are good to go.
 
@@ -6834,8 +6962,9 @@ class Tree(object):
 
         complaintHead = '\nTree.modelSanityCheck()'
         gm = [complaintHead]
-        #print "\nTree.modelSanityCheck() here. self.model.nParts=%s" % self.model.nParts
-        #print "\nTree.modelSanityCheck() here.  resetEmpiricalComps=%s" % resetEmpiricalComps
+        # print "\nTree.modelSanityCheck() here. self.model.nParts=%s" % self.model.nParts
+        # print "\nTree.modelSanityCheck() here.  resetEmpiricalComps=%s" %
+        # resetEmpiricalComps
         isBad = 0
         complaints = []
         if not self.data:
@@ -6877,7 +7006,8 @@ class Tree(object):
                     partIsBad = 1
             if mp.nGammaCat == 1:
                 if mp.nGdasrvs:
-                    complaints.append('    There should be no gdasrvs in part %s, with nGammaCat=1' % pNum)
+                    complaints.append(
+                        '    There should be no gdasrvs in part %s, with nGammaCat=1' % pNum)
                     partIsBad = 1
             if not mp.pInvar:
                 complaints.append('    No pInvar in part %s' % pNum)
@@ -6888,12 +7018,12 @@ class Tree(object):
                 gm += complaints
                 raise P4Error(gm)
 
-
             # Check if comp values have been set.
             for mt in mp.comps:
                 if mt.spec != 'empirical' or not resetEmpiricalComps:
                     if not mt.val:
-                        complaints.append('    No composition val in part %s' % pNum)
+                        complaints.append(
+                            '    No composition val in part %s' % pNum)
                         partIsBad = 1
                     if len(mt.val) != mp.dim:
                         complaints.append('    Composition val is wrong length (%i), but dim is %i' % (
@@ -6903,18 +7033,20 @@ class Tree(object):
             # We don't want multiple rMatrices or free rMatrices if mp.dim is 2
             if mp.dim == 2:
                 if mp.nRMatrices > 1:
-                    complaints.append('    Part %s is dim 2, but we have more than one rMatrix' % pNum)
+                    complaints.append(
+                        '    Part %s is dim 2, but we have more than one rMatrix' % pNum)
                     partIsBad = 1
-                mt = mp.rMatrices[0] # hopefully only one
+                mt = mp.rMatrices[0]  # hopefully only one
                 if mt.free:
-                    complaints.append('    Part %s is dim 2, but rMatrix 0 is free' % pNum)
+                    complaints.append(
+                        '    Part %s is dim 2, but rMatrix 0 is free' % pNum)
                     partIsBad = 1
-
 
             # If isMixture, then it may not have nGdasrvs
             if mp.isMixture:
                 if mp.nGdasrvs:
-                    complaints.append('    If it isMixture, then gdasrv may not be on.')
+                    complaints.append(
+                        '    If it isMixture, then gdasrv may not be on.')
                     partIsBad = 1
 
             # If isMixture, then it cannot be isHet
@@ -6929,23 +7061,26 @@ class Tree(object):
             if mp.isMixture:
                 mt = mp.mixture
                 if not mt.freqs or not mt.rates:
-                    complaints.append('    This week, you must specify mixture freqs and rates.')
+                    complaints.append(
+                        '    This week, you must specify mixture freqs and rates.')
                     partIsBad = 1
                 print 'mt.freqs = %s' % mt.freqs
                 print 'mt.rates = %s' % mt.rates
                 if len(mt.freqs) != len(mt.rates):
-                    complaints.append('    Lengths of mixture freqs and rates differ.')
+                    complaints.append(
+                        '    Lengths of mixture freqs and rates differ.')
                     partIsBad = 1
                 mp.nCat = mp.nComps * mp.nRMatrices
-                #if nCompsTimesNRMatrices == 1:
+                # if nCompsTimesNRMatrices == 1:
                 #    complaints.append('    nComps * nRMatrices = 1, no point in having a mixture.')
                 #    partIsBad = 1
                 if len(mt.freqs) != mp.nCat:
-                    complaints.append('    Wrong length of mixture freqs and rates.  Should be %i' % mp.nCat)
+                    complaints.append(
+                        '    Wrong length of mixture freqs and rates.  Should be %i' % mp.nCat)
                     partIsBad = 1
 
-                #print "Freqs = %s" % mt.freqs
-                #print "Rates = %s" % mt.rates
+                # print "Freqs = %s" % mt.freqs
+                # print "Rates = %s" % mt.rates
                 theSum = sum(mt.freqs)
                 if theSum != 1.0:
                     for i in range(len(mt.freqs)):
@@ -6953,7 +7088,7 @@ class Tree(object):
                 theSum = 0.0
                 for i in range(len(mt.freqs)):
                     theSum += mt.freqs[i] * mt.rates[i]
-                #print "Mixture mean = %f (un-normalized)" % theSum
+                # print "Mixture mean = %f (un-normalized)" % theSum
                 if theSum != 1.0:
                     for i in range(len(mt.freqs)):
                         mt.rates[i] /= theSum
@@ -6962,17 +7097,15 @@ class Tree(object):
                     for i in range(len(mt.freqs)):
                         theSum += mt.freqs[i] * mt.rates[i]
                     if theSum < 1.0 - 1.0e-9 or theSum > 1.0 + 1.0e-9:
-                        gm.append("Failed to normalize mixture rates.  Sum = %19.17f" % theSum)
+                        gm.append(
+                            "Failed to normalize mixture rates.  Sum = %19.17f" % theSum)
                         raise P4Error(gm)
-                    #else:
+                    # else:
                     #    print "...successfully normalized mixture rates."
-                    #print "Freqs = %s" % mt.freqs
-                    #print "Rates = %s" % mt.rates
+                    # print "Freqs = %s" % mt.freqs
+                    # print "Rates = %s" % mt.rates
 
-
-
-
-            else: # not isMixture
+            else:  # not isMixture
                 mp.nCat = mp.nGammaCat
                 # If the model part isHet, we need to check that all nodes
                 # have something assigned, and that all model things are
@@ -6982,17 +7115,19 @@ class Tree(object):
                 # node.br.parts[pNum].rMatrixNum and
                 # node.br.parts[pNum].gdasrvNum are set to 0.
                 if not mp.isHet:
-                    #print "model part %i is not het" % pNum
+                    # print "model part %i is not het" % pNum
                     for n in self.nodes:
-                        #print "pNum = %i, n.nodeNum=%i, len n.parts = %i" % (pNum, n.nodeNum, len(n.parts))
+                        # print "pNum = %i, n.nodeNum=%i, len n.parts = %i" %
+                        # (pNum, n.nodeNum, len(n.parts))
                         n.parts[pNum].compNum = 0
                         if n != self.root:
                             n.br.parts[pNum].rMatrixNum = 0
                             if mp.nGammaCat > 1:
                                 n.br.parts[pNum].gdasrvNum = 0
-                else: # isHet
+                else:  # isHet
 
-                    # If there is only one comp, rMatrix, or gdasrv, then simply set it.
+                    # If there is only one comp, rMatrix, or gdasrv, then
+                    # simply set it.
                     if mp.nComps == 1:
                         for n in self.nodes:
                             n.parts[pNum].compNum = 0
@@ -7005,8 +7140,9 @@ class Tree(object):
                             if n != self.root:
                                 n.br.parts[pNum].gdasrvNum = 0
 
-                    #print "model part %i is het" % pNum
-                    # New ad hoc attribute 'isUsed', to keep track of whether any node uses it.
+                    # print "model part %i is het" % pNum
+                    # New ad hoc attribute 'isUsed', to keep track of whether
+                    # any node uses it.
                     for mt in mp.comps:
                         mt.isUsed = 0
                     for mt in mp.rMatrices:
@@ -7021,7 +7157,8 @@ class Tree(object):
                             mt = mp.comps[mtNum]
                             mt.isUsed = 1
                         else:
-                            complaints.append('    Part %s, node %s has no comp.' % (pNum, n.nodeNum))
+                            complaints.append(
+                                '    Part %s, node %s has no comp.' % (pNum, n.nodeNum))
                             partIsBad = 1
 
                         if n != self.root:
@@ -7030,7 +7167,8 @@ class Tree(object):
                                 mt = mp.rMatrices[n.br.parts[pNum].rMatrixNum]
                                 mt.isUsed = 1
                             else:
-                                complaints.append('    Part %s, node %s has no rMatrix.' % (pNum, n.nodeNum))
+                                complaints.append(
+                                    '    Part %s, node %s has no rMatrix.' % (pNum, n.nodeNum))
                                 partIsBad = 1
                             if mp.nGammaCat > 1:
                                 mtNum = n.br.parts[pNum].gdasrvNum
@@ -7051,16 +7189,19 @@ class Tree(object):
                     if not mp.rjComp:
                         for mt in mp.comps:
                             if not mt.isUsed:
-                                complaints.append('    Part %s, comp %s is not used.' % (pNum, mt.num))
+                                complaints.append(
+                                    '    Part %s, comp %s is not used.' % (pNum, mt.num))
                                 partIsBad = 1
                     if not mp.rjRMatrix:
                         for mt in mp.rMatrices:
                             if not mt.isUsed:
-                                complaints.append('    Part %s, rMatrix %s is not used.' % (pNum, mt.num))
+                                complaints.append(
+                                    '    Part %s, rMatrix %s is not used.' % (pNum, mt.num))
                                 partIsBad = 1
                     for mt in mp.gdasrvs:
                         if not mt.isUsed:
-                            complaints.append('    Part %s, gdasrv %s is not used.' % (pNum, mt.num))
+                            complaints.append(
+                                '    Part %s, gdasrv %s is not used.' % (pNum, mt.num))
                             partIsBad = 1
 
                     # Clean up ad hoc attr 'isUsed'
@@ -7103,7 +7244,8 @@ class Tree(object):
                 totDataLen += p.nChar
             fact = 0.0
             for i in range(self.model.nParts):
-                fact += (self.model.parts[i].relRate * self.data.parts[i].nChar)
+                fact += (self.model.parts[i].relRate *
+                         self.data.parts[i].nChar)
             fact = float(totDataLen) / fact
             for p in self.model.parts:
                 p.relRate *= fact
@@ -7115,21 +7257,26 @@ class Tree(object):
             if 1:
                 total = 0.0
                 for i in range(self.model.nParts):
-                    total += (self.model.parts[i].relRate * (float(self.data.parts[i].nChar) / float(totDataLen)))
+                    total += (self.model.parts[i].relRate *
+                              (float(self.data.parts[i].nChar) / float(totDataLen)))
                 if abs(total - 1.0) > 1.0e-12:
-                    gm.append('Error in relativeRate calculation (total=%s).' % total)
+                    gm.append(
+                        'Error in relativeRate calculation (total=%s).' % total)
                     raise P4Error(gm)
 
-        #print "modelSanityCheck. relRatesAreFree=%s, doRelRates=%s" % (self.model.relRatesAreFree, self.model.doRelRates)
+        # print "modelSanityCheck. relRatesAreFree=%s, doRelRates=%s" %
+        # (self.model.relRatesAreFree, self.model.doRelRates)
 
         # tSCovarion
         for p in self.model.parts:
             if p.tSCovarion:
                 if p.nComps > 1 or p.nRMatrices > 1 or p.nGammaCat > 1:
-                    gm.append("When tSCovarion is on, there should be no heterogeneity in comps, rMatrices, and gdasrv.")
+                    gm.append(
+                        "When tSCovarion is on, there should be no heterogeneity in comps, rMatrices, and gdasrv.")
                     raise P4Error(gm)
                 if p.pInvar.val > 0.0 or p.pInvar.free:
-                    gm.append("When tSCovarion is on, you can't use pInvar.  Turn it off.")
+                    gm.append(
+                        "When tSCovarion is on, you can't use pInvar.  Turn it off.")
                     raise P4Error(gm)
 
         # model.nFreePrams
@@ -7143,7 +7290,8 @@ class Tree(object):
                     if mt.spec == '2p':
                         self.model.nFreePrams += 1
                     else:
-                        self.model.nFreePrams += (((mp.dim * mp.dim) - mp.dim) / 2) - 1
+                        self.model.nFreePrams += (
+                            ((mp.dim * mp.dim) - mp.dim) / 2) - 1
             for mt in mp.gdasrvs:
                 if mt.free:
                     self.model.nFreePrams += 1
@@ -7153,7 +7301,8 @@ class Tree(object):
                 self.model.nFreePrams += 2
             if mp.isMixture and mp.mixture.free:
                 self.model.nFreePrams += 2 * (len(mp.mixture.freqs) - 1)
-        #print "Tree.modelSanityCheck().  Counted %i free params." % self.model.nFreePrams
+        # print "Tree.modelSanityCheck().  Counted %i free params." %
+        # self.model.nFreePrams
 
         if self.model.doRelRates and self.model.relRatesAreFree:
             self.model.nFreePrams += self.model.nParts - 1
@@ -7162,8 +7311,6 @@ class Tree(object):
             gm.append("(Indices are zero-based.)")
             gm += complaints
             raise P4Error(gm)
-
-
 
     def setEmpiricalComps(self):
         """Set any empirical model comps to the comp of the data.
@@ -7185,7 +7332,7 @@ class Tree(object):
         for mp in self.model.parts:
             for c in mp.comps:
                 if c.spec == 'empirical':
-                    #print "got empirical comp, comp %s in part %s. (nComps=%i, isHet=%s)" % (
+                    # print "got empirical comp, comp %s in part %s. (nComps=%i, isHet=%s)" % (
                     #    c.num, mp.num, mp.nComps, mp.isHet)
                     if not mp.isHet:
                         seqNums = None
@@ -7193,78 +7340,90 @@ class Tree(object):
                         seqNums = None
                     else:
                         seqNums = []
-                        #for n in self.nodes:
+                        # for n in self.nodes:
                         #    print "node %2i seqNum=%3i n.parts[%i].compNum=%3i" % (
-                        #        n.nodeNum, n.seqNum, mp.num, n.parts[mp.num].compNum)
+                        # n.nodeNum, n.seqNum, mp.num, n.parts[mp.num].compNum)
 
                         for n in self.nodes:
-                            if n.parts[mp.num].compNum == c.num: # Is the comp used by the node?
-                                #print "comp %s is used by node %s" % (c.num, n.nodeNum)
+                            # Is the comp used by the node?
+                            if n.parts[mp.num].compNum == c.num:
+                                # print "comp %s is used by node %s" % (c.num,
+                                # n.nodeNum)
                                 if n.isLeaf:
                                     nodeNums = [n.nodeNum]
                                 else:
-                                    nodeNums = self.getNodeNumsAbove(n, leavesOnly=1)
-                                #gm.append("nodeNums for %s = %s" % (n.nodeNum, nodeNums)
+                                    nodeNums = self.getNodeNumsAbove(
+                                        n, leavesOnly=1)
+                                # gm.append("nodeNums for %s = %s" %
+                                # (n.nodeNum, nodeNums)
                                 for i in nodeNums:
                                     seqNum = self.nodes[i].seqNum
                                     if seqNum not in seqNums:
                                         seqNums.append(seqNum)
 
-                        #print "setEmpiricalComps() got seqNums = %s" % seqNums
+                        # print "setEmpiricalComps() got seqNums = %s" %
+                        # seqNums
                         if not seqNums:
-                            gm.append("Something is wrong here.  part %i, comp %i." % (mp.num, c.num))
-                            gm.append("This comp object has no sequences from which to get the empirical comp.")
-                            gm.append("Maybe you need to yourTree.setModelThing() or ")
+                            gm.append(
+                                "Something is wrong here.  part %i, comp %i." % (mp.num, c.num))
+                            gm.append(
+                                "This comp object has no sequences from which to get the empirical comp.")
+                            gm.append(
+                                "Maybe you need to yourTree.setModelThing() or ")
                             gm.append("yourTree.setModelThingsRandomly()")
-                            gm.append("Or maybe its an extra comp in an RJ MCMC? -- If so, fix")
+                            gm.append(
+                                "Or maybe its an extra comp in an RJ MCMC? -- If so, fix")
                             gm.append("the comp val to eg 'equal'.")
                             raise P4Error(gm)
 
-                    c.val = self.data.parts[mp.num].composition(seqNums) # dim long, not dim - 1
-                    #print "  seqNums=%s, c.val=%s" % (seqNums, c.val)
+                    c.val = self.data.parts[mp.num].composition(
+                        seqNums)  # dim long, not dim - 1
+                    # print "  seqNums=%s, c.val=%s" % (seqNums, c.val)
 
                     needsNormalizing = 0
                     theSum = 0.0
                     for i in range(len(c.val)):
                         if c.val[i] < var.PIVEC_MIN:
-                            c.val[i] = var.PIVEC_MIN + (0.2 * var.PIVEC_MIN) + (var.PIVEC_MIN * random.random())
+                            c.val[
+                                i] = var.PIVEC_MIN + (0.2 * var.PIVEC_MIN) + (var.PIVEC_MIN * random.random())
                             needsNormalizing = 1
                         theSum += c.val[i]
-                    #print "setEmpiricalComps().  Got theSum = %i" % theSum
+                    # print "setEmpiricalComps().  Got theSum = %i" % theSum
 
                     # We may have asked for the comp of an empty sequence,
                     # in which case val is all zeros.  Check for that.
                     if abs(1.0 - theSum) > 0.1:
-                        gm.append("Something is very wrong here.  Empirical comp vals should sum to 1.0")
-                        gm.append("The sum of the comp vals for part %s, comp %s, is %s" % (mp.num, c.num, theSum))
-                        gm.append("Probably the sequences from which the composition was taken were blank.")
+                        gm.append(
+                            "Something is very wrong here.  Empirical comp vals should sum to 1.0")
+                        gm.append("The sum of the comp vals for part %s, comp %s, is %s" % (
+                            mp.num, c.num, theSum))
+                        gm.append(
+                            "Probably the sequences from which the composition was taken were blank.")
                         raise P4Error(gm)
 
                     if needsNormalizing or abs(theSum - 1.0) > 1e-16:
                         for i in range(len(c.val)):
                             c.val[i] /= theSum
 
-
-
-
-
-    #def __del__(self, freeTree=pf.p4_freeTree, freeNode=pf.p4_freeNode):
-    #def __del__(self, freeTree=pf.p4_freeTree, dp_freeTree = pf.dp_freeTree, mysys=sys):
-    #def __del__(self, freeTree=pf.p4_freeTree, dp_freeTree = pf.dp_freeTree):
+    # def __del__(self, freeTree=pf.p4_freeTree, freeNode=pf.p4_freeNode):
+    # def __del__(self, freeTree=pf.p4_freeTree, dp_freeTree = pf.dp_freeTree, mysys=sys):
+    # def __del__(self, freeTree=pf.p4_freeTree, dp_freeTree = pf.dp_freeTree):
     def __del__(self, freeTree=pf.p4_freeTree, freeNode=pf.p4_freeNode, mysys=sys):
         #mysys.stdout.write('Tree.__del__() here.\n')
-        #mysys.stdout.flush()
-        if hasattr(self, "splitKeyHash"): # Refers to nodes, which causes grief.
+        # mysys.stdout.flush()
+        # Refers to nodes, which causes grief.
+        if hasattr(self, "splitKeyHash"):
             del(self.splitKeyHash)
         self._data = None
-        #self._model = None  # model is needed for freeNode()
-        if 1:       # If this is not here, then nodes tend to hang around forever ...
+        # self._model = None  # model is needed for freeNode()
+        # If this is not here, then nodes tend to hang around forever ...
+        if 1:
             for n in self.nodes:
                 n.wipe()
             for n in self.nodes:
                 if n.cNode:
                     #mysys.stdout.write('  Tree.__del__(), freeing node %i\n' % n.nodeNum)
-                    #mysys.stdout.flush()
+                    # mysys.stdout.flush()
                     freeNode(n.cNode)
                     n.cNode = None
             for n in self.nodes:
@@ -7278,33 +7437,29 @@ class Tree(object):
                 freeTree(self.cTree)
             self.cTree = None
         #mysys.stdout.write('Tree.__del__() finished.\n')
-        #mysys.stdout.flush()
-
+        # mysys.stdout.flush()
 
     def deleteCStuff(self):
         """Deletes c-pointers from nodes, self, and model, but not the data."""
 
-        #print 'Tree.deleteCStuff() here.'
+        # print 'Tree.deleteCStuff() here.'
         for n in self.nodes:
             if n.cNode:
-                #print '  about to free node %i, cNode %s' % (n.nodeNum, n.cNode)
+                # print '  about to free node %i, cNode %s' % (n.nodeNum,
+                # n.cNode)
                 pf.p4_freeNode(n.cNode)
                 n.cNode = 0
         if self.cTree:
-            #print '  about to free cTree'
+            # print '  about to free cTree'
             pf.p4_freeTree(self.cTree)
             self.cTree = 0
         # I need to delay deleting the cModel until after deleting the
         # self.cStuff, because free-ing self.cStuff (eg nodes)
         # requires the cModel.
         if self.model and self.model.cModel:
-            #print '  about to free cModel'
+            # print '  about to free cModel'
             pf.p4_freeModel(self.model.cModel)
             self.model.cModel = 0
-
-
-
-
 
     def _allocCStuff(self, resetEmpiricalComps=True):
         """Allocate c-memory for self and its nodes."""
@@ -7314,7 +7469,8 @@ class Tree(object):
         # Make sure the nodeNums go from zero to N-1
         for i in range(len(self.nodes)):
             if self.nodes[i].nodeNum != i:
-                gm.append("Programming error: Problem with node number %i." % i)
+                gm.append(
+                    "Programming error: Problem with node number %i." % i)
                 gm.append("Nodes should be numbered consecutively from zero.")
                 raise P4Error(gm)
 
@@ -7325,7 +7481,7 @@ class Tree(object):
             self.model.allocCStuff()
 
         if var.doDataPart:
-            #print 'about to dp_newTree'
+            # print 'about to dp_newTree'
             self.cTree = pf.dp_newTree(len(self.nodes), self.preOrder,
                                        self.postOrder, self.data.cData, self.model.cModel)
             self.doDataPart = 1
@@ -7334,8 +7490,9 @@ class Tree(object):
                 raise P4Error(gm)
             for n in self.nodes:
                 n.doDataPart = 1
-                #print 'about to dp_newNode (%i)' % n.nodeNum
-                cNode = pf.dp_newNode(n.nodeNum, self.cTree, n.seqNum, n.isLeaf)
+                # print 'about to dp_newNode (%i)' % n.nodeNum
+                cNode = pf.dp_newNode(
+                    n.nodeNum, self.cTree, n.seqNum, n.isLeaf)
                 if not cNode:
                     gm.append("Unable to allocate a cNode.")
                     raise P4Error(gm)
@@ -7361,13 +7518,13 @@ class Tree(object):
                 # is in the tree or not.  If the inTree flag is 0,
                 # then the node is not actually part of the tree, and so
                 # clNeedsUpdating is turned off.
-                n.cNode = pf.p4_newNode(n.nodeNum, self.cTree, n.seqNum, n.isLeaf, inTree)
+                n.cNode = pf.p4_newNode(
+                    n.nodeNum, self.cTree, n.seqNum, n.isLeaf, inTree)
                 if not n.cNode:
                     gm.append("Unable to allocate a cNode")
                     raise P4Error(gm)
 
-        #print "finished Tree._allocCStuff()"
-
+        # print "finished Tree._allocCStuff()"
 
     def setCStuff(self):
         """Transfer info about self to c-language stuff.
@@ -7378,7 +7535,8 @@ class Tree(object):
 
         #gm = ['Tree.setCStuff()']
 
-        # Set node relations, br.len, root, node modelNums, preOrder?, postOrder
+        # Set node relations, br.len, root, node modelNums, preOrder?,
+        # postOrder
 
         # Set relations- parent, leftChild, sibling.  Here's the code for
         # pf.p4_setRelative(int theCNode, int relation, int relNum)
@@ -7388,7 +7546,7 @@ class Tree(object):
             if n.parent:
                 pf.p4_setNodeRelation(n.cNode, 0, n.parent.nodeNum)
             else:
-                pf.p4_setNodeRelation(n.cNode, 0, -1) # "-1" gives NULL
+                pf.p4_setNodeRelation(n.cNode, 0, -1)  # "-1" gives NULL
 
             if n.leftChild:
                 pf.p4_setNodeRelation(n.cNode, 1, n.leftChild.nodeNum)
@@ -7412,22 +7570,24 @@ class Tree(object):
         if self.model.isHet:
             for pNum in range(self.model.nParts):
                 if self.model.parts[pNum].isHet:
-                    #print "setCStuff().  about to setCompNum"
+                    # print "setCStuff().  about to setCompNum"
                     for n in self.nodes:
                         pf.p4_setCompNum(n.cNode, pNum, n.parts[pNum].compNum)
                         if n != self.root:
-                            pf.p4_setRMatrixNum(n.cNode, pNum, n.br.parts[pNum].rMatrixNum)
-                            pf.p4_setGdasrvNum(n.cNode, pNum, n.br.parts[pNum].gdasrvNum)
+                            pf.p4_setRMatrixNum(
+                                n.cNode, pNum, n.br.parts[pNum].rMatrixNum)
+                            pf.p4_setGdasrvNum(
+                                n.cNode, pNum, n.br.parts[pNum].gdasrvNum)
 
         # pre- and postOrder
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
 
-        #for i in range(len(self.nodes)):
-        #    pf.p4_setPreAndPostOrder(self.cTree, i, self.preOrder[i], self.postOrder[i]) # no longer needed
+        # for i in range(len(self.nodes)):
+        # pf.p4_setPreAndPostOrder(self.cTree, i, self.preOrder[i],
+        # self.postOrder[i]) # no longer needed
 
-        #print "finished Tree.setCStuff()"
-
+        # print "finished Tree.setCStuff()"
 
     def _commonCStuff(self, resetEmpiricalComps=True):
         """Allocate and set c-stuff, and setPrams."""
@@ -7436,33 +7596,34 @@ class Tree(object):
                 gm = ["Tree %s  (_commonCStuff)" % self.name]
             else:
                 gm = ["Tree (_commonCStuff)"]
-            gm.append("This tree has no data attached.  Before doing an optimization, likelihood")
-            gm.append("calculation, or simulation, you need to do something like this:")
+            gm.append(
+                "This tree has no data attached.  Before doing an optimization, likelihood")
+            gm.append(
+                "calculation, or simulation, you need to do something like this:")
             gm.append("    theTree.data = theData")
             raise P4Error(gm)
 
-        #print "self.cTree = %s" % self.cTree
+        # print "self.cTree = %s" % self.cTree
         if not self.cTree:
-            # This calls self.modelSanityCheck(), which calls self.setEmpiricalComps()
+            # This calls self.modelSanityCheck(), which calls
+            # self.setEmpiricalComps()
             self._allocCStuff(resetEmpiricalComps=resetEmpiricalComps)
-        #print "About to self.model.setCStuff()"
+        # print "About to self.model.setCStuff()"
         self.model.setCStuff()
-        #print "About to self.setCStuff()"
+        # print "About to self.setCStuff()"
         self.setCStuff()
-        #print "about to p4_setPrams()..."
-        pf.p4_setPrams(self.cTree, -1) # "-1" means do all parts
-
+        # print "about to p4_setPrams()..."
+        pf.p4_setPrams(self.cTree, -1)  # "-1" means do all parts
 
     def calcLogLike(self, verbose=1, resetEmpiricalComps=True):
         """Calculate the likelihood of the tree, without optimization."""
 
         self._commonCStuff(resetEmpiricalComps=resetEmpiricalComps)
-        #print "about to p4_treeLogLike()..."
-        self.logLike = pf.p4_treeLogLike(self.cTree, 0) # second arg is getSiteLikes
+        # print "about to p4_treeLogLike()..."
+        # second arg is getSiteLikes
+        self.logLike = pf.p4_treeLogLike(self.cTree, 0)
         if verbose:
             print "Tree.calcLogLike(). %f" % self.logLike
-
-
 
     def optLogLike(self, verbose=1, newtAndBrentPowell=1, allBrentPowell=0, simplex=0):
         """Calculate the likelihood of the tree, with optimization.
@@ -7475,7 +7636,6 @@ class Tree(object):
         optimizer is the slowest, and will sometimes find better optima
         for difficult data, but often fails to optimize (with no
         warning)."""
-
 
         if verbose:
             theStartTime = time.clock()
@@ -7502,7 +7662,8 @@ class Tree(object):
             pf.p4_newtSetup(self.cTree)
             pf.p4_newtAndBrentPowellOpt(self.cTree)
 
-        self.logLike = pf.p4_treeLogLike(self.cTree, 0) # second arg is getSiteLikes
+        # second arg is getSiteLikes
+        self.logLike = pf.p4_treeLogLike(self.cTree, 0)
 
         # get the brLens
         brLens = pf.p4_getBrLens(self.cTree)
@@ -7543,7 +7704,6 @@ class Tree(object):
 
         print "time %s seconds." % (time.clock() - theStartTime)
 
-
     def simulate(self, calculatePatterns=True, resetSequences=True, resetNexusSetsConstantMask=True):
         """Simulate into the attached data.
 
@@ -7566,8 +7726,8 @@ class Tree(object):
         # If there is a NexusSets object attached to any of the alignments
         # in the Data, the constant sites mask at least will become out of sync, but we can't just
         # delete the whole nexusSets object, as they define what the parts are.
-        #for a in self.data.alignments:
-        # 
+        # for a in self.data.alignments:
+        #
         #    if a.nexusSets:
         #        a.nexusSets = None
 
@@ -7575,7 +7735,7 @@ class Tree(object):
         # a.nexusSets.constant.mask = self.constantMask()
         # at the end.
 
-        #print "About to pf.p4_simulate(self.cTree)"
+        # print "About to pf.p4_simulate(self.cTree)"
         pf.p4_simulate(self.cTree)
         if calculatePatterns:
             for p in self.data.parts:
@@ -7590,20 +7750,21 @@ class Tree(object):
         else:
             if resetNexusSetsConstantMask:
                 gm = ['Tree.simulate().']
-                gm.append("resetSequences is not set, but resetNexusSetsConstantMask is set,")
+                gm.append(
+                    "resetSequences is not set, but resetNexusSetsConstantMask is set,")
                 gm.append("which is probably not going to work as you want.")
                 raise P4Error(gm)
-
 
     def getSiteLikes(self):
         """Likelihoods, not log likes. Placed in self.siteLikes, a list."""
         self._commonCStuff()
-        self.logLike = pf.p4_treeLogLike(self.cTree, 1) # second arg is getSiteLikes
+        # second arg is getSiteLikes
+        self.logLike = pf.p4_treeLogLike(self.cTree, 1)
         self.siteLikes = []
         for p in self.data.parts:
             self.siteLikes += pf.getSiteLikes(p.cPart)
 
-    #def getWinningGammaCats(self):
+    # def getWinningGammaCats(self):
     def getSiteRates(self):
         """Get posterior mean site rate, and gamma category.
 
@@ -7632,9 +7793,10 @@ class Tree(object):
         """
 
         self._commonCStuff()
-        self.logLike = pf.p4_treeLogLike(self.cTree, 0) # second arg is getSiteLikes
+        # second arg is getSiteLikes
+        self.logLike = pf.p4_treeLogLike(self.cTree, 0)
         #self.winningGammaCats = []
-        #for p in self.data.parts:
+        # for p in self.data.parts:
         #    self.winningGammaCats += pf.getWinningGammaCats(p.cPart)
         results = []
 
@@ -7650,19 +7812,22 @@ class Tree(object):
             if self.model.parts[partNum].nGammaCat == 1:
                 siteRates = numpy.ones(p.nChar, numpy.float)
                 gammaCats = numpy.zeros(p.nChar, numpy.int32)
-            elif self.model.parts[partNum].nGammaCat >  1:
+            elif self.model.parts[partNum].nGammaCat > 1:
                 siteRates = numpy.zeros(p.nChar, numpy.float)
                 gammaCats = numpy.zeros(p.nChar, numpy.int32)
-                work = numpy.zeros(self.model.parts[partNum].nGammaCat, numpy.float)
+                work = numpy.zeros(
+                    self.model.parts[partNum].nGammaCat, numpy.float)
                 for charNum in range(p.nChar):
                     gammaCats[charNum] = -1
                 #pf.getWinningGammaCats(self.cTree, p.cPart, i, gammaCats, work)
-                pf.getSiteRates(self.cTree, p.cPart, partNum, siteRates, gammaCats, work)
-                #print siteRates
-                #print gammaCats
-                #print work
+                pf.getSiteRates(
+                    self.cTree, p.cPart, partNum, siteRates, gammaCats, work)
+                # print siteRates
+                # print gammaCats
+                # print work
                 if 0:
-                    counts = numpy.zeros(self.model.parts[partNum].nGammaCat, numpy.int32)
+                    counts = numpy.zeros(
+                        self.model.parts[partNum].nGammaCat, numpy.int32)
                     for charNum in range(p.nChar):
                         counts[winningGammaCats[charNum]] += 1
                     print counts
@@ -7714,9 +7879,6 @@ class Tree(object):
         A critical point of 95% is used to decide if the data fits or not.
     """
 
-
-
-
     def simsForModelFitTests(self, reps=10, seed=None):
         """Do simulations for model fit tests.
 
@@ -7753,10 +7915,10 @@ class Tree(object):
         #gm = ['Tree.simsForModelFitTests()']
 
         # Make a new data object in which to do the sims, so we do not over-write self
-        #print "a self.data = %s" % self.data
-        #self.data.dump()
+        # print "a self.data = %s" % self.data
+        # self.data.dump()
         savedData = self.data
-        self.data = None # This triggers self.deleteCStuff()
+        self.data = None  # This triggers self.deleteCStuff()
         self.data = savedData.dupe()
 
         # We need 2 trees, one for sims, and one for evaluations.  We can
@@ -7775,7 +7937,7 @@ class Tree(object):
             if a.hasGapsOrAmbiguities():
                 doGoldmanCox = False
                 break
-        #print "sims doGoldmanCox = %s" % doGoldmanCox
+        # print "sims doGoldmanCox = %s" % doGoldmanCox
 
         # Collect info about the observed data
         statsHashList = []  # one for each data part
@@ -7785,15 +7947,18 @@ class Tree(object):
             h['individualNSites'] = []
             h['observedIndividualCounts'] = []
             for j in range(self.data.nTax):
-                h['individualNSites'].append(pf.partSequenceSitesCount(self.data.parts[pNum].cPart, j)) # no gaps or qmarks
-                h['observedIndividualCounts'].append(self.data.parts[pNum].composition([j]))  
+                h['individualNSites'].append(
+                    pf.partSequenceSitesCount(self.data.parts[pNum].cPart, j))  # no gaps or qmarks
+                h['observedIndividualCounts'].append(
+                    self.data.parts[pNum].composition([j]))
                 # (In the line above, its temporarily composition, not counts)
-                #print "got seq %i comp = %s' % (j, h['observedIndividualCounts"][-1])
+                # print "got seq %i comp = %s' % (j, h['observedIndividualCounts"][-1])
             # At the moment, h['observedIndividualCounts'] has composition,
             # not counts.  So multiply by h['individualNSites']
             for i in range(self.data.nTax):
                 for j in range(self.data.parts[pNum].dim):
-                    h['observedIndividualCounts'][i][j] *= h['individualNSites'][i]
+                    h['observedIndividualCounts'][i][
+                        j] *= h['individualNSites'][i]
 
         # We will want to skip any sequences composed of all gaps
         skipTaxNums = []
@@ -7803,14 +7968,14 @@ class Tree(object):
                 if not statsHashList[pNum]['individualNSites'][tNum]:
                     stn.append(tNum)
             skipTaxNums.append(stn)
-        #print "skipTaxNums = %s" % skipTaxNums
+        # print "skipTaxNums = %s" % skipTaxNums
 
         if seed == None:
             seed = os.getpid()
         pf.reseedCRandomizer(int(seed))
 
         # Open up some output files in which to put the sim data
-        outfileBaseName = 'sims' # Could be an argument, user-assignable.
+        outfileBaseName = 'sims'  # Could be an argument, user-assignable.
         if doGoldmanCox:
             f2Name = outfileBaseName + '_GoldmanStats_%s' % seed
             f2 = open(f2Name, 'w')
@@ -7828,71 +7993,83 @@ class Tree(object):
                 if c.spec == 'empirical':
                     hasEmpiricalComps = 1
                     break
-        #print "hasEmpiricalComps=%s" % hasEmpiricalComps
+        # print "hasEmpiricalComps=%s" % hasEmpiricalComps
 
         # Do the sims
         for i in range(reps):
             self.simulate()
             if hasEmpiricalComps:
-                evalTree.setEmpiricalComps()   # Set empirical comps based on newly-simulated data
+                # Set empirical comps based on newly-simulated data
+                evalTree.setEmpiricalComps()
             evalTree.optLogLike(verbose=0)     # The time-consuming part
 
             if doGoldmanCox:
                 if self.data.nParts > 1:
                     self.data.calcUnconstrainedLogLikelihood2()
-                    diff = self.data.unconstrainedLogLikelihood - evalTree.logLike
-                    f2.write('-1\t%f\t%f\t%f\n' % (self.data.unconstrainedLogLikelihood, evalTree.logLike, diff))
+                    diff = self.data.unconstrainedLogLikelihood - \
+                        evalTree.logLike
+                    f2.write(
+                        '-1\t%f\t%f\t%f\n' % (self.data.unconstrainedLogLikelihood, evalTree.logLike, diff))
                 for pNum in range(self.data.nParts):
-                    unc = pf.getUnconstrainedLogLike(self.data.parts[pNum].cPart)
-                    like = pf.p4_partLogLike(evalTree.cTree, self.data.parts[pNum].cPart, pNum, 0) # 0 for getSiteLikes
+                    unc = pf.getUnconstrainedLogLike(
+                        self.data.parts[pNum].cPart)
+                    # 0 for getSiteLikes
+                    like = pf.p4_partLogLike(
+                        evalTree.cTree, self.data.parts[pNum].cPart, pNum, 0)
                     diff = unc - like
                     f2.write('%i\t%f\t%f\t%f\n' % (pNum, unc, like, diff))
 
             for pNum in range(self.data.nParts):
                 h = statsHashList[pNum]
                 # pf.p4_expectedCompositionCounts returns a tuple of tuples
-                # representing the counts of the nodes in proper alignment order.
+                # representing the counts of the nodes in proper alignment
+                # order.
                 ret = pf.p4_expectedCompositionCounts(evalTree.cTree, pNum)
-                h['expectedIndividualCounts'] = list(ret) # alignment order
-                #print h['expectedIndividualCounts']
+                h['expectedIndividualCounts'] = list(ret)  # alignment order
+                # print h['expectedIndividualCounts']
                 h['overallSimStat'] = 0.0
                 h['individualSimStats'] = [0.0] * self.data.nTax
                 for seqNum in range(self.data.nTax):
                     if seqNum in skipTaxNums[pNum]:
                         pass
                     else:
-                        obsCounts = list(pf.singleSequenceBaseCounts(self.data.parts[pNum].cPart, seqNum))
+                        obsCounts = list(
+                            pf.singleSequenceBaseCounts(self.data.parts[pNum].cPart, seqNum))
                         # obsCounts is the counts observed in the simulation.
-                        # It assumes that there are no gaps.  If there are gaps, adjust the counts.
+                        # It assumes that there are no gaps.  If there are
+                        # gaps, adjust the counts.
                         if h['individualNSites'][seqNum] != self.data.parts[pNum].nChar:
-                            factor = float(h['individualNSites'][seqNum]) / self.data.parts[pNum].nChar
-                            #print "factor = %s" % factor
+                            factor = float(
+                                h['individualNSites'][seqNum]) / self.data.parts[pNum].nChar
+                            # print "factor = %s" % factor
                             for j in range(self.data.parts[pNum].dim):
                                 obsCounts[j] = float(obsCounts[j]) * factor
-                        #print obsCounts
+                        # print obsCounts
                         for j in range(self.data.parts[pNum].dim):
                             # Avoid dividing by Zero.
                             if h['expectedIndividualCounts'][seqNum][j]:
-                                dif = obsCounts[j] - h['expectedIndividualCounts'][seqNum][j]
-                                h['individualSimStats'][seqNum] += ((dif * dif) / h['expectedIndividualCounts'][seqNum][j])
+                                dif = obsCounts[
+                                    j] - h['expectedIndividualCounts'][seqNum][j]
+                                h['individualSimStats'][
+                                    seqNum] += ((dif * dif) / h['expectedIndividualCounts'][seqNum][j])
                         h['overallSimStat'] += h['individualSimStats'][seqNum]
 
                 f3.write('%i\t' % pNum)
                 for seqNum in range(self.data.nTax):
                     f3.write('%f\t' % h['individualSimStats'][seqNum])
                 f3.write('%f\n' % h['overallSimStat'])
-                #print h['overallSimStat']
+                # print h['overallSimStat']
 
         if doGoldmanCox:
             f2.close()
         f3.close()
 
         # Replace the saved data
-        self.data = savedData # Since we are replacing an exisiting data, this triggers self.deleteCStuff()
+        # Since we are replacing an exisiting data, this triggers
+        # self.deleteCStuff()
+        self.data = savedData
 
-
-
-    def modelFitTests(self, fName = 'model_fit_tests_out', writeRawStats=0):
+    def modelFitTests(self, fName='model_fit_tests_out', writeRawStats=0):
         """Do model fit tests on the data.
 
         The two tests are the Goldman-Cox test, and the tree- and model-
@@ -7930,7 +8107,9 @@ class Tree(object):
 
         gm = ['Tree.modelFitTests()']
         self.calcLogLike(verbose=0)
-        doOut = True # Usually True.  Set to False for debugging, experimentation, getting individual stats, etc
+        # Usually True.  Set to False for debugging, experimentation, getting
+        # individual stats, etc
+        doOut = True
 
         # We can't do the Goldman-Cox test if there are any gaps or
         # ambiguities.
@@ -7939,8 +8118,7 @@ class Tree(object):
             if a.hasGapsOrAmbiguities():
                 doGoldmanCox = False
                 break
-        #print "test doGoldmanCox = %s" % doGoldmanCox
-
+        # print "test doGoldmanCox = %s" % doGoldmanCox
 
         rawFName = '%s_raw.py' % fName
         #flob = sys.stderr
@@ -7963,13 +8141,13 @@ class Tree(object):
         # groups of 3-- the first one for all parts together (part number
         # -1), and the next lines for separate parts.
 
-        ##    # part  unconstr L       log like       Goldman-Cox stat
-        ##    -1      -921.888705     -1085.696919    163.808215
-        ##    0       -357.089057     -430.941958     73.852901
-        ##    1       -564.799648     -654.754962     89.955314
-        ##    -1      -952.063037     -1130.195799    178.132761
-        ##    0       -362.164119     -439.709824     77.545705
-        ##   ... and so on.
+        # part  unconstr L       log like       Goldman-Cox stat
+        # -1      -921.888705     -1085.696919    163.808215
+        # 0       -357.089057     -430.941958     73.852901
+        # 1       -564.799648     -654.754962     89.955314
+        # -1      -952.063037     -1130.195799    178.132761
+        # 0       -362.164119     -439.709824     77.545705
+        # ... and so on.
 
         # For a one-part analysis, it will be the same except that one sim
         # gets only one line, starting with zero.
@@ -7983,8 +8161,8 @@ class Tree(object):
 
             import glob
             goldmanFNames = glob.glob('sims_GoldmanStats_*')
-            #print "nParts=%s" % self.data.nParts
-            #print goldmanFNames
+            # print "nParts=%s" % self.data.nParts
+            # print goldmanFNames
             for fName1 in goldmanFNames:
                 f2 = open(fName1)
                 aLine = f2.readline()
@@ -7992,70 +8170,80 @@ class Tree(object):
                     gm.append("Empty file %s" % fName1)
                     raise P4Error(gm)
                 if aLine[0] != '#':
-                    gm.append("Expecting a '#' as the first character in file %s" % fName1)
+                    gm.append(
+                        "Expecting a '#' as the first character in file %s" % fName1)
                     raise P4Error(gm)
                 aLine = f2.readline()
-                #print "a got line %s" % aLine,
+                # print "a got line %s" % aLine,
                 while aLine:
                     if self.data.nParts > 1:
                         splitLine = aLine.split()
                         if len(splitLine) != 4:
-                            gm.append("Bad line in Goldman stats file %s" % fName1)
+                            gm.append(
+                                "Bad line in Goldman stats file %s" % fName1)
                             gm.append("'%s'" % aLine)
                             raise P4Error(gm)
                         if int(splitLine[0]) != -1:
-                            gm.append("Bad line in Goldman stats file %s" % fName1)
+                            gm.append(
+                                "Bad line in Goldman stats file %s" % fName1)
                             gm.append("First item should be -1")
                             gm.append("'%s'" % aLine)
                             raise P4Error(gm)
-                        #print splitLine[-1]
+                        # print splitLine[-1]
                         goldmanOverallSimStats.append(float(splitLine[-1]))
 
                         aLine = f2.readline()
-                        #print "b got line %s" % aLine,
+                        # print "b got line %s" % aLine,
                         if not aLine:
                             gm.append("Premature end to file %s" % fName1)
                             raise P4Error(gm)
 
                     for partNum in range(self.data.nParts):
                         splitLine = aLine.split()
-                        #print "partNum %i, splitLine=%s" % (partNum, splitLine)
+                        # print "partNum %i, splitLine=%s" % (partNum,
+                        # splitLine)
                         if len(splitLine) != 4:
-                            gm.append("Bad line in Goldman stats file %s" % fName1)
+                            gm.append(
+                                "Bad line in Goldman stats file %s" % fName1)
                             gm.append("'%s'" % aLine)
                             raise P4Error(gm)
                         try:
                             splitLine[0] = int(splitLine[0])
                         except ValueError:
-                            gm.append("Bad line in Goldman stats file %s" % fName1)
-                            gm.append("First item should be the partNum %i" % partNum)
+                            gm.append(
+                                "Bad line in Goldman stats file %s" % fName1)
+                            gm.append(
+                                "First item should be the partNum %i" % partNum)
                             gm.append("'%s'" % aLine)
                             raise P4Error(gm)
                         if splitLine[0] != partNum:
-                            gm.append("Bad line in Goldman stats file %s" % fName1)
-                            gm.append("First item should be the partNum %i" % partNum)
+                            gm.append(
+                                "Bad line in Goldman stats file %s" % fName1)
+                            gm.append(
+                                "First item should be the partNum %i" % partNum)
                             gm.append("'%s'" % aLine)
                             raise P4Error(gm)
-                        #for taxNum in range(self.data.nTax):
+                        # for taxNum in range(self.data.nTax):
                         #    print splitLine[taxNum + 1]
-                        #print splitLine[-1]
+                        # print splitLine[-1]
                         if self.data.nParts == 1:
                             goldmanOverallSimStats.append(float(splitLine[-1]))
                         else:
-                            goldmanIndividualSimStats[partNum].append(float(splitLine[-1]))
+                            goldmanIndividualSimStats[
+                                partNum].append(float(splitLine[-1]))
 
                         aLine = f2.readline()
-                        #print "c got line %s" % aLine,
+                        # print "c got line %s" % aLine,
                 f2.close()
 
-
-            #print "goldmanOverallSimStats =", goldmanOverallSimStats
-            #print "goldmanIndividualSimStats =", goldmanIndividualSimStats
-            #sys.exit()
+            # print "goldmanOverallSimStats =", goldmanOverallSimStats
+            # print "goldmanIndividualSimStats =", goldmanIndividualSimStats
+            # sys.exit()
 
             if doOut:
                 flob.write('Model fit tests\n===============\n\n')
-                flob.write('The data that we are testing have %i taxa,\n' % self.data.nTax)
+                flob.write(
+                    'The data that we are testing have %i taxa,\n' % self.data.nTax)
 
                 if len(self.data.alignments) == 1:
                     flob.write('1 alignment, ')
@@ -8069,79 +8257,99 @@ class Tree(object):
                 flob.write('The lengths of those partitions are as follows:\n')
                 flob.write('                  partNum    nChar \n')
                 for i in range(self.data.nParts):
-                    flob.write('                      %3i   %5i\n' % (i, self.data.parts[i].nChar))
+                    flob.write('                      %3i   %5i\n' %
+                               (i, self.data.parts[i].nChar))
             self.data.calcUnconstrainedLogLikelihood2()
             if doOut:
-                flob.write("\nThe unconstrained likelihood is %f\n" % self.data.unconstrainedLogLikelihood)
-                flob.write('(This is the partition-by-partition unconstrained log likelihood, \n')
-                flob.write('ie the sum of the unconstrained log likes from each partition separately, \n')
-                flob.write('and so will not be the same as that given by PAUP, if the data are partitioned.)\n')
-
+                flob.write("\nThe unconstrained likelihood is %f\n" %
+                           self.data.unconstrainedLogLikelihood)
+                flob.write(
+                    '(This is the partition-by-partition unconstrained log likelihood, \n')
+                flob.write(
+                    'ie the sum of the unconstrained log likes from each partition separately, \n')
+                flob.write(
+                    'and so will not be the same as that given by PAUP, if the data are partitioned.)\n')
 
                 flob.write('\n\nGoldman-Cox test for overall model fit\n')
-                flob.write    ('======================================\n')
-                flob.write('The log likelihood for these data for this tree is %f\n' % self.logLike)
-                flob.write('The unconstrained log likelihood for these data is %f\n' % self.data.unconstrainedLogLikelihood)
-            originalGoldmanCoxStat = self.data.unconstrainedLogLikelihood - self.logLike
+                flob.write('======================================\n')
+                flob.write(
+                    'The log likelihood for these data for this tree is %f\n' % self.logLike)
+                flob.write('The unconstrained log likelihood for these data is %f\n' %
+                           self.data.unconstrainedLogLikelihood)
+            originalGoldmanCoxStat = self.data.unconstrainedLogLikelihood - \
+                self.logLike
             if doOut:
-                flob.write('The Goldman-Cox statistic for the original data is the difference, %f\n' % originalGoldmanCoxStat)
+                flob.write(
+                    'The Goldman-Cox statistic for the original data is the difference, %f\n' % originalGoldmanCoxStat)
                 if self.data.nParts > 1:
-                    flob.write('(The unconstrained log likelihood for these data is calculated partition by partition.)\n')
+                    flob.write(
+                        '(The unconstrained log likelihood for these data is calculated partition by partition.)\n')
                 flob.write('\n')
 
             if self.data.nParts > 1:
                 originalGoldmanCoxStatsByPart = []
                 if doOut:
                     flob.write('Stats by partition.\n')
-                    flob.write('part\t unconstrLogL\t log like \tGoldman-Cox stat\n')
-                    flob.write('----\t ----------\t -------- \t----------------\n')
+                    flob.write(
+                        'part\t unconstrLogL\t log like \tGoldman-Cox stat\n')
+                    flob.write(
+                        '----\t ----------\t -------- \t----------------\n')
                 for partNum in range(self.data.nParts):
-                    unc = pf.getUnconstrainedLogLike(self.data.parts[partNum].cPart)
-                    like = pf.p4_partLogLike(self.cTree, self.data.parts[partNum].cPart, partNum, 0)
+                    unc = pf.getUnconstrainedLogLike(
+                        self.data.parts[partNum].cPart)
+                    like = pf.p4_partLogLike(
+                        self.cTree, self.data.parts[partNum].cPart, partNum, 0)
                     diff = unc - like
                     if doOut:
-                        flob.write('  %i\t%f\t%f\t   %f\n' % (partNum, unc, like, diff))
+                        flob.write('  %i\t%f\t%f\t   %f\n' %
+                                   (partNum, unc, like, diff))
                     originalGoldmanCoxStatsByPart.append(diff)
 
             # Do the overall stat
             nSims = len(goldmanOverallSimStats)
-            if doOut: flob.write('\nThere were %i simulations.\n\n' % nSims)
+            if doOut:
+                flob.write('\nThere were %i simulations.\n\n' % nSims)
 
             if writeRawStats:
                 fRaw.write('# Goldman-Cox null distributions.\n')
                 if self.data.nParts > 1:
-                    fRaw.write('# Simulation stats for overall data, ie for all data partitions combined.\n')
+                    fRaw.write(
+                        '# Simulation stats for overall data, ie for all data partitions combined.\n')
                 else:
                     fRaw.write('# Simulation stats.\n')
-                fRaw.write('goldman_cox_overall = %s\n' % goldmanOverallSimStats)
+                fRaw.write('goldman_cox_overall = %s\n' %
+                           goldmanOverallSimStats)
                 if self.data.nParts > 1:
                     for partNum in range(self.data.nParts):
-                        fRaw.write('# Simulation stats for data partition %i\n' % partNum)
-                        fRaw.write('goldman_cox_part%i = %s\n' % (partNum, goldmanIndividualSimStats[partNum]))
+                        fRaw.write(
+                            '# Simulation stats for data partition %i\n' % partNum)
+                        fRaw.write('goldman_cox_part%i = %s\n' %
+                                   (partNum, goldmanIndividualSimStats[partNum]))
 
-
-            prob =  func.tailAreaProbability(originalGoldmanCoxStat, goldmanOverallSimStats, verbose=0)
+            prob = func.tailAreaProbability(
+                originalGoldmanCoxStat, goldmanOverallSimStats, verbose=0)
             if doOut:
-                flob.write( '\n              Overall Goldman-Cox test: ')
+                flob.write('\n              Overall Goldman-Cox test: ')
                 if prob <= 0.05:
                     flob.write('%13s' % "Doesn't fit.")
                 else:
-                    flob.write('%13s' %  'Fits.')
+                    flob.write('%13s' % 'Fits.')
                 flob.write('    P = %5.3f\n' % prob)
 
             if self.data.nParts > 1:
-                if doOut: flob.write('  Tests for individual data partitions:\n')
+                if doOut:
+                    flob.write('  Tests for individual data partitions:\n')
                 for partNum in range(self.data.nParts):
-                    prob =  func.tailAreaProbability(originalGoldmanCoxStatsByPart[partNum],
-                                                     goldmanIndividualSimStats[partNum], verbose=0)
+                    prob = func.tailAreaProbability(originalGoldmanCoxStatsByPart[partNum],
+                                                    goldmanIndividualSimStats[partNum], verbose=0)
                     if doOut:
-                        flob.write( '                               Part %-2i: ' % partNum)
+                        flob.write(
+                            '                               Part %-2i: ' % partNum)
                         if prob <= 0.05:
                             flob.write('%13s' % 'Doesn\'t fit.')
                         else:
-                            flob.write('%13s' %  'Fits.')
+                            flob.write('%13s' % 'Fits.')
                         flob.write('    P = %5.3f\n' % prob)
-
 
         #########################
         # COMPOSITION
@@ -8154,20 +8362,25 @@ class Tree(object):
             h['individualNSites'] = []
             h['observedIndividualCounts'] = []
             for j in range(self.data.nTax):
-                #print pf.partSequenceSitesCount(self.data.parts[pNum].cPart, j)
-                h['individualNSites'].append(pf.partSequenceSitesCount(self.data.parts[pNum].cPart, j)) # no gaps or qmarks
-                #print self.data.parts[pNum].composition([j])
-                h['observedIndividualCounts'].append(self.data.parts[pNum].composition([j]))
+                # print pf.partSequenceSitesCount(self.data.parts[pNum].cPart,
+                # j)
+                h['individualNSites'].append(
+                    pf.partSequenceSitesCount(self.data.parts[pNum].cPart, j))  # no gaps or qmarks
+                # print self.data.parts[pNum].composition([j])
+                h['observedIndividualCounts'].append(
+                    self.data.parts[pNum].composition([j]))
                 # The line above is temporarily composition, not counts
             # pf.expectedCompositionCounts returns a tuple of tuples
             # representing the counts of the nodes in proper alignment order.
-            h['expectedIndividualCounts'] = list(pf.p4_expectedCompositionCounts(self.cTree, pNum)) # alignment order
+            h['expectedIndividualCounts'] = list(
+                pf.p4_expectedCompositionCounts(self.cTree, pNum))  # alignment order
 
             # At the moment, h['observedIndividualCounts'] has composition,
             # not counts.  So multiply by h['individualNSites']
             for i in range(self.data.nTax):
                 for j in range(self.data.parts[pNum].dim):
-                    h['observedIndividualCounts'][i][j] *= h['individualNSites'][i]
+                    h['observedIndividualCounts'][i][
+                        j] *= h['individualNSites'][i]
 
         # We will want to skip any sequences composed of all gaps
         skipTaxNums = []
@@ -8177,23 +8390,26 @@ class Tree(object):
                 if not statsHashList[pNum]['individualNSites'][tNum]:
                     stn.append(tNum)
             skipTaxNums.append(stn)
-        #print "skipTaxNums = %s" % skipTaxNums
+        # print "skipTaxNums = %s" % skipTaxNums
 
         # Do the boring old compo chi square test.
-        if doOut: flob.write(longMessage1) # explanation ...
+        if doOut:
+            flob.write(longMessage1)  # explanation ...
         for pNum in range(self.data.nParts):
             h = statsHashList[pNum]
             # Can't use func.xSquared(), because there might be column
             # zeros.
-            #print "observedIndividualCounts = %s' % h['observedIndividualCounts"]
+            # print "observedIndividualCounts = %s' %
+            # h['observedIndividualCounts"]
             nRows = len(h['observedIndividualCounts'])
             nCols = len(h['observedIndividualCounts'][0])
-            theSumOfRows = func._sumOfRows(h['observedIndividualCounts']) # I could have just used nSites, above
+            # I could have just used nSites, above
+            theSumOfRows = func._sumOfRows(h['observedIndividualCounts'])
             theSumOfCols = func._sumOfColumns(h['observedIndividualCounts'])
-            #print theSumOfCols
+            # print theSumOfCols
             isOk = 1
             columnZeros = []
-            #for j in range(len(theSumOfRows)):
+            # for j in range(len(theSumOfRows)):
             #    if theSumOfRows[j] == 0.0:
             #        gm.append("Zero in a row sum.  Programming error.")
             #        raise P4Error(gm)
@@ -8201,8 +8417,8 @@ class Tree(object):
                 if theSumOfCols[j] <= 0.0:
                     columnZeros.append(j)
             theExpected = func._expected(theSumOfRows, theSumOfCols)
-            #print "theExpected = %s" % theExpected
-            #print "columnZeros = %s" % columnZeros
+            # print "theExpected = %s" % theExpected
+            # print "columnZeros = %s" % columnZeros
             xSq = 0.0
             for rowNum in range(nRows):
                 if rowNum in skipTaxNums[pNum]:
@@ -8213,12 +8429,17 @@ class Tree(object):
                         if colNum in columnZeros:
                             pass
                         else:
-                            theDiff = h['observedIndividualCounts'][rowNum][colNum] - theExpected[rowNum][colNum]
-                            xSq_row += (theDiff * theDiff) / theExpected[rowNum][colNum]
+                            theDiff = h['observedIndividualCounts'][rowNum][
+                                colNum] - theExpected[rowNum][colNum]
+                            xSq_row += (theDiff * theDiff) / \
+                                theExpected[rowNum][colNum]
                     xSq += xSq_row
-            dof = (nCols - len(columnZeros) - 1) * (nRows - len(skipTaxNums[pNum]) - 1)
+            dof = (nCols - len(columnZeros) - 1) * \
+                (nRows - len(skipTaxNums[pNum]) - 1)
             prob = func.chiSquaredProb(xSq, dof)
-            if doOut: flob.write('        Part %i: Chi-square = %f, (dof=%i) P = %f\n' % (pNum, xSq, dof, prob))
+            if doOut:
+                flob.write(
+                    '        Part %i: Chi-square = %f, (dof=%i) P = %f\n' % (pNum, xSq, dof, prob))
 
         for pNum in range(self.data.nParts):
             h = statsHashList[pNum]
@@ -8226,13 +8447,15 @@ class Tree(object):
             h['individualStats'] = [0.0] * self.data.nTax
             for i in range(self.data.nTax):
                 if i in skipTaxNums[pNum]:
-                    pass # h['individualStats'] stays at zeros
+                    pass  # h['individualStats'] stays at zeros
                 else:
                     for j in range(self.data.parts[pNum].dim):
                         # Avoid dividing by Zero.
                         if h['expectedIndividualCounts'][i][j]:
-                            dif = h['observedIndividualCounts'][i][j] - h['expectedIndividualCounts'][i][j]
-                            h['individualStats'][i] += ((dif * dif) /h['expectedIndividualCounts'][i][j])
+                            dif = h['observedIndividualCounts'][i][
+                                j] - h['expectedIndividualCounts'][i][j]
+                            h['individualStats'][
+                                i] += ((dif * dif) / h['expectedIndividualCounts'][i][j])
                     h['overallStat'] += h['individualStats'][i]
 
             h['overallSimStats'] = []
@@ -8248,49 +8471,52 @@ class Tree(object):
                 print "h['individualStats'] = %s" % h['individualStats']
                 raise P4Error(gm)
 
-
-
         import glob
         compoFNames = glob.glob('sims_CompStats_*')
-        #print compoFNames
+        # print compoFNames
         for fName1 in compoFNames:
             f2 = open(fName1)
             aLine = f2.readline()
             if not aLine:
                 gm.append("Empty file %s" % fName1)
                 raise P4Error(gm)
-            #print "a got line %s" % aLine,
+            # print "a got line %s" % aLine,
             while aLine:
                 for partNum in range(self.data.nParts):
                     h = statsHashList[partNum]
                     splitLine = aLine.split()
                     if len(splitLine) != (self.data.nTax + 2):
-                        gm.append("Bad line in composition stats file %s" % fName1)
+                        gm.append(
+                            "Bad line in composition stats file %s" % fName1)
                         gm.append("'%s'" % aLine)
                         raise P4Error(gm)
                     if int(splitLine[0]) != partNum:
-                        gm.append("Bad line in composition stats file %s" % fName1)
-                        gm.append("First item should be the partNum %i" % partNum)
+                        gm.append(
+                            "Bad line in composition stats file %s" % fName1)
+                        gm.append(
+                            "First item should be the partNum %i" % partNum)
                         gm.append("'%s'" % aLine)
                         raise P4Error(gm)
-                    #for taxNum in range(self.data.nTax):
+                    # for taxNum in range(self.data.nTax):
                     #    print splitLine[taxNum + 1]
-                    #print splitLine[-1]
+                    # print splitLine[-1]
                     h['overallSimStats'].append(float(splitLine[-1]))
                     for i in range(self.data.nTax):
-                        h['individualSimStats'][i].append(float(splitLine[i + 1]))
+                        h['individualSimStats'][i].append(
+                            float(splitLine[i + 1]))
                     #raise P4Error(gm)
 
                     aLine = f2.readline()
                     if not aLine:
                         break
-                    #print "b got line %s" % aLine,
+                    # print "b got line %s" % aLine,
             f2.close()
 
         nSims = len(statsHashList[0]['overallSimStats'])
         if doOut:
-            flob.write(longMessage2) # Explain tree- and model-based compo fit stat, X^2_m
-            flob.write( '    %i simulation reps were used.\n\n' % nSims)
+            # Explain tree- and model-based compo fit stat, X^2_m
+            flob.write(longMessage2)
+            flob.write('    %i simulation reps were used.\n\n' % nSims)
 
         spacer1 = ' ' * 10
         for partNum in range(self.data.nParts):
@@ -8298,58 +8524,69 @@ class Tree(object):
             if doOut:
                 flob.write('Part %-2i:\n-------\n\n' % partNum)
                 flob.write('Statistics from the original data\n')
-                flob.write('%s%30s: %f\n' % (spacer1, 'Overall observed stat', h['overallStat']))
-                flob.write('%s%30s:\n' %  (spacer1, 'Stats for individual taxa'))
+                flob.write('%s%30s: %f\n' %
+                           (spacer1, 'Overall observed stat', h['overallStat']))
+                flob.write('%s%30s:\n' %
+                           (spacer1, 'Stats for individual taxa'))
                 for taxNum in range(self.data.nTax):
                     if taxNum not in skipTaxNums[partNum]:
-                        flob.write('%s%30s: %f\n' % (spacer1, self.data.taxNames[taxNum], h['individualStats'][taxNum]))
+                        flob.write('%s%30s: %f\n' % (
+                            spacer1, self.data.taxNames[taxNum], h['individualStats'][taxNum]))
                     else:
-                        flob.write('%s%30s: skipped\n' % (spacer1, self.data.taxNames[taxNum]))
+                        flob.write('%s%30s: skipped\n' %
+                                   (spacer1, self.data.taxNames[taxNum]))
 
-                flob.write('\nAssessment of fit from null distribution from %i simulations\n' % nSims)
+                flob.write(
+                    '\nAssessment of fit from null distribution from %i simulations\n' % nSims)
                 flob.write('%s%30s:  ' % (spacer1, 'Overall'))
-            prob =  func.tailAreaProbability(h['overallStat'], h['overallSimStats'], verbose=0)
+            prob = func.tailAreaProbability(
+                h['overallStat'], h['overallSimStats'], verbose=0)
             if doOut:
                 if prob <= 0.05:
                     flob.write('%13s' % 'Doesn\'t fit.')
                 else:
-                    flob.write('%13s' %  'Fits.')
+                    flob.write('%13s' % 'Fits.')
                 flob.write('    P = %5.3f\n' % prob)
             #############
-            theRet= prob
+            theRet = prob
             #############
             for taxNum in range(self.data.nTax):
-                if doOut: flob.write('%s%30s:  ' % (spacer1, self.data.taxNames[taxNum]))
+                if doOut:
+                    flob.write('%s%30s:  ' %
+                               (spacer1, self.data.taxNames[taxNum]))
                 if taxNum in skipTaxNums[partNum]:
-                    if doOut: flob.write('%13s\n' % 'skipped.')
+                    if doOut:
+                        flob.write('%13s\n' % 'skipped.')
                 else:
-                    prob =  func.tailAreaProbability(h['individualStats'][taxNum],
-                                                     h['individualSimStats'][taxNum], verbose=0)
+                    prob = func.tailAreaProbability(h['individualStats'][taxNum],
+                                                    h['individualSimStats'][taxNum], verbose=0)
                     if doOut:
                         if prob <= 0.05:
                             flob.write('%13s' % "Doesn't fit.")
                         else:
-                            flob.write('%13s' %  'Fits.')
+                            flob.write('%13s' % 'Fits.')
                         flob.write('    P = %5.3f\n' % prob)
 
             if writeRawStats:
                 fRaw.write('#\n# Tree and model based composition fit test\n')
                 fRaw.write('# =========================================\n')
-                fRaw.write('# Simulation statistics, ie the null distributions\n\n')
+                fRaw.write(
+                    '# Simulation statistics, ie the null distributions\n\n')
                 fRaw.write('# Part %i:\n' % partNum)
-                fRaw.write('part%i_overall_compo_null = %s\n' % (partNum, h['overallSimStats']))
+                fRaw.write('part%i_overall_compo_null = %s\n' %
+                           (partNum, h['overallSimStats']))
                 for taxNum in range(self.data.nTax):
                     fRaw.write('part%i_%s_compo_null = %s\n' % (partNum,
-                                                                 _fixFileName(self.data.taxNames[taxNum]),
-                                                                 h['individualSimStats'][taxNum]))
+                                                                _fixFileName(
+                                                                    self.data.taxNames[taxNum]),
+                                                                h['individualSimStats'][taxNum]))
 
-
-        if flob and flob != sys.stdout: # Yes, it is possible to close sys.stdout
+        # Yes, it is possible to close sys.stdout
+        if flob and flob != sys.stdout:
             flob.close()
         if fRaw and fRaw != sys.stdout:
             fRaw.close()
         return theRet
-
 
     def compoTestUsingSimulations(self, nSims=100, doIndividualSequences=0, doChiSquare=0, verbose=1):
         """Compositional homogeneity test using a null distribution from simulations.
@@ -8458,7 +8695,7 @@ class Tree(object):
 
         gm = ['Tree.compoTestUsingSimulations()']
 
-        #print "inComp = %s" % self.model.parts[0].comps[0].val
+        # print "inComp = %s" % self.model.parts[0].comps[0].val
 
         if not self.data:
             gm.append("No data.  Set the data first.")
@@ -8473,14 +8710,14 @@ class Tree(object):
             raise P4Error(gm)
 
         # Make a new data object in which to do the sims, so we do not over-write self
-        #print "a self.data = %s" % self.data
-        #self.data.dump()
+        # print "a self.data = %s" % self.data
+        # self.data.dump()
         savedData = self.data
-        self.data = None # This triggers self.deleteCStuff()
+        self.data = None  # This triggers self.deleteCStuff()
         self.data = savedData.dupe()
 
-        #print "b self.data = %s" % self.data
-        #self.data.dump()
+        # print "b self.data = %s" % self.data
+        # self.data.dump()
         #raise P4Error(gm)
 
         # Check for missing sequences in any of the parts.  Missing seq
@@ -8490,7 +8727,8 @@ class Tree(object):
             skips.append([])
         for pNum in range(self.data.nParts):
             for tNum in range(self.data.nTax):
-                nSites = pf.partSequenceSitesCount(self.data.parts[pNum].cPart, tNum) # no gaps, no missings
+                nSites = pf.partSequenceSitesCount(
+                    self.data.parts[pNum].cPart, tNum)  # no gaps, no missings
                 if not nSites:
                     skips[pNum].append(tNum)
 
@@ -8500,7 +8738,7 @@ class Tree(object):
                                                  skipColumnZeros=1,
                                                  skipTaxNums=skips,
                                                  getRows=doIndividualSequences)
-        #print "original =", original
+        # print "original =", original
 
         # Make some empty lists in which to put our stats
         full = []
@@ -8516,12 +8754,12 @@ class Tree(object):
 
         # Do the sims
         for i in range(nSims):
-            #if i < 5:
-            #    print "%i simComp = %s" % (i, self.model.parts[0].comps[0].val)
+            # if i < 5:
+            # print "%i simComp = %s" % (i, self.model.parts[0].comps[0].val)
             self.simulate()
             ret = self.data.compoChiSquaredTest(skipColumnZeros=1,
                                                 skipTaxNums=skips, getRows=doIndividualSequences, verbose=0)
-            #print "%i ret=%s" % (i, ret)
+            # print "%i ret=%s" % (i, ret)
             for pNum in range(self.data.nParts):
                 full[pNum].append(ret[pNum][0])
                 if doIndividualSequences:
@@ -8529,8 +8767,8 @@ class Tree(object):
                         if tNum not in skips[pNum]:
                             rows[pNum][tNum].append(ret[pNum][3][tNum])
 
-
-        # Find the longest part name length, and heading width, so the output looks nice.
+        # Find the longest part name length, and heading width, so the output
+        # looks nice.
         partWid = 8
         for p in self.data.parts:
             if len(p.name) > partWid:
@@ -8548,7 +8786,8 @@ class Tree(object):
         # Get the all-sequences tail area probs
         partTaps = []
         for pNum in range(self.data.nParts):
-            partTaps.append(func.tailAreaProbability(original[pNum][0], full[pNum], verbose = 0))
+            partTaps.append(
+                func.tailAreaProbability(original[pNum][0], full[pNum], verbose=0))
 
         # Intro
         if verbose:
@@ -8585,17 +8824,17 @@ class Tree(object):
                     print string.center('(%6.4f)' % original[pNum][2], partWid),
                 print
 
-
         if doIndividualSequences and verbose:
             print
-            #print "Individual sequences"
-            #print "--------------------"
+            # print "Individual sequences"
+            # print "--------------------"
 
             for tNum in range(self.data.nTax):
                 print headSig % self.data.taxNames[tNum],
                 for pNum in range(self.data.nParts):
                     if tNum not in skips[pNum]:
-                        ret = func.tailAreaProbability(original[pNum][3][tNum], rows[pNum][tNum], verbose = 0)
+                        ret = func.tailAreaProbability(
+                            original[pNum][3][tNum], rows[pNum][tNum], verbose=0)
                         print string.center('%6.4f' % ret, partWid),
                     else:
                         print string.center('%s' % ('-' * 4), partWid),
@@ -8603,22 +8842,22 @@ class Tree(object):
                 if doChiSquare:
                     print headSig % ' ',
                     for pNum in range(self.data.nParts):
-                        dof = self.data.parts[pNum].dim - 1 # degrees of freedom
+                        # degrees of freedom
+                        dof = self.data.parts[pNum].dim - 1
                         if tNum not in skips[pNum]:
-                            ret = func.chiSquaredProb(original[pNum][3][tNum], dof)
+                            ret = func.chiSquaredProb(
+                                original[pNum][3][tNum], dof)
                             print string.center('(%6.4f)' % ret, partWid),
                         else:
                             print string.center('%s' % ('-' * 4), partWid),
                     print
 
         # Replace the saved data
-        self.data = savedData # Since we are replacing an exisiting data, this triggers self.deleteCStuff()
+        # Since we are replacing an exisiting data, this triggers
+        # self.deleteCStuff()
+        self.data = savedData
 
         return partTaps[0]
-
-
-
-
 
     def bigXSquaredSubM(self, verbose=False):
         """Calculate the X^2_m stat
@@ -8638,9 +8877,10 @@ class Tree(object):
                 print "Part %i" % pNum
                 print "======"
             obs = []
-            nSites = [] # no gaps or ?
+            nSites = []  # no gaps or ?
             for taxNum in range(self.nTax):
-                thisNSites = pf.partSequenceSitesCount(self.data.parts[pNum].cPart, taxNum)
+                thisNSites = pf.partSequenceSitesCount(
+                    self.data.parts[pNum].cPart, taxNum)
                 comp = self.data.parts[pNum].composition([taxNum])
                 for symbNum in range(self.data.parts[pNum].dim):
                     comp[symbNum] *= thisNSites
@@ -8657,7 +8897,6 @@ class Tree(object):
                     for symbNum in range(self.data.parts[pNum].dim):
                         print "%8.4f" % obs[taxNum][symbNum],
                     print "   n=%i" % nSites[taxNum]
-
 
             # pf.p4_expectedCompositionCounts returns a tuple of tuples
             # representing the counts of the nodes in proper alignment order.
@@ -8685,7 +8924,6 @@ class Tree(object):
             if verbose:
                 print "The bigXSquaredSubM stat for this part is %.5f" % theSum
         return l
-
 
     def compStatFromCharFreqs(self, verbose=False):
         """Calculate a statistic from observed and model character frequencies.
@@ -8724,7 +8962,6 @@ class Tree(object):
                         print "%8.4f" % obs[taxNum][symbNum],
                     print
 
-
             if verbose:
                 print "\n  Expected"
                 print " " * 10,
@@ -8741,7 +8978,8 @@ class Tree(object):
             theSum = 0.0
             for taxNum in range(self.nTax):
                 for symbNum in range(self.data.parts[pNum].dim):
-                    theSum += math.fabs(obs[taxNum][symbNum] - exp[pNum][taxNum][symbNum]) / exp[pNum][taxNum][symbNum]
+                    theSum += math.fabs(obs[taxNum][symbNum] - exp[pNum]
+                                        [taxNum][symbNum]) / exp[pNum][taxNum][symbNum]
 
             l.append(theSum)
             if verbose:
@@ -8750,25 +8988,27 @@ class Tree(object):
 
 
 class RMatrix(object):
+
     def __init__(self):
         self.num = -1
         self.partNum = None
-        self.free=None
-        self.spec=None
-        self.symbol=None
-        self.val=None
+        self.free = None
+        self.spec = None
+        self.symbol = None
+        self.val = None
         self.nNodes = 0
         self.rj_isInPool = False
         self.rj_f = 0.0
 
 
 class Gdasrv(object):
+
     def __init__(self):
         self.num = -1
         self.partNum = None
         self.free = None
         self.symbol = None
-        #self.val=None
+        # self.val=None
         self._val = numpy.zeros(1, numpy.float)
         self.freqs = None
         self.rates = None
@@ -8780,7 +9020,8 @@ class Gdasrv(object):
         if theVal < 1.e-16:
             gm = ["Gdasrv._setVal()"]
             gm.append("Attempt to set Gdasrv.val (ie alpha) to %g" % theVal)
-            gm.append("However, we cannot calculate the discrete categories with a value so low.")
+            gm.append(
+                "However, we cannot calculate the discrete categories with a value so low.")
             raise P4Error(gm)
         self._val[0] = theVal
         self.calcRates()
@@ -8790,44 +9031,52 @@ class Gdasrv(object):
     def calcRates(self):
         # Use either the p4_gdasrvStruct, or just use the NumPy
         # array vals (np = NumPy).
-        #print "self.c = %s" % self.c
+        # print "self.c = %s" % self.c
         if self.c:
             pf.gdasrvCalcRates(self.c)
         else:
-            pf.gdasrvCalcRates_np(self.nGammaCat, self._val[0], self.freqs, self.rates)
-        #print 'xxx self.rates = %s, val=%s' % (self.rates, self._val[0])
+            pf.gdasrvCalcRates_np(
+                self.nGammaCat, self._val[0], self.freqs, self.rates)
+        # print 'xxx self.rates = %s, val=%s' % (self.rates, self._val[0])
+
 
 class Comp(object):
+
     def __init__(self):
         self.num = -1
         self.partNum = None
-        self.free=None
-        self.spec=None
-        self.symbol=None
-        self.val=None
+        self.free = None
+        self.spec = None
+        self.symbol = None
+        self.val = None
         self.nNodes = 0
         self.rj_isInPool = False
         self.rj_f = 0.0
 
+
 class PInvar(object):
+
     def __init__(self):
         self.num = -1
         self.partNum = None
-        self.free=None
-        self.val=None
+        self.free = None
+        self.val = None
+
 
 class TSCovarion(object):
+
     def __init__(self):
         self.partNum = None
         self.free = None
         self.s1 = None
         self.s2 = None
 
+
 class Mixture(object):
+
     def __init__(self):
         self.partNum = None
         self.free = None
         self.freqs = None
         self.rates = None
         self.nMix = None
-
