@@ -10,21 +10,17 @@ import random
 import glob
 import time
 import types
-from Var import var
-from SequenceList import Sequence,SequenceList
-from Alignment import Alignment
-from Nexus import Nexus
-from Tree import Tree
-from Node import Node
-from Glitch import Glitch
-from Constraints import Constraints
-if var.usePfAndNumpy:
-    try:
-        import pf
-        import numpy
-    except ImportError:
-        raise Glitch, "Can't import at least one of pf or numpy."
-    from Numbers import Numbers
+from var import var
+from sequencelist import Sequence,SequenceList
+from alignment import Alignment
+from nexus import Nexus
+from tree import Tree
+from node import Node
+from p4exceptions import P4Error
+from constraints import Constraints
+import pf
+import numpy
+from numbers import Numbers
 
 
 def nexusCheckName(theName):
@@ -73,7 +69,7 @@ def nexusUnquoteName(theName):
             gm = ['func.nexusUnquotName()']
             gm.append('the name is %s' % theName)
             gm.append("First char is a single quote, but last char is not.")
-            raise Glitch, gm
+            raise P4Error(gm)
         theName = theName[1:-1]
         if theName.count('\'\''):
             return theName.replace('\'\'', '\'')
@@ -325,7 +321,7 @@ def read(stuff):
     gm = ['p4.read()']
     if type(stuff) != type('string'):
         gm.append("I was expecting a string argument.")
-        raise Glitch, gm
+        raise P4Error(gm)
     #nAlignments = len(var.alignments)
     if os.path.exists(stuff):
         #var.nexus_doFastNextTok = False
@@ -366,7 +362,7 @@ def readFile(fName):
         flob = file(fName, "U") # Universal line endings.
     except IOError:
         gm.append("Can't open %s.  Are you sure you have the right name?" % fName)
-        raise Glitch, gm
+        raise P4Error(gm)
 
     
     # See if there is an informative suffix on the file name
@@ -392,31 +388,31 @@ def readFile(fName):
             ret = _tryToReadFastaFile(fName, flob)
             if not ret:
                 gm.append("Failed to read supposed fasta file '%s'" % fName)
-                raise Glitch, gm
+                raise P4Error(gm)
             return
         elif suffix == 'gde':
             ret = _tryToReadGdeFile(fName, flob)
             if not ret:
                 gm.append("Failed to read supposed gde file '%s'" % fName)
-                raise Glitch, gm
+                raise P4Error(gm)
             return
         elif suffix in ['pir', 'nbrf']:  # new, july 2010
             ret = _tryToReadPirFile(fName, flob)
             if not ret:
                 gm.append("Failed to read supposed pir file '%s'" % fName)
-                raise Glitch, gm
+                raise P4Error(gm)
             return
         elif suffix == 'phy' or suffix == 'phylip':
             ret = _tryToReadPhylipFile(fName, flob, None)
             if not ret:
                 gm.append("Failed to read supposed phylip file '%s'" % fName)
-                raise Glitch, gm
+                raise P4Error(gm)
             return
         elif suffix == 'aln':
             ret = _tryToReadClustalwFile(fName, flob)
             if not ret:
                 gm.append("Failed to read supposed clustalw file '%s'" % fName)
-                raise Glitch, gm
+                raise P4Error(gm)
             return
         elif result.group(2) in ['p4_tPickle']: # preserve uppercase
             if var.verboseRead:
@@ -425,7 +421,7 @@ def readFile(fName):
             ret = cPickle.load(flob)
             if not ret:
                 gm.append("Failed to read supposed p4_tPickle file '%s'." % fName)
-                raise Glitch, gm
+                raise P4Error(gm)
             else:
                 if isinstance(ret, Tree):
                     ret.fName = fName
@@ -435,7 +431,7 @@ def readFile(fName):
                         print "Got a tree from file '%s'." % fName
                 else:
                     gm.append("Failed to get a Tree from '%s'" % fName)
-                    raise Glitch, gm
+                    raise P4Error(gm)
             return
         else:
             _decideFromContent(fName, flob)
@@ -468,7 +464,7 @@ def _decideFromContent(fName, flob):
     #    print "Got a blank file."
     if not firstLine:
         gm.append("Input '%s' is empty." % fName)
-        raise Glitch, gm
+        raise P4Error(gm)
     else:
         # Fasta, phylip, and clustalw files have clues on the first line
         # If these files fail to be what they are first supposed to be,
@@ -522,7 +518,7 @@ def _decideFromContent(fName, flob):
         #print "Got firstChar candidate '%s'" % firstChar
         if firstChar == '':  # Redundant: this problem seems to be caught above, in _tryToReadPhylipFile()
             gm.append("This file seems to be composed only of whitespace.")
-            raise Glitch, gm
+            raise P4Error(gm)
 
         #print "got firstChar = %s" % firstChar
         flob.seek(0)
@@ -567,7 +563,7 @@ def _decideFromContent(fName, flob):
                     gm.append("It is not a file name, and I could not make sense out of it otherwise.")
                 else:
                     gm=["Couldn't make sense of the input '%s'." % fName]
-            raise Glitch, gm
+            raise P4Error(gm)
 
 
 
@@ -646,7 +642,7 @@ def _tryToReadFastaFile(fName, flob, firstLine=None):
         #    print "Got a blank file."
     if not firstLine:
         gm = ["_tryToReadFastaFile: the file '%s' is empty!" % fName]
-        raise Glitch, gm
+        raise P4Error(gm)
     else:
         if var.verboseRead:
             print "Trying to read '%s' as a fasta file..." % fName
@@ -728,7 +724,7 @@ def _tryToReadPhylipFile(fName, flob, firstLine):
     #print "B firstLine is '%s'" % firstLine
     if not firstLine:
         gm.append("The file %s is empty." % fName)
-        raise Glitch, gm
+        raise P4Error(gm)
     splitLine = firstLine.split()
 
     # If theres 2 numbers on the first line, it may be a phylip data file
@@ -768,7 +764,7 @@ def _tryToReadPhylipFile(fName, flob, firstLine):
         firstChar = flob.read(1)
     if not firstChar:
         gm.append("No non-whitespace chars found.")
-        raise Glitch, gm
+        raise P4Error(gm)
     #print "got firstChar '%s'" % firstChar
     if firstChar not in ['(', '[']:  # The '[' for puzzle output.
         if var.verboseRead:
@@ -781,9 +777,9 @@ def _tryToReadPhylipFile(fName, flob, firstLine):
 
     # We need to import nextTok.
     if var.nexus_doFastNextTok:
-        from NexusToken2 import nextTok
+        from nexustoken2 import nextTok
     else:
-        from NexusToken import nextTok
+        from nexustoken import nextTok
     
     while 1:
         savedPosition = flob.tell()
@@ -801,7 +797,7 @@ def _tryToReadPhylipFile(fName, flob, firstLine):
         t = Tree()
         t.name = 't%i' % len(theseTrees)
         t.parseNewick(flob, None) # None is the translationHash
-        t.initFinish()
+        t._initFinish()
         theseTrees.append(t)
     if len(theseTrees) == 0:
         return
@@ -824,7 +820,7 @@ def _tryToReadClustalwFile(fName, flob, firstLine = None):
         firstLine = flob.readline()
     if not firstLine:
         gm.append("func. _tryToReadClustalwFile()  The file %s is empty." % fName)
-        raise Glitch, gm
+        raise P4Error(gm)
     expectedFirstLine = 'CLUSTAL'
     if firstLine.startswith(expectedFirstLine):
         if var.verboseRead:
@@ -833,7 +829,7 @@ def _tryToReadClustalwFile(fName, flob, firstLine = None):
         if hasattr(flob, 'name'):
             a.fName = flob.name
             var.fileNames.append(flob.name)
-        a.readOpenClustalwFile(flob)
+        a._readOpenClustalwFile(flob)
         a.checkNamesForDupes()
         a.checkLengthsAndTypes()
         if var.doCheckForAllGapColumns:
@@ -855,7 +851,7 @@ def _tryToReadGdeFile(fName, flob):
     if hasattr(flob, 'name'):
         a.fName = flob.name
         var.fileNames.append(flob.name)
-    a.readOpenGdeFile(flob)
+    a._readOpenGdeFile(flob)
     #a.writePhylip()
     if var.doCheckForAllGapColumns:
         a.checkForAllGapColumns()
@@ -1005,12 +1001,12 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
     # we need either taxNames or nTax
     if not taxNames and not nTax:
         gm.append("You need to supply either taxNames or nTax.")
-        raise Glitch, gm
+        raise P4Error(gm)
     if taxNames and nTax:
         if len(taxNames) != nTax:
             gm.append("You need not supply both taxNames and nTax,")
             gm.append("but if you do, at least they should match, ok?")
-            raise Glitch, gm
+            raise P4Error(gm)
     if taxNames:  # implies not []
         nTax = len(taxNames)
     elif nTax:
@@ -1084,7 +1080,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
                     gm.append("constraint %s" % getSplitStringFromKey(aConstraint, constraints.tree.nTax))
                     gm.append("'%s' parent is not node %i" % (tN, firstParent.nodeNum))
                     gm.append('It appears that there are incompatible constraints.')
-                    raise Glitch, gm
+                    raise P4Error(gm)
             
             n = Node()
             n.nodeNum = nodeNum
@@ -1252,12 +1248,8 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
 
         # addNodeBetweenNodes() requires t.preOrder.
         if 1:
-            if var.usePfAndNumpy:
-                t.preOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
-                t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
-            else:
-                t.preOrder = [var.NO_ORDER] * len(t.nodes)
-                t.postOrder = [var.NO_ORDER] * len(t.nodes)
+            t.preOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
+            t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
             if len(t.nodes) > 1:
                 t.setPreAndPostOrder()
         nodeNum = t.addNodeBetweenNodes(n, n.parent)
@@ -1283,7 +1275,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
                 else:
                     n.br.len = 0.02 + (random.random() * 0.03)
 
-    t.initFinish()
+    t._initFinish()
     return t
 
 
@@ -1300,29 +1292,29 @@ def newEmptyAlignment(dataType=None, symbols=None, taxNames=None, length=None):
     # check for silliness
     if not dataType:
         gm.append("No dataType. You need to specify at least the dataType, taxNames, and sequenceLength.")
-        raise Glitch, gm
+        raise P4Error(gm)
     if not taxNames:
         gm.append("No taxNames. You need to specify at least the dataType, taxNames, and sequenceLength.")
-        raise Glitch, gm
+        raise P4Error(gm)
     if not length:
         gm.append("No length.  You need to specify at least the dataType, taxNames, and sequenceLength.")
-        raise Glitch, gm
+        raise P4Error(gm)
     goodDataTypes = ['dna', 'protein', 'standard']
     if dataType not in goodDataTypes:
         gm.append("dataType '%s' is not recognized.")
         gm.append("I only know about %s" % goodDataTypes)
-        raise Glitch, gm
+        raise P4Error(gm)
     if dataType == 'standard':
         if not symbols:
             gm.append("For standard dataType you need to specify symbols.")
-            raise Glitch, gm
+            raise P4Error(gm)
     else:
         if symbols:
             gm.append("You should not specify symbols for %s dataType." % dataType)
-            raise Glitch, gm
+            raise P4Error(gm)
 
-    from Alignment import Alignment
-    from SequenceList import Sequence
+    from alignment import Alignment
+    from sequencelist import Sequence
     a = Alignment()
     a.length = length
     a.dataType = dataType
@@ -1409,14 +1401,14 @@ def getSplitKeyFromTaxNames(allTaxNames, someTaxNames):
     gm = ['func.getSplitKeyFromTaxNames()']
     if not len(allTaxNames) or not len(someTaxNames):
         gm.append("Got an empty arg?!?")
-        raise Glitch, gm
+        raise P4Error(gm)
     theIndices = []
     for tn in someTaxNames:
         try:
             theIndex = allTaxNames.index(tn)
         except ValueError:
             gm.append("The taxName '%s' is not in allTaxNames." % tn)
-            raise Glitch, gm
+            raise P4Error(gm)
         if theIndex not in theIndices:  # Duped indices would be a Bad Thing
             theIndices.append(theIndex)
     #print "theIndices = %s" % theIndices
@@ -1493,11 +1485,11 @@ def xSquared(observed):
     for i in theSumOfRows:
         if i == 0.0:
             gm.append("Sum of rows includes a zero.  Can't calculate xSquared.")
-            raise Glitch, gm
+            raise P4Error(gm)
     for i in theSumOfCols:
         if i == 0.0:
             gm.append("Sum of cols includes a zero.  Can't calculate xSquared.")
-            raise Glitch, gm
+            raise P4Error(gm)
 
     xSq = 0.0
     for i in range(nRows):
@@ -1520,7 +1512,7 @@ def _stdErrorOfTheDifferenceBetweenTwoMeans(seq1, seq2):
     else:
         gm = ["_stdErrorOfTheDifferenceBetweenTwoMeans()"]
         gm.append("I can only deal with sequences of equal length, each more than 30 long.")
-        raise Glitch, gm
+        raise P4Error(gm)
 
 def mean(seq):
     """Simple, pure-python mean.  For big lists, use something better."""
@@ -1550,12 +1542,12 @@ def tailAreaProbability(theStat, theDistribution, verbose=1):
             float(i)
         except TypeError:
             gm.append("Item '%s' from theDistribution does not seem to be a float." % i)
-            raise Glitch, gm
+            raise P4Error(gm)
     try:
         float(theStat)
     except TypeError:
         gm.append("theStat '%s' does not seem to be a float." % theStat)
-        raise Glitch, gm
+        raise P4Error(gm)
         
     hits = 0
     theMax = theDistribution[0]
@@ -1594,7 +1586,7 @@ def which(what, verbose=0):
     If verbose is turned on, it speaks the path, if it exists."""
 
     if type(what) != type('aString'):
-        raise Glitch, "function which().  I was expecting a string argument."
+        raise P4Error("function which().  I was expecting a string argument.")
     import os
     f = os.popen('which %s 2> /dev/null' % what, 'r')
     aLine = f.readline()
@@ -1629,12 +1621,11 @@ def which2(program):
     return None
 
 
-##Ignore
-def writeRMatrixTupleToOpenFile(theTuple, dim, flob, offset=23):
-    gm = ["func.writeRMatrixTupleToOpenFile()"]
+def _writeRMatrixTupleToOpenFile(theTuple, dim, flob, offset=23):
+    gm = ["func._writeRMatrixTupleToOpenFile()"]
     if dim < 2:
         gm.append("dim must be two or more for this to work.")
-        raise Glitch, gm
+        raise P4Error(gm)
 
     isShort = False # For backward compatibility
     if var.rMatrixNormalizeTo1:
@@ -1647,7 +1638,7 @@ def writeRMatrixTupleToOpenFile(theTuple, dim, flob, offset=23):
                 gm.append("The length of the tuple (%i) is " % len(theTuple))
                 gm.append("incommensurate with the dim (%i)" % dim)
                 gm.append("(should be %i)" % (((dim * dim) - dim) / 2))
-                raise Glitch, gm
+                raise P4Error(gm)
     else:
         isShort = True
         if len(theTuple) != (((dim * dim) - dim) / 2) - 1:
@@ -1655,7 +1646,7 @@ def writeRMatrixTupleToOpenFile(theTuple, dim, flob, offset=23):
             gm.append("The length of the tuple (%i) is " % len(theTuple))
             gm.append("incommensurate with the dim (%i)" % dim)
             gm.append("(should be %i)" % ((((dim * dim) - dim) / 2) - 1))
-            raise Glitch, gm
+            raise P4Error(gm)
         
     if dim == 3:
         flob.write('%s\n' % repr(theTuple))
@@ -1720,8 +1711,7 @@ def writeRMatrixTupleToOpenFile(theTuple, dim, flob, offset=23):
             flob.write('%10.6f )' % theTuple[tuplePos])
             flob.write('\n')
 
-##Ignore
-def writeCharFreqToOpenFile(theCharFreq, dim, symbols, flob, offset=23):  ##Ignore
+def _writeCharFreqToOpenFile(theCharFreq, dim, symbols, flob, offset=23):
     formatString = '%' + '%is' % offset
     s = 0.0
     if symbols:
@@ -1817,7 +1807,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
     """
 
     gm = ["maskFromNexusCharacterList()"]
-    from Alignment_muck import cListPat, cList2Pat, cListAllPat
+    from alignment import cListPat, cList2Pat, cListAllPat
     #cListPat = re.compile('(\d+)-?(.+)?')
     #cList2Pat = re.compile('(.+)\\\\(\d+)')
     #cListAllPat = re.compile('all\\\\?(\d+)?')
@@ -1851,11 +1841,11 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
                 third = result.group(1)
             else:
                 gm.append("Can't parse maskFromNexusCharacterList '%s'" % nexusCharListString)
-                raise Glitch, gm
+                raise P4Error(gm)
         # print "first = %s, second = %s, third = %s" % (first, second, third)
         if not first:
             gm.append("Can't parse maskFromNexusCharacterList '%s'" % nexusCharListString)
-            raise Glitch, gm
+            raise P4Error(gm)
         elif first and not second: # its a single
             if string.lower(first) == 'all':
                 for i in range(len(mask)):
@@ -1869,14 +1859,14 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
                 except ValueError:
                     gm.append("Can't parse '%s' in maskFromNexusCharacterList '%s'" \
                           % (first, nexusCharListString))
-                    raise Glitch, gm
+                    raise P4Error(gm)
         elif first and second:  # its a range
             try:
                 start = int(first)
             except ValueError:
                 gm.append("Can't parse '%s' in maskFromNexusCharacterList '%s'" \
                       % (first, nexusCharListString))
-                raise Glitch, gm
+                raise P4Error(gm)
             if second == '.':
                 fin = len(mask)
             else:
@@ -1885,14 +1875,14 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
                 except ValueError:
                     gm.append("Can't parse '%s' in maskFromNexusCharacterList '%s'" % \
                                     (second, nexusCharListString))
-                    raise Glitch, gm
+                    raise P4Error(gm)
             if third:
                 try:
                     bystep = int(third)
                 except ValueError:
                     gm.append("Can't parse '%s' in maskFromNexusCharacterList '%s'" % \
                           (third, nexusCharListString))
-                    raise Glitch, gm
+                    raise P4Error(gm)
                 for spot in range(start - 1, fin, bystep):
                     mask[spot] = '1'
             else:
@@ -1916,7 +1906,7 @@ def polar2square(angleLenList):
     if angleLenList[1] == 0.0:
         return [0, 0]
     elif angleLenList[1] < 0.0:
-        raise Glitch, 'func.polar2square error: len is less than zero'
+        raise P4Error("func.polar2square error: len is less than zero")
     if angleLenList[0] == (math.pi / 2.0) or angleLenList[0] == (math.pi / -2.0):
         adj = 0.0
     else:
@@ -1946,7 +1936,7 @@ def factorial(n):
     try:
         n = int(n)
     except:
-        raise Glitch, "n should be (at least convertible to) an int."
+        raise P4Error("n should be (at least convertible to) an int.")
     assert n >= 0, "n should be zero or positive."
 
     fact = {0: 1, 1: 1, 2: 2, 3: 6, 4: 24, 5: 120, 6: 720, 7: 5040, 8: 40320, 9: 362880,
@@ -1972,7 +1962,7 @@ def nChooseK(n, k):
         n = int(n)
         k = int(k)
     except ValueError, TypeError:
-        raise Glitch, "n and k should be (at least convertible to) ints."
+        raise P4Error("n and k should be (at least convertible to) ints.")
     
     assert n >= 0, "n should be zero or more."
     assert k <= n, "k should be less than or equal to n"
@@ -2123,7 +2113,7 @@ def dirichlet1(inSeq, alpha, theMin, theMax=None, u=None):
             gm.append("Tried more than %i times to get good dirichlet values, and failed.  Giving up." % safetyLimit)
             gm.append("inSeq: %s" % inSeq)
             gm.append("theMin: %s, theMax: %s, u=%s" % (theMin, theMax, u))
-            raise Glitch, gm
+            raise P4Error(gm)
 
 
 
@@ -2141,10 +2131,10 @@ def unPickleMcmc(runNum, theData, verbose=True):
         runNum = int(runNum)
     except (ValueError, TypeError):
         gm.append("runNum should be an int, 0 or more.  Got %s" % runNum)
-        raise Glitch, gm
+        raise P4Error(gm)
     if runNum < 0:
         gm.append("runNum should be an int, 0 or more.  Got %s" % runNum)
-        raise Glitch, gm
+        raise P4Error(gm)
     baseName = "mcmc_checkPoint_%i." % runNum
     ff = glob.glob("%s*" % baseName)
 
@@ -2155,7 +2145,7 @@ def unPickleMcmc(runNum, theData, verbose=True):
     if not pickleNums: # an empty sequence
         gm.append("Can't find any checkpoints for runNum %i." % runNum)
         gm.append("Got the right runNum?")
-        raise Glitch, gm
+        raise P4Error(gm)
     theIndx = pickleNums.index(max(pickleNums))
     fName = ff[theIndx]
     if verbose:
@@ -2210,10 +2200,10 @@ def unPickleSTMcmc(runNum, verbose=True):
         runNum = int(runNum)
     except (ValueError, TypeError):
         gm.append("runNum should be an int, 0 or more.  Got %s" % runNum)
-        raise Glitch, gm
+        raise P4Error(gm)
     if runNum < 0:
         gm.append("runNum should be an int, 0 or more.  Got %s" % runNum)
-        raise Glitch, gm
+        raise P4Error(gm)
     baseName = "mcmc_checkPoint_%i." % runNum
     ff = glob.glob("%s*" % baseName)
 
@@ -2224,7 +2214,7 @@ def unPickleSTMcmc(runNum, verbose=True):
     if not pickleNums: # an empty sequence
         gm.append("Can't find any checkpoints for runNum %i." % runNum)
         gm.append("Got the right runNum?")
-        raise Glitch, gm
+        raise P4Error(gm)
     theIndx = pickleNums.index(max(pickleNums))
     fName = ff[theIndx]
     if verbose:
@@ -2255,7 +2245,7 @@ def recipes(writeToFile=var.recipesWriteToFile):
     gm = ["func.recipes()"]
     if not var.examplesDir:
         gm.append("Can't find the Examples directory.")
-        raise Glitch, gm
+        raise P4Error(gm)
     recipesDir = os.path.join(var.examplesDir, 'W_recipes')
 
     # # One line blurb, and default file name.
@@ -2344,7 +2334,7 @@ to be done as root, or using sudo."""
     try:
         import installation
     except ImportError:
-        raise Glitch, "Unable to import the p4.installation module."
+        raise P4Error("Unable to import the p4.installation module.")
     print """
     
 This function will remove the p4 script file
@@ -2364,15 +2354,15 @@ and the documentation in the directory
     if os.path.exists(installation.p4LibDir):
         os.system("rm -fr %s" % installation.p4LibDir)
     else:
-        raise Glitch, "Could not find %s" % installation.p4LibDir
+        raise P4Error("Could not find %s" % installation.p4LibDir)
     if os.path.exists(installation.p4DocDir):
         os.system("rm -fr %s" % installation.p4DocDir)
     else:
-        raise Glitch, "Could not find %s" % installation.p4DocDir
+        raise P4Error("Could not find %s" % installation.p4DocDir)
     if os.path.exists(installation.p4ScriptPath):
         os.system("rm %s" % installation.p4ScriptPath)
     else:
-        raise Glitch, "Could not find %s" % installation.p4ScriptPath
+        raise P4Error("Could not find %s" % installation.p4ScriptPath)
     
     
 
@@ -2481,7 +2471,7 @@ def uniqueFile(file_name):
 def writeInColour(theString, colour='blue'):
     goodColours = ['red', 'RED', 'blue', 'BLUE', 'cyan', 'CYAN', 'violet', 'VIOLET']
     if colour not in goodColours:
-        raise Glitch, "func.printColour().  The colour should be one of %s" % goodColours
+        raise P4Error("func.printColour().  The colour should be one of %s" % goodColours)
     codeDict = {
         'red': '\033[0;31m', 
         'RED':'\033[1;31m',
@@ -2594,7 +2584,7 @@ def readAndPop(stuff):
             gm.append("no appropriate objects were made.")
         else:
             gm.append("Got %i objects.  Only 1 allowed." % mySum)
-        raise Glitch, gm
+        raise P4Error(gm)
     if nnSL:
         return var.sequenceLists.pop()
     elif nnAlig:
@@ -2638,7 +2628,7 @@ def charsets(names, lens, fName=None):
         gm.append("len of names (%i) is not the same as the len of lengths (%i)" % (len(names), len(lens)))
         print "names: ", names
         print "lens: ", lens
-        raise Glitch, gm
+        raise P4Error(gm)
                   
     start = 1
     if fName:
@@ -2666,460 +2656,458 @@ def charsets(names, lens, fName=None):
         f.close()
 
 
-if var.usePfAndNumpy:
-    
-    def reseedCRandomizer(newSeed):
-        """Set a new seed for the c-language random() function.
+def reseedCRandomizer(newSeed):
+    """Set a new seed for the c-language random() function.
 
-        For those things in the C-language that use random(), this
-        re-seeds the randomizer.  Reseed to different integers to make
-        duplicate runs of something come out different.  This is not for
-        the GSL random stuff.  Confusing to have 2 systems, innit?  And
-        then there is the 3rd system that Python uses in the random
-        module.  Sorry!"""
+    For those things in the C-language that use random(), this
+    re-seeds the randomizer.  Reseed to different integers to make
+    duplicate runs of something come out different.  This is not for
+    the GSL random stuff.  Confusing to have 2 systems, innit?  And
+    then there is the 3rd system that Python uses in the random
+    module.  Sorry!"""
 
-        pf.reseedCRandomizer(newSeed)
+    pf.reseedCRandomizer(newSeed)
 
-    def gsl_meanVariance(seq, mean=None, variance=None):
-        """Use gsl to compute both the mean and variance.
+def gsl_meanVariance(seq, mean=None, variance=None):
+    """Use gsl to compute both the mean and variance.
 
-        Arg seq can be a list or a numpy array.
+    Arg seq can be a list or a numpy array.
 
-        Returns a 2-tuple of single-item NumPy arrays.  To save a little
-        time, you can pass the mean and variance to this function, in
-        the form of zero-dimensional, single item NumPy arrays
-        (eg mean = numpy.array(0.0))
+    Returns a 2-tuple of single-item NumPy arrays.  To save a little
+    time, you can pass the mean and variance to this function, in
+    the form of zero-dimensional, single item NumPy arrays
+    (eg mean = numpy.array(0.0))
 
-        The numpy built-in variance function does not use n-1 weighting.
-        This one (from gsl) does use n-1 weighting.
+    The numpy built-in variance function does not use n-1 weighting.
+    This one (from gsl) does use n-1 weighting.
 
-        """
+    """
 
-        if type(seq) == numpy.ndarray:
-            mySeq = seq
-        else:
-            mySeq = numpy.array(seq, numpy.float)
+    if type(seq) == numpy.ndarray:
+        mySeq = seq
+    else:
+        mySeq = numpy.array(seq, numpy.float)
 
-        if type(mean) == types.NoneType:
-            mean = numpy.array([0.0])
-        if type(variance) == types.NoneType:
-            variance = numpy.array([0.0])
-        pf.gsl_meanVariance(mySeq, len(seq), mean, variance)
-        if 0:
-            from p4 import func
-            print "slow p4: mean=%f, variance=%f" % (func.mean(list(seq)), func.variance(list(seq)))
-            print "gsl: mean=%f, variance=%f" % (mean, variance)
-            print "numpy: mean=%f, variance=%f" % (mySeq.mean(), mySeq.var())  # different than gsl-- no n-1 weighting.
-        return (mean, variance)
+    if type(mean) == types.NoneType:
+        mean = numpy.array([0.0])
+    if type(variance) == types.NoneType:
+        variance = numpy.array([0.0])
+    pf.gsl_meanVariance(mySeq, len(seq), mean, variance)
+    if 0:
+        from p4 import func
+        print "slow p4: mean=%f, variance=%f" % (func.mean(list(seq)), func.variance(list(seq)))
+        print "gsl: mean=%f, variance=%f" % (mean, variance)
+        print "numpy: mean=%f, variance=%f" % (mySeq.mean(), mySeq.var())  # different than gsl-- no n-1 weighting.
+    return (mean, variance)
 
-    def chiSquaredProb(xSquared, dof):
-        """Returns the probability of observing X^2."""
-        import pf
-        return pf.chiSquaredProb(xSquared, dof)
+def chiSquaredProb(xSquared, dof):
+    """Returns the probability of observing X^2."""
+    import pf
+    return pf.chiSquaredProb(xSquared, dof)
 
 
-    def gsl_ran_gamma(a, b, seed=None):
-        """See also random.gammavariate()"""
+def gsl_ran_gamma(a, b, seed=None):
+    """See also random.gammavariate()"""
 
-        complaintHead = '\nfunc.gsl_ran_gamma()'
-        gm = complaintHead
-        try:
-            a = float(a)
-            b = float(b)
-        except:
-            gm.append("Both a and b should be floats.")
-            raise Glitch, gm
+    complaintHead = '\nfunc.gsl_ran_gamma()'
+    gm = complaintHead
+    try:
+        a = float(a)
+        b = float(b)
+    except:
+        gm.append("Both a and b should be floats.")
+        raise P4Error(gm)
 
-        isNewGSL_RNG = 0
-        if not var.gsl_rng:
-            var.gsl_rng = pf.get_gsl_rng()
-            isNewGSL_RNG = 1
-            #print "got var.gsl_rng = %i" % var.gsl_rng
-            #sys.exit()
+    isNewGSL_RNG = 0
+    if not var.gsl_rng:
+        var.gsl_rng = pf.get_gsl_rng()
+        isNewGSL_RNG = 1
+        #print "got var.gsl_rng = %i" % var.gsl_rng
+        #sys.exit()
 
-            # Set the GSL random number generator seed, only if it is a new GSL_RNG
-            if isNewGSL_RNG:
-                if seed != None:
-                    try:
-                        newSeed = int(seed)
-                        pf.gsl_rng_set(var.gsl_rng, newSeed)
-                    except ValueError:
-                        print complaintHead
-                        print "    The seed should be convertible to an integer"
-                        print "    Using the process id instead."
-                        pf.gsl_rng_set(var.gsl_rng,  os.getpid())
-                else:
+        # Set the GSL random number generator seed, only if it is a new GSL_RNG
+        if isNewGSL_RNG:
+            if seed != None:
+                try:
+                    newSeed = int(seed)
+                    pf.gsl_rng_set(var.gsl_rng, newSeed)
+                except ValueError:
+                    print complaintHead
+                    print "    The seed should be convertible to an integer"
+                    print "    Using the process id instead."
                     pf.gsl_rng_set(var.gsl_rng,  os.getpid())
+            else:
+                pf.gsl_rng_set(var.gsl_rng,  os.getpid())
 
-        return pf.gsl_ran_gamma(var.gsl_rng, a, b)
+    return pf.gsl_ran_gamma(var.gsl_rng, a, b)
 
-    def dirichlet2(inSeq, outSeq, alpha, theMin):
-        """Modify inSeq with a draw from a Dirichlet distribution with a single alpha value.
+def dirichlet2(inSeq, outSeq, alpha, theMin):
+    """Modify inSeq with a draw from a Dirichlet distribution with a single alpha value.
 
-        Args *inSeq* and *outSeq* are both numpy arrays.  Arg *inSeq*
-        is not modified itself; the modification is placed in *outSeq*
-        (and nothing is returned).  The result is normalized to 1.0
+    Args *inSeq* and *outSeq* are both numpy arrays.  Arg *inSeq*
+    is not modified itself; the modification is placed in *outSeq*
+    (and nothing is returned).  The result is normalized to 1.0
 
-        This is about 20% slower than :func:`func.dirichlet1` -- not quite sure why.
-        """
+    This is about 20% slower than :func:`func.dirichlet1` -- not quite sure why.
+    """
 
-        gm = ['func.dirichlet2()']
-        assert type(inSeq) == numpy.ndarray
-        assert type(outSeq) == numpy.ndarray
-        kk = len(inSeq)
-        theMax = 1.0 - ((kk - 1) * theMin)
-        safety = 0
-        safetyLimit = 300
-        while 1:
-            for i in range(kk):
-                #theSeq[i] = pf.gsl_ran_gamma(var.gsl_rng, theSeq[i] * alpha, 1.0)
-                #outSeq[i] = random.gammavariate(inSeq[i] * alpha, 1.0)   --- this is very slow!
-                outSeq[i] = numpy.random.gamma(inSeq[i] * alpha)
-                #outSeq[i] = inSeq[i] * numpy.random.gamma(alpha)
-            outSeq /= outSeq.sum()
-            thisMin = numpy.amin(outSeq)
-            thisMax = numpy.amax(outSeq)
-            isOk = True
-            if (thisMin < theMin) or (thisMax > theMax):
-                isOk = False
-            if isOk:
-                return
-            safety += 1
-            if safety > safetyLimit:
-                gm.append("Tried more than %i times to get good dirichlet values, and failed.  Giving up." % safetyLimit)
-                raise Glitch, gm
-    
+    gm = ['func.dirichlet2()']
+    assert type(inSeq) == numpy.ndarray
+    assert type(outSeq) == numpy.ndarray
+    kk = len(inSeq)
+    theMax = 1.0 - ((kk - 1) * theMin)
+    safety = 0
+    safetyLimit = 300
+    while 1:
+        for i in range(kk):
+            #theSeq[i] = pf.gsl_ran_gamma(var.gsl_rng, theSeq[i] * alpha, 1.0)
+            #outSeq[i] = random.gammavariate(inSeq[i] * alpha, 1.0)   --- this is very slow!
+            outSeq[i] = numpy.random.gamma(inSeq[i] * alpha)
+            #outSeq[i] = inSeq[i] * numpy.random.gamma(alpha)
+        outSeq /= outSeq.sum()
+        thisMin = numpy.amin(outSeq)
+        thisMax = numpy.amax(outSeq)
+        isOk = True
+        if (thisMin < theMin) or (thisMax > theMax):
+            isOk = False
+        if isOk:
+            return
+        safety += 1
+        if safety > safetyLimit:
+            gm.append("Tried more than %i times to get good dirichlet values, and failed.  Giving up." % safetyLimit)
+            raise P4Error(gm)
 
 
-    def gsl_ran_dirichlet(alpha, theta, seed=None):
-        """Make a random draw from a dirichlet distribution.
 
-        Args *alpha* and *theta* should be NumPy arrays, both the same
-        length (more than 1).  The length is the dimension of the
-        dirichlet.  The contents of *theta* are over-written (without
-        being used).  The draw ends up in *theta*.  It is normalized
-        so that it sums to 1.0.
+def gsl_ran_dirichlet(alpha, theta, seed=None):
+    """Make a random draw from a dirichlet distribution.
 
-        This handles making the GSL random number generator, or
-        re-using it if it was made before.  If it is newly made, you
-        can optionally set its *seed*; otherwise the pid is used.
-        """
+    Args *alpha* and *theta* should be NumPy arrays, both the same
+    length (more than 1).  The length is the dimension of the
+    dirichlet.  The contents of *theta* are over-written (without
+    being used).  The draw ends up in *theta*.  It is normalized
+    so that it sums to 1.0.
 
-        complaintHead = '\nfunc.gsl_ran_dirichlet()'
-        gm = complaintHead
-        try:
-            assert type(alpha) == numpy.ndarray
-            assert type(theta) == numpy.ndarray
-        except AssertionError:
-            gm.append(" alpha, theta, should be numpy arrays.")
-            raise Glitch, gm
+    This handles making the GSL random number generator, or
+    re-using it if it was made before.  If it is newly made, you
+    can optionally set its *seed*; otherwise the pid is used.
+    """
 
-        assert len(alpha) > 1
-        assert len(theta) == len(alpha)
+    complaintHead = '\nfunc.gsl_ran_dirichlet()'
+    gm = complaintHead
+    try:
+        assert type(alpha) == numpy.ndarray
+        assert type(theta) == numpy.ndarray
+    except AssertionError:
+        gm.append(" alpha, theta, should be numpy arrays.")
+        raise P4Error(gm)
 
-        isNewGSL_RNG = 0
-        if not var.gsl_rng:
-            var.gsl_rng = pf.get_gsl_rng()
-            isNewGSL_RNG = 1
-            #print "got var.gsl_rng = %i" % var.gsl_rng
-            #sys.exit()
+    assert len(alpha) > 1
+    assert len(theta) == len(alpha)
 
-            # Set the GSL random number generator seed, only if it is a new GSL_RNG
-            if isNewGSL_RNG:
-                if seed != None:
-                    try:
-                        newSeed = int(seed)
-                        pf.gsl_rng_set(var.gsl_rng, newSeed)
-                    except ValueError:
-                        print complaintHead
-                        print "    The seed should be convertable to an integer"
-                        print "    Using the process id instead."
-                        pf.gsl_rng_set(var.gsl_rng,  os.getpid())
-                else:
+    isNewGSL_RNG = 0
+    if not var.gsl_rng:
+        var.gsl_rng = pf.get_gsl_rng()
+        isNewGSL_RNG = 1
+        #print "got var.gsl_rng = %i" % var.gsl_rng
+        #sys.exit()
+
+        # Set the GSL random number generator seed, only if it is a new GSL_RNG
+        if isNewGSL_RNG:
+            if seed != None:
+                try:
+                    newSeed = int(seed)
+                    pf.gsl_rng_set(var.gsl_rng, newSeed)
+                except ValueError:
+                    print complaintHead
+                    print "    The seed should be convertable to an integer"
+                    print "    Using the process id instead."
                     pf.gsl_rng_set(var.gsl_rng,  os.getpid())
+            else:
+                pf.gsl_rng_set(var.gsl_rng,  os.getpid())
 
-        pf.gsl_ran_dirichlet(var.gsl_rng, len(theta), alpha, theta)
+    pf.gsl_ran_dirichlet(var.gsl_rng, len(theta), alpha, theta)
 
-    def studentsTTest1(seq, mu=0.0, verbose=True):
-        """Test whether a sample differs from mu.
+def studentsTTest1(seq, mu=0.0, verbose=True):
+    """Test whether a sample differs from mu.
 
-        From wikipedia.
+    From wikipedia.
 
-        Arg 'seq' is a list of numbers.  Internally it is converted to a
-        numpy array of floats, so the input seq need not be floats, and
-        need not be a numpy array, although it does not hurt to be either.
+    Arg 'seq' is a list of numbers.  Internally it is converted to a
+    numpy array of floats, so the input seq need not be floats, and
+    need not be a numpy array, although it does not hurt to be either.
 
-        Arg 'mu' is by default zero.
+    Arg 'mu' is by default zero.
 
-        Returns the p-value.
-        """
+    Returns the p-value.
+    """
 
-        sq = numpy.array(seq, dtype=numpy.float)
-        m,v = gsl_meanVariance(sq)
-        s = numpy.sqrt(v)
-        n = len(sq)
-        sqN = numpy.sqrt(n)
-        t = (m - mu) / (s / sqN)
-        dof = n - 1
-        p = pf.studentsTProb(t, dof)
+    sq = numpy.array(seq, dtype=numpy.float)
+    m,v = gsl_meanVariance(sq)
+    s = numpy.sqrt(v)
+    n = len(sq)
+    sqN = numpy.sqrt(n)
+    t = (m - mu) / (s / sqN)
+    dof = n - 1
+    p = pf.studentsTProb(t, dof)
 
-        if verbose:
-            print "mean =", m
-            print "std dev =", s
-            print "t statistic =", t
-            print "prob =", p
-        return p
-
-
-    def effectiveSampleSize(data, mean):
-        """As done in Tracer v1.4, by Drummond and Rambaut.  Thanks guys!
-
-        But see :func:`func.summarizeMcmcPrams`, which gives ESSs.
-        
-        """
-
-        nSamples = len(data)
-        maxLag = int(nSamples / 3)
-        if maxLag > 1000:
-            maxLag = 1000
-
-        gammaStatAtPreviousLag = numpy.array([0.0])
-        assert type(data) == type(gammaStatAtPreviousLag), "Arg 'data' should be a numpy.array.  Its %s" % type(data)
-        assert type(mean) == type(gammaStatAtPreviousLag), "Arg 'mean' should be a numpy.array.  Its %s" % type(mean)
-        gammaStat = numpy.array([0.0])
-        varStat = numpy.array([0.0])
-        gammaStatAtLagZero = numpy.array([0.0])
-        if 0:
-            lag = 0
-            while lag < maxLag:
-                gammaStat[0] = 0.0
-                for j in range(nSamples - lag):
-                    gammaStat[0] += (data[j] - mean) * (data[j + lag] - mean)
-
-                #if lag == 0:
-                #    print "mean is %f" % mean
-                #    print "lag is 0, gammaStat = %f" % gammaStat[0]
-
-                gammaStat[0] /= (nSamples - lag)
-
-                if lag == 0:
-                    varStat[0] = gammaStat
-                    gammaStatAtLagZero[0] = gammaStat
-                    #print "got gammaStatAtLagZero = %f" % gammaStatAtLagZero[0]
-                elif (lag % 2) == 0:
-                    if gammaStatAtPreviousLag + gammaStat > 0:
-                        varStat[0] += 2.0 * (gammaStatAtPreviousLag + gammaStat)
-                    else:
-                        break
-                lag += 1
-                gammaStatAtPreviousLag[0] = gammaStat
-                #gammaStat[0] = 0.0
+    if verbose:
+        print "mean =", m
+        print "std dev =", s
+        print "t statistic =", t
+        print "prob =", p
+    return p
 
 
-            #print gammaStatAtLagZero, gammaStat, varStat, lag
-            #print "maxLag is %i" % maxLag
-            #stdErrorOfMean = numpy.sqrt(varStat / nSamples)  ??!?
-            #ACT = stepSize * varStat / gammaStatAtLagZero
-            #ESS = (stepSize * nSamples) / ACT;
-            ESS1 = nSamples * (gammaStatAtLagZero / varStat)   # stepSize is not needed
-            #print "got ESS1 %f" % ESS1
+def effectiveSampleSize(data, mean):
+    """As done in Tracer v1.4, by Drummond and Rambaut.  Thanks guys!
 
-        if 1:
-            pf.effectiveSampleSize(data, mean, nSamples, maxLag, gammaStatAtPreviousLag,
-                                   gammaStat, varStat, gammaStatAtLagZero)
-            ESS2 = nSamples * (gammaStatAtLagZero / varStat)
-            #fabsDiff = numpy.fabs(ESS1 - ESS2)
-            #print "ESS1 is %f, ESS2 is %f, diff is %g" % (ESS1, ESS2, fabsDiff)
-        return ESS2[0]
+    But see :func:`func.summarizeMcmcPrams`, which gives ESSs.
+
+    """
+
+    nSamples = len(data)
+    maxLag = int(nSamples / 3)
+    if maxLag > 1000:
+        maxLag = 1000
+
+    gammaStatAtPreviousLag = numpy.array([0.0])
+    assert type(data) == type(gammaStatAtPreviousLag), "Arg 'data' should be a numpy.array.  Its %s" % type(data)
+    assert type(mean) == type(gammaStatAtPreviousLag), "Arg 'mean' should be a numpy.array.  Its %s" % type(mean)
+    gammaStat = numpy.array([0.0])
+    varStat = numpy.array([0.0])
+    gammaStatAtLagZero = numpy.array([0.0])
+    if 0:
+        lag = 0
+        while lag < maxLag:
+            gammaStat[0] = 0.0
+            for j in range(nSamples - lag):
+                gammaStat[0] += (data[j] - mean) * (data[j + lag] - mean)
+
+            #if lag == 0:
+            #    print "mean is %f" % mean
+            #    print "lag is 0, gammaStat = %f" % gammaStat[0]
+
+            gammaStat[0] /= (nSamples - lag)
+
+            if lag == 0:
+                varStat[0] = gammaStat
+                gammaStatAtLagZero[0] = gammaStat
+                #print "got gammaStatAtLagZero = %f" % gammaStatAtLagZero[0]
+            elif (lag % 2) == 0:
+                if gammaStatAtPreviousLag + gammaStat > 0:
+                    varStat[0] += 2.0 * (gammaStatAtPreviousLag + gammaStat)
+                else:
+                    break
+            lag += 1
+            gammaStatAtPreviousLag[0] = gammaStat
+            #gammaStat[0] = 0.0
 
 
-    def summarizeMcmcPrams(skip=0, run=-1, theDir='.'):
-        """Find the mean, variance, and ess of mcmc parameters.
+        #print gammaStatAtLagZero, gammaStat, varStat, lag
+        #print "maxLag is %i" % maxLag
+        #stdErrorOfMean = numpy.sqrt(varStat / nSamples)  ??!?
+        #ACT = stepSize * varStat / gammaStatAtLagZero
+        #ESS = (stepSize * nSamples) / ACT;
+        ESS1 = nSamples * (gammaStatAtLagZero / varStat)   # stepSize is not needed
+        #print "got ESS1 %f" % ESS1
 
-        Ess is effective sample size, as in Tracer by Drummond and Rambaut.
+    if 1:
+        pf.effectiveSampleSize(data, mean, nSamples, maxLag, gammaStatAtPreviousLag,
+                               gammaStat, varStat, gammaStatAtLagZero)
+        ESS2 = nSamples * (gammaStatAtLagZero / varStat)
+        #fabsDiff = numpy.fabs(ESS1 - ESS2)
+        #print "ESS1 is %f, ESS2 is %f, diff is %g" % (ESS1, ESS2, fabsDiff)
+    return ESS2[0]
 
-        The numbers are found in mcmc_prams_N, N=0, 1, etc.  If arg 'run' is
-        set to -1, the default, then all runs are done.  Alternatively you
-        can set the run to a specific run number, and that is the only one
-        that is done.
 
-        The 'profile', with the names of the parameters, and the number of
-        each, is found in mcmc_pramsProfile.py.  It is not essential, but
-        it gives names to the parameters.
+def summarizeMcmcPrams(skip=0, run=-1, theDir='.'):
+    """Find the mean, variance, and ess of mcmc parameters.
 
-        """
+    Ess is effective sample size, as in Tracer by Drummond and Rambaut.
 
-        gm = ["func.summarizeMcmcPrams()"]
-        nPrams = None
-        pramsProfile = None
+    The numbers are found in mcmc_prams_N, N=0, 1, etc.  If arg 'run' is
+    set to -1, the default, then all runs are done.  Alternatively you
+    can set the run to a specific run number, and that is the only one
+    that is done.
+
+    The 'profile', with the names of the parameters, and the number of
+    each, is found in mcmc_pramsProfile.py.  It is not essential, but
+    it gives names to the parameters.
+
+    """
+
+    gm = ["func.summarizeMcmcPrams()"]
+    nPrams = None
+    pramsProfile = None
+    try:
+        loc = {}
+        execfile(os.path.join(theDir, "mcmc_pramsProfile.py"), {}, loc)
+        #loc =locals()  no workee.
+        #print "loc = %s" % loc
+        nPrams = loc['nPrams']
+        pramsProfile = loc['pramsProfile']
+    except IOError:
+        print "The file 'mcmc_pramsProfile.py' cannot be found."
+
+    numsList = None
+    if run == -1:
+        runNum = 0
+    else:
+        runNum = run
+    totalLinesRead = 0
+    while 1:
         try:
-            loc = {}
-            execfile(os.path.join(theDir, "mcmc_pramsProfile.py"), {}, loc)
-            #loc =locals()  no workee.
-            #print "loc = %s" % loc
-            nPrams = loc['nPrams']
-            pramsProfile = loc['pramsProfile']
+            theFName = os.path.join(theDir, "mcmc_prams_%i" % runNum)
+            flob = file(theFName)
+            print "Reading prams from file %s" % theFName 
         except IOError:
-            print "The file 'mcmc_pramsProfile.py' cannot be found."
-
-        numsList = None
-        if run == -1:
-            runNum = 0
-        else:
-            runNum = run
-        totalLinesRead = 0
-        while 1:
-            try:
-                theFName = os.path.join(theDir, "mcmc_prams_%i" % runNum)
-                flob = file(theFName)
-                print "Reading prams from file %s" % theFName 
-            except IOError:
-                break
-            theLines = flob.readlines()
-            flob.close()
-            runNum += 1
-            skipsDone = 0
-            linesRead = 0
-            for aLine in theLines:
-                ll = aLine.lstrip()
-                if ll.startswith("#"):
-                    pass
-                elif not ll:
-                    pass
-                elif ll[0] not in string.digits:
-                    pass
+            break
+        theLines = flob.readlines()
+        flob.close()
+        runNum += 1
+        skipsDone = 0
+        linesRead = 0
+        for aLine in theLines:
+            ll = aLine.lstrip()
+            if ll.startswith("#"):
+                pass
+            elif not ll:
+                pass
+            elif ll[0] not in string.digits:
+                pass
+            else:
+                if skipsDone < skip:
+                    skipsDone += 1
                 else:
-                    if skipsDone < skip:
-                        skipsDone += 1
-                    else:
-                        splitLine = aLine.split()
-                        if not numsList:  # If it does not exist yet, then make it now.
-                            thisNPrams = len(splitLine) - 1
-                            if nPrams:
-                                if not thisNPrams == nPrams:
-                                    gm.append("thisNPrams = %i, nPrams = %s" % (thisNPrams, nPrams))
-                                    raise Glitch, gm
-                            else:
-                                nPrams = thisNPrams
-                            numsList = []
-                            for pramNum in range(nPrams):
-                                numsList.append([])
+                    splitLine = aLine.split()
+                    if not numsList:  # If it does not exist yet, then make it now.
+                        thisNPrams = len(splitLine) - 1
+                        if nPrams:
+                            if not thisNPrams == nPrams:
+                                gm.append("thisNPrams = %i, nPrams = %s" % (thisNPrams, nPrams))
+                                raise P4Error(gm)
+                        else:
+                            nPrams = thisNPrams
+                        numsList = []
                         for pramNum in range(nPrams):
-                            try:
-                                theOne = splitLine[pramNum + 1]
-                            except IndexError:
-                                gm.append("Line '%s'.  " % string.rstrip(aLine))
-                                gm.append("Can't get parameter number %i  " % pramNum) 
-                                raise Glitch, gm
-                            try:
-                                aFloat = float(theOne)
-                                numsList[pramNum].append(aFloat)
-                            except (ValueError, TypeError):
-                                gm.append("Can't make sense of '%s'" % theOne)
-                                raise Glitch, gm
-                        linesRead += 1
-            print "  skipped %i lines" % skipsDone
-            print "  read %i lines" % linesRead
-            totalLinesRead += linesRead
-            if run != -1:
-                break
+                            numsList.append([])
+                    for pramNum in range(nPrams):
+                        try:
+                            theOne = splitLine[pramNum + 1]
+                        except IndexError:
+                            gm.append("Line '%s'.  " % string.rstrip(aLine))
+                            gm.append("Can't get parameter number %i  " % pramNum) 
+                            raise P4Error(gm)
+                        try:
+                            aFloat = float(theOne)
+                            numsList[pramNum].append(aFloat)
+                        except (ValueError, TypeError):
+                            gm.append("Can't make sense of '%s'" % theOne)
+                            raise P4Error(gm)
+                    linesRead += 1
+        print "  skipped %i lines" % skipsDone
+        print "  read %i lines" % linesRead
+        totalLinesRead += linesRead
+        if run != -1:
+            break
 
-        print "Read %i pram lines in total." % totalLinesRead
+    print "Read %i pram lines in total." % totalLinesRead
 
-        #print numsList
-        spacer1 = ' ' * 20
-        if pramsProfile:
-            print "%s   %16s         mean      variance       ess  " % (spacer1, ' ')
-            print "%s   %16s       --------    --------    --------" % (spacer1, ' ')
-            pramCounter = 0
-            for partNum in range(len(pramsProfile)):
-                if len(pramsProfile) > 1:
-                    print "Data partition %i" % partNum
-                if len(pramsProfile[partNum]):
-                    #print pramsProfile[partNum]
-                    for pramNum in range(len(pramsProfile[partNum])):
-                        pString = pramsProfile[partNum][pramNum][0]
-                        pramCounts = pramsProfile[partNum][pramNum][1]
-                        for p in range(pramCounts):
-                            print "%s%3i %12s[%2i]   " % (spacer1, pramCounter, pString, p),
-                            d = numpy.array(numsList[pramCounter], numpy.float)
-                            m,v = gsl_meanVariance(d)
-                            ess = effectiveSampleSize(d, m)
-                            if m == 0.0:
-                                print "  0.0      ",
-                            elif m < 0.00001:
-                                print "%10.3g " % m,
-                            elif m < 1.0:
-                                print "%10.6f " % m,
-                            else:
-                                print "%10.4f " % m,
-                            if v == 0.0:
-                                print "  0.0      ",
-                            elif v < 0.000001:
-                                print "%10.3g " % v,
-                            elif v < 1.0:
-                                print "%10.6f " % v,
-                            else:
-                                print "%10.4f " % v,
-                            print "%10.1f " % ess,
-                            print
-                            pramCounter += 1
+    #print numsList
+    spacer1 = ' ' * 20
+    if pramsProfile:
+        print "%s   %16s         mean      variance       ess  " % (spacer1, ' ')
+        print "%s   %16s       --------    --------    --------" % (spacer1, ' ')
+        pramCounter = 0
+        for partNum in range(len(pramsProfile)):
+            if len(pramsProfile) > 1:
+                print "Data partition %i" % partNum
+            if len(pramsProfile[partNum]):
+                #print pramsProfile[partNum]
+                for pramNum in range(len(pramsProfile[partNum])):
+                    pString = pramsProfile[partNum][pramNum][0]
+                    pramCounts = pramsProfile[partNum][pramNum][1]
+                    for p in range(pramCounts):
+                        print "%s%3i %12s[%2i]   " % (spacer1, pramCounter, pString, p),
+                        d = numpy.array(numsList[pramCounter], numpy.float)
+                        m,v = gsl_meanVariance(d)
+                        ess = effectiveSampleSize(d, m)
+                        if m == 0.0:
+                            print "  0.0      ",
+                        elif m < 0.00001:
+                            print "%10.3g " % m,
+                        elif m < 1.0:
+                            print "%10.6f " % m,
+                        else:
+                            print "%10.4f " % m,
+                        if v == 0.0:
+                            print "  0.0      ",
+                        elif v < 0.000001:
+                            print "%10.3g " % v,
+                        elif v < 1.0:
+                            print "%10.6f " % v,
+                        else:
+                            print "%10.4f " % v,
+                        print "%10.1f " % ess,
+                        print
+                        pramCounter += 1
 
-                else:
-                    print "        No parameters in this data partition."
-        else: # no pramsProfile
-            print "%9s  mean      variance       ess  " % ' '
-            print "%9s--------    --------    --------" % ' '
-            for pramNum in range(nPrams):
-                print "  %2i  " % pramNum,
-                d = numpy.array(numsList[pramNum], numpy.float)
-                m,v = gsl_meanVariance(d)
-                ess = effectiveSampleSize(d, m)
-                if m == 0.0:
-                    print "  0.0      ",
-                elif m < 0.00001:
-                    print "%10.3g " % m,
-                elif m < 1.0:
-                    print "%10.6f " % m,
-                else:
-                    print "%10.4f " % m,
+            else:
+                print "        No parameters in this data partition."
+    else: # no pramsProfile
+        print "%9s  mean      variance       ess  " % ' '
+        print "%9s--------    --------    --------" % ' '
+        for pramNum in range(nPrams):
+            print "  %2i  " % pramNum,
+            d = numpy.array(numsList[pramNum], numpy.float)
+            m,v = gsl_meanVariance(d)
+            ess = effectiveSampleSize(d, m)
+            if m == 0.0:
+                print "  0.0      ",
+            elif m < 0.00001:
+                print "%10.3g " % m,
+            elif m < 1.0:
+                print "%10.6f " % m,
+            else:
+                print "%10.4f " % m,
 
-                if v == 0.0:
-                    print "  0.0      ",
-                elif v < 0.000001:
-                    print "%10.3g " % v,
-                elif v < 1.0:
-                    print "%10.6f " % v,
-                else:
-                    print "%10.4f " % v,
+            if v == 0.0:
+                print "  0.0      ",
+            elif v < 0.000001:
+                print "%10.3g " % v,
+            elif v < 1.0:
+                print "%10.6f " % v,
+            else:
+                print "%10.4f " % v,
 
-                print "%10.1f " % ess,
-                print
+            print "%10.1f " % ess,
+            print
 
 
 
-    def newtonRaftery94_eqn16(logLikes, delta=0.1, verbose=False):
-        """Importance sampling, as in Newton and Raftery 1994, equation 16"""
+def newtonRaftery94_eqn16(logLikes, delta=0.1, verbose=False):
+    """Importance sampling, as in Newton and Raftery 1994, equation 16"""
 
-        lla = numpy.array(logLikes)
+    lla = numpy.array(logLikes)
 
-        # Start the iteration with the harm mean, so calculate it.
+    # Start the iteration with the harm mean, so calculate it.
 
-        # This first way is the way from Susko I think it was, via Jessica
-        # Leigh.  It is not very good.  But it probably does not matter,
-        # as it is only a starting point for an iteration.
-        if 1:
-            theMax = -numpy.min(lla)
-            diff = 700. - theMax
-            shifted = (-lla) + diff
-            expd = numpy.exp(shifted)
-            theSum = numpy.sum(expd)
-            theHarmMean = float(-(numpy.log(theSum) - diff))
-            #print theHarmMean
-            #print type(theHarmMean)
+    # This first way is the way from Susko I think it was, via Jessica
+    # Leigh.  It is not very good.  But it probably does not matter,
+    # as it is only a starting point for an iteration.
+    if 1:
+        theMax = -numpy.min(lla)
+        diff = 700. - theMax
+        shifted = (-lla) + diff
+        expd = numpy.exp(shifted)
+        theSum = numpy.sum(expd)
+        theHarmMean = float(-(numpy.log(theSum) - diff))
+        #print theHarmMean
+        #print type(theHarmMean)
 
-            return pf.newtonRaftery94_eqn16(lla, len(logLikes), theHarmMean, delta, int(verbose))
+        return pf.newtonRaftery94_eqn16(lla, len(logLikes), theHarmMean, delta, int(verbose))
 
-        #n = Numbers(logLikes)
-        #theHarmMean = n.harmonicMeanOfLogs()  # better
-        #return pf.newtonRaftery94_eqn16(lla, len(logLikes), theHarmMean, delta, int(verbose))
+    #n = Numbers(logLikes)
+    #theHarmMean = n.harmonicMeanOfLogs()  # better
+    #return pf.newtonRaftery94_eqn16(lla, len(logLikes), theHarmMean, delta, int(verbose))

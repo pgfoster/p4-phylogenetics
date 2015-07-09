@@ -111,9 +111,12 @@ if 1:
     del(theDir)
 
 # This is only needed if we are interactive.
-from p4 import p3rlcompleter
+try:
+    import p3rlcompleter
+except ImportError:
+    pass
 
-# Maybe the novice user just types 'p4' ...
+# Maybe the user just types 'p4' and wants to see a splash...
 if len(sys.argv) == 1:
     if var.doSplash:
         func.splash()

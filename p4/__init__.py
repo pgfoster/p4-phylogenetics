@@ -30,38 +30,39 @@ Documentation is at <http://p4.nhm.ac.uk>
 
 """
 
-import sys, os, glob
+import sys
+import os
+import glob
 
-from Var import var
+from var import var
 import func
 from func import read # Make this one top-level, as it is used so often
 
-from Alignment import Alignment
-if var.usePfAndNumpy:
-    import numpy
-    from Data import Data
-    from Model import Model
-    from Mcmc import Mcmc
-    from McmcCheckPointReader import McmcCheckPointReader
-    from Chain import Chain
-    from STMcmc import STMcmc,STMcmcCheckPointReader
-from DistanceMatrix import DistanceMatrix
-from SequenceList import Sequence,SequenceList
-from Tree import Tree
-from Node import Node,NodeBranch
-#from Nexus import Nexus
-from TreePartitions import TreePartitions
-from Trees import Trees
-from Numbers import Numbers
-from Glitch import Glitch
-from Quartet import QuartetSet, Quartet
-from ReducedStrictConsensus import Reduced, Intersection
-from Triplets import Aho
-from LeafSupport import LeafSupport
-from Constraints import Constraints
-from QuartetJoining import QuartetJoining
-from PosteriorSamples import PosteriorSamples
-from Var import Var  # To provide access to the property docstrings.
+from alignment import Alignment
+import numpy
+from data import Data
+from model import Model
+from mcmc import Mcmc
+from mcmccheckpointreader import McmcCheckPointReader
+from chain import Chain
+from stmcmc import STMcmc,STMcmcCheckPointReader
+from distancematrix import DistanceMatrix
+from sequencelist import Sequence,SequenceList
+from tree import Tree
+from node import Node,NodeBranch
+#from nexus import Nexus
+from treepartitions import TreePartitions
+from trees import Trees
+from numbers import Numbers
+from p4exceptions import P4Error
+from quartet import QuartetSet, Quartet
+from reducedstrictconsensus import Reduced, Intersection
+from triplets import Aho
+from leafsupport import LeafSupport
+from constraints import Constraints
+from quartetjoining import QuartetJoining
+from posteriorsamples import PosteriorSamples
+from var import Var  # To provide access to the property docstrings.
 
 
 # Read in user-defined p4 stuff on startup.  These might be var
