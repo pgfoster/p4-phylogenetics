@@ -4,7 +4,7 @@ import sys
 import random
 import string
 import math
-from p4.Tree import Tree
+from p4.tree import Tree
 from p4exceptions import P4Error
 try:
     from Tkinter import *

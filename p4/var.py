@@ -301,16 +301,16 @@ class Var(object):
         self.rjCompUniformAllocationPrior = True
         self.rjRMatrixUniformAllocationPrior = True
 
-        # Modify behavior of NexusToken.nextTok() function.
-        # write, but do not get, all [!...]
-        self._nexus_writeVisibleComments = 0
-        self._nexus_getP4CommandComments = 0             # all [&&p4 ...]
-        self._nexus_getWeightCommandComments = 1         # all [&w ...]
-        self._nexus_getAllCommandComments = 0            # all [&...]
-        self._nexus_getLineEndingsAsTokens = 0
-        # nextTok in C, from NexusToken2.  Does not work for CStrings.
-        self.nexus_doFastNextTok = False
-        self._rMatrixNormalizeTo1 = 1
+        # # Modify behavior of NexusToken.nextTok() function.
+        # # write, but do not get, all [!...]
+        # self._nexus_writeVisibleComments = 0
+        # self._nexus_getP4CommandComments = 0             # all [&&p4 ...]
+        # self._nexus_getWeightCommandComments = 1         # all [&w ...]
+        # self._nexus_getAllCommandComments = 0            # all [&...]
+        # self._nexus_getLineEndingsAsTokens = 0
+        # # nextTok in C, from NexusToken2.  Does not work for CStrings.
+        # self.nexus_doFastNextTok = False
+        # self._rMatrixNormalizeTo1 = 1
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
