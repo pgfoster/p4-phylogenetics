@@ -20,7 +20,7 @@ from p4exceptions import P4Error
 from constraints import Constraints
 import pf
 import numpy
-from numbers import Numbers
+from pnumbers import Numbers
 
 
 def nexusCheckName(theName):

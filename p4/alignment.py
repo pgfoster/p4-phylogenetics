@@ -143,15 +143,18 @@ class Alignment(SequenceList):
 
     """A SequenceList where all the sequences are the same length and dataType.
 
+    .. This should be a comment.  See http://sphinx-doc.org/domains.html#cross-referencing-syntax
+
     From SequenceList, this inherits
 
-    * ``sequences``, a list of :class:`SequenceList.Sequence` objects
+    * ``sequences``, a list of :class:`~p4.sequencelist.Sequence` objects
     * ``fName``, the file name, by default None
     * ``sequenceForNameDict``, a dictionary which allows you to get a
       Sequence given its name.  This week it is not made by default
-      --- you need to make it explicitly with
-      :meth:`SequenceList.SequenceList.makeSequenceForNameDict`.
-    * and the other methods from  :class:`SequenceList.SequenceList`
+      --- you need to make it explicitly with the inherited 
+      :class:`~p4.sequencelist.SequenceList` method 
+      :meth:`~p4.sequencelist.SequenceList.makeSequenceForNameDict`.
+    * and the other methods from  :class:`~p4.sequencelist.SequenceList`
 
     Alignment objects additionally have the ``length``, which has a
     synonym ``nChar``, and is also accessible via ``len(self)``.
@@ -162,20 +165,24 @@ class Alignment(SequenceList):
     * ``taxNames``, a list of the names of the sequences
     * ``dataType``, a NEXUS-centric string --- 'dna', 'protein', or 'standard'
     * ``symbols``, the character symbols, not including equates or ambiguities
-    * ``equates``, a dictionary of NEXUS-style ambiguities, eg 'r':['a','g'] for DNA
+    * ``equates``, a dictionary of NEXUS-style ambiguities, eg ``'r':['a','g']`` for DNA
     * ``dim``, the dimension, ie the number of symbols
     * ``nexusSets``, a :class:`NexusSets.NexusSets` object, usually
       made from a copy of ``var.nexusSets``, but made specific to self
 
     **Various checks are made when alignments are read in from files**
 
-     .. autosummary::
 
-        SequenceList.SequenceList.checkNamesForDupes
-        Alignment.checkForAllGapColumns
-        Alignment.checkForBlankSequences
-        Alignment.checkForDuplicateSequences
-        Alignment.checkLengthsAndTypes
+     .. currentmodule:: p4.alignment
+
+     .. autosummary::
+        :nosignatures:
+
+        p4.sequencelist.SequenceList.checkNamesForDupes
+        ~Alignment.checkForAllGapColumns
+        ~Alignment.checkForBlankSequences
+        ~Alignment.checkForDuplicateSequences
+        ~Alignment.checkLengthsAndTypes
 
     These are under the control of some variables in ``var``
 
@@ -187,39 +194,42 @@ class Alignment(SequenceList):
 
     **Writing**
      .. autosummary::
+        :nosignatures:
 
-        Alignment.writeNexus
-        Alignment.writePhylip
-        SequenceList.SequenceList.writeFasta
-        Alignment.writeMolphy
+        ~Alignment.writeNexus
+        ~Alignment.writePhylip
+        p4.sequencelist.SequenceList.writeFasta
+        ~Alignment.writeMolphy
 
     **Copy self**
      .. autosummary::
+        :nosignatures:
 
-        Alignment.dupe
-        Alignment.noGapsOrAmbiguitiesCopy
-        Alignment.bootstrap
-        Data.Data.bootstrap
-        Alignment.sequenceSlice
+        ~Alignment.dupe
+        ~Alignment.noGapsOrAmbiguitiesCopy
+        ~Alignment.bootstrap
+        p4.data.Data.bootstrap
+        ~Alignment.sequenceSlice
 
     **Masks are strings that are nChar long, usually just 0s and 1s**
      .. autosummary::
+        :nosignatures:
 
-        Alignment.constantMask
-        Alignment.simpleConstantMask
-        Alignment.gappedMask
-        Alignment.getAllGapsMask
-        Alignment.getEnoughCharsMask
-        Alignment.getLikelihoodTopologyInformativeSitesMask
+        ~Alignment.constantMask
+        ~Alignment.simpleConstantMask
+        ~Alignment.gappedMask
+        ~Alignment.getAllGapsMask
+        ~Alignment.getEnoughCharsMask
+        ~Alignment.getLikelihoodTopologyInformativeSitesMask
 
 
-    You can also make masks with :func:`func.maskFromNexusCharacterList`.
+    You can also make masks with :func:`p4.func.maskFromNexusCharacterList`.
     You can combine masks bitwise with the methods :meth:`Alignment.andMasks` and :meth:`Alignment.orMasks`
 
     **CharSets and CharPartitions**
 
     A NEXUS-style charSet or charPartition is usually defined using a
-    NEXUS sets block, as explained in :class:`NexusSets.NexusSets`.  A
+    NEXUS sets block, as explained in :class:`p4.nexussets.NexusSets`.  A
     NEXUS sets block might be something like::
 
         begin sets;
@@ -237,7 +247,7 @@ class Alignment(SequenceList):
         end;
 
     However, you can also make new charSets from an
-    Alignment.nexusSets with a mask using :meth:`NexusSets.NexusSets.newCharSet`
+    Alignment.nexusSets with a mask using :meth:`p4.nexussets.NexusSets.newCharSet`
 
     CharPartitions must cover the entire length of self, without
     overlap of the character partition subsets.
@@ -250,22 +260,25 @@ class Alignment(SequenceList):
     :meth:`Alignment.setNexusSets`.
 
      .. autosummary::
+        :nosignatures:
 
         Alignment.excludeCharSet
         Alignment.setCharPartition
         Alignment.setGBlocksCharSet
         Alignment.setNexusSets
-        NexusSets.NexusSets.newCharSet
-        NexusSets.NexusSets.dupeCharSet
+        p4.nexussets.NexusSets.newCharSet
+        p4.nexussets.NexusSets.dupeCharSet
 
     **Extracting subsets**
      .. autosummary::
+        :nosignatures:
 
         Alignment.subsetUsingCharSet
         Alignment.subsetUsingMask
 
     **Recoding the data into groups**
      .. autosummary::
+        :nosignatures:
 
         Alignment.recodeDayhoff
         Alignment.recodeProteinIntoGroups
@@ -273,6 +286,7 @@ class Alignment(SequenceList):
 
     **Translating DNA to protein**
      .. autosummary::
+        :nosignatures:
 
         Alignment.translate
         Alignment.checkTranslation
@@ -1903,6 +1917,10 @@ class Alignment(SequenceList):
 
         Various checks are made.  If the sequences are in a different
         order in the two alignments then it will not work.
+
+        See the method :meth:`Alignment.concatenate`, which can handle missing
+        and out-of-order sequences.
+
         """
 
         gm = ['Alignment.bluntEndLigate()']
@@ -1955,6 +1973,9 @@ class Alignment(SequenceList):
 
         The order of the taxa in sNames need not be the same order as either
         alignment.  So this method can change the order of the sequences in self.
+
+        It will still work if either self or alig has missing sequences.  This
+        method will add blank sequences as needed.
 
         """
 

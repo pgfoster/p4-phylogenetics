@@ -8,7 +8,7 @@ import sys
 import random
 import copy
 import types
-from numbers import Numbers
+from pnumbers import Numbers
 import math
 
 # I suppose if there are input trees whose tax sets are equal to or subsets

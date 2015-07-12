@@ -53,7 +53,7 @@ from node import Node, NodeBranch
 #from nexus import Nexus
 from treepartitions import TreePartitions
 from trees import Trees
-from numbers import Numbers
+from pnumbers import Numbers
 from p4exceptions import P4Error
 from quartet import QuartetSet, Quartet
 from reducedstrictconsensus import Reduced, Intersection

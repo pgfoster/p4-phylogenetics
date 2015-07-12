@@ -5,7 +5,7 @@ from tree import Tree
 from func import read
 from var import var
 from p4exceptions import P4Error
-from p4.ReducedStrictConsensus import Intersection, TreeBuilderFromSplits
+from p4.reducedstrictconsensus import Intersection, TreeBuilderFromSplits
 
 
 class SuperTreeInputTrees(object):
