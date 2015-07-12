@@ -1328,6 +1328,13 @@ class STChain(object):
             # print logLikeRatio
             #logLikeRatio = 0.0
 
+            # Experimental.  Try annealing topology moves.
+            if 0 and theProposal.name in ['nni', 'spr']:
+                temperature = 5.0
+                heatFactor = 1.0 / (1.0 + temperature)
+                logLikeRatio *= heatFactor
+                self.logPriorRatio *= heatFactor
+
             theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
             #theSum = self.logProposalRatio + self.logPriorRatio
             # if theProposal.name == 'polytomy':
@@ -2344,13 +2351,13 @@ See :class:`TreePartitions`.
             # in the polytomy move, we want to pre-compute the logs of
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
-            # if self.proposalsHash.has_key('polytomy') and self.tunings.doPolytomyResolutionClassPrior:
-            #     p = self.proposalsHash['polytomy']
-            #     bigT = func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
-            #     p.logBigT = [0.0] * (self.tree.nTax - 1)
-            #     for i in range(1, self.tree.nTax - 1):
-            #         p.logBigT[i] = math.log(bigT[i])
-            #     #print p.logBigT
+            if self.proposalsHash.has_key('polytomy') and self.tunings.doPolytomyResolutionClassPrior:
+                p = self.proposalsHash['polytomy']
+                bigT = func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
+                p.logBigT = [0.0] * (self.tree.nTax - 1)
+                for i in range(1, self.tree.nTax - 1):
+                    p.logBigT[i] = math.log(bigT[i])
+                #print p.logBigT
 
     def _setOutputTreeFile(self):
         """Setup the (output) tree file for the STMcmc."""
