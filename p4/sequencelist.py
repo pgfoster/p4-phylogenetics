@@ -287,8 +287,12 @@ class SequenceList(object):
     """
 
     def __init__(self, flob=None):
+
+        #: A list of Sequence objects
         self.sequences = []
+        #: If it came from a file with a name, this is it.
         self.fName = None
+        #: Allows you to find Sequence objects from their Sequence.name
         self.sequenceForNameDict = None
         if flob:
             self._readFastaFile(flob)

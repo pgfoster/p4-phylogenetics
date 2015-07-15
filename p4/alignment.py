@@ -151,8 +151,7 @@ class Alignment(SequenceList):
     * ``fName``, the file name, by default None
     * ``sequenceForNameDict``, a dictionary which allows you to get a
       Sequence given its name.  This week it is not made by default
-      --- you need to make it explicitly with the inherited 
-      :class:`~p4.sequencelist.SequenceList` method 
+      --- you need to make it explicitly with the inherited method 
       :meth:`~p4.sequencelist.SequenceList.makeSequenceForNameDict`.
     * and the other methods from  :class:`~p4.sequencelist.SequenceList`
 
@@ -294,18 +293,23 @@ class Alignment(SequenceList):
 
     def __init__(self):
 
-        # In SequenceList:
+        SequenceList.__init__(self)
+        # Inherited from SequenceList:
         #self.sequences = []
         #self.fName = None
         #self.sequenceForNameDict = None
 
         self.length = 0
+
+        #: Nexus-centric data type.  One of dna, rna, protein, or standard.
         self.dataType = None
-        self.sequences = []
-        self.fName = None
-        self.sequenceForNameDict = None
+
+        #self.sequences = []
+        #self.fName = None
+        #self.sequenceForNameDict = None
+
+        #: Lowercase string, eg 'acgt'.  The order is all-important.
         self.symbols = None
-        #self.nexus_gap = var.nexus_gap
 
         #: The number of symbols, eg 4 for DNA.
         self.dim = None
@@ -313,11 +317,11 @@ class Alignment(SequenceList):
         #: A dictionary of NEXUS-style equates, eg r=[a,g] in DNA
         self.equates = {}   # A hash
 
-        #: A :class:`NexusSets` object, perhaps copied from
+        #: A :class:`~p4.nexussets.NexusSets` object, perhaps copied from
         #: var.nexusSets and made specific to self.  You can do a
-        #: :meth:`NexusSets.NexusSets.dump` on it to see what is in
+        #: :meth:`p4.nexussets.NexusSets.dump` on it to see what is in
         #: there.
-        self.nexusSets = None  # A NexusSets object
+        self.nexusSets = None
 
         #: A list of Part objects, encapsulating data partitions in
         #: :class:`Data` objects.  There would be one or more parts in
@@ -330,6 +334,7 @@ class Alignment(SequenceList):
     nTax = property(lambda self: len(self.sequences))
     #: A synonym for Alignment.length
     nChar = property(lambda self: self.length)
+    #: A property -- the number of equates
     nEquates = property(lambda self: len(self.equates))
 
     def _getTaxNames(self):
@@ -1339,7 +1344,7 @@ class Alignment(SequenceList):
     def simpleConstantMask(self, ignoreGapQ=True, invert=False):
         """Returns a mask with 1 at simple constant sites, and 0 otherwise.
 
-        See also :meth:`Alignment.Alignment.constantMask`
+        See also :meth:`~p4.alignment.Alignment.constantMask`
 
         A simple constant site is a site that has only 1 kind of symbol, and no
         ambiguities.
@@ -1420,7 +1425,7 @@ class Alignment(SequenceList):
     def constantMask(self, invert=None):
         """Returns a mask string with 1 at constant sites, and 0 otherwise.
 
-        See also :meth:`Alignment.Alignment.simpleConstantMask`
+        See also :meth:`~p4.alignment.Alignment.simpleConstantMask`
 
         Constant sites are defined in a PAUP-like manner.  If, when all
         possibilities of ambiguities are tried, the site could possibly be
@@ -1901,7 +1906,15 @@ class Alignment(SequenceList):
         return andMask.tostring()
 
     def sequenceSlice(self, pos):
-        """Returns a list composed of the characters from the alignment at position pos."""
+        """Returns a list composed of the characters from the alignment at position pos.
+
+        Args:
+            pos (int): Zero-based position
+
+        Returns:
+            A list of the characters at that position
+
+        """
         if self.length:
             if pos >= 0 and pos < self.length:
                 sList = []
@@ -1966,7 +1979,9 @@ class Alignment(SequenceList):
     def concatenate(self, alig, sNames):
         """Attaches alig to the end of self.
 
-        You need to provide a list of taxon names, arg sNames.
+        You need to provide a list, argument sNames, of taxon names that are
+        found in self and alig.  This will determine the order of the taxa in
+        self, the result.
 
         It will still work if the sequences are in a different
         order in the two alignments.
@@ -1974,8 +1989,12 @@ class Alignment(SequenceList):
         The order of the taxa in sNames need not be the same order as either
         alignment.  So this method can change the order of the sequences in self.
 
-        It will still work if either self or alig has missing sequences.  This
-        method will add blank sequences as needed.
+        It will still work if there are missing sequences in either self or
+        alig.  It will add blank sequences as needed.
+
+        Args:
+            alig (Alignment):  The other Alignment object.
+            sNames (list):  A list of all the taxon names found in self and alig
 
         """
 
@@ -2149,7 +2168,7 @@ class Alignment(SequenceList):
 
         This is done only in Python (ie no cParts involved), and does not
         handle partitioned data.  If you want to bootstrap partitioned
-        data, use the :meth:`Data.Data.bootstrap` method.  """
+        data, use the :meth:`p4.data.Data.bootstrap` method.  """
 
         gm = ["Alignment.bootstrap()"]
 
@@ -2578,7 +2597,7 @@ class Alignment(SequenceList):
         """Check that self translates to theProteinAlignment.
 
         Self should be a DNA alignment.  It is translated using
-        :meth:`GeneticCode.GeneticCode.translate` (so it should handle
+        :meth:`p4.geneticcode.GeneticCode.translate` (so it should handle
         ambiguities) and compared against theProteinAlignment.  The
         theProteinAlignment sequence order, names, and gap pattern should
         be the same as in the DNA alignment.  The default transl_table is
@@ -2586,7 +2605,7 @@ class Alignment(SequenceList):
 
         Other available translation tables, this week::
 
-            if transl_table == 1: # standard
+            if transl_table == 1:   # standard
             elif transl_table == 2: # vertebrate mito
             elif transl_table == 4: # Mold, Protozoan,
                                     # and Coelenterate Mitochondrial Code
@@ -2596,9 +2615,9 @@ class Alignment(SequenceList):
 
             # and now 6, 10, 11, 12, 13, 14, 21.
 
-        (These are found in :class:`GeneticCode.GeneticCode`)
+        (These are found in :class:`~p4.geneticcode.GeneticCode`)
 
-        See also :meth:`Alignment.Alignment.translate`
+        See also :meth:`p4.alignment.Alignment.translate`
 
         If the arg *checkStarts* is turned on (by default it is not turned
         on) then this method checks whether the first codon is a start
