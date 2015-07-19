@@ -13,10 +13,6 @@ import sys
 
 class Chain(object):
 
-    # Import methods in other files
-    # from Chain_propose1 import proposeRoot3, proposeBrLen, proposeLocal, proposeETBR_Blaise,  proposeETBR,  proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
-    # from Chain_propose2 import proposeCompWithSlider, proposeCompWithDirichlet, proposeRjComp, proposeSplitComp, proposeMergeComp, proposeRMatrixWithSlider, proposeRjRMatrix, proposeSplitRMatrix, proposeMergeRMatrix, proposeGdasrv,proposePInvar, proposeRelRate, proposeCompLocation, proposeRMatrixLocation, proposeGdasrvLocation, proposeCmd1CompDir, proposeCmd1Comp0Dir, proposeCmd1AllCompDir, proposeCmd1Alpha
-
     def __init__(self, aMcmc):
         self.mcmc = aMcmc
         #self.num = -1
@@ -730,7 +726,7 @@ class Chain(object):
             logLikeRatio = self.propTree.logLike - self.curTree.logLike
 
             # To run "without the data", which shows the effect of priors.
-            #logLikeRatio = 0.0
+            logLikeRatio = 0.0
 
             if self.mcmc.nChains > 1:
                 heatBeta = 1.0 / \
