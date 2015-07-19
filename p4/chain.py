@@ -726,7 +726,7 @@ class Chain(object):
             logLikeRatio = self.propTree.logLike - self.curTree.logLike
 
             # To run "without the data", which shows the effect of priors.
-            logLikeRatio = 0.0
+            #logLikeRatio = 0.0
 
             if self.mcmc.nChains > 1:
                 heatBeta = 1.0 / \
@@ -735,6 +735,15 @@ class Chain(object):
                 # print "logPriorRatio is %s, heatBeta is %s" %
                 # (self.logPriorRatio, heatBeta)
                 self.logPriorRatio *= heatBeta
+
+            # Experimental.  Try annealing topology moves.
+            # maybe add compLocation, polytomy
+            if 0 and theProposal.name in ['local', 'eTBR']:
+                temperature = 5.0
+                heatFactor = 1.0 / (1.0 + temperature)
+                logLikeRatio *= heatFactor
+                self.logPriorRatio *= heatFactor
+
 
             theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
             if theProposal.name in ['rjComp', 'rjRMatrix']:
