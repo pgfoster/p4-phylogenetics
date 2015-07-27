@@ -1197,10 +1197,9 @@ class STChain(object):
             # print logLikeRatio
             #logLikeRatio = 0.0
 
-            # Experimental.  Try annealing topology moves.
-            if 0 and theProposal.name in ['nni', 'spr']:
-                temperature = 5.0
-                heatFactor = 1.0 / (1.0 + temperature)
+            # Experimental Heating hack
+            if self.stMcmc.doHeatingHack and theProposal.name in self.stMcmc.heatingHackProposalNames:
+                heatFactor = 1.0 / (1.0 + self.stMcmc.heatingHackTemperature)
                 logLikeRatio *= heatFactor
                 self.logPriorRatio *= heatFactor
 
@@ -1308,8 +1307,7 @@ class STMcmcTunings(object):
         lst.append("%s%20s: %s" % (spacer, 'chainTemp', self.chainTemp))
         lst.append("%s%20s: %s" % (spacer, 'nni', self.nni))
         lst.append("%s%20s: %s" % (spacer, 'spr', self.spr))
-        lst.append("%s%20s: %s" %
-                   (spacer, 'SR2008beta_uniform', self.SR2008beta_uniform))
+        lst.append("%s%20s: %s" % (spacer, 'SR2008beta_uniform', self.SR2008beta_uniform))
         lst.append("%s%20s: %s" % (spacer, 'spaQ_uniform', self.spaQ_uniform))
         return string.join(lst, '\n')
 
@@ -1990,6 +1988,11 @@ See :class:`TreePartitions`.
                     "Arg useSplitSupport is turned on, but none of the trees seem to have split info.")
                 raise P4Error(gm)
 
+        # Hidden experimental hacking
+        self.doHeatingHack = False
+        self.heatingHackTemperature = 5.0
+        self.heatingHackProposalNames = ['nni', 'spr', 'polytomy']
+
         print "Initializing STMcmc"
         print "%-16s: %s" % ('modelName', modelName)
         if self.modelName.startswith("SR2008"):
@@ -2264,6 +2267,13 @@ See :class:`TreePartitions`.
         """Start the STMcmc running."""
 
         gm = ['STMcmc.run()']
+
+        # Hidden experimental hack
+        if self.doHeatingHack:
+            print "Heating hack is turned on."
+            assert self.nChains == 1, "MCMCMC does not work with the heating hack"
+            print "Heating hack temperature is %.2f" % self.heatingHackTemperature
+            print "Heating hack affects proposals %s" % self.heatingHackProposalNames
 
         # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
