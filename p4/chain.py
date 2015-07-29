@@ -736,11 +736,9 @@ class Chain(object):
                 # (self.logPriorRatio, heatBeta)
                 self.logPriorRatio *= heatBeta
 
-            # Experimental.  Try annealing topology moves.
-            # maybe add compLocation, polytomy
-            if 0 and theProposal.name in ['local', 'eTBR']:
-                temperature = 5.0
-                heatFactor = 1.0 / (1.0 + temperature)
+            # Experimental Heating hack
+            if self.mcmc.doHeatingHack and theProposal.name in self.mcmc.heatingHackProposalNames:
+                heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature)
                 logLikeRatio *= heatFactor
                 self.logPriorRatio *= heatFactor
 

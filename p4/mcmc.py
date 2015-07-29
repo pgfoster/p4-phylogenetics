@@ -1051,6 +1051,12 @@ class Mcmc(object):
                 # for rMatrix in mp.rMatrices:
                 #    print rMatrix.num, rMatrix.nNodes, rMatrix.rj_f
 
+        # Hidden experimental hacking
+        self.doHeatingHack = False
+        self.heatingHackTemperature = 5.0
+        self.heatingHackProposalNames = ['local', 'eTBR']
+        
+
         # Are we doing cmd1 in any model partitions?
         cmd1Parts = [mp.cmd1 for mp in self.tree.model.parts]  # True and False
         # empty if there are none that do cmd1
@@ -1684,6 +1690,13 @@ class Mcmc(object):
 
         # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
+
+        # Hidden experimental hack
+        if self.doHeatingHack:
+            print "Heating hack is turned on."
+            assert self.nChains == 1, "MCMCMC does not work with the heating hack"
+            print "Heating hack temperature is %.2f" % self.heatingHackTemperature
+            print "Heating hack affects proposals %s" % self.heatingHackProposalNames
 
         if self.checkPointInterval:
             # We want a couple of things:
