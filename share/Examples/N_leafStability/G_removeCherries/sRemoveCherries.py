@@ -1,4 +1,4 @@
-from p4.LeafSupport import CherryRemover
+from p4.leafsupport import CherryRemover
 
 #These three lines removes the cherries and saves the resulting trees in a file. 
 rc = CherryRemover('../input.nex')

@@ -1575,7 +1575,7 @@ class CharPartition(object):
                 raise P4Error(gm)
 
     def checkForOverlaps(self):
-        gm = ['CharParitition._checkForOverlaps()']
+        gm = ['CharParitition.checkForOverlaps()']
         unspanned = 0
         for i in range(self.nexusSets.aligNChar):
             sum = 0

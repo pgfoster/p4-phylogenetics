@@ -1,0 +1,3 @@
+p4 sRecode.py
+p4 sMcmc.py
+rm -r mcmc* recoded.nex

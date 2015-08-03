@@ -1,4 +1,4 @@
-from p4.SuperTreeSupport import SuperTreeInputTrees
+from p4.supertreesupport import SuperTreeInputTrees
 
 stit = SuperTreeInputTrees('balanced64.nex', distributionTrees='FelidaeRVS.tre')
 stit.writeInputTreesToFile = True

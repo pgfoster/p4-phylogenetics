@@ -1,4 +1,3 @@
-os.system("rm -f mcmc*")
 read("recoded.nex")
 d = Data()
 t = func.randomTree(taxNames=d.taxNames)

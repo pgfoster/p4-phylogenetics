@@ -187,7 +187,7 @@ class PosteriorSamples(object):
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
         translateFlob = cStringIO.StringIO(' '.join(translateLines))
-        nx = Nexus.Nexus()
+        nx = nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
         # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok
@@ -374,7 +374,7 @@ class PosteriorSamples(object):
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
         translateFlob = cStringIO.StringIO(' '.join(translateLines))
-        nx = Nexus.Nexus()
+        nx = nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
         # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok
@@ -462,7 +462,7 @@ class PosteriorSamples(object):
 
         # t.model.dump()
 
-        splIndx = 3
+        splIndx = 4          # assuming Gen     LnL     LnPr    TL  ...
         while splIndx < self.nPrams:
             pNum = 0
             # print "splIndx = %i, pramsHeader = %s" % (splIndx,

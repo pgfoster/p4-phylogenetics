@@ -1,4 +1,4 @@
-from p4.SuperTreeSupport import SuperTreeSupport
+from p4.supertreesupport import SuperTreeSupport
 
 sts = SuperTreeSupport('supertree.nex', 'input.nex')
 sts.doSaveDecoratedTree = False

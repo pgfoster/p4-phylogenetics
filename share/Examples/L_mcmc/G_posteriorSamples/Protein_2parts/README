@@ -1,5 +1,4 @@
 p4 sSim.py
 p4 sMcmc.py
-mb m.nex
-mb32 m32.nex # mrbayes v 3.2
+mb m32.nex # mrbayes v 3.2
 p4 sPostSamps.py

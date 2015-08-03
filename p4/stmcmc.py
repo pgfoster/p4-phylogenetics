@@ -720,9 +720,6 @@ class STChain(object):
                     self.proposeDeleteEdge(theProposal, candidateNodes)
                 else:
                     self.proposeAddEdge(theProposal)
-        # if self.mcmc.constraints:
-        #    print "checkSplitKeys() at the end of polytomy"
-        #    self.propTree.checkSplitKeys()
 
     def proposeAddEdge(self, theProposal):
         gm = ["STChain.proposeAddEdge()"]
@@ -1991,7 +1988,7 @@ See :class:`TreePartitions`.
         # Hidden experimental hacking
         self.doHeatingHack = False
         self.heatingHackTemperature = 5.0
-        self.heatingHackProposalNames = ['nni', 'spr', 'polytomy']
+        self.heatingHackProposalNames = ['nni', 'spr']
 
         print "Initializing STMcmc"
         print "%-16s: %s" % ('modelName', modelName)

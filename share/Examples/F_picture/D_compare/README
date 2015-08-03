@@ -1,1 +1,3 @@
-FINISH ME.  And then svn add the directory etc.
+# This uses a Tkinter GUI to hilight differences between two trees.
+
+p4 -i sCompare.py 

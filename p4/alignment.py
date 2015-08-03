@@ -1259,7 +1259,7 @@ class Alignment(SequenceList):
                 "Could not find a CharPartition with the name '%s'" % charPartitionName)
             raise P4Error(gm)
         self.nexusSets.charPartition.setSubsetMasks()
-        self.nexusSets.charPartition._checkForOverlaps()
+        self.nexusSets.charPartition.checkForOverlaps()
         if 0:
             print gm[0]
             self.nexusSets.charPartition.dump()

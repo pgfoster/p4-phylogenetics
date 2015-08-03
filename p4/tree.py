@@ -22,6 +22,48 @@ from alignment import Part
 from node import NodeBranch, NodePart, NodeBranchPart
 import random
 
+def _fixFileName(fName):
+    if fName.count('.') or fName.count(' '):
+        fName = list(fName)
+        for i in range(len(fName)):
+            theChar = fName[i]
+            if theChar == '.' or theChar == ' ':
+                fName[i] = '_'
+        fName = string.join(fName, '')
+    return fName
+
+longMessage1 = """
+
+(Boring old) Chi-square test for compositional homogeneity
+==========================================================
+
+    The statistic is Sum[(Obs - Exp)^2 / Exp],
+        where Exp comes from the data.
+    The statistic is X^2 (X squared), in the sense used by
+        Sokal & Rohlf in 'Biometry', to distinguish it from
+        'chi square', which is a distribution, not a statistic.
+    This is (mostly) the same as the test in PAUP, using the
+        basefreq command.  There are small differences having
+        to do with calculation of degrees of freedom.
+    Significance is assessed by Chi-square.
+
+"""
+
+longMessage2 = """
+
+Tree- and model-based composition fit test
+==========================================
+
+    The statistic is Sum[(Obs - Exp)^2 / Exp],
+        like the statistic used in the Chi-squared test,
+        except that Exp comes from the model, not from the data.
+    I call the statistic X^2_m (X squared sub m) since it is like
+        the X^2 statistic used in the chi-square test above, but uses
+        the m subscript to say that the expected values come from the model.
+    Significance is assessed by simulations on the tree and model.
+    A critical point of 95% is used to decide if the data fits or not.
+"""
+
 
 class Tree(object):
 
@@ -887,7 +929,7 @@ class Tree(object):
                     # print 'got comment %s, node %i' % (tok, n.nodeNum)
                     cFlob = cStringIO.StringIO(tok)
                     cFlob.seek(2)
-                    tok2 = NexusToken.safeNextTok(cFlob)
+                    tok2 = nexustoken.safeNextTok(cFlob)
                     while 1:
                         if tok2 == ']':
                             break
@@ -909,7 +951,7 @@ class Tree(object):
                         else:
                             gm.append('Bad command comment %s' % tok)
                             raise P4Error(gm)
-                        tok2 = NexusToken.safeNextTok(cFlob)
+                        tok2 = nexustoken.safeNextTok(cFlob)
                 elif 0:
                     # Ugly hack for RAxML trees with bootstrap
                     # supports in square brackets after the br len, on
@@ -7837,47 +7879,6 @@ class Tree(object):
             results.append([siteRates, gammaCats])
         return results
 
-    def _fixFileName(fName):
-        if fName.count('.') or fName.count(' '):
-            fName = list(fName)
-            for i in range(len(fName)):
-                theChar = fName[i]
-                if theChar == '.' or theChar == ' ':
-                    fName[i] = '_'
-            fName = string.join(fName, '')
-        return fName
-
-    longMessage1 = """
-
-    (Boring old) Chi-square test for compositional homogeneity
-    ==========================================================
-
-        The statistic is Sum[(Obs - Exp)^2 / Exp],
-            where Exp comes from the data.
-        The statistic is X^2 (X squared), in the sense used by
-            Sokal & Rohlf in 'Biometry', to distinguish it from
-            'chi square', which is a distribution, not a statistic.
-        This is (mostly) the same as the test in PAUP, using the
-            basefreq command.  There are small differences having
-            to do with calculation of degrees of freedom.
-        Significance is assessed by Chi-square.
-
-    """
-
-    longMessage2 = """
-
-    Tree- and model-based composition fit test
-    ==========================================
-
-        The statistic is Sum[(Obs - Exp)^2 / Exp],
-            like the statistic used in the Chi-squared test,
-            except that Exp comes from the model, not from the data.
-        I call the statistic X^2_m (X squared sub m) since it is like
-            the X^2 statistic used in the chi-square test above, but uses
-            the m subscript to say that the expected values come from the model.
-        Significance is assessed by simulations on the tree and model.
-        A critical point of 95% is used to decide if the data fits or not.
-    """
 
     def simsForModelFitTests(self, reps=10, seed=None):
         """Do simulations for model fit tests.

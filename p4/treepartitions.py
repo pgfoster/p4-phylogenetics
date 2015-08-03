@@ -208,18 +208,18 @@ def _getModelInfo(theComment):
     flob = cStringIO.StringIO(theComment)
     flob.seek(1, 0)  # past the [
 
-    tok = NexusToken.nextTok(flob)
+    tok = nexustoken.nextTok(flob)
     if not tok or tok != '&&p4':
         print "a got tok=%s" % tok
         flob.close()
         return  # not an error, just the wrong kind of comment
-    tok = NexusToken.nextTok(flob)
+    tok = nexustoken.nextTok(flob)
     if not tok or tok != 'models':
         print "b got tok=%s" % tok
         flob.close()
         gm.append("Expecting 'models'.  Got %s" % tok)
         raise P4Error(gm)
-    tok = NexusToken.nextTok(flob)
+    tok = nexustoken.nextTok(flob)
     if tok[0] != 'p':
         gm.append("Expecting 'pN'.  Got %s" % tok)
         raise P4Error(gm)
@@ -239,7 +239,7 @@ def _getModelInfo(theComment):
         gm.append("Failed to parse model comment.")
         raise P4Error(gm)
 
-    tok = NexusToken.safeNextTok(flob)
+    tok = nexustoken.safeNextTok(flob)
     while 1:
         # print "top of loop, tok = %s" % tok
         if tok == ']':
@@ -263,7 +263,7 @@ def _getModelInfo(theComment):
         else:
             gm.append("Bad token %s")
             raise P4Error(gm)
-        tok = NexusToken.safeNextTok(flob)
+        tok = nexustoken.safeNextTok(flob)
 
     # theModelInfo.dump()
     return theModelInfo

@@ -1,5 +1,3 @@
-from p4.PosteriorSamples import PosteriorSamples
-
 read("d.nex")
 read('sets.nex')
 a = var.alignments[0]
@@ -30,8 +28,15 @@ t.calcLogLike()
 func.reseedCRandomizer(os.getpid())
 t.calcLogLike()
 
-#ps = PosteriorSamples(t, runNum=0, program='p4', verbose=3)
-#ps = PosteriorSamples(t, runNum=1, program='mrbayes', mbBaseName='mbout', verbose=3)
+ps = PosteriorSamples(t, runNum=0, program='p4', verbose=3)
+
+for sampNum in range(0,10):
+    t2 = ps.getSample(sampNum)
+    t2.data = d
+    t2.simulate()
+    ret = t2.data.simpleBigXSquared()
+    print ret[0], ret[1]
+    
 ps = PosteriorSamples(t, runNum=1, program='mrbayes', mbBaseName='mbout32', verbose=3)
 
 for sampNum in range(0,10):
@@ -41,4 +46,3 @@ for sampNum in range(0,10):
     ret = t2.data.simpleBigXSquared()
     print ret[0], ret[1]
     
-
