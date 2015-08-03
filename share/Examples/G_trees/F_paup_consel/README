@@ -1,0 +1,17 @@
+p4 sSim.py
+paup pGenTrees.nex
+paup pSiteLikes.nex
+
+# Consel will only read the simplest of paup site like outputs, and
+# will not read the paup output in this case.  So the paup output
+# needs to be fixed.  I have confirmed this on consel version k.
+
+python sFixPaupOut.py
+rm siteLikes
+makermt --paup siteLikes consel_out
+consel consel_out
+catpv consel_out
+rm siteLikes.txt consel_out* allTrees.nex d.nex
+
+
+

@@ -1,0 +1,4 @@
+# This is a repeat of Yang and Roberts Table 2.
+# Except that p4 only does dG rates, not continuous gamma rates.
+
+p4 s.py

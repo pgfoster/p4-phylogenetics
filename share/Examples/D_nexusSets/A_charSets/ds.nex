@@ -1,0 +1,22 @@
+#NEXUS
+
+begin taxa;
+    dimensions ntax=3;
+    taxlabels A B C;
+end;
+
+begin characters;
+    dimensions nchar=4;
+    format datatype=dna gap=-;
+    matrix
+    A  acgt
+    B  acgt
+    C  accg
+    ;
+end;
+
+
+begin sets;
+    charset cs1 = constant 3;
+    charset cs2 = 1-.\2 gapped;
+end;

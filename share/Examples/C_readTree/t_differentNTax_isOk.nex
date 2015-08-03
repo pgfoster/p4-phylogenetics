@@ -1,0 +1,8 @@
+#NEXUS
+
+begin trees;
+tree t1 = [&U] ((A:0.6, B:0.5):0.03, C:0.5, (D:0.5, E:0.4):0.2 );
+tree t2 = [&U] ((A, B), C, (D, E));
+tree t3 = [&U] (X, Y, ((A, B), C, (D, E)));
+end;
+

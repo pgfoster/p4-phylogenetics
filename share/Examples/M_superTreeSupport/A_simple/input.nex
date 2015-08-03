@@ -1,0 +1,12 @@
+#NEXUS
+
+begin trees;
+
+	tree tree_1 = (((A,B),C),(D,E));
+	tree tree_2 = (((D,E),A),((G,F),H));
+	tree tree_3 = ((((G,F),H),A),(I,J));
+	tree tree_4 = ((A,C),B);
+	tree tree_5 = ((I,J),(((E,D),((A,B),C)),((G,F),H)));
+
+end;
+

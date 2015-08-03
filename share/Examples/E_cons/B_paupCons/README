@@ -1,0 +1,22 @@
+# Here we use paup to make a cons tree.  But we want the support, and
+# that is not provided in the paup tree output.  However, it is
+# available in the paup log file.
+
+# If you are dealing with weighted trees, that might be an issue.  In
+# this example, we use tree weights, although all the weights happen
+# to be 1.  Paup will not read tree weights unless you tell it to, and
+# it will not use tree weights in the cons unless you tell it to.  And
+# if you tell the cons command to use tree weights without having told
+# paup to read them in, then it also won't work.
+
+# In the sMakeTrees.py script, we make some trees.  The number of taxa
+# is given by the first number after the double dash, and the number
+# of trees made is given by the second number.  We make use of the
+# Chain method proposeLocal() to generate the trees-- they will be
+# more similar than random trees.
+
+p4 sMakeTrees.py -- 30 85
+rm mcmc_checkPoint_0.1 mcmc_likes_0 mcmc_trees_0.nex
+paup pMakeCons.nex
+p4 sFixPaupConsTree.py
+rm paupConTree.nex paupLog tt.nex d.nex

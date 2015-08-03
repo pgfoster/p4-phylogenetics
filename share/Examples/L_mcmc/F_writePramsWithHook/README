@@ -1,0 +1,3 @@
+p4 sMcmc.py
+cat mcmc_hookFile
+rm mcmc*

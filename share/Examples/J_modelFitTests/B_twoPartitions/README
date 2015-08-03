@@ -1,0 +1,8 @@
+p4 sMakeRanTree.py
+p4 sSimData.py
+p4 sOpt.py
+paup paup.nex
+echo 'Doing sims.  This could take a while ...'
+p4 sTests.py
+cat model_fit_tests_out
+rm d.nex t.nex noOpt.p4_tPickle opt.p4_tPickle sims* model_fit_tests_out

@@ -1,0 +1,9 @@
+p4 sMcmc.py -- 0
+p4 sMcmc.py -- 1
+p4 sRestartMcmc.py
+p4 sReadMcmcCheckPoints.py
+p4 sCon.py
+p4 sTrackSplits.py
+rm mcmc*
+rm cons.nex
+rm trackSplitsOut.py

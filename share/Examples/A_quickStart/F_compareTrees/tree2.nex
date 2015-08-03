@@ -1,0 +1,11 @@
+#NEXUS
+
+begin taxa;
+  dimensions ntax=7;
+  taxlabels t0 t1 t2 t3 t4 t5 t6;
+end;
+
+begin trees;
+    tree random = [&U] ((t4:0.236294, t2:0.425069):0.0447041, (t6:0.336926, t5:0.453459):0.0316235, ((t0:0.411751, t1:0.314732):0.0438514, t3:0.41193):0.0376085);
+end;
+

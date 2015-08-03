@@ -1,0 +1,30 @@
+# In the simulation, I make a star tree, with 5 equal branches, all
+# length 0.3.  The root has an equal frequency of bases, but the
+# sequences on the branches evolve under an f81 model with a
+# composition (0.4, 0.1, 0.1).  So the sequences start out with equal
+# base frequencies but become AT-rich as they evolve.  Since they
+# approach the model composition assymptotically, the composition of
+# the sequences never actually gets there.  They only become slightly
+# AT-rich over the course of their evolution.
+
+# The analysis has no access to the parameters of the simulation; all
+# it has are the data.  Yet it is able to correctly estimate all the
+# simulation parameters.
+
+# The cool thing about this is that although all the sequences have a
+# composition of approx (0.31, 0.19, 0.19), p4 is able to correctly
+# estimate both the (0.4, 0.1, 0.1) composition params for the branch
+# model, but also the equal composition params for the root model.
+# All of these composition parameters are outside of the range of the
+# observed data (!).  Remarkable.
+
+# One lesson here is that if you are dealing with hetero composition,
+# it is best to estimate the charfreq, rather than using empirical
+# charfreq.
+
+p4 sSim.py
+p4 sOpt.py
+rm data.nex
+
+
+

@@ -1,0 +1,40 @@
+# Grouped amino acids
+# ===================
+
+# This shows how to put amino acids into groups.  One motivation is
+# that you might suspect that there is saturation within the groups
+# but not so much between the groups.  Its rather like RY-recoding of
+# DNA, where you end up analysing only transversions.  One big
+# advantage to grouping aa's is that you can then optimize the
+# rMatrix, which is not only computationally expensive with the full
+# set of 20 aa's, but often there is not enough data with which to do
+# it well.
+
+# Here I have used Dayhoff groups. Dayhoff groups are:
+
+# c
+# stpag
+# ndeq
+# hrk
+# milv
+# fyw
+
+
+# One way to do it would be to use the nexus 'format' command to do
+# the recoding.  This does it:
+
+#  format datatype=standard symbols="123456" equate="c=1 s=2 t=2 p=2
+#        a=2 g=2 n=3 d=3 e=3 q=3  h=4 r=4 k=4 m=5 i=5 l=5 v=5  f=6 y=6 
+#        w=6"  gap=-;
+
+# However, that makes for slow likelihood evaluations, because each
+# equate must be evaluated, which takes a few extra calculations.  A
+# better way to do it would be to hard recode the data, which is the
+# way it is done here.  (An additional advantage, besides the speed,
+# is that if there are no gaps or ambiguities then it allows the
+# calculation of the unconstrained likelihood.)
+
+p4 s.py
+
+
+

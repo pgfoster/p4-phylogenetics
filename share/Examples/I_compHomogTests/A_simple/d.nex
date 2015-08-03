@@ -1,0 +1,44 @@
+#NEXUS
+
+begin taxa;
+  dimensions ntax=5;
+  taxlabels A B C D E;
+end;
+
+begin characters;
+  dimensions nChar=300;
+  format datatype=dna gap=- missing=?;
+  matrix
+    A
+      gtttggcctgttttgatctgttctgccggtttttcggttgcactgcgagtgcttacttgc
+      gctgcgtttgtcggttccttagttcttaaactacaagttccgtcgggtgctgtgctaatt
+      gcttgtgttactttgcctcttgcgggcggcgagggtctgttttgtagtttgggtttcaat
+      cttgaacgttcgtttgtcggtctcgttgttctgtggtttttttgtgttttctgattttgt
+      gtgcgatgtgccgatgtgcgggatgtgggtaatgcctttgcttttttccgtgtactttag
+    B
+      ctttggcatggtgccttctgttccgccggtttttgggttcctctgcgcgtgcttgcttgc
+      gctgcgtttgtcgattccttagttcgtaaggttcaagttgcgcggggtgctgagctaatc
+      gctcgtgttactttgcctctttcggggggggagggtctgttttgtactttgggtttcaat
+      cttgaaggttcgtttgtgcgtttcgttgttctctggtttgtttgtgttctctgcttttgt
+      gtgcgatgtacggatgtgcgccatctggctaatgcctttgctttttgccgtgttcgtttg
+    C
+      gtttggcttggtgtcgtctgttctgccggtttttcggttccactgcgagtgcttgcttgc
+      ggtgcgtttgtcgattccctagttcgtaaggttggagttacggggggtgctgtgctaatc
+      gctgatgttactttgcctcttgcgggccgggaggctctgttttgtagtttgggtttcaat
+      cttgaaggttcgtttgtccgtttggttgttctgtggtttgtttttgttttctgattttgt
+      gtgcgatgtgcggatgtgcgcgatgtgggtaatgcctttggtttttggcgtgttcttttc
+    D
+      cttttgcgtcttgtcttctgttctgccggtttttccgttcgtccgcgagtgctttcttgc
+      gacgcgtttctcctttccgtagttggtaaggttgaagttgcgccgtctgctgcgctaatt
+      gctcttgttactttgcctctttcgggcggggtggctctgatttgtaatctgggtttcagt
+      cttgaaggttctcttgtgcgtttgcttggtctgtggtttgtttgtcttttctgctttagt
+      gtgcaatgttcggatttgcgggctgtgggtaatgcctttggttttttaggtgttattttc
+    E
+      cttcggccttgtggcttctcttctgccggtttttcgggtgcgctgcatgtgcttagttgc
+      gcggcgtctgtcgtctcattagttccttactttgaagttgcgtcgcgtgctgtgcaaatg
+      gctcctgtgactttgcctctttccgggtctgagggtctgttctgtaatgtgggtttcagt
+      cttgaaggtctgtttgtcttttttcttgttctgtggtttgtttttgttctctccttttgt
+      atgcgatgtgcggatctgggcggtgtggttaatgcctttggtatttgtcgtgttccttgc
+  ;
+end;
+

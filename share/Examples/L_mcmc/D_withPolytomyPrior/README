@@ -1,0 +1,7 @@
+# Try it with and without the polytomy prior, and see what happens to
+# the support values.  You can turn it on and off by editing the
+# sMcmc.py script.
+
+p4 sMcmc.py
+p4 sCon.py
+rm mcmc* cons.nex

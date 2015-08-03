@@ -1,0 +1,9 @@
+# This is a repeat of the analysis for Y & R figure 1.
+# It is tree 31.
+# 
+# The numbers in the figure and in the figure caption are presented in
+# the results, except the errors (ie +/- something) on the kappa and
+# shape values, the unconstrained likelihood, and the compositions of
+# the sequences.
+
+p4 s.py

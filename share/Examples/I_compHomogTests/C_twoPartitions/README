@@ -1,0 +1,6 @@
+p4 sMakeRanTree.py
+p4 sSimData.py
+p4 sOpt.py
+paup -n paup.nex
+p4 sTests.py
+rm t.nex dA.nex dB.nex noOpt.p4_tPickle opt.p4_tPickle

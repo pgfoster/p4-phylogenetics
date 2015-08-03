@@ -1,0 +1,6 @@
+#nexus
+
+begin sets;
+  taxSet tsOdd = 1-.\2;
+  taxSet tsEven = 2-.\2;
+end;

@@ -1,0 +1,13 @@
+# This uses Shimo's consel set of programs to do sh, au, etc tests.
+# Of course the programs need to be installed.
+
+# The consel() method is a method of the Trees class, but the trees
+# should all be optimized.  So before we do consel(), we have to
+# define models and optimize the likelihood.  Here we do not save the
+# optimized trees, but it would be usual to do that.  After optimizing
+# both trees (with separate models), we make a Trees() object, and
+# call consel().
+
+# Do this:
+p4 s.py
+rm conselOut

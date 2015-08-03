@@ -1,0 +1,6 @@
+# We have a file with some data, and a file with a single tree.  We do
+# not do a tree search.  We evaluate the likelihood of the tree under
+# the Jukes-Cantor model, first in PAUP and then with p4.
+
+paup paup.nex
+p4 s.py

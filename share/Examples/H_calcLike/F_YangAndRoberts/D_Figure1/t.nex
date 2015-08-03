@@ -1,0 +1,13 @@
+#nexus
+
+begin trees;
+	translate
+		1 S_solfat,
+		2 H_salin,
+		3 E_coli,
+		4 H_sapiens
+		;
+
+	tree t31 = [&U]  (((1,4),2),3);
+
+end;

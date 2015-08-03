@@ -1,0 +1,16 @@
+paup paupCompo.nex
+p4 sCompo.py
+
+# These next 2 lines make a single composition tree.  P4 makes the
+# distance matrix and writes it to a file, and paup searches for a
+# best tree using that distance matrix.
+p4 sMakeCompositionDistMatrix.py
+paup pMakeDistanceTree.nex
+
+# This one uses p4 to bootstrap the data, and for each
+# pseudo-replicate it makes a composition distance matrix and asks
+# paup for a NJ tree.
+p4 sCompoBoot.py
+
+# clean up
+rm compDistMatrix.nex

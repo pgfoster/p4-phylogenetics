@@ -1,0 +1,22 @@
+#NEXUS
+
+begin taxa;
+  dimensions ntax=4;
+  taxlabels one two three four;
+end;
+
+begin characters;
+  dimensions nChar=10;
+  format datatype=dna gap=- missing=?;
+  matrix
+    one
+      acgtacgtac
+    two
+      acgtacgtrr
+    three
+      acgtacgryy
+    four
+      acgtacgmry
+  ;
+end;
+

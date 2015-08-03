@@ -1,0 +1,29 @@
+#NEXUS
+
+begin taxa;
+  dimensions ntax=4;
+  taxlabels S_solfat H_salin E_coli H_sapiens;
+end;
+
+begin trees;
+    tree t0 = [&U] (S_solfat, H_sapiens, H_salin, E_coli);
+    tree t1 = [&U] ((S_solfat, H_salin), E_coli, H_sapiens);
+    tree t11 = [&U] (((S_solfat, H_salin), H_sapiens), E_coli);
+    tree t12 = [&U] (((S_solfat, H_salin), E_coli), H_sapiens);
+    tree t13 = [&U] (((E_coli, H_sapiens), H_salin), S_solfat);
+    tree t14 = [&U] (((E_coli, H_sapiens), S_solfat), H_salin);
+    tree t15 = [&U] ((S_solfat, H_salin), (E_coli, H_sapiens));
+    tree t2 = [&U] ((S_solfat, E_coli), H_salin, H_sapiens);
+    tree t21 = [&U] (((H_salin, H_sapiens), S_solfat), E_coli);
+    tree t22 = [&U] (((S_solfat, E_coli), H_salin), H_sapiens);
+    tree t23 = [&U] (((S_solfat, E_coli), H_sapiens), H_salin);
+    tree t24 = [&U] (((H_salin, H_sapiens), E_coli), S_solfat);
+    tree t25 = [&U] ((S_solfat, E_coli), (H_salin, H_sapiens));
+    tree t3 = [&U] ((S_solfat, H_sapiens), H_salin, E_coli);
+    tree t31 = [&U] (((S_solfat, H_sapiens), H_salin), E_coli);
+    tree t32 = [&U] (((S_solfat, H_sapiens), E_coli), H_salin);
+    tree t33 = [&U] (((H_salin, E_coli), H_sapiens), S_solfat);
+    tree t34 = [&U] (((H_salin, E_coli), S_solfat), H_sapiens);
+    tree t35 = [&U] ((S_solfat, H_sapiens), (H_salin, E_coli));
+end;
+

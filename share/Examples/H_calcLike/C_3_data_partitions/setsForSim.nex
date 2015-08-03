@@ -1,0 +1,7 @@
+#nexus
+
+begin sets;
+  charset cs1 = 1-.\2;
+  charset cs2 = 2-.\2;
+  charPartition cp1 = cs1:cs1, cs2:cs2;
+end;

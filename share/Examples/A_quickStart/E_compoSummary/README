@@ -1,0 +1,4 @@
+#     $ p4 d.nex             # Read the data
+#     p4> d=Data()           # Make a Data object
+#     p4> d.compoSummary()   # Ask for a table of composition
+

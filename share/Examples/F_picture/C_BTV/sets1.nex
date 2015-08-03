@@ -1,0 +1,6 @@
+#nexus
+
+begin sets;
+  taxSet ts1 = 100-200;
+  taxSet ts2 = 200-300 400-500;
+end;

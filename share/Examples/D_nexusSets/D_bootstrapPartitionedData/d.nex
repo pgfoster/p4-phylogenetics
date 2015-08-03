@@ -1,0 +1,20 @@
+#NEXUS
+
+begin taxa;
+    dimensions ntax=3;
+    taxlabels A B C;
+end;
+
+begin characters;
+    dimensions nchar=12;
+    format datatype=standard symbols="mnlt" gap=-;
+    matrix
+    A  mnmnmnltltlt
+    B  mnmnmnltltlt
+    C  mnmnmnltltlt
+    ;
+end;
+
+begin sets;
+  charpartition cp1 = mn:1-6, lt:7-12;
+end;

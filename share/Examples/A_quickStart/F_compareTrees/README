@@ -1,0 +1,10 @@
+# To draw the trees to the screen, do this:
+p4 -d t*
+
+# Then, to compare the topologies,
+#     $ p4 t*                           # Read in both trees
+#     p4> tA = var.trees[0]             # Name the first one
+#     p4> tB = var.trees[1]             # Name the second one
+#     p4> print tA.topologyDistance(tB) # Symmetric difference
+#     0                                 # Zero means they are the same
+

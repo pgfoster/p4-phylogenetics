@@ -1,0 +1,12 @@
+# Here we make up a random tree, and then use it to simulate some data
+# based on that tree.  We want to make 2 alignments: the first
+# alignment is partitioned into first and second positions, and the
+# second alignment is standard datatype, unpartitioned.  The model is
+# GTR+something, specific to each partition.  Relative rates of the
+# different partitions are optimized.
+
+p4 sMakeRanTree.py
+p4 sSimData.py
+p4 sOpt.py
+p4 sResults.py
+rm d.nex t.nex opt.p4_tPickle

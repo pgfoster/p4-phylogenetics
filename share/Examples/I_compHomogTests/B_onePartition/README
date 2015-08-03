@@ -1,0 +1,6 @@
+p4 sMakeRanTree.py
+p4 sSimData.py
+p4 sOpt.py
+paup paup.nex  # bad output in my version of paup, due to no a's in the sequences
+p4 sTests.py
+rm t.nex d.nex noOpt.p4_tPickle opt.p4_tPickle

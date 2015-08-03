@@ -1,0 +1,8 @@
+#NEXUS
+
+begin paup;
+	execute d.nex;
+	generatetrees all;
+	savetrees file=allTrees.nex replace;
+	quit;
+end;

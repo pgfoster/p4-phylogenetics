@@ -1,0 +1,39 @@
+#NEXUS
+
+begin taxa;
+    dimensions ntax=3;
+    taxlabels A B C;
+end;
+
+begin characters;
+    dimensions nchar=7;
+    format datatype=dna gap=-;
+    matrix
+    A  acgtact
+    B  acgtact
+    C  acgcact
+    ;
+end;
+
+begin sets;
+    charset cs2 = 1;
+    charpartition aB = A:cs2 2, b:4;
+end;
+
+begin data;
+    dimensions ntax=3 nchar=8;
+    format datatype=standard symbols="wxyz" gap=-;
+    matrix
+    A  wxyzwxyz
+    B  wxyzwxyz
+    C  wxyzwxyz
+    ;
+end;
+
+begin sets;
+    charset cs1 = 1 7;
+    charpartition cD = foo:cs1, bar:2 3, baz:remainder;
+    charpartition w_xyz = w:1 5, xyz:remainder;
+    charset w = 1 5;
+    charpartition xyz = w:w, xyz:remainder;
+end;

@@ -1,0 +1,10 @@
+#nexus
+
+begin paup;
+  set warntsave=no;
+  execute compDistMatrix.nex;
+  set crit=dist;
+  hs;
+  showtrees;
+  quit;
+end;

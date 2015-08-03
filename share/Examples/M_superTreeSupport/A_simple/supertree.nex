@@ -1,0 +1,7 @@
+#NEXUS
+
+begin trees;
+	
+	tree tree_1 = ((I,J),(((E,D),((A,B),C)),((G,H),F)));
+
+end;

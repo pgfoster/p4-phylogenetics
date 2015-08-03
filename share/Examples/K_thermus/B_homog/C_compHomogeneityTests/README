@@ -1,0 +1,3 @@
+p4 sOpt.py
+p4 sTests.py
+rm opt.p4_tPickle

@@ -1,0 +1,9 @@
+#NEXUS
+
+begin paup;
+	execute ../noTRuberNoGapsNoAmbiguities.nex;
+	basefreqs;
+	exclude constant;
+	basefreqs;
+	quit;
+end;

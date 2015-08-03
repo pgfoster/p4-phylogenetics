@@ -1,0 +1,54 @@
+#NEXUS
+
+begin data;
+  dimensions ntax=9 nChar=237;
+  format datatype=protein gap=- missing=?;
+  matrix
+    A
+      nhivllaekadyvygfltgevivtsscglyvlgvvtliknpgtgedatlinversrwaii
+      vhveggnyyeagfwtpsakrgaalrysavdiymgdaigvffaagylrvkdvvdnmeaggv
+      ktweckeahqpresidltndfrdqgtcgkigtsenatlatssvaigtnchgqfllagntk
+      asltgftldvgaseaepeivpsqggshaywgishtyyplkktmgklpyvdwfansgh
+    B
+      qhivllaeridafygfltgtvtitsscglyvigvytlikniatledattinverskwaii
+      ihveggnyyeagywsattkrtaalryiadeifmgvalgvftaagypavkdtvdnmeaggv
+      ktwdckqahqpresidltnsirdqgtmgdegtsenasiaessvaigqnchshfiiagntk
+      amftefnlsvgiaeaepeivpkqggsheywgisytympikktqgefpyvtwtanagy
+    C
+      nhvillaeiaqilvgflsgevlvttgcglyflgvvtliknvgyqedattlnversrwaii
+      ihveggnyteagfwsppaimgaaarynaqgiymgpaagvffaagysgvkdavdnmeaggv
+      knwackeanqpresidlthdyrdqgqighvhtsenvslatssvalgenchgqfllaanak
+      atvtqfslgvsigeakpeivpsqggstkywgvsrtyipvpktmgefpyvnwlanagy
+    D
+      yeavllassedllygyvtgkatvtpscglyavgvitlipnkgavedqtalntersrwali
+      ahveggnyteagfwavfvtsgaalrykairifmgnargvfpsagfsgvkgsvdnmeatgv
+      atwecieaqqpreaidmaskvctqgiqgqigtselaglavssvalgqnphgkyllagnck
+      sslsfftldvgcleaqpemipggkgshpywgvsrtalplpkatgdlpvvswfakggr
+    E
+      nhvillaeksdmaygfltgevtvtssmglyvkgvttlikntgygedatalnversrwsii
+      ahveggnyteagfwsmasimgaatryeaqgiymgdavgvffmagysgvkdavdnmeapgv
+      knwsckeaiqpvesidlthdmrsqgttgqigtsenanlatssvaigennhgqfllagnak
+      asitrfylsvgvseaepeivpsqggshpywgvshtylpvpkligefpyvswlanagy
+    F
+      yhvvllaekadfsygfltgmisvtsscglyvigvitlienmgqgedatelnversrwali
+      ihveggnyteagfwstattrgaamrysaidiymgdalgvffaagysgvndtvdnmeawgv
+      ktwecreasqpresidltndacdqgtkgfvgtsenaglagssvalgnnmhfqfllagntk
+      atltnffldvgtgeaerevvpskggshpywgvsttylpvpktmgdfpyadwftnagy
+    G
+      srvvllagrsdfiygfltgdvlttsscglyvlgvvtliknigsgedadalnversrwkvi
+      lhveggnyteagfwsaslkdgaamsysaheiymgetvgvffsagsggvkdlvdnmeaggv
+      knwqcdeanqpresidltnperdqggmiqygtsenahlasssvaygenvhgdfllagnvk
+      amlthfmgdvglseaepdivpsesgshpywglshtyfpvpitmgefpyvdwwanmgy
+    H
+      nhvillaeaadfvygfltgeatvtsscglyvlgvvtlidnigtgedatalnversrwavi
+      rhveggnyteagywsateeraaatrylavdiymgealgvffaagyhgvkdqvdnmeaggv
+      ktweckeagqpresidltiddrdqgslqqvgtsefaglatssvalgqnchgqvllagnvk
+      agptnfsydvgieeaepeivpseggshpywgvshtylpipktmgdypyvewwanvgy
+    I
+      nhmillaikpetfygfltgevkitsscglyvlgvvtliknlgnaedaallnversryasi
+      lhveggnytepgmwplsnkrgaairysapgiaygdamgvffmagyshvkdkidnmeaagv
+      knweckeanqpresidlthdirdtgpfgqvstsenaaltpssvamgenchgqfwlagnvk
+      atmtnfelqigvseaepniiptqggshpywgvsstylplpksmgefpyvdwwanngy
+  ;
+end;
+

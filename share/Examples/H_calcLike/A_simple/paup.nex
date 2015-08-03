@@ -1,0 +1,10 @@
+#nexus
+
+begin paup;
+  execute d.nex;
+  gettrees file=t.nex;
+  set crit=like;
+  lset nst=1 basefreq=equal;
+  lsc 1;
+  quit;
+end;

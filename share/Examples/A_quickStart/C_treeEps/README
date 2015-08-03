@@ -1,0 +1,6 @@
+# Try this:
+#     $ p4 t.nex                 # Read the tree from the command line
+#     p4> t = var.trees[0]       # Give the tree a name
+#     p4> t.eps()                # Tell it to make an eps file.
+#     p4>                        # Quit with control-d
+

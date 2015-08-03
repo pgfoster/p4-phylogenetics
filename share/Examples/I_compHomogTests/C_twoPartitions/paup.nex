@@ -1,0 +1,9 @@
+#nexus
+
+begin paup;
+  execute dA.nex;
+  basefreq;
+  execute dB.nex;
+  basefreq;
+  quit;
+end;

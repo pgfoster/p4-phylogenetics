@@ -1,0 +1,6 @@
+#nexus
+
+begin sets;
+charpartition p1 = one:1-200, two:201-333;
+end;
+

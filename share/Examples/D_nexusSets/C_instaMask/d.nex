@@ -1,0 +1,17 @@
+#NEXUS
+
+begin taxa;
+    dimensions ntax=3;
+    taxlabels A B C;
+end;
+
+begin characters;
+    dimensions nchar=12;
+    format datatype=standard symbols="abcdefghijkl" gap=-;
+    matrix
+    A  abcdefghijkl
+    B  abcdefghijkl
+    C  abcdefghijkl
+    ;
+end;
+

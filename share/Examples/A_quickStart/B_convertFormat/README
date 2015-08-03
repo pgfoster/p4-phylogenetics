@@ -1,0 +1,6 @@
+# Try this
+#     $ p4 data.phy                # Read the data at the command line
+#     p4> a = var.alignments[0]    # Give the alignment a name
+#     p4> a.writeNexus('data.nex') # Tell it to write itself to a file
+#     p4>                          # Control-d to quit.
+

@@ -1,0 +1,11 @@
+#nexus
+
+begin taxa;
+  dimensions ntax=7;
+  taxlabels A B C D E F G;
+end;
+
+begin trees;
+  tree t1 = [&U] (((F:0.2, D:0.1):0.3, A:0.05):0.4, (B:0.2, C:0.15):0.2, (E:0.1, G:0.2):0.1);
+  tree t2 = [&U] (((A:0.2, D:0.1):0.2, F:0.1):0.3, (B:0.2, C:0.15):0.3 [0.3 in the diagram page 532, but its 0.2 in the table and in the calculations.  It should be 0.3-- see the web page http://evolution.genetics.washington.edu/book/typos.html], E:0.1, G:0.2);
+end;

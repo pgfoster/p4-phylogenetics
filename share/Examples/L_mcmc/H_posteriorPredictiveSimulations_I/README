@@ -1,0 +1,11 @@
+# Here we look at the Thermus dataset and ask whether the composition
+# part of the tree-homogeneous model fits the data.  To do that we do
+# an MCMC with Mcmc(..., simulate=2), which writes a file of X^2
+# values from simulations made at the sampled points in the MCMC.
+# Then the X^2 stat is obtained from the original data.  It is
+# evaluated relative to the simulation values using a tail area
+# probability test.  The P_t is zero; that shows that the composition
+# of a homogeneous GTR+G model does not fit the data.
+
+p4 sMcmc.py
+p4 sExamineSims.py

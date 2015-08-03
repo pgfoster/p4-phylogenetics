@@ -1,0 +1,19 @@
+#NEXUS
+
+begin taxa;
+    dimensions ntax=2;
+    taxlabels A B;
+end;
+
+
+begin characters;
+    dimensions nchar=4;
+    format  datatype=dna   equate="x={acgt}" gap=-;
+    matrix
+      A
+        agct
+      B
+        acgt
+      ;
+end;
+

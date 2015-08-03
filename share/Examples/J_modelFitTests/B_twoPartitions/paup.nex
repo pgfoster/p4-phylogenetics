@@ -1,0 +1,7 @@
+#nexus
+
+begin paup;
+  execute d.nex;
+  basefreq;
+  quit;
+end;

@@ -1,0 +1,11 @@
+#nexus
+begin paup;
+log start file=paupLog replace=yes;
+execute d.nex;
+set maxtrees=1000 increase=auto;
+gettrees file=tt.nex allblocks=yes storeTreeWts=yes;
+contree all/strict=no majrule=yes percent=50 le50=yes showtree=yes treefile=paupConTree.nex replace=yes useTreeWts=yes;
+[savetrees file=savetrees.nex format=altnex;]
+log stop;
+quit;
+end;

@@ -1,0 +1,2 @@
+rm -f mcmc*
+p4 sSTMcmc.py

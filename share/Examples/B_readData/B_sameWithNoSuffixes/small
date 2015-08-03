@@ -1,0 +1,26 @@
+{
+name	"Walrus"
+type		"DNA"
+sequence-ID	"foob"
+offset		0
+creation-date	 6/21/10 20: 1:37
+direction	1
+strandedness	1
+comments	""
+sequence	"cctggttgatcctgccagtagttatatgcttgt-ctcaaagattaagccatgcatgtc
+taagtacaaagcct-acaaggctgaaaccgcgaatggctcattaaatcagttgtggttta
+tagaggaagtaaaagtcgtaacaaggtttccgtaggtgaacctgcggaaggatcatta"
+}
+{
+name	"Carpenter_sp."
+type		"DNA"
+sequence-ID	"joshua:1:993150097"
+offset		2
+creation-date	 6/21/10 20: 1:37
+direction	1
+strandedness	1
+comments	""
+sequence	"tggttgatcctgccagtagtcatatgcttgtcctcaaagattaagccatgcatgtg
+taagtacaca-ccaaattaaggtgaaaccgcgaatggctcattaaatcagttgtggttcc
+tagaggaagtaaaagtcgtaacaaggtttccgtag-tgaacctgcggaaggatcat"
+}

@@ -1,0 +1,11 @@
+#NEXUS
+
+begin taxa;
+  dimensions ntax=5;
+  taxlabels A B C D E;
+end;
+
+begin trees;
+    tree random = [&U] ((C, (D, B)), E, A);
+end;
+

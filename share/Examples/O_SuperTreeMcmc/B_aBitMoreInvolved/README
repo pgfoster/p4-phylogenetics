@@ -1,0 +1,10 @@
+rm -f mcmc* mr* stMcmcCons.nex
+p4 sMakeMR.py
+paup paup_this.nex
+p4 -d mrp*
+p4 sSTMcmc.py
+p4 sCon.py
+p4 sReadSTMcmcCheckPoints.py
+p4 sPlotLikes.py
+p4 sDoSTS.py
+p4 sInputTreesToSuperTreeDistances.py

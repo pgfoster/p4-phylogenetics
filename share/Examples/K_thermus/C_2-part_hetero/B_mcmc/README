@@ -1,0 +1,4 @@
+p4 sMcmc.py
+p4 sCon.py
+p4 sFit.py
+rm mcmc*

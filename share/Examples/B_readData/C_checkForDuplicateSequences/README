@@ -1,0 +1,5 @@
+rm -f d3_noDupes.phy  njTree.nex  p4DupeSeqRenameDict.py  restoredNJTree.nex
+p4 s.py
+cat d3_noDupes.phy
+p4 sMakeTree.py
+p4 sRestoreTree.py

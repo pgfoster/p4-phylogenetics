@@ -1,0 +1,4 @@
+# Say
+p4 -d t.nex
+# to draw the tree to the screen.
+

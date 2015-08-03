@@ -1,0 +1,18 @@
+# I use a model that is tree-hetero for composition, so the data is
+# compositionally heterogeneous.  Naturally, tests of compositional
+# homogeneity (X^2 test) say that it is not homogeneous.  But a more
+# important question is whether the hetero data fits the hetero model,
+# and here I show that it does fit.  That is reasonable, because I
+# simulated the "original" data under a known model, and I evaluated
+# those data with that model.  In a more realistic scenario I would of
+# course not know what the true model was.
+
+p4 sMakeRanTree.py
+p4 sSimData.py
+p4 sOpt.py
+paup paup.nex
+echo 'Doing sims.  This could take a while ...'
+p4 sTests.py
+cat model_fit_tests_out
+rm d.nex t.nex noOpt.p4_tPickle opt.p4_tPickle sims* model_fit_tests_out
+

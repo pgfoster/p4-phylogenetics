@@ -1,0 +1,10 @@
+#nexus
+
+begin paup;
+  execute d.nex;
+  gettrees file=t.nex;
+  set crit=like;
+  lset nst=6 basefreq=est rmatrix=est rates=gamma shape=est pinvar=est;
+  lsc 1;
+  quit;
+end;

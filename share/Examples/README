@@ -1,0 +1,11 @@
+Using the Examples
+==================
+
+It is recommended that you make a copy of these Examples, and work on
+the copy.  That way the original is left untouched.
+
+Sometimes there is a README file, that tells you what sequence of
+commands to do to make the examples happen.  In other cases there is
+just a script (s.py or sSomething.py) that you can execute with p4.
+
+

@@ -1,0 +1,12 @@
+#NEXUS
+
+begin taxa;
+  dimensions ntax=5;
+  taxlabels Aquifex Deinococcus Thermotoga Bacillus Thermus;
+end;
+
+begin trees;
+    tree true = [&U] (Aquifex, ((Deinococcus, Thermus), Bacillus), Thermotoga);
+    tree attract = [&U] (Aquifex, ((Deinococcus, Bacillus), Thermus), Thermotoga);
+end;
+

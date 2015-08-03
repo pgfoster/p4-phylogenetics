@@ -1,0 +1,16 @@
+#NEXUS
+
+
+begin trees;
+	translate
+		1 S_solfat,
+		2 H_salin,
+		3 E_coli,
+		4 H_sapiens
+		;
+	tree t0 = [&U]  (1,2,3,4);
+	tree t1 = [&U]  ((1,2),3,4);
+	tree t2 = [&U]  ((1,3),2,4);
+	tree t3 = [&U]  ((1,4),2,3);
+end;
+

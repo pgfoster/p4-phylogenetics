@@ -1,0 +1,22 @@
+#nexus
+
+begin mrbayes;
+  log filename=mbout32.log replace start;
+  execute d.nex;
+  charset one = 1-200;
+  charset two = 201-333;
+  partition p1 = 2:one,two;
+  set partition = p1;
+  unlink revmat=(all) statefreq=(all) shape=(all) pinvar=(all);
+  prset ratepr=variable;
+prset applyto=(1) aamodelpr=fixed(wag);
+prset applyto=(2) aamodelpr=fixed(jones);
+  lset applyto=(1) rates=gamma;
+  lset applyto=(2) rates=invgamma;
+  
+  mcmc ngen=2000 samplefreq=100 printfreq=200 mcmcdiagn=yes diagnfreq=1000 relburnin=yes burninfrac=0.5 savetrees=yes checkpoint=no autotune=yes filename=mbout32;
+
+  sump filename=mbout32 outputname=mbout32 relburnin=yes burninfrac=0.5 ;
+  sumt filename=mbout32 outputname=mbout32 relburnin=yes burninfrac=0.5 contype=allcompat conformat=simple;
+  quit;
+end;

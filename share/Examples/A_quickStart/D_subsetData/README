@@ -1,0 +1,6 @@
+#     $ p4 d.phy sets.nex                   # Read everything
+#     p4> a=var.alignments[0]               # Name the alignment
+#     p4> b = a.subsetUsingCharSet('gene1') # b is a new alignment
+#     p4> b.writeNexus('gene1.nex')         # Tell b to write itself
+#     p4>                                   # Quit with control-d
+

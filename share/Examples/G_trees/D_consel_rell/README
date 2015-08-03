@@ -1,0 +1,5 @@
+p4 sSim.py
+p4 sMakeOptTrees.py
+p4 sConsel.py
+rm t* d.nex conselOut
+

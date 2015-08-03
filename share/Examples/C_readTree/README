@@ -1,0 +1,3 @@
+p4 -x t* outtree
+p4 z_nLeavesDoesNotEqualNTax_notOk.nex
+

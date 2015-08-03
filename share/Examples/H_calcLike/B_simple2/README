@@ -1,0 +1,9 @@
+# Here we make up a random tree, and then simulate some data based on
+# that tree.  Then we analyse it with the GTR+G+I model, first with
+# PAUP and then with p4.  Then we clean up.
+
+p4 sMakeRanTree.py
+p4 sSimData.py
+paup paup.nex
+p4 sOpt.py
+rm d.nex t.nex

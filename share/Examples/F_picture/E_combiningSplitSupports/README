@@ -1,0 +1,106 @@
+Combining split supports
+
+You will often analyse the same data with two different
+methods, each of which gives you a tree with support values, but you
+may want to summarize the results of both trees using a single tree
+figure.  The trees may differ in topology, or they may be the same.
+Even if they are the same topology, the branch lengths may differ.
+One approach is to consider one tree to be the "master" tree, giving
+the figure its topology and branch lengths, but you then somehow
+combine the split supports from the other tree onto the master.  
+
+Consider these two trees ---
+
+       +-------------- E
++------|0.84
+|      +----------- B
+|
+|-------- G
+|
+|                      +-------- C
+|                      |
+|               +------|0.90          +-------------- D
+|               |      |      +-------|0.95
+|               |      |      |       +----------- F
+|               |      +------|0.87
+|       +-------|0.95         |       +------------ H
+|       |       |             +-------|0.88
+|       |       |                     +-------------------- A
++-------|0.59   |
+        |       +-------------- I
+        |
+        +--------------- J
+
+        +--------------- D
++-------|73
+|       +------------- F
+|
+|       +-------------- H
+|-------|77
+|       +---------------------- A
+|
+|               +-------- C
+|       +-------|86
+|       |       +---------------- I
+|       |
++-------|88      +---------------- J
+        |        |
+        +--------|58             +--------------- E
+                 |       +-------|98
+                 +-------|99     +------------ B
+                         |
+                         +-------- G
+
+
+ 
+These two trees are both fully resolved, and mostly have the same
+splits -- there is one difference (can you see that?).  If we make the
+first tree the master tree, it is a fairly easy job to merge the split
+supports onto that tree, as shown below.
+
+Doing the combining "by hand" is an option, but for bigger trees
+(which may share only some of the same splits) the task becomes
+onerous, time-consuming, and error-prone.  The process can be
+automated, and one way to do that is shown here.  The
+process involves assigning numbers to each split in both trees;
+those numbers being a numerical equivalent of the ``dot-star''
+notation for splits --- for example |.**.**| might be binary |011011|.
+Since the taxa are the same in both trees, and in the same order,
+those numbers can be used by each split in the master tree to find
+the same split (if it exists) in the other tree.  Then the supports
+can be combined.
+
+
+       +-------------- E
++------|0.84/98
+|      +----------- B
+|
+|-------- G
+|
+|                      +-------- C
+|                      |
+|               +------|0.90/-        +-------------- D
+|               |      |      +-------|0.95/73
+|               |      |      |       +----------- F
+|               |      +------|0.87/88
+|       +-------|0.95/58      |       +------------ H
+|       |       |             +-------|0.88/77
+|       |       |                     +-------------------- A
++-------|0.59/99|
+        |       +-------------- I
+        |
+        +--------------- J
+
+
+This is done in this example (on a bigger scale).  To make the tree with the combined supports, do
+
+p4 sCombine.py
+
+To display it (assuming you have a Python with Tkinter) (graphics alert!), do
+
+p4 -i sView.py
+
+In these examples above, the support values came from the consensus trees, and so some support values were in one tree and not the other.  However, it is possible to get the support values of the secondary tree from a TreePartitions object rather than a consensus tree, which may give fewer instances where there is only one support. 
+
+
+

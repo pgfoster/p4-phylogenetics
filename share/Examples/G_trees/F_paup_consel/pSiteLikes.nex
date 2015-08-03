@@ -1,0 +1,12 @@
+#NEXUS
+
+begin paup;
+    [log start file=paupLog replace;]
+    execute d.nex;
+    gettrees file=allTrees.nex;
+    set crit=like;
+    lset nst=6 rmatrix=est basefreq=emp pinvar=est rates=equal;
+    [this next line gives something that can be modified to feed to consel]
+    lsc all/sitelikes=yes scorefile=siteLikes displayout=no;
+    quit;
+end;

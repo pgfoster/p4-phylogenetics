@@ -1,0 +1,19 @@
+# This is a demo of 3 different topologyDistance metrics.  It is taken
+# from Felsenstein's book, page 529 ff.
+
+# The first is the symmetric difference.  Its that number of splits
+# that one tree has that the other does not, plus the number of splits
+# that the other tree has that the one does not.  It is the same as
+# the unweighted Robinson-Foulds distance.
+
+# The weighted Robinson-Foulds distance and the BLD are metrics for
+# weighted trees.  The example is taken from Felsenstein's book, page
+# 532, but note that there is a small error there-- in the diagram on
+# the right of Figure 30.8, the branch length to the AB clade is shown
+# as 0.3, but in the table below, and in the calculations, it is 0.2.
+# This is a known typo, and it should be 0.3, which makes the rf
+# distance 1.05, and the branch score 0.1925.  See 
+# http://evolution.genetics.washington.edu/book/typos.html
+
+p4 s.py
+
