@@ -415,10 +415,16 @@ class STChain(object):
                 else:
                     # If we are here when S_st is zero, then q is undefined.
                     # So fall into the else clause
-                    if self.stMcmc.useSplitSupport and S_st and n.br.support != None:
-                        self.propTree.logLike += math.log(
-                            r + ((1. - n.br.support) * (q - r)))
+                    if 0:
+                        # This has the dodgy assumption that 1-support is in the supertree.
+                        # Might be zero support for a split in the supertree.
+                        if self.stMcmc.useSplitSupport and S_st and n.br.support != None:
+                            self.propTree.logLike += math.log(
+                                r + ((1. - n.br.support) * (q - r)))
+                        else:
+                            self.propTree.logLike += logr
                     else:
+                        # This does not make the assumption above.  Safer.
                         self.propTree.logLike += logr
 
             if slowCheck:
