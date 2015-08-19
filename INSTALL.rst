@@ -43,7 +43,7 @@ Installing p4 using setup.py
 
 This is the usual way that Python packages are installed; however if you plan on
 keeping up with the git repo you it may be easier to install p4 in-place as
-described above.
+described below.
 
 If you are upgrading, you can un-install the previous version with the
 p4 func.uninstall() function.  Depending on how it was installed, you
