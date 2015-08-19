@@ -1,0 +1,266 @@
+============
+Installation
+============
+
+The source code is hosted at `<https://github.com/pgfoster/p4-phylogenetics>`_
+
+P4 needs Python 2; it is not yet ported to Python3.
+
+I've installed it on Linux and Mac OS X.  In either case, you need to
+have some basic C-language programming tools, including a compiler,
+libraries, headers, and so on.   
+
+**Preparations for the full install on the Mac**
+
+
+You need Xcode, available from the Apple App Store.
+
+You need ``numpy``, a python module, and the ``gsl`` library (Gnu
+Scientific Library).  
+
+
+ 
+**Preparations for the full install on Ubuntu Linux**
+
+If the installation process complains about lack of Python.h, then you
+need what on Ubuntu would be called 'python-dev'. 
+
+I have recently installed p4 Ubuntu 14.04, and had to::
+
+    sudo apt-get install python-numpy
+    sudo apt-get install libgsl0-dev
+    sudo apt-get install python-dev
+
+And if you want to use the GUI tree-drawing::
+
+    sudo apt-get install python-tk
+
+Presumably other Ubuntu versions will be similar or identical.
+
+
+Installing p4 using setup.py
+============================
+
+This is the usual way that Python packages are installed; however if you plan on
+keeping up with the git repo you it may be easier to install p4 in-place as
+described above.
+
+If you are upgrading, you can un-install the previous version with the
+p4 func.uninstall() function.  Depending on how it was installed, you
+may need to be root or use sudo to do that.
+
+Presumably you are starting with the file ``p4-1.x.y.tar.gz``.  Unpack it in
+your favourite source directory.  In the newly-created directory note
+the file ``setup.py``.  That file controls the build and installation.  It
+installs 3 things:
+
+    1.  **The p4 package.**          Goes where 3rd party packages go
+                                Eg ``/usr/local/lib/python2.7/site-packages``
+
+    2.  **The p4 script.**           Goes somewhere in your path
+                                Eg ``/usr/local/bin``
+
+    3.  **The examples**             Goes in a share/doc directory
+                                Eg ``/usr/local/share/doc``
+
+Simple install
+--------------
+
+First you can build it, without installing it, by saying::
+
+    python setup.py build
+
+(no need to be root, or use sudo, for the above step)
+
+After building it, you then install it.  The default location for
+installation is where python libraries are installed, and you as
+JoeUser may not have file-writing permission to put files there, so
+you may need to be root or use sudo for the next step.  Eg if you sudo
+it, you can say::
+
+    sudo python setup.py install
+
+
+Installation variations
+-----------------------
+
+To get a description of the various installation options, do::
+    
+    python setup.py install --help. 
+
+To install it in your home directory, say::
+
+    python setup.py install --home=~
+
+If you install it in your home directory, 
+    
+- there is no need to be root or to use sudo
+
+- if you do this you may need to setenv your ``PYTHONPATH`` to eg
+        ``~/lib/python``.  Eg in your ``~/.bash_profile`` or ``~/.profile`` you can put the
+        line::
+
+          export PYTHONPATH=$HOME/lib/python
+
+        (depending on where your P4 lib directory is, and what it is called), or
+        you can add ::
+
+          export PYTHONPATH=$PYTHONPATH:$HOME/lib/python
+
+        if you already have a ``PYTHONPATH`` defined.
+
+- you may also need to set your ``PATH`` environment variable to
+      include ``~/bin``.  In many cases this will already be done, but if it is
+      not, and you are using the bash shell, you can do something like::
+
+          PATH=$PATH:$HOME/bin
+
+      and then as usual after all your paths have been set, you should have a line that says::
+
+          export PATH
+
+
+
+Where things go
+---------------
+
+
+The default installation location has a "root", which might be ``/usr`` or
+``/usr/local``, or your home directory.
+
+The default location for installation of the modules is something like::
+
+    /usr/lib/python2.7/site-packages
+
+or::
+
+    ~/lib/python
+
+depending on the "root" of the installation, of course.
+
+The default location for the script p4 is something like::
+
+    /usr/local/bin
+
+The default location for the examples is something like::
+
+    /usr/local/share/doc/p4-1.x.y/Examples
+
+
+Installing it in-place
+======================
+
+My fave way of using the git version of p4 is to install it in-place rather than
+installing it with ``setup.py``.  The advantage is that it makes it easier to
+keep up with the changes made to the git repo.  To make it usable in-place, you
+need to do three things, which in overview are
+
+1. Add the p4 git directory, eg ``/usr/local/src/P4Git`` to your ``PYTHONPATH``
+
+2. Add the p4 git bin directory, eg ``/usr/local/src/P4Git/bin`` to your ``PATH``
+
+3. Build the ``pf`` module, installing it in-place
+
+Now look at those three steps in detail.
+For example if you install it in your home directory, to add the p4
+git directory to your ``PYTHONPATH``, you might add something like the
+following line to your ``~/.profile`` or ``~/.bash_profile``::
+
+  export PYTHONPATH=$HOME/src/P4Hg
+
+(depending on where your P4 lib directory is, and what it is called), or
+you can add ::
+
+  export PYTHONPATH=$PYTHONPATH:$HOME/src/P4Git
+
+if you already have a ``PYTHONPATH`` defined.
+
+The second thing you will want to do is to add the location of the p4
+script to your ``PATH``.  Similar to adjusting the ``PYTHONPATH``
+above, you can add a line like this to your  ``~/.profile`` or ``~/.bash_profile``::
+
+  export PATH=$PATH:$HOME/src/P4Hg/bin
+
+depending on where your P4 hg directory is, and what it is called.
+
+To build the ``pf`` module, say::
+
+   python setup.py build_ext -i
+
+It might actually work.  If it doesn't, note the error messages that
+flew by.  The earliest error message is usually a clue.
+
+
+Updating from git
+=================
+
+The best part of installing it in-place is that it makes it easy to
+update.  Generally all you need to do is to go to the p4 git directory
+and say::
+
+  git pull
+
+That is usually sufficient.  
+
+Occasionally there may have been changes to the C-language code in the ``pf``
+module.  If that is the case (would you be able to see those files as they are
+updated?), and you use the ``pf`` module then you would need to do::
+
+  python setup.py build_ext -i
+
+You would also need to do that when you install it in-place for the
+first time, or if you make any changes to the C-language code
+yourself.  If you are not sure it is needed, its ok to do it anyway.
+
+
+Installing scqdist, the sub-cubic quartet distance module
+=========================================================
+
+See the directory Qdist in the source, with its own instructions.
+
+
+To see if it works
+==================
+
+If, in your shell, you are still in the same directory that you built it from,
+go to some other directory, or the following test will not work.  Even better,
+use a new shell.
+
+To see if you can load the package, start up python and then::
+
+    import p4
+
+To see if the p4 script works, say (perhaps from a new terminal) to
+your shell (not in interactive python)::
+
+    p4 --help
+
+(Once it gets installed, if everything went perfectly and it still
+does not work, try it in a new shell, or maybe even restart your
+terminal program to refresh your PATH and PYTHONPATH.)
+
+
+
+Deinstallation
+==============
+
+There is a func.uninstall() function, which may work.  You may need to
+run it as root, or use sudo.
+
+If that does not work, then recall that things get installed in 3
+places.  Search out the Python package, the p4 script, and the
+examples.
+
+
+
+ 
+If you want to statically link your gsl libs
+============================================
+
+For those who may not want to do the usual dynamic linking of gsl
+libs, it is possible to statically link the gsl libs to the pf.so
+module when you build it.  See the ``setup.py``
+file, and uncomment and adjust the ``extra_link_args`` line.
+
+
+

@@ -15,6 +15,7 @@ but it means that you need to know some Python in order to use it.  It
 can be useful for things like programmatic manipulation of trees or
 data.
 
+It is hosted at `<https://github.com/pgfoster/p4-phylogenetics>`_
 
 P4 documentation
 ================
@@ -25,6 +26,7 @@ Contents:
    :maxdepth: 1
 
    introduction
+   installation
    classes/index
 
 
