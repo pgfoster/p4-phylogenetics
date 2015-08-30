@@ -503,6 +503,7 @@ class Chain(object):
 
         elif theProposal.name == 'eTBR':
             self.proposeETBR_Blaise(theProposal)
+            # self.proposeETBR(theProposal)
             if theProposal.doAbort:
                 return 0.0
             else:
@@ -742,6 +743,8 @@ class Chain(object):
                 logLikeRatio *= heatFactor
                 self.logPriorRatio *= heatFactor
 
+            #print "logLikeRatio %13.10f self.logProposalRatio %9.6f self.logPriorRatio %9.6f" % (
+            #    logLikeRatio, self.logProposalRatio, self.logPriorRatio)
 
             theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
             if theProposal.name in ['rjComp', 'rjRMatrix']:
