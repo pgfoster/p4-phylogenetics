@@ -2639,7 +2639,11 @@ class Tree(object):
             if n.parent:
                 return 1
             else:
-                return 0
+                assert n == self.root
+                if n.leftChild:   # a tree-on-a-stick
+                    return 1
+                else:             # a single isolated node
+                    return 0
         else:
             #assert n.leftChild
             deg = 1  # the leftChild
