@@ -27,7 +27,6 @@ Contents:
 
    introduction
    installation
-   test
    tutorial/index
    examples/index
    scripts
