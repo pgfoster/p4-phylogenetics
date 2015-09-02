@@ -183,7 +183,8 @@ class Alignment(SequenceList):
         ~Alignment.checkForDuplicateSequences
         ~Alignment.checkLengthsAndTypes
 
-    These are under the control of some variables in ``var``
+    The checks above are under the control of some variables in
+    :py:class:`~p4.var.Var`, always available to you as the instance ``var``.
 
     * ``var.doCheckForDuplicateSequenceNames``
     * ``var.doRepairDupedTaxonNames``
@@ -223,7 +224,7 @@ class Alignment(SequenceList):
 
 
     You can also make masks with :func:`p4.func.maskFromNexusCharacterList`.
-    You can combine masks bitwise with the methods :meth:`Alignment.andMasks` and :meth:`Alignment.orMasks`
+    You can combine masks bitwise with the Alignment methods :meth:`~Alignment.andMasks` and :meth:`~Alignment.orMasks`
 
     **CharSets and CharPartitions**
 
@@ -289,6 +290,7 @@ class Alignment(SequenceList):
 
         Alignment.translate
         Alignment.checkTranslation
+
     """
 
     def __init__(self):

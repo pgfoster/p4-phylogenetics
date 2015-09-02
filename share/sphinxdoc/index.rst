@@ -27,7 +27,11 @@ Contents:
 
    introduction
    installation
-   classes/index
+   test
+   tutorial/index
+   examples/index
+   scripts
+   modules/index
 
 
 

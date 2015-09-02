@@ -22,6 +22,7 @@ from alignment import Part
 from node import NodeBranch, NodePart, NodeBranchPart
 import random
 
+
 def _fixFileName(fName):
     if fName.count('.') or fName.count(' '):
         fName = list(fName)
@@ -241,6 +242,7 @@ class Tree(object):
 **Misc**
 
      .. autosummary::
+        :nosignatures:
 
         Tree.checkDupedTaxonNames
         Tree.checkSplitKeys

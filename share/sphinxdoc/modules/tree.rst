@@ -5,4 +5,3 @@
 .. autoclass:: Tree
    :members:
    :undoc-members:
-
