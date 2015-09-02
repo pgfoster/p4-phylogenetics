@@ -45,9 +45,8 @@ This is the usual way that Python packages are installed; however if you plan on
 keeping up with the git repo you it may be easier to install p4 in-place as
 described below.
 
-If you are upgrading, you can un-install the previous version with the
-p4 func.uninstall() function.  Depending on how it was installed, you
-may need to be root or use sudo to do that.
+If you are upgrading and you want a clean install, you can un-install the
+previous version with the p4 func.uninstall() function --- see below.
 
 Presumably you are starting with the file ``p4-x.y.z.tar.gz``.  Unpack it in
 your favourite source directory.  In the newly-created directory note
@@ -151,8 +150,11 @@ Installing it in-place
 
 My fave way of using the git version of p4 is to install it in-place rather than
 installing it with ``setup.py``.  The advantage is that it makes it easier to
-keep up with the changes made to the git repo.  To make it usable in-place, you
-need to do three things, which in overview are
+keep up with the changes made to the git repo.  The first thing would be to
+clone it from GitHub.  After that, you need to make it usable.
+
+
+To make it usable in-place, you need to do three things, which in overview are
 
 1. Add the p4 git directory, eg ``/usr/local/src/P4Git`` to your ``PYTHONPATH``
 
@@ -165,7 +167,7 @@ For example if you install it in your home directory, to add the p4
 git directory to your ``PYTHONPATH``, you might add something like the
 following line to your ``~/.profile`` or ``~/.bash_profile``::
 
-  export PYTHONPATH=$HOME/src/P4Hg
+  export PYTHONPATH=$HOME/src/P4Git
 
 (depending on where your P4 lib directory is, and what it is called), or
 you can add ::
@@ -178,9 +180,9 @@ The second thing you will want to do is to add the location of the p4
 script to your ``PATH``.  Similar to adjusting the ``PYTHONPATH``
 above, you can add a line like this to your  ``~/.profile`` or ``~/.bash_profile``::
 
-  export PATH=$PATH:$HOME/src/P4Hg/bin
+  export PATH=$PATH:$HOME/src/P4Git/bin
 
-depending on where your P4 hg directory is, and what it is called.
+depending on where your P4 git directory is, and what it is called.
 
 To build the ``pf`` module, say::
 
@@ -191,7 +193,7 @@ flew by.  The earliest error message is usually a clue.
 
 
 Updating from git
-=================
+-----------------
 
 The motivation for installing it in-place is that it makes it easy to
 update.  Generally all you need to do is to go to the p4 git directory
