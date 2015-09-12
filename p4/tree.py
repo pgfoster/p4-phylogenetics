@@ -585,12 +585,14 @@ class Tree(object):
         tok = nextTok(flob)
         if not tok:
             return
-
+        isQuotedTok = False
+        if tok.startswith("'"):
+            isQuotedTok = True
         # Should generally be the opening paren, except if its a single-node
         # tree.
         tok = func.nexusUnquoteName(tok)
         while tok != ';':
-            # print "top of loop tok '%s', tok[0] is '%s'" % (tok, tok[0])
+            # print "top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0])
 
             if tok == '(':
                 # print "Got '(': new node (%i)." % len(self.nodes)
@@ -661,7 +663,8 @@ class Tree(object):
                     gm.append('Empty stack.  Out of place unparen?')
                     raise P4Error(gm)
 
-            elif tok[0] in string.letters or tok[0] in string.digits or tok[0] == "'" or tok[0] in [
+            elif tok[0] in string.letters or tok[0] in string.digits or tok[0] in var.nexus_safeChars \
+                 or isQuotedTok or tok[0] in [
                     '_', '#', '\\', '/', '"', '(', ')']:
                 # A single-node tree, not ()aName, rather just aName.
                 if len(self.nodes) == 0:
@@ -1061,8 +1064,12 @@ class Tree(object):
                 #gm.append("tok[0] is '%s'" % tok[0])
                 raise P4Error(gm)
 
-            tok = func.nexusUnquoteName(
-                safeNextTok(flob, 'Tree init, reading tree string'))
+            sTok = safeNextTok(flob, 'Tree init, reading tree string')
+            if sTok.startswith("'"):
+                isQuotedTok = True
+            else:
+                isQuotedTok = False
+            tok = func.nexusUnquoteName(sTok)
             # print 'got tok for next round = %s' % tok
             # This is the end of the "while tok != ';':" loop
 
