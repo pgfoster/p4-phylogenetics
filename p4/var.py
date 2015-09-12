@@ -167,9 +167,9 @@ class Var(object):
 
         self.recipesWriteToFile = True  # See func.recipes()
 
-        # self.nexus_punctuation = '\(\)\[\]\{\}\\\/\,\;\:\=\*\'\"\`\+\-\<\>'
         # # no period, '!', #, @, _, &, ^, %, $
         self.nexus_punctuation = """()[]{}\\/,;:=*'"`+-<>"""  # no period, '!', #, @, _, &, ^, %, $
+        self.nexus_safeChars = "!#@_&^%$"
         #self.phylip_punctuation = '\(\)\,\;\:'
         self.phylip_punctuation = '(),;:'
         self.punctuation = self.nexus_punctuation
