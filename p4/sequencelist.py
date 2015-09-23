@@ -137,13 +137,14 @@ class Sequence(object):
         flob.write('\n')
         left = len(self.sequence)
         pos = 0
-        while left >= width:
-            if var.writeFastaUppercase:
-                flob.write('%s\n' % self.sequence[pos: pos + width].upper())
-            else:
-                flob.write('%s\n' % self.sequence[pos: pos + width])
-            pos = pos + width
-            left = left - width
+        if width > 0:
+            while left >= width:
+                if var.writeFastaUppercase:
+                    flob.write('%s\n' % self.sequence[pos: pos + width].upper())
+                else:
+                    flob.write('%s\n' % self.sequence[pos: pos + width])
+                pos = pos + width
+                left = left - width
         if left > 0:
             if var.writeFastaUppercase:
                 flob.write('%s\n' % self.sequence[pos:].upper())
@@ -693,12 +694,16 @@ class SequenceList(object):
         The sequences may have comments, which are written by default.
         If you don't want comments, say comment=None
 
+        By default, sequences are wrapped when they are too long.
+        You can set the length at which to wrap the sequences.
+        Set width=0 if you want your sequences in one (long) line.
+
         If seqNum=None, the default, then all the sequences are
         written.  But you can also just write one sequence, given by
         its number.   Write out a bunch to the same file with 'append'.
 
         By default, a blank line will be written after each sequence.
-        If you prefer you fasta without these extra lines, say
+        If you prefer your fasta without these extra lines, say
         writeExtraNewline=False.
         """
 
@@ -753,13 +758,14 @@ class SequenceList(object):
                 f.write('\n')
                 left = len(s.sequence)
                 pos = 0
-                while left >= width:
-                    if var.writeFastaUppercase:
-                        f.write('%s\n' % s.sequence[pos: pos + width].upper())
-                    else:
-                        f.write('%s\n' % s.sequence[pos: pos + width])
-                    pos = pos + width
-                    left = left - width
+                if width > 0:
+                    while left >= width:
+                        if var.writeFastaUppercase:
+                            f.write('%s\n' % s.sequence[pos: pos + width].upper())
+                        else:
+                            f.write('%s\n' % s.sequence[pos: pos + width])
+                        pos = pos + width
+                        left = left - width
                 if left > 0:
                     if var.writeFastaUppercase:
                         f.write('%s\n' % s.sequence[pos:].upper())
@@ -785,13 +791,14 @@ class SequenceList(object):
             f.write('\n')
             left = len(s.sequence)
             pos = 0
-            while left >= width:
-                if var.writeFastaUppercase:
-                    f.write('%s\n' % s.sequence[pos: pos + width].upper())
-                else:
-                    f.write('%s\n' % s.sequence[pos: pos + width])
-                pos = pos + width
-                left = left - width
+            if width > 0:
+                while left >= width:
+                    if var.writeFastaUppercase:
+                        f.write('%s\n' % s.sequence[pos: pos + width].upper())
+                    else:
+                        f.write('%s\n' % s.sequence[pos: pos + width])
+                    pos = pos + width
+                    left = left - width
             if left > 0:
                 if var.writeFastaUppercase:
                     f.write('%s\n' % s.sequence[pos:].upper())
