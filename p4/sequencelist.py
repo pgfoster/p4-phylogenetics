@@ -155,7 +155,7 @@ class Sequence(object):
     def write(self):
         self.writeFastaToOpenFile(sys.stdout)
 
-    def writeFasta(self, fName=None, width=60, doComment=True):
+    def writeFasta(self, fName=None, width=60, doComment=True, writeExtraNewline=True):
         isFlob = False
         if not fName or fName == sys.stdout:
             f = sys.stdout
@@ -165,7 +165,7 @@ class Sequence(object):
             isFlob = True
         else:
             f = file(fName, 'w')
-        self.writeFastaToOpenFile(f, width=width, doComment=doComment)
+        self.writeFastaToOpenFile(f, width=width, doComment=doComment, writeExtraNewline=writeExtraNewline)
         if not isFlob:
             f.close()
 
@@ -684,7 +684,7 @@ class SequenceList(object):
         a.checkLengthsAndTypes()
         return a
 
-    def writeFasta(self, fName=None, comment=1, width=60, append=0, seqNum=None):
+    def writeFasta(self, fName=None, comment=1, width=60, append=0, seqNum=None, writeExtraNewline=True):
         """Write out the sequences in Fasta format.
 
         This will write to stdout by default, or a file name, or to an
@@ -696,6 +696,10 @@ class SequenceList(object):
         If seqNum=None, the default, then all the sequences are
         written.  But you can also just write one sequence, given by
         its number.   Write out a bunch to the same file with 'append'.
+
+        By default, a blank line will be written after each sequence.
+        If you prefer you fasta without these extra lines, say
+        writeExtraNewline=False.
         """
 
         complaintHead = '\nSequenceList.writeFasta()'
@@ -761,7 +765,8 @@ class SequenceList(object):
                         f.write('%s\n' % s.sequence[pos:].upper())
                     else:
                         f.write('%s\n' % s.sequence[pos:])
-                f.write('\n')
+                if writeExtraNewline:
+                    f.write('\n')
         else:
             try:
                 theInt = int(seqNum)
@@ -792,7 +797,8 @@ class SequenceList(object):
                     f.write('%s\n' % s.sequence[pos:].upper())
                 else:
                     f.write('%s\n' % s.sequence[pos:])
-            f.write('\n')
+            if writeExtraNewline:
+                f.write('\n')
 
         # f.read()
         if isFlob and f != sys.stdout:
