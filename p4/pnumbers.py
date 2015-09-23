@@ -335,8 +335,8 @@ class Numbers(object):
             os.system('gnuplot --persist %s' % instructionsFileName)
         else:
             os.system('gnuplot %s' % instructionsFileName)
-        #os.system('rm %s' % weirdName)
-        #os.system('rm %s' % instructionsFileName)
+        os.system('rm %s' % weirdName)
+        os.system('rm %s' % instructionsFileName)
 
     def tailAreaProbability(self, theStat, verbose=1):
         """Access to :func:`func.tailAreaProbability`
