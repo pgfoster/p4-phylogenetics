@@ -302,7 +302,7 @@ class Numbers(object):
         print "binSize=%s, " % self.binSize,
         print "nBins=%s" % self.nBins
 
-    def plot(self, term='x11'):
+    def plot(self, term='x11', output=None):
         """A horrible hack to plot stuff with GnuPlot.
 
         A file, gnuplot_instructs, is written.  Then gnuplot is
@@ -310,7 +310,12 @@ class Numbers(object):
 
         Couldn't this be done in a clever way with (existing) proper
         python hooks into GnuPlot?  -yes, but it would require installing
-        other modules."""
+        another module.
+
+        To make a png, you could call it with::
+ 
+          term='png', output='myPlot.png'
+        """
 
         weirdName = 'tmPFoRGnUPloT'
         f1 = file(weirdName, 'w')
@@ -320,14 +325,18 @@ class Numbers(object):
 
         instructionsFileName = 'gNupLot_inStruCts'
         f1 = open(instructionsFileName, 'w')
-        # my new gnuplot on my mac, from macports, has aqua as the default.
         f1.write('set term %s\n' % term)
+        if output:
+            f1.write('set output "%s"\n' % output)
         f1.write('plot "%s" notitle\n' % weirdName)
         f1.close()
 
-        os.system('gnuplot -persist %s' % instructionsFileName)
-        os.system('rm %s' % weirdName)
-        os.system('rm %s' % instructionsFileName)
+        if term == 'x11':
+            os.system('gnuplot --persist %s' % instructionsFileName)
+        else:
+            os.system('gnuplot %s' % instructionsFileName)
+        #os.system('rm %s' % weirdName)
+        #os.system('rm %s' % instructionsFileName)
 
     def tailAreaProbability(self, theStat, verbose=1):
         """Access to :func:`func.tailAreaProbability`
