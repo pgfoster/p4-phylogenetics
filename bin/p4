@@ -50,6 +50,18 @@ if len(sys.argv) > 1:  # Is there stuff on the command line?
                 argvAfterDoubleDash.append(f)
     del(f)
 
+    # This is a hack to fix a clash with bash completion if bash-completion is
+    # installed.  The clashing file is, this week,
+    # /usr/share/bash-completion/completions/p4 
+    # Previously it was in /etc/bash_completion.d/p4 
+    # Without this, it hangs when you do tab completion for file name and
+    # directory args for p4.
+    try:
+        if sys.argv[1] == "help" and sys.argv[2] == "commands":
+            sys.exit()
+    except IndexError:
+        pass
+
 # Whether to "import p4" or "from p4 import *"?  The former is more
 # polite, and makes p4 a better Python citizen, but I prefer the
 # latter for regular p4 work.  If you want to use p4 in a more
