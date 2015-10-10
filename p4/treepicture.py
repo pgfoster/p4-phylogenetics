@@ -3,8 +3,8 @@ import os
 from var import var
 from p4exceptions import P4Error
 
-"""This class is used by Tree.draw(), Tree.eps(), and Tree.svg().
-This week, there is no 'user-interface' for it, other than those two
+"""This class is used by Tree.draw(), and Tree.eps().
+This week, there is no 'user-interface' for it, other than those
 methods."""
 
 
