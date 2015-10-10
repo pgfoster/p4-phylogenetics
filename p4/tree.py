@@ -93,7 +93,7 @@ class Tree(object):
 
     You often will want to refer to a node in a tree.  This can be
     done via its name, or its nodeNum, or as an object, via the method
-    :meth:`Tree.Tree.node`.  For example, from a Tree ``t`` you can
+    :meth:`~p4.tree.Tree.node`.  For example, from a Tree ``t`` you can
     get node number 3 via::
 
         n = t.node(3)
@@ -110,39 +110,41 @@ class Tree(object):
 
 **Describe, draw, and get information about the tree**
 
-     .. autosummary::
+    .. autosummary::
+       :nosignatures:
 
-        Tree.dump
-        Tree.draw
-        Tree.textDrawList
-        Tree.tv
-        Tree.btv
-        Tree.isFullyBifurcating
-        Tree.taxSetIsASplit
-        Tree.getAllLeafNames
-        Tree.getChildrenNums
-        Tree.getDegree
-        Tree.getLen
-        Tree.getNodeNumsAbove
-        Tree.getPreAndPostOrderAbove
-        Tree.getPreAndPostOrderAboveRoot
-        Tree.getSeqNumsAbove
-        Tree.subTreeIsFullyBifurcating
-        Tree.summarizeModelThingsNNodes
-        Tree.verifyIdentityWith
+       ~Tree.dump
+       ~Tree.draw
+       ~Tree.textDrawList
+       ~Tree.tv
+       ~Tree.btv
+       ~Tree.isFullyBifurcating
+       ~Tree.taxSetIsASplit
+       ~Tree.getAllLeafNames
+       ~Tree.getChildrenNums
+       ~Tree.getDegree
+       ~Tree.getLen
+       ~Tree.getNodeNumsAbove
+       ~Tree.getPreAndPostOrderAbove
+       ~Tree.getPreAndPostOrderAboveRoot
+       ~Tree.getSeqNumsAbove
+       ~Tree.subTreeIsFullyBifurcating
+       ~Tree.summarizeModelThingsNNodes
+       ~Tree.verifyIdentityWith
 
 **Write**
 
     .. autosummary::
+       :nosignatures:
 
-       Tree.write
-       Tree.writeNewick
-       Tree.writeNexus
-       Tree.writePhylip
-       Tree.tPickle
+       ~Tree.write
+       ~Tree.writeNewick
+       ~Tree.writeNexus
+       ~Tree.writePhylip
+       ~Tree.tPickle
 
-    See also Trees methods :meth:`Trees.Trees.writeNexus` and
-    :meth:`Trees.Trees.writeNewick` for doing trees by the bunch.
+    See also Trees methods :meth:`p4.trees.Trees.writeNexus` and
+    :meth:`p4.trees.Trees.writeNewick` for doing trees by the bunch.
 
 **Iteration over the nodes**
 
@@ -152,111 +154,116 @@ class Tree(object):
     that, skipping such nodes.
 
     .. autosummary::
+       :nosignatures:
 
-       Tree.iterInternals
-       Tree.iterInternalsNoRoot
-       Tree.iterInternalsNoRootPostOrder
-       Tree.iterInternalsNoRootPreOrder
-       Tree.iterInternalsPostOrder
-       Tree.iterLeavesNoRoot
-       Tree.iterLeavesPostOrder
-       Tree.iterLeavesPreOrder
-       Tree.iterNodes
-       Tree.iterNodesNoRoot
-       Tree.iterPostOrder
-       Tree.iterPreOrder
-       Tree.nextNode
+       ~Tree.iterInternals
+       ~Tree.iterInternalsNoRoot
+       ~Tree.iterInternalsNoRootPostOrder
+       ~Tree.iterInternalsNoRootPreOrder
+       ~Tree.iterInternalsPostOrder
+       ~Tree.iterLeavesNoRoot
+       ~Tree.iterLeavesPostOrder
+       ~Tree.iterLeavesPreOrder
+       ~Tree.iterNodes
+       ~Tree.iterNodesNoRoot
+       ~Tree.iterPostOrder
+       ~Tree.iterPreOrder
+       ~Tree.nextNode
 
-    See also Node methods that do similar things starting from a given node.
+    See also :class:`~p4.node.Node` methods that do similar things starting from a given node.
 
 **Copy**
 
-     .. autosummary::
+    .. autosummary::
+       :nosignatures:
 
-        Tree.dupe
-        Tree.copyToTree
-        Tree.dupeSubTree
+       ~Tree.dupe
+       ~Tree.copyToTree
+       ~Tree.dupeSubTree
 
 **In combination with Data and Model**
 
      .. autosummary::
+        :nosignatures:
 
-        Tree.calcLogLike
-        Tree.optLogLike
-        Tree.simulate
-        Tree.getSiteLikes
-        Tree.getSiteRates
-        Tree.bigXSquaredSubM
-        Tree.compStatFromCharFreqs
-        Tree.compoTestUsingSimulations
-        Tree.modelFitTests
-        Tree.modelSanityCheck
-        Tree.simsForModelFitTests
+        ~Tree.calcLogLike
+        ~Tree.optLogLike
+        ~Tree.simulate
+        ~Tree.getSiteLikes
+        ~Tree.getSiteRates
+        ~Tree.bigXSquaredSubM
+        ~Tree.compStatFromCharFreqs
+        ~Tree.compoTestUsingSimulations
+        ~Tree.modelFitTests
+        ~Tree.modelSanityCheck
+        ~Tree.simsForModelFitTests
 
 **Setting a model**
 
      .. autosummary::
+        :nosignatures:
 
-        Tree.newComp
-        Tree.newRMatrix
-        Tree.newGdasrv
-        Tree.setPInvar
-        Tree.setRelRate
-        Tree.setModelThing
-        Tree.setModelThingsRandomly
-        Tree.setModelThingsNNodes
-        Tree.summarizeModelThingsNNodes
-        Tree.setNGammaCat
-        Tree.setTextDrawSymbol
+        ~Tree.newComp
+        ~Tree.newRMatrix
+        ~Tree.newGdasrv
+        ~Tree.setPInvar
+        ~Tree.setRelRate
+        ~Tree.setModelThing
+        ~Tree.setModelThingsRandomly
+        ~Tree.setModelThingsNNodes
+        ~Tree.summarizeModelThingsNNodes
+        ~Tree.setNGammaCat
+        ~Tree.setTextDrawSymbol
 
 
 **Tree manipulation**
 
      .. autosummary::
+        :nosignatures:
 
-        Tree.addLeaf
-        Tree.addNodeBetweenNodes
-        Tree.addSibLeaf
-        Tree.addSubTree
-        Tree.allBiRootedTrees
-        Tree.collapseNode
-        Tree.ladderize
-        Tree.lineUpLeaves
-        Tree.nni
-        Tree.pruneSubTreeWithoutParent
-        Tree.randomSpr
-        Tree.randomizeTopology
-        Tree.reRoot
-        Tree.reconnectSubTreeWithoutParent
-        Tree.removeEverythingExceptCladeAtNode
-        Tree.removeNode
-        Tree.removeAboveNode
-        Tree.removeRoot
-        Tree.renameForPhylip
-        Tree.restoreDupeTaxa
-        Tree.restoreNamesFromRenameForPhylip
-        Tree.rotateAround
-        Tree.spr
-        Tree.stripBrLens
+        ~Tree.addLeaf
+        ~Tree.addNodeBetweenNodes
+        ~Tree.addSibLeaf
+        ~Tree.addSubTree
+        ~Tree.allBiRootedTrees
+        ~Tree.collapseNode
+        ~Tree.ladderize
+        ~Tree.lineUpLeaves
+        ~Tree.nni
+        ~Tree.pruneSubTreeWithoutParent
+        ~Tree.randomSpr
+        ~Tree.randomizeTopology
+        ~Tree.reRoot
+        ~Tree.reconnectSubTreeWithoutParent
+        ~Tree.removeEverythingExceptCladeAtNode
+        ~Tree.removeNode
+        ~Tree.removeAboveNode
+        ~Tree.removeRoot
+        ~Tree.renameForPhylip
+        ~Tree.restoreDupeTaxa
+        ~Tree.restoreNamesFromRenameForPhylip
+        ~Tree.rotateAround
+        ~Tree.spr
+        ~Tree.stripBrLens
 
 **Misc**
 
      .. autosummary::
         :nosignatures:
 
-        Tree.checkDupedTaxonNames
-        Tree.checkSplitKeys
-        Tree.checkTaxNames
-        Tree.checkThatAllSelfNodesAreInTheTree
-        Tree.inputTreesToSuperTreeDistances
-        Tree.makeSplitKeys
-        Tree.readBipartitionsFromPaupLogFile
-        Tree.recalculateSplitKeysOfNodeFromChildren
-        Tree.setNexusSets
-        Tree.topologyDistance
-        Tree.tvTopologyCompare
-        Tree.patristicDistanceMatrix
-        Tree.inputTreesToSuperTreeDistances
+        ~Tree.checkDupedTaxonNames
+        ~Tree.checkSplitKeys
+        ~Tree.checkTaxNames
+        ~Tree.checkThatAllSelfNodesAreInTheTree
+        ~Tree.inputTreesToSuperTreeDistances
+        ~Tree.makeSplitKeys
+        ~Tree.readBipartitionsFromPaupLogFile
+        ~Tree.recalculateSplitKeysOfNodeFromChildren
+        ~Tree.setNexusSets
+        ~Tree.topologyDistance
+        ~Tree.tvTopologyCompare
+        ~Tree.patristicDistanceMatrix
+        ~Tree.inputTreesToSuperTreeDistances
 
 
 
@@ -385,6 +392,8 @@ class Tree(object):
         """Duplicates self, but with no c-pointers.  And no data object.
 
         If there is a model, it is duped.
+
+        Returns a copy of self.
         """
 
         storedData = None
@@ -412,7 +421,19 @@ class Tree(object):
         """Start parsing nexus format newick tree description.
 
         From just after the command word 'tree', to the first paren of
-        the Newick part of the tree."""
+        the Newick part of the tree.
+
+        Args:
+            flob: an open file or file-like object
+            translationHash (dict): associates short names or numbers with 
+                long proper taxon names
+            doModelComments (bool): whether to parse p4-specific model 
+                command comments in the tree description
+
+        Returns:
+            None
+
+        """
 
         gm = ['Tree.parseNexus()']  # re-defined below
         if 0:

@@ -25,7 +25,7 @@ name ``a``.  Then you can do useful things with ``a``.
 
 
 Alignment, Part, and Data classes
-=================================
+---------------------------------
 
 There are 3 classes.
 

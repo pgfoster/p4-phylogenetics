@@ -52,8 +52,7 @@ Presumably you are starting with the file ``p4-x.y.z.tar.gz``.  Unpack it in
 your favourite source directory.  In the newly-created directory note
 the file ``setup.py``.  That file controls the build and installation.  
 
-Simple install
---------------
+**Simple install**
 
 First you can build it, without installing it, by saying::
 
@@ -70,8 +69,7 @@ it, you can say::
     sudo python setup.py install
 
 
-Installation variations
------------------------
+**Installation variations**
 
 To get a description of the various installation options, do::
     
@@ -86,45 +84,44 @@ If you install it in your home directory,
 - there is no need to be root or to use sudo
 
 - if you do this you may need to setenv your ``PYTHONPATH`` to eg
-        ``~/lib/python``.  Eg in your ``~/.bash_profile`` or ``~/.profile`` you can put the
-        line::
+  ``~/lib/python``.  Eg in your ``~/.bash_profile`` or ``~/.profile`` you can put the
+  line::
 
-          export PYTHONPATH=$HOME/lib/python
+      export PYTHONPATH=$HOME/lib/python
 
-        (depending on where your P4 lib directory is, and what it is called), or
-        you can add ::
+  (depending on where your P4 lib directory is, and what it is called), or
+  you can add ::
 
-          export PYTHONPATH=$PYTHONPATH:$HOME/lib/python
+      export PYTHONPATH=$PYTHONPATH:$HOME/lib/python
 
-        if you already have a ``PYTHONPATH`` defined.
+  if you already have a ``PYTHONPATH`` defined.
 
 - you may also need to set your ``PATH`` environment variable to
-      include ``~/bin``.  In many cases this will already be done, but if it is
-      not, and you are using the bash shell, you can do something like::
+  include ``~/bin``.  In many cases this will already be done, but if it is
+  not, and you are using the bash shell, you can do something like::
 
-          PATH=$PATH:$HOME/bin
+      PATH=$PATH:$HOME/bin
 
-      and then as usual after all your paths have been set, you should have a line that says::
+  and then as usual after all your paths have been set, you should have a line that says::
 
-          export PATH
+      export PATH
 
 
 
-Where things go
----------------
+**Where things go**
 
 
 The default installation location has a "root", which might be ``/usr`` or
 ``/usr/local``, or your home directory.  These three things are installed:
 
     1.  **The p4 package.**          Goes where 3rd party packages go
-                                Eg ``/usr/local/lib/python2.7/site-packages``
+        Eg ``/usr/local/lib/python2.7/site-packages``
 
     2.  **The p4 script.**           Goes somewhere in your path
-                                Eg ``/usr/local/bin``
+        Eg ``/usr/local/bin``
 
-    3.  **The examples**             Goes in a share/doc directory
-                                Eg ``/usr/local/share/doc``
+    3.  **The examples.**             Goes in a share/doc directory
+        Eg ``/usr/local/share/doc``
 
 The default location for installation of the modules is something like::
 
@@ -192,8 +189,8 @@ It might actually work.  If it doesn't, note the error messages that
 flew by.  The earliest error message is usually a clue.
 
 
-Updating from git
------------------
+**Updating from git**
+
 
 The motivation for installing it in-place is that it makes it easy to
 update.  Generally all you need to do is to go to the p4 git directory
