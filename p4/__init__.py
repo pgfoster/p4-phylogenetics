@@ -63,6 +63,7 @@ from constraints import Constraints
 from quartetjoining import QuartetJoining
 from posteriorsamples import PosteriorSamples
 from var import Var  # To provide access to the property docstrings.
+from geneticcode import GeneticCode
 
 
 # Read in user-defined p4 stuff on startup.  These might be var
