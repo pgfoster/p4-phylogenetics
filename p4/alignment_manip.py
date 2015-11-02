@@ -19,6 +19,7 @@ from part import Part
 import numpy
 import numpy.linalg
 import pf
+from alignment import ExcludeDelete
 
 if True:
     def simpleConstantMask(self, ignoreGapQ=True, invert=False):
@@ -771,6 +772,7 @@ if True:
         sequences site by site as long as there are no gaps or
         ambiguities.  """
 
+        from alignment import Alignment
         dbug = 0
         seqCount = len(self.sequences)
         newAlig = Alignment()
@@ -1599,6 +1601,7 @@ if True:
                           (protSeq.name, dnaSeq.name))
                 raise P4Error(gm)
 
+        from alignment import Alignment
         a = Alignment()
         a.dataType = 'dna'
         a.symbols = 'acgt'
