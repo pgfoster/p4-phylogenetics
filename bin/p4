@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 #-m cProfile -s time
 import sys,os,string
 
@@ -123,10 +124,19 @@ if 1:
     del(theDir)
 
 # This is only needed if we are interactive.
-try:
-    import p3rlcompleter
-except ImportError:
-    pass
+if var.interactiveHelper:
+    if var.interactiveHelper == 'p3rlcompleter':
+        try:
+            import p4.interactive.p3rlcompleter
+        except ImportError:
+            print "failed to load p3rlcompleter"
+    elif var.interactiveHelper == 'bpython':
+        try:
+            from bpython.curtsies import main
+            sys.argv = sys.argv[:1]  # already "processed", above
+            sys.exit(main(locals_=locals()))
+        except ImportError:
+            print "Failed to import bpython. Is it installed?"
 
 # Maybe the user just types 'p4' and wants to see a splash...
 if len(sys.argv) == 1:

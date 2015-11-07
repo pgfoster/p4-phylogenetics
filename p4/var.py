@@ -158,6 +158,14 @@ class Var(object):
         Used by :meth:`Tree.Tree.topologyDistance` and :meth:`Trees.Trees.topologyDistanceMatrix`
         """
 
+        self.interactiveHelper = None
+        """Whether to read the contents of p4.extras
+
+        This directory has modules that may be handy, but are not central to
+        what p4 is about, and so are not imported by default.
+
+        """
+
         # These are used by TreePicture
         self.TEXTDRAW_NONE = 0
         self.TEXTDRAW_COMP = 1
@@ -311,6 +319,8 @@ class Var(object):
         # # nextTok in C, from NexusToken2.  Does not work for CStrings.
         # self.nexus_doFastNextTok = False
         # self._rMatrixNormalizeTo1 = 1
+        self._interactiveHelper = None
+        self.useEmacsclientExcepthook = False
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
@@ -414,6 +424,23 @@ class Var(object):
 
     rMatrixNormalizeTo1 = property(_get_rMatrixNormalizeTo1,
                                    _set_rMatrixNormalizeTo1, _del_nothing)
+
+    def _get_interactiveHelper(self):
+        """Is this the docstring?"""
+
+        return self._interactiveHelper
+
+    def _set_interactiveHelper(self, newVal):
+        goodValues = [None, 'p3rlcompleter', 'bpython']
+        if newVal in goodValues:
+            self._interactiveHelper = newVal
+        else:
+            gm = ['This property should be set to one of %s' % goodValues]
+            raise P4Error(gm)
+
+    interactiveHelper = property(_get_interactiveHelper,
+                                 _set_interactiveHelper, _del_nothing)
+
 
     def _getExamplesDir(self):
         if self._examplesDir:

@@ -379,6 +379,7 @@ def readFile(fName):
         if suffix == 'py':
             flob.close()
             import __main__
+            #print "__main__.__dict__ is %s" % __main__.__dict__
             execfile(fName, __main__.__dict__,  __main__.__dict__)
             if hasattr(__main__, 'pyFileCount'):
                 __main__.pyFileCount += 1

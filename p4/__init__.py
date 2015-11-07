@@ -119,3 +119,7 @@ if 1:
     del(theDir)
     del(verboseStartupFiles)
     del(sdd)
+
+if var.useEmacsclientExcepthook:
+    import interactive.excepthook
+
