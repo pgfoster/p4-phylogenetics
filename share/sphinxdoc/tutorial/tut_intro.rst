@@ -22,7 +22,7 @@ Introduction
      try help(Alignment) from within p4 to read all the docstrings in
      the Alignment class.
 
-..   * Completion, for quick reminders.  See :ref:`Completion`.
+   * Completion, for quick reminders.  See :ref:`InteractiveHelpers`.
 
 
 P4 is used in Python -- it is a Python package.  You can import p4
@@ -36,8 +36,7 @@ script.  The p4 script loads the package as::
   from p4 import *
 
 so all the p4 stuff goes to the 'top level' (which you may not like).  The p4 script will
-read in files from the command line, and if you are interactive it will
-set up completion.
+read in files from the command line.
 
 This week, p4 will recognize and read data files in the form of Nexus
 files, fasta files, Phylip (sequential or interleaved), GDE files
@@ -193,4 +192,5 @@ are described and then the likelihood is calculated without
 optimization.  To make the script happen, say, to your command line::
 
      p4 s.py
+
 

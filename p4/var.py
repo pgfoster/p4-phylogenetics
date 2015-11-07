@@ -64,7 +64,7 @@ class Var(object):
 
         #: Whether to do the splash screen on startup with no args.
         #: When you get tired of it, turn it off in a customization
-        #: file.  You can always see it again with :func:`func.splash`.
+        #: file.  You can always see it again with :func:`p4.func.splash`.
         self.doSplash = 1
 
         #: Running commentary on p4's attempts to read in files.
@@ -457,7 +457,7 @@ class Var(object):
                                  _set_interactiveHelper, _del_nothing)
     """For interactive use, set the helper.
 
-    Set to p3rlcompleter, or bpython.
+    Set to p3rlcompleter, or bpython.  Default is None.
     """
 
 

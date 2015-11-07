@@ -1,11 +1,12 @@
-Tutorial introduction
-=====================
+Tutorial
+========
 
 .. toctree::
    :maxdepth: 1
 
    tut_intro
    tut_using
+   tut_customize
    tut_alignments
    tut_trees
    tut_models_likelihood
