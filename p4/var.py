@@ -320,7 +320,22 @@ class Var(object):
         # self.nexus_doFastNextTok = False
         # self._rMatrixNormalizeTo1 = 1
         self._interactiveHelper = None
+
         self.useEmacsclientExcepthook = False
+        """Boolean to say whether to follow a traceback with a hook to call emacsclient
+
+        For using p4 at the terminal, writing scripts and source in emacs.
+        Emacs is called via emacsclient.  The various files and lines of the
+        traceback are given numbers that you can type in to get to the source.
+        Handy!
+
+        It has been hacked to work with bpython (if you use that as your
+        var.interactiveHelper), but that would be fragile because it depends on
+        bpython.
+
+        Is there a vi equivalent?
+
+        """
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
@@ -440,6 +455,10 @@ class Var(object):
 
     interactiveHelper = property(_get_interactiveHelper,
                                  _set_interactiveHelper, _del_nothing)
+    """For interactive use, set the helper.
+
+    Set to p3rlcompleter, or bpython.
+    """
 
 
     def _getExamplesDir(self):
