@@ -124,7 +124,7 @@ if 1:
 
 # This is only needed if we are interactive.
 if var.interactiveHelper:
-    print "Going interactive, with helper %s" % var.interactiveHelper
+    # print "Going interactive, with helper %s" % var.interactiveHelper
     if var.interactiveHelper == 'p3rlcompleter':
         import p4.interactive.p3rlcompleter
     elif var.interactiveHelper == 'bpython':
