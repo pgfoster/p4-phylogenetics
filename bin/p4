@@ -93,8 +93,7 @@ if exitAtEnd:
     if pyFileCount > 0:
         sys.exit()
 
-# New in Python 2.3
-# - A program can now set the environment variable PYTHONINSPECT to some
+#  A program can set the environment variable PYTHONINSPECT to some
 #  string value in Python, and cause the interpreter to enter the
 #  interactive prompt at program exit, as if Python had been invoked
 #  with the -i option.
@@ -125,18 +124,22 @@ if 1:
 
 # This is only needed if we are interactive.
 if var.interactiveHelper:
+    print "Going interactive, with helper %s" % var.interactiveHelper
     if var.interactiveHelper == 'p3rlcompleter':
-        try:
-            import p4.interactive.p3rlcompleter
-        except ImportError:
-            print "failed to load p3rlcompleter"
+        import p4.interactive.p3rlcompleter
     elif var.interactiveHelper == 'bpython':
-        try:
-            from bpython.curtsies import main
-            sys.argv = sys.argv[:1]  # already "processed", above
-            sys.exit(main(locals_=locals()))
-        except ImportError:
-            print "Failed to import bpython. Is it installed?"
+        from bpython.curtsies import main
+        sys.argv = sys.argv[:1]  # already "processed", above
+        sys.exit(main(locals_=locals()))
+    elif var.interactiveHelper == 'ipython':
+        from IPython import start_ipython
+        if var.useEmacsclientExcepthook:
+            sys.exit(start_ipython(argv=["-m", "p4.interactive.ipython", "-i"], 
+                                   user_ns=locals()))
+        else:
+            sys.exit(start_ipython(argv=["-i"], user_ns=locals()))
+            
+
 
 # Maybe the user just types 'p4' and wants to see a splash...
 if len(sys.argv) == 1:

@@ -446,7 +446,7 @@ class Var(object):
         return self._interactiveHelper
 
     def _set_interactiveHelper(self, newVal):
-        goodValues = [None, 'p3rlcompleter', 'bpython']
+        goodValues = [None, 'p3rlcompleter', 'bpython', 'ipython']
         if newVal in goodValues:
             self._interactiveHelper = newVal
         else:
@@ -457,7 +457,7 @@ class Var(object):
                                  _set_interactiveHelper, _del_nothing)
     """For interactive use, set the helper.
 
-    Set to p3rlcompleter, or bpython.  Default is None.
+    Set to p3rlcompleter, bpython, or ipython.  Default is None.
     """
 
 
