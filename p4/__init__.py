@@ -120,6 +120,6 @@ if 1:
     del(verboseStartupFiles)
     del(sdd)
 
-if var.useEmacsclientExcepthook:
+if var.excepthookEditor:
     import interactive.excepthook
 

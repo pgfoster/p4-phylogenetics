@@ -2,6 +2,7 @@
 import sys
 import os
 import numpy
+import types
 from p4exceptions import P4Error
 
 # A           Ala            Alanine
@@ -320,22 +321,8 @@ class Var(object):
         # self.nexus_doFastNextTok = False
         # self._rMatrixNormalizeTo1 = 1
         self._interactiveHelper = None
+        self._excepthookEditor = None
 
-        self.useEmacsclientExcepthook = False
-        """Boolean to say whether to follow a traceback with a hook to call emacsclient
-
-        For using p4 at the terminal, writing scripts and source in emacs.
-        Emacs is called via emacsclient.  The various files and lines of the
-        traceback are given numbers that you can type in to get to the source.
-        Handy!
-
-        It has been hacked to work with bpython (if you use that as your
-        var.interactiveHelper), but that would be fragile because it depends on
-        bpython.
-
-        Is there a vi equivalent?
-
-        """
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
@@ -441,8 +428,6 @@ class Var(object):
                                    _set_rMatrixNormalizeTo1, _del_nothing)
 
     def _get_interactiveHelper(self):
-        """Is this the docstring?"""
-
         return self._interactiveHelper
 
     def _set_interactiveHelper(self, newVal):
@@ -458,6 +443,31 @@ class Var(object):
     """For interactive use, set the helper.
 
     Set to p3rlcompleter, bpython, or ipython.  Default is None.
+    """
+
+    def _get_excepthookEditor(self):
+        return self._excepthookEditor
+
+    def _set_excepthookEditor(self, newVal):
+        assert type(newVal) == types.NoneType or type(newVal) == types.StringType 
+        self._excepthookEditor = newVal
+
+    excepthookEditor = property(_get_excepthookEditor,
+                                 _set_excepthookEditor, _del_nothing)
+    """The editor that is called by excepthook, or None
+
+    Setting this to None or to the name of an editor acts as a Boolean to say
+    whether to follow a traceback with a hook to call your editor.
+
+    It is for using p4 at the terminal, writing scripts and source in an editor
+    such as emacs or vi.  The various files and lines of the traceback are given
+    numbers that you can type in to get to the source.  Handy!  
+
+    The editor needs to be clever enough to use the "+N" command line option to
+    be able to go to a particular line (N).  Emacs and vi can both do this.
+
+    Set to, for example 'emacsclient -n', or 'vim'.  Default is None.
+
     """
 
 

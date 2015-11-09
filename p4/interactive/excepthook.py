@@ -2,9 +2,8 @@ import sys,traceback
 import os
 from p4.var import var
 
-def invoke_emacsclient(extractedTraceback):
-    print "\nAssuming we have emacs running ..."
-    print "Where do you want to go? ..."
+def invoke_editor(extractedTraceback):
+    print "\nWhere do you want to go? ..."
 
     te = extractedTraceback
     for teItemNum in range(len(te)):  # te is a traceback.extract_tb() result
@@ -28,7 +27,7 @@ def invoke_emacsclient(extractedTraceback):
         if os.path.isfile(theFileName):
             try:
                 theLineNum = int(theTeItem[1])
-                theCommand = "emacsclient -n +%i %s" % (theLineNum, theFileName)
+                theCommand = "%s +%i %s" % (var.excepthookEditor, theLineNum, theFileName)
                 os.system(theCommand)
             except:
                 print "...could not make an int from theLineNum '%s'" % theLineNum
@@ -65,10 +64,11 @@ if var.interactiveHelper == 'bpython':
         #     tblist = tb = None
 
         #self.writetb(l)
-        self.write("Over-riding bpython's showtraceback with the p4 version to invoke emacsclient...\n")
+        #self.write("Over-riding bpython's showtraceback with the p4 version to invoke emacsclient...\n")
         for line in l:
             self.write(line)
-        invoke_emacsclient(tblist)
+        if var.excepthookEditor:
+            invoke_editor(tblist)
 
     from bpython.repl import Interpreter
     Interpreter.showtraceback = my_showtraceback
@@ -84,7 +84,8 @@ def myExceptHook(exctype, excvalue, tb):
     # This next line does a regular traceback.
     sys.__excepthook__(exctype, excvalue, tb)
 
-    invoke_emacsclient(te)
+    if var.excepthookEditor:
+        invoke_editor(te)
 
 sys.excepthook = myExceptHook
 del(myExceptHook)

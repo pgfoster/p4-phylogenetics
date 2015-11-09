@@ -133,7 +133,7 @@ if var.interactiveHelper:
         sys.exit(main(locals_=locals()))
     elif var.interactiveHelper == 'ipython':
         from IPython import start_ipython
-        if var.useEmacsclientExcepthook:
+        if var.excepthookEditor:
             sys.exit(start_ipython(argv=["-m", "p4.interactive.ipython", "-i"], 
                                    user_ns=locals()))
         else:
