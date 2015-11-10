@@ -1,15 +1,19 @@
 import sys,traceback
 import os
 from p4.var import var
+import p4.func
 
 def invoke_editor(extractedTraceback):
-    print "\nWhere do you want to go? ..."
+    p4.func.writeInColour("\nWhere do you want to go? ...\n", colour="blue")
 
     te = extractedTraceback
     for teItemNum in range(len(te)):  # te is a traceback.extract_tb() result
         theTeItem = te[teItemNum]
-        print "%2i  line %4i,  %s" %  (teItemNum, theTeItem[1], theTeItem[0])
+        p4.func.writeInColour("%2i" % teItemNum, colour='red')
+        print "  line %4i,  %s" %  (theTeItem[1], theTeItem[0])
+    p4.func.setTerminalColour("blue")
     ret = raw_input('Tell me a number (or nothing to do nothing): ')
+    p4.func.unsetTerminalColour()
     #print "Got %s" % ret
     retNum = None
     if ret == '':
