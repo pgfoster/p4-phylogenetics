@@ -172,7 +172,7 @@ class Nexus:
         if var.nexus_doFastNextTok:
             from nexustoken2 import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd
         else:
-            from texustoken import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd
+            from nexustoken import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd
 
         tok = nextTok(flob)
         if not tok:
