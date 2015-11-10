@@ -44,6 +44,18 @@ setting::
 There are several other things in the :class:`p4.var.Var` class that you might want to know about.
 Take a :ref:`look <var-class-ref-label>`.
 
+.. note::
+   You can make these settings to ``var``, either 
+
+   * temporarily
+
+     - in interactive p4   
+     - at the top of individual scripts
+   * or in startup scripts
+
+     - possibly in your ``~/.p4`` directory
+ 
+
 Add your own code
 -----------------
 
@@ -90,7 +102,7 @@ You can over-ride existing methods that way also.  If you don't like the
 way p4 works, change it to suit yourself.
 
 A good place to put these new methods and functions is in files in the
-``~/.p4`` directory, or in another of your specified ``P4_STARTUP_DIRS``.
+``~/.p4`` directory, or in one of your specified ``P4_STARTUP_DIRS``.
 You can easily turn off files, but allow them to remain there for
 later, by changing the file name so that it no longer ends in ``.py``, or
 just put them in a sub-directory.
@@ -139,26 +151,23 @@ If you are using p4 interactively you can set it up so that you get
 * signatures of functions and methods
 * doc strings
 
-This week, there are two ways to do it ---
+This week, there are three ways to do it ---
 
 * p3rlcompleter (comes with p4, based on rlcompleter that comes with Python)
 * `bpython <http://bpython-interpreter.org>`_
+* `ipython <http://ipython.org>`_
 
-You can turn it on by setting ``var.interactiveHelper``, which is by default ``None``::
+You can turn it on by setting :attr:`p4.var.Var.interactiveHelper`, which is by default ``None``, for example::
 
     var.interactiveHelper = 'p3rlcompleter'
 
-or ::
 
-    var.interactiveHelper = 'bpython'
-
-Completion and access to signatures and docstrings differs in p3rlcompleter and bpython.
 In p3rlcompleter, 
 
 * you get signatures (argspecs) inserted in place
 * in the attribute listing, you get an indication of whether the attribute is a function or method (with a ``()``) or a list, a numpy array, or a plain variable
 
-However, bpython looks a lot nicer!  With colour!
+However, ipython and bpython look a lot nicer!  With colour!
 
 
 
@@ -219,11 +228,11 @@ If you type a function or method name up to the argument list, but not
 including the opening parenthesis, and then a dot, and then <tab><tab>,
 then the documentation for the function or method is given, if it
 exists. For example, do this to get the documentation for the read
-function:
+function::
 
 	read.<tab><tab>
 
-To get the documentation for the Alignment method translate(),
+To get the documentation for the Alignment method translate()::
 
 	Alignment.translate.<tab><tab>
 
@@ -248,19 +257,25 @@ which then tells you::
 
 	a.translate(transl_table=1)
 
-In this example, I asked for completion using an Alignment instance a,
+In this example, I asked for completion using an Alignment instance ``a``,
 but it works using the Alignment class as well. Note that in methods,
 the first argument is ``self``; I skip that in argspecs via completion, but
 retain it in the documentation output via completion.
 
-(Tip: you can delete the entire line backwards with control-u.)
+.. tip::
+   You can delete the entire line backwards with control-u.
+   Delete everything to the end of the line with control-k
 
-Interfacing with emacs
-----------------------
+Interfacing with your editor
+----------------------------
 
-In my world, I use a terminal to run p4 and emacs to edit my scripts and code.  When you use emacs to run your Python code and you get a traceback, you can use that traceback to easily go to those locations in the source.  That is brilliant functionality, but I have never got the hang of running Python in emacs  --- so I use a terminal.  So, using the terminal, when I get a traceback from an exception I want to go to where the error is, or perhaps one of the previous places in the traceback stack, and I want to go quickly and easily and start editing.  For that I use an exceptionhook that makes `emacsclient <http://www.emacswiki.org/emacs/EmacsClient>`_ commands.  It is by default off, but you can turn it on by::
+In my world, I use a terminal to run p4 and emacs to edit my scripts and code.  When you use emacs to run your Python code and you get a traceback, you can use that traceback to easily go to those locations in the source.  That is brilliant functionality, but I have never got the hang of running Python in emacs  --- so I use a terminal.  Using the terminal is simpler, but I still want that traceback functionality.
 
-    var.useEmacsclientExcepthook = True
+Using the terminal, when I get a traceback from an exception I want to go to where the error is, or perhaps one of the previous places in the traceback stack, and I want to go quickly and easily and start editing.  For that I use an exceptionhook that invokes the editor and goes to the right line in the right file.  It is under the control of :attr:`p4.var.Var.excepthookEditor`. It is by default ``None``, but you can turn it on by::
+
+    var.excepthookEditor = 'emacsclient -n'
+
+It appears to work for vim, as well, although I have not tested it well.
 
 
  
