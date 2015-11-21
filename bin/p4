@@ -21,8 +21,22 @@ argvAfterDoubleDash = []
 # and then they get put in var.argvAfterDoubleDash, (as strings, of
 # course).
 
-# the path to this script is made sys.path[0], but I see no point in
-# that, so put it back to normal, which is sys.path[0] = an empty string
+# The python 2 docs say """As initialized upon program startup, the first item of
+# this list, path[0], is the directory containing the script that was used to
+# invoke the Python interpreter. If the script directory is not available
+# (e.g. if the interpreter is invoked interactively or if the script is read
+# from standard input), path[0] is the empty string, which directs Python to
+# search modules in the current directory first. Notice that the script
+# directory is inserted before the entries inserted as a result of PYTHONPATH.
+# 
+# A program is free to modify this list for its own purposes."""
+
+# So when a python script is run, the path to that script is made sys.path[0],
+# but that is not appropriate in this case.  What the user would rather have is
+# to search for modules in their current directory first.  So I put sys.path[0]
+# back to being an empty string, the way it usually is when you run interactive
+# python.
+
 sys.path[0] = ''  
 
 if len(sys.argv) > 1:  # Is there stuff on the command line?
