@@ -52,6 +52,8 @@ class Numbers(object):
         #self.range = None
         # self.col
         # self.skip
+        if type(inThing) == numpy.ndarray:
+            inThing = list(inThing)
         if inThing:
             self.read(inThing, col, skip)
 
