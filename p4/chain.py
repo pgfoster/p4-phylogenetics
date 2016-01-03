@@ -5,6 +5,7 @@ import math
 import random
 import copy
 import numpy
+import scipy
 from p4exceptions import P4Error
 import sys
 
@@ -1624,11 +1625,13 @@ class Chain(object):
         # arrays.  A copy of inSeq is made, and the copy is modified and
         # returned.
         #dirichlet1(inSeq, alpha, theMin, theMax)
-        newVal = func.dirichlet1(
-            mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
-
-        self.logProposalRatio = 0.0
-
+        #newVal = func.dirichlet1(
+        #    mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
+        mtval = numpy.array(mt.val)
+        myProposer = scipy.stats.dirichlet(theProposal.tuning * mtval)
+        newVal = myProposer.rvs()
+        
+        # Old way
         rangeDim = range(dim)
         mySum = 0.0
         for stNum in rangeDim:
@@ -1649,11 +1652,22 @@ class Chain(object):
         for stNum in rangeDim:
             y += ((mt.val[stNum] * theProposal.tuning) - 1.) * \
                 math.log(newVal[stNum])
-        self.logProposalRatio = x - y
-        mt.val = newVal
+        logProposalRatio = x - y
 
-        # The prior here is a flat Dirichlet, ie Dirichlet(1, 1, 1, ...,
-        # 1).  If it is informative, then the prior is affected.
+        # Calculate the proposal ratio
+        # We can re-use myProposer to get the log pdf
+        forwardLnPdf = myProposer.logpdf(newVal)
+        # Another dirichlet distribution for the reverse
+        spDist = scipy.stats.dirichlet(tuning * newVal)
+        reverseLnPdf = spDist.logpdf(mtval)
+        self.logProposalRatio = reverseLnPdf - forwardLnPdf
+
+        assert math.fabs(logProposalRatio - self.logProposalRatio) < 1.e-12
+        
+        mt.val = list(newVal)
+
+        # The prior here is a flat Dirichlet, ie Dirichlet(1, 1, 1, ..., 1).  If
+        # it was not flat, then we would need to do some calculation here.
         self.logPriorRatio = 0.0
 
     def proposeRjComp(self, theProposal):
