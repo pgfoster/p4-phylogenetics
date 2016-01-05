@@ -6,6 +6,7 @@ import random
 import copy
 import numpy
 import scipy
+import scipy.stats
 from p4exceptions import P4Error
 import sys
 
@@ -14,7 +15,7 @@ import sys
 
 class Chain(object):
 
-    from chain_topol import proposeRoot3, proposeBrLen, proposeLocal, proposeETBR_Blaise, proposeESPR_Blaise, proposeETBR, proposeESPR, proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
+    from chain_topol import proposeRoot3, proposeBrLen, proposeAllBrLens, proposeTreeScale, proposeLocal, proposeETBR_Blaise, proposeESPR_Blaise, proposeETBR, proposeESPR, proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
 
 
     def __init__(self, aMcmc):
@@ -329,8 +330,11 @@ class Chain(object):
             # print "theProposal.name = cmd1_alpha, pNum=%i" % theProposal.pNum
             self.proposeCmd1Alpha(theProposal)
 
-        elif theProposal.name == 'rMatrix':
-            self.proposeRMatrixWithSlider(theProposal)
+        elif theProposal.name in ['rMatrix', 'rMatrixDir']:
+            if theProposal.name == 'rMatrix':
+                self.proposeRMatrixWithSlider(theProposal)
+            else:
+                self.proposeRMatrixDirichlet(theProposal)
 
             self.propTree.model.setCStuff(partNum=theProposal.pNum)
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
@@ -504,6 +508,56 @@ class Chain(object):
                     print "propose brLen bad likes calc. %f %f" % (logLike1, logLike2)
                 else:
                     print "propose brLen likes ok --  %f" % logLike1
+                sys.exit()
+
+        elif theProposal.name == 'allBrLens':
+            self.proposeAllBrLens(theProposal)
+            self.propTree.setCStuff()
+            for n in self.propTree.iterNodesNoRoot():  
+                # all branch lengths have changed, 
+                # so no need to check whether n.br.lenChanged
+                pf.p4_calculateBigPDecks(n.cNode)
+            for pNum in range(self.propTree.model.nParts):
+                for n in self.propTree.iterPostOrder():
+                    if not n.isLeaf:
+                        # Normally we would check whether n.flag is set
+                        # but here they all need to recalc cond likes
+                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                            n.cNode, pNum)
+                pf.p4_partLogLike(
+                    self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
+            #for n in self.propTree.iterInternalsNoRoot():
+            #    n.flag = 0
+            #self.propTree.root.flag = 0
+
+        elif theProposal.name == 'treeScale':
+            self.proposeTreeScale(theProposal)
+            self.propTree.setCStuff()
+            for n in self.propTree.iterNodesNoRoot():  
+                # all branch lengths have changed, 
+                # so no need to check whether n.br.lenChanged
+                pf.p4_calculateBigPDecks(n.cNode)
+            for pNum in range(self.propTree.model.nParts):
+                for n in self.propTree.iterPostOrder():
+                    if not n.isLeaf:
+                        # Normally we would check whether n.flag is set
+                        # but here they all need to recalc cond likes
+                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                            n.cNode, pNum)
+                pf.p4_partLogLike(
+                    self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
+            #for n in self.propTree.iterInternalsNoRoot():
+            #    n.flag = 0
+            #self.propTree.root.flag = 0
+
+            if 0:
+                logLike1 = sum(self.propTree.partLikes)
+                pf.p4_setPrams(self.propTree.cTree, -1)
+                logLike2 = pf.p4_treeLogLike(self.propTree.cTree, 0)
+                if math.fabs(logLike1 - logLike2) > 0.001:
+                    print "propose treeScale bad likes calc. %f %f" % (logLike1, logLike2)
+                else:
+                    print "propose treeScale likes ok --  %f" % logLike1
                 sys.exit()
 
         elif theProposal.name == 'eTBR':
@@ -1092,7 +1146,9 @@ class Chain(object):
                 b = self.propTree
 
             # Model values for one partition only.
-            if aProposal.name in ['comp', 'compDir', 'rMatrix', 'gdasrv', 'pInvar', 'cmd1_compDir', 'cmd1_allCompDir']:
+            if aProposal.name in ['comp', 'compDir', 'rMatrix', 
+                                  'rMatrixDir', 'gdasrv', 'pInvar', 
+                                  'cmd1_compDir', 'cmd1_allCompDir']:
                 b.logLike = a.logLike
                 pNum = aProposal.pNum
                 b.partLikes[pNum] = a.partLikes[pNum]
@@ -1209,7 +1265,7 @@ class Chain(object):
                 pf.p4_copyModelPrams(a.cTree, b.cTree)
 
             # Tree topology, so all parts
-            elif aProposal.name in ['local', 'eTBR', 'root3', 'brLen', 'polytomy']:
+            elif aProposal.name in ['local', 'eTBR', 'root3', 'brLen', 'polytomy', 'treeScale', 'allBrLens']:
                 b.logLike = a.logLike
                 for pNum in range(self.propTree.model.nParts):
                     b.partLikes[pNum] = a.partLikes[pNum]
@@ -1629,42 +1685,52 @@ class Chain(object):
         #    mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
         mtval = numpy.array(mt.val)
         myProposer = scipy.stats.dirichlet(theProposal.tuning * mtval)
-        newVal = myProposer.rvs()
-        
-        # Old way
-        rangeDim = range(dim)
-        mySum = 0.0
-        for stNum in rangeDim:
-            mySum += newVal[stNum] * theProposal.tuning
-        x = pf.gsl_sf_lngamma(mySum)
-        for stNum in rangeDim:
-            x -= pf.gsl_sf_lngamma(newVal[stNum] * theProposal.tuning)
-        for stNum in rangeDim:
-            x += ((newVal[stNum] * theProposal.tuning) - 1.) * \
-                math.log(mt.val[stNum])
 
-        mySum = 0.0
-        for stNum in rangeDim:
-            mySum += mt.val[stNum] * theProposal.tuning
-        y = pf.gsl_sf_lngamma(mySum)
-        for stNum in rangeDim:
-            y -= pf.gsl_sf_lngamma(mt.val[stNum] * theProposal.tuning)
-        for stNum in rangeDim:
-            y += ((mt.val[stNum] * theProposal.tuning) - 1.) * \
-                math.log(newVal[stNum])
-        logProposalRatio = x - y
+        safety = 0
+        while 1:
+            newVal = myProposer.rvs(size=1)[0]
+            if newVal.min() > var.PIVEC_MIN:
+                break
+            safety += 1
+            if safety > 100:
+                gm.append("Unable to draw a good proposal more than var.PIVEC_MIN")
+                raise P4Error, gm
+        
+        # # Old way
+        # newValList = newVal.tolist()
+        # rangeDim = range(dim)
+        # mySum = 0.0
+        # for stNum in rangeDim:
+        #     mySum += newValList[stNum] * theProposal.tuning
+        # x = pf.gsl_sf_lngamma(mySum)
+        # for stNum in rangeDim:
+        #     x -= pf.gsl_sf_lngamma(newValList[stNum] * theProposal.tuning)
+        # for stNum in rangeDim:
+        #     x += ((newValList[stNum] * theProposal.tuning) - 1.) * \
+        #         math.log(mt.val[stNum])
+
+        # mySum = 0.0
+        # for stNum in rangeDim:
+        #     mySum += mt.val[stNum] * theProposal.tuning
+        # y = pf.gsl_sf_lngamma(mySum)
+        # for stNum in rangeDim:
+        #     y -= pf.gsl_sf_lngamma(mt.val[stNum] * theProposal.tuning)
+        # for stNum in rangeDim:
+        #     y += ((mt.val[stNum] * theProposal.tuning) - 1.) * \
+        #         math.log(newValList[stNum])
+        # logProposalRatio = x - y
 
         # Calculate the proposal ratio
         # We can re-use myProposer to get the log pdf
         forwardLnPdf = myProposer.logpdf(newVal)
         # Another dirichlet distribution for the reverse
-        spDist = scipy.stats.dirichlet(tuning * newVal)
+        spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
         reverseLnPdf = spDist.logpdf(mtval)
         self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
-        assert math.fabs(logProposalRatio - self.logProposalRatio) < 1.e-12
+        # assert math.fabs(logProposalRatio - self.logProposalRatio) < 1.e-12 
         
-        mt.val = list(newVal)
+        mt.val = newVal.tolist()
 
         # The prior here is a flat Dirichlet, ie Dirichlet(1, 1, 1, ..., 1).  If
         # it was not flat, then we would need to do some calculation here.
@@ -2147,8 +2213,10 @@ class Chain(object):
             # 1, which makes the prior ratio 1.0 and the logPriorRatio
             # zero.
 
+            # note that mtCur.val and mtProp.val are both ndarrays 
+            # print mtCur.val, type(mtCur.val)
             old = [0.0, 0.0]
-            old[0] = mtCur.val / (mtCur.val + 1.0)
+            old[0] = mtCur.val[0] / (mtCur.val[0] + 1.0)
             old[1] = 1.0 - old[0]
             new = func.dirichlet1(
                 old, theProposal.tuning, var.KAPPA_MIN, var.KAPPA_MAX)
@@ -2227,6 +2295,89 @@ class Chain(object):
                 mt.val[stNum] /= mySum
 
             self.logProposalRatio = 0.0
+
+        self.logPriorRatio = 0.0
+
+    def proposeRMatrixDirichlet(self, theProposal):
+        gm = ['Chain.proposeRMatrixDirichlet()']
+        # print "rMatrix proposal. the tuning is %s" % theProposal.tuning
+
+        assert var.rMatrixNormalizeTo1
+        mtCur = self.curTree.model.parts[
+            theProposal.pNum].rMatrices[theProposal.mtNum]
+        mtProp = self.propTree.model.parts[
+            theProposal.pNum].rMatrices[theProposal.mtNum]
+        if mtProp.spec == '2p':
+
+            # This is derived from MrBayes, where the default tuning is 50.  In
+            # MrBayes, the "alphaDir" is a 2-item list of Dirichlet parameters
+            # (not the multiplier) but they are both by default 1, which makes
+            # the prior ratio 1.0 and the logPriorRatio zero.
+
+            # note that mtCur.val and mtProp.val are both ndarrays, shape (1,) 
+            # print mtCur.val, type(mtCur.val), mtCur.val.shape
+            oldVal = numpy.array([0.0, 0.0])
+            oldVal[0] = mtCur.val[0] / (mtCur.val[0] + 1.0)
+            oldVal[1] = 1.0 - oldVal[0]
+            myProposer = scipy.stats.dirichlet(theProposal.tuning * oldVal)
+            newVal = myProposer.rvs(size=1)[0]
+
+            safety = 0
+            while 1:
+                newVal = myProposer.rvs(size=1)[0]
+                if newVal.min() > var.KAPPA_MIN and newVal.max() < var.KAPPA_MAX:
+                    break
+                safety += 1
+                if safety > 100:
+                    gm.append("Unable to draw a good proposal within var.KAPPA_MIN and var.KAPPA_MAX")
+                    raise P4Error, gm
+
+
+
+
+            mtProp.val[0] = newVal[0] / newVal[1]
+            # print mtProp.val, type(mtProp.val), mtProp.val.shape
+
+            # Calculate the proposal ratio
+            # We can re-use myProposer to get the log pdf
+            forwardLnPdf = myProposer.logpdf(newVal)
+            # Another dirichlet distribution for the reverse
+            spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
+            reverseLnPdf = spDist.logpdf(oldVal)
+            self.logProposalRatio = reverseLnPdf - forwardLnPdf
+
+
+        else:  # specified, ones, eg gtr
+            mt = self.propTree.model.parts[
+                theProposal.pNum].rMatrices[theProposal.mtNum]
+
+            # mt.val is a numpy array
+            assert type(mt.val) == numpy.ndarray
+            myProposer = scipy.stats.dirichlet(theProposal.tuning * mt.val)
+
+            safety = 0
+            while 1:
+                newVal = myProposer.rvs(size=1)[0]
+                if newVal.min() > var.RATE_MIN and newVal.max() < var.RATE_MAX:
+                    break
+                safety += 1
+                if safety > 100:
+                    gm.append("Unable to draw a good proposal within var.RATE_MIN and var.RATE_MAX")
+                    raise P4Error, gm
+
+
+            # Calculate the proposal ratio
+            # We can re-use myProposer to get the log pdf
+            forwardLnPdf = myProposer.logpdf(newVal)
+            # Another dirichlet distribution for the reverse
+            spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
+            reverseLnPdf = spDist.logpdf(mt.val)
+            self.logProposalRatio = reverseLnPdf - forwardLnPdf
+
+            mtProp = self.propTree.model.parts[
+                theProposal.pNum].rMatrices[theProposal.mtNum]
+            for i,val in enumerate(newVal):
+                mtProp.val[i] = val
 
         self.logPriorRatio = 0.0
 

@@ -79,6 +79,10 @@ To install it in your home directory, say::
 
     python setup.py install --home=~
 
+Or some unusual place in your home directory::
+
+    python setup.py install --prefix=~/Unusual
+
 If you install it in your home directory, 
     
 - there is no need to be root or to use sudo

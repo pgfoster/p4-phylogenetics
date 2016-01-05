@@ -76,6 +76,54 @@ if True:
         if var.doMcmcSp:
             theNode.br.lenChanged = True
 
+    def proposeAllBrLens(self, theProposal):
+        gm = ['Chain.proposeAllBrLens']
+        pTree = self.propTree
+        nBranches = 0
+        oldBrLens = [n.br.len for n in pTree.iterNodesNoRoot()]
+
+        self.logPriorRatio = 0.0
+        self.logProposalRatio = 0.0
+        for n in pTree.iterNodesNoRoot():
+            oldBrLen = n.br.len
+            newBrLen = oldBrLen *  math.exp(theProposal.tuning * (random.random() - 0.5))
+            # no need to bother with this next line, because all branches change
+            #n.br.lenChanged = True
+            if self.mcmc.tunings.brLenPriorType == 'exponential':
+                self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
+                                      (oldBrLen - newBrLen)
+            else:
+                pass # log prior remains zero for uniform prior
+            self.logProposalRatio += math.log(newBrLen / oldBrLen)
+
+
+    def proposeTreeScale(self, theProposal):
+        gm = ['Chain.proposeTreeScale']
+        pTree = self.propTree
+        nBranches = 0
+        oldTreeLen = 0.0
+        for n in pTree.iterNodesNoRoot():
+            nBranches += 1
+            oldTreeLen += n.br.len
+        newTreeLen = oldTreeLen *  math.exp(theProposal.tuning * (random.random() - 0.5))
+        forwardScaler = newTreeLen/oldTreeLen
+        reverseScaler = oldTreeLen/newTreeLen
+
+        self.logPriorRatio = 0.0
+        for n in pTree.iterNodesNoRoot():
+            oldBrLen = n.br.len
+            n.br.len *= forwardScaler
+            # no need to bother with this next line, because all branches change
+            #n.br.lenChanged = True
+            if self.mcmc.tunings.brLenPriorType == 'exponential':
+                self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
+                                      (oldBrLen - n.br.len)
+            else:
+                pass # remains zero
+
+        self.logProposalRatio = nBranches * (math.log(newTreeLen) - math.log(oldTreeLen))
+            
+
     def proposeLocal(self, theProposal):  # from BAMBE and MrBayes.
 
         # doAbort is set if brLens are too long or too short, or if a

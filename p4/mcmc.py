@@ -21,6 +21,8 @@ fudgeFactor = {}
 fudgeFactor['local'] = 1.0
 fudgeFactor['brLen'] = 1.0
 fudgeFactor['eTBR'] = 1.0
+fudgeFactor['treeScale'] = 1.0
+fudgeFactor['allBrLens'] = 1.0
 fudgeFactor['polytomy'] = 1.0
 fudgeFactor['rjComp'] = 2.0
 fudgeFactor['rjRMatrix'] = 2.0
@@ -41,6 +43,7 @@ class McmcTuningsPart(object):
         object.__setattr__(self, 'rjComp', 200.)
         # No longer changed depending on the dim (ie size of rMatrix)
         object.__setattr__(self, 'rMatrix', 0.3)
+        object.__setattr__(self, 'rMatrixDir', 200.)
         object.__setattr__(self, 'twoP', 50.)
         object.__setattr__(self, 'rjRMatrix', 300.)
         object.__setattr__(self, 'gdasrv', 2.0 * math.log(1.5))  # 0.811
@@ -101,6 +104,8 @@ class McmcTunings(object):
         object.__setattr__(self, 'doPolytomyResolutionClassPrior', False)
         object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
         object.__setattr__(self, 'brLenPriorType', 'exponential')
+        object.__setattr__(self, 'treeScale', 2.0 * math.log(1.1))
+        object.__setattr__(self, 'allBrLens', 2.0 * math.log(1.1))
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
@@ -129,6 +134,8 @@ class McmcTunings(object):
         lst.append("%s%15s: %5.3f" % (spacer, 'etbrPExt', self.etbrPExt))
         lst.append("%s%15s: %5.3f" % (spacer, 'etbrLambda', self.etbrLambda))
         lst.append("%s%15s: %s" % (spacer, 'relRate', self.relRate))
+        lst.append("%s%15s: %s" % (spacer, 'treeScale', self.treeScale))
+        lst.append("%s%15s: %s" % (spacer, 'allBrLens', self.allBrLens))
 
         #lst.append("%s%30s: %s" % (spacer, 'chainTemp', self.chainTemp))
         #lst.append("%s%30s: %5.3f" % (spacer, 'local', self.local))
@@ -170,6 +177,11 @@ class McmcTunings(object):
         aLine = theSig % (spacer, 'rMatrix')
         for pNum in range(self.nParts):
             aLine += " %10.3f" % self.parts[pNum].rMatrix
+        lst.append(aLine)
+
+        aLine = theSig % (spacer, 'rMatrixDir')
+        for pNum in range(self.nParts):
+            aLine += " %10.3f" % self.parts[pNum].rMatrixDir
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'twoP')
@@ -236,6 +248,7 @@ class McmcTuningsUsagePart(object):
         #object.__setattr__(self, 'rjComp', [])
         #object.__setattr__(self, 'addComp', [])
         object.__setattr__(self, 'rMatrix', [])
+        object.__setattr__(self, 'rMatrixDir', [])
         object.__setattr__(self, 'gdasrv', [])
         object.__setattr__(self, 'pInvar', None)
         object.__setattr__(self, 'compLocation', None)
@@ -310,6 +323,8 @@ class McmcTuningsUsage(object):
                        (spacer, 'compDir', len(self.parts[pNum].compDir)))
             lst.append(sig2 %
                        (spacer, 'rMatrix', len(self.parts[pNum].rMatrix)))
+            lst.append(sig2 %
+                       (spacer, 'rMatrixDir', len(self.parts[pNum].rMatrixDir)))
             lst.append(sig2 % (spacer, 'gdasrv', len(self.parts[pNum].gdasrv)))
             if len(self.parts[pNum].comp):
                 nTunings += 1
@@ -376,12 +391,15 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'compDir', 0.0)
         object.__setattr__(self, 'rjComp', 0.0)
         object.__setattr__(self, 'rMatrix', 1.0)
+        object.__setattr__(self, 'rMatrixDir', 0.0)
         object.__setattr__(self, 'rjRMatrix', 0.0)
         object.__setattr__(self, 'gdasrv', 1.0)
         object.__setattr__(self, 'pInvar', 1.0)
         object.__setattr__(self, 'local', 1.0)
         object.__setattr__(self, 'brLen', 0.0)
+        object.__setattr__(self, 'allBrLens', 0.0)
         object.__setattr__(self, 'eTBR', 1.0)
+        object.__setattr__(self, 'treeScale', 0.0)
         object.__setattr__(self, 'polytomy', 0.0)
         object.__setattr__(self, 'root3', 0.0)
         object.__setattr__(self, 'compLocation', 0.0)
@@ -459,18 +477,19 @@ class Proposal(object):
 
     # Some tunings are part-specific, and so are associated with the proposals.
     def _getTuning(self):
-        if self.name in ['relRate', 'local', 'brLen']:
+        if self.name in ['relRate', 'local', 'brLen', 'treeScale', 'allBrLens']:
             # print "getting tuning for %s, returning %f" % (self.name,
             # getattr(self.mcmc.tunings, self.name))
             return getattr(self.mcmc.tunings, self.name)
         elif self.name in ['eTBR']:
             return getattr(self.mcmc.tunings, 'etbrLambda')
-        elif self.name in ['comp', 'compDir', 'rjComp', 'rMatrix', 'rjRMatrix', 'gdasrv', 'pInvar']:
+        elif self.name in ['comp', 'compDir', 'rjComp', 'rMatrix', 
+                           'rMatrixDir', 'rjRMatrix', 'gdasrv', 'pInvar']:
             # print "getting tuning for %s, partNum %i, returning %f" % (
             #    self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum], self.name))
             # the variant attribute is new, and can mess up reading older
             # pickles.
-            if self.name == 'rMatrix' and hasattr(self, 'variant') and self.variant == '2p':
+            if self.name in ['rMatrix', 'rMatrixDir'] and self.variant == '2p':
                 return getattr(self.mcmc.tunings.parts[self.pNum], 'twoP')
             else:
                 return getattr(self.mcmc.tunings.parts[self.pNum], self.name)
@@ -1114,9 +1133,18 @@ class Mcmc(object):
             p = Proposal(self)
             p.name = 'brLen'
             p.weight = self.prob.brLen * \
-                (len(self.tree.nodes) - 1) * fudgeFactor['local']
+                (len(self.tree.nodes) - 1) * fudgeFactor['brLen']
             self.proposals.append(p)
             object.__setattr__(self.tuningsUsage, 'brLen', p)
+
+        # allBrLens
+        if self.prob.allBrLens:
+            p = Proposal(self)
+            p.name = 'allBrLens'
+            p.weight = self.prob.allBrLens * \
+                (len(self.tree.nodes) - 1) * fudgeFactor['allBrLens']
+            self.proposals.append(p)
+            #object.__setattr__(self.tuningsUsage, 'brLen', p)
 
         # eTBR
         if self.prob.eTBR:
@@ -1126,6 +1154,15 @@ class Mcmc(object):
                 (len(self.tree.nodes) - 1) * fudgeFactor['eTBR']
             self.proposals.append(p)
             object.__setattr__(self.tuningsUsage, 'eTBR', p)
+
+        # treeScale
+        if self.prob.treeScale:
+            p = Proposal(self)
+            p.name = 'treeScale'
+            p.weight = self.prob.treeScale * \
+                (len(self.tree.nodes) - 1) * fudgeFactor['treeScale']
+            self.proposals.append(p)
+            #object.__setattr__(self.tuningsUsage, 'treeScale', p)
 
         # polytomy
         if self.prob.polytomy:
@@ -1212,9 +1249,25 @@ class Mcmc(object):
                                 (((mp.dim * mp.dim) - mp.dim) / 2)
                         p.pNum = pNum
                         p.mtNum = mtNum
-                        #p.tuning = self.tunings.parts[pNum].rMatrix
                         self.proposals.append(p)
                         self.tuningsUsage.parts[pNum].rMatrix.append(p)
+
+            # rMatrixDir
+            if self.prob.rMatrixDir:
+                for mtNum in range(mp.nRMatrices):
+                    if mp.rMatrices[mtNum].free:
+                        p = Proposal(self)
+                        p.name = 'rMatrixDir'
+                        if mp.rMatrices[mtNum].spec == '2p':
+                            p.weight = self.prob.rMatrixDir
+                            p.variant = '2p'
+                        else:
+                            p.weight = self.prob.rMatrixDir * \
+                                (((mp.dim * mp.dim) - mp.dim) / 2)
+                        p.pNum = pNum
+                        p.mtNum = mtNum
+                        self.proposals.append(p)
+                        self.tuningsUsage.parts[pNum].rMatrixDir.append(p)
 
             # rjRMatrix
             if self.prob.rjRMatrix:
@@ -1344,10 +1397,20 @@ class Mcmc(object):
                 p.weight = self.prob.brLen * \
                     (len(self.tree.nodes) - 1) * fudgeFactor['brLen']
 
+            # allBrLens
+            if p.name == 'allBrLens':
+                p.weight = self.prob.allBrLens * \
+                    (len(self.tree.nodes) - 1) * fudgeFactor['allBrLens']
+
             # eTBR
             if p.name == 'eTBR':
                 p.weight = self.prob.eTBR * \
                     (len(self.tree.nodes) - 1) * fudgeFactor['eTBR']
+
+            # treeScale
+            if p.name == 'treeScale':
+                p.weight = self.prob.treeScale * \
+                    (len(self.tree.nodes) - 1) * fudgeFactor['treeScale']
 
             # polytomy
             if p.name == 'polytomy':
@@ -1387,6 +1450,15 @@ class Mcmc(object):
                     p.weight = self.prob.rMatrix
                 else:
                     p.weight = self.prob.rMatrix * \
+                        ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
+
+            # rMatrixDir
+            if p.name == 'rMatrixDir':
+                mp = self.tree.model.parts[p.pNum]
+                if mp.rMatrices[0].spec == '2p':
+                    p.weight = self.prob.rMatrixDir
+                else:
+                    p.weight = self.prob.rMatrixDir * \
                         ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
 
             # rjRMatrix
