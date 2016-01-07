@@ -179,7 +179,7 @@ class TreeFileLite(object):
                 aLine = fLines[lNum].strip()
             translateLines.append(aLine)
             translateFlob = cStringIO.StringIO(' '.join(translateLines))
-            nx = Nexus.Nexus()
+            nx = nexus.Nexus()
             self.translationHash = nx.readTranslateCommand(translateFlob)
             # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok
