@@ -207,7 +207,7 @@ if True:
         self.writeNewick(
             fName, withTranslation, translationHash, doMcmcCommandComments)
 
-    def writeNewick(self, fName=None, withTranslation=0, translationHash=None, doMcmcCommandComments=0, toString=False, append=False):
+    def writeNewick(self, fName=None, withTranslation=0, translationHash=None, doMcmcCommandComments=0, toString=False, append=False, spaceAfterComma=True):
         """Write the tree in Newick, aka Phylip, format.
 
         This is done in a Nexus-oriented way.  If taxNames have spaces or
@@ -308,7 +308,10 @@ if True:
                     if doMcmcCommandComments:
                         sList.append(self._getMcmcCommandComment(n1))
                     if n1.sibling:
-                        sList.append(', ')
+                        if spaceAfterComma:
+                            sList.append(', ')
+                        else:
+                            sList.append(',')
                         break
         sList.append(';\n')
         if toString:
