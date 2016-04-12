@@ -669,6 +669,8 @@ if True:
             self.removeNode(n, alsoRemoveSingleChildParentNode=False)
         rNode.name = newName
         rNode.isLeaf = 1
+        if self.taxNames:
+            self.taxNames.append(newName)
 
     def collapseNode(self, specifier):
         """Collapse the specified node to make a polytomy, and remove it from the tree.
