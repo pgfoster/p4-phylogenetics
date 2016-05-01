@@ -72,6 +72,7 @@ part *newPart(int nTax, int nChar, char *equateSymbols, int nEquates, char *symb
 
   thePart->taxList = malloc(thePart->nTax * sizeof(int));
   thePart->simCats = NULL;
+  thePart->drawAncStResults = NULL;
   return thePart;
 
 }
@@ -111,6 +112,8 @@ void freePart(part *thePart)
     free(thePart->simCats);
     thePart->simCats = NULL;
   }
+  if(thePart->drawAncStResults) free(thePart->drawAncStResults);
+  thePart->simCats = NULL;
   //printf("part.c: free-ing part %li\n", (long int)thePart); fflush(stdout);
   free(thePart);
   thePart = NULL;

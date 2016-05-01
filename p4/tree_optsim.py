@@ -10,7 +10,7 @@ import time
 import glob
 from var import var
 from p4exceptions import P4Error
-from node import Node, NodePart, NodeBranchPart
+from node import Node, NodeBranch, NodePart, NodeBranchPart
 import nexustoken
 from distancematrix import DistanceMatrix
 
@@ -19,7 +19,6 @@ import pf
 from model import Model
 from data import Data
 from alignment import Part
-from node import NodeBranch, NodePart, NodeBranchPart
 import random
 
 if True:
@@ -319,7 +318,7 @@ if True:
 
         print "time %s seconds." % (time.clock() - theStartTime)
 
-    def simulate(self, calculatePatterns=True, resetSequences=True, resetNexusSetsConstantMask=True):
+    def simulate(self, calculatePatterns=True, resetSequences=True, resetNexusSetsConstantMask=True, refTree=None):
         """Simulate into the attached data.
 
         The tree self needs to have a data and model attached.
@@ -333,10 +332,58 @@ if True:
 
         func.reseedCRandomizer(os.getpid())
 
+        The usual way to simulate does not use reference data.  An unsual way to
+        simulate comes from (inspired by?) PhyloBayes, where the simulation is
+        conditional on the original data.  It uses conditional likelihoods of
+        that reference data at the root.  To turn that on, set refTree to the
+        tree+model+data that you would like to use.  Calculate a likelihood with
+        that refTree before using it, so that conditional likelihoods are set.
+        The tree and model for refTree should be identical to the tree and model
+        for self.
+
+        Args: 
+
+            calculatePatterns (bool): True by default. Whether to "compress" the
+                newly simulated data to facilitate a faster likelihood
+                calculation.
+
+            resetSequences (bool): True by default. whether to bring the
+                simulated sequences in C back into Python
+
+            resetNexusSetsConstantMask (bool): True by default.  When
+                simulations are made, the constant mask in any associated nexus
+                sets will get out of sync.  Setting this to True makes a new
+                mask and sets it.
+
+            refTree (Tree): None by default.  If supplied, a tree+model+data
+                which has had its likelihood calculated, where the tree+model is
+                identical to self.
 
         """
 
+        if refTree:
+            from tree import Tree
+            assert isinstance(refTree, Tree)
+            assert refTree.model
+            assert refTree.data
+            if not refTree.cTree:
+                refTree.calcLogLike(verbose=False)
+            assert refTree.model.cModel
+            assert refTree.data.cData
+            
+            
+
         self._commonCStuff()
+        if refTree:
+            assert refTree.data.cData != self.data.cData
+            assert refTree.data.nParts == self.data.nParts
+            assert refTree.data.nTax == self.data.nTax
+            for i in range(self.data.nTax):
+                assert refTree.data.taxNames[i] == self.data.taxNames[i]
+            assert len(refTree.data.alignments) == len(self.data.alignments)
+            assert refTree.logLike, "Do a likelihood calculation with the refTree before using it here."
+            # could have some more checks ...
+            
 
         # If there is a NexusSets object attached to any of the alignments
         # in the Data, the constant sites mask at least will become out of sync, but we can't just
@@ -351,7 +398,10 @@ if True:
         # at the end.
 
         # print "About to pf.p4_simulate(self.cTree)"
-        pf.p4_simulate(self.cTree)
+        if refTree:
+            pf.p4_simulate(self.cTree, refTree.cTree)
+        else:
+            pf.p4_simulate(self.cTree, 0)
         if calculatePatterns:
             for p in self.data.parts:
                 pf.makePatterns(p.cPart)

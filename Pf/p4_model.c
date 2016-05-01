@@ -234,7 +234,8 @@ void p4_newModelPart(p4_model *aModel, int pNum, int dim, int nComps, int nRMatr
 
 
 	mp->freqsTimesOneMinusPInvar = NULL;
-		
+	mp->charStatePicker = NULL;
+        mp->ancStPicker = NULL;
 	//printf("finished p4_newModelPart()\n");
 
 	// install
@@ -366,6 +367,16 @@ void p4_freeModelPart(p4_modelPart *mp)
 		free(mp->freqsTimesOneMinusPInvar);
 	}
 	mp->freqsTimesOneMinusPInvar = NULL;
+
+	if(mp->charStatePicker) {
+		free(mp->charStatePicker);
+	}
+	mp->charStatePicker = NULL;
+
+	if(mp->ancStPicker) {
+		free(mp->ancStPicker);
+	}
+	mp->ancStPicker = NULL;
 
 
 	free(mp);
