@@ -3,6 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+
+P4
+==
+
 P4 is a Python package for maximum likelihood and Bayesian analysis of
 molecular sequences.  Its specialty is that it can use heterogeneous
 models, where the characteristics of the model can differ over the data
@@ -17,18 +21,18 @@ data.
 
 It is hosted at `<https://github.com/pgfoster/p4-phylogenetics>`_
 
-P4 documentation
-================
+..
+   test
+   test2
 
-Contents:
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
    introduction
    installation
    tutorial/index
-   examples/index
    scripts
    modules/index
 

@@ -178,8 +178,8 @@ P4 supports Nexus standard datatype.
 
 Something I have been looking into is **recoding protein alignments into
 amino acid groups**, for example the 6 Dayhoff groups, for analysis.  That uses the
-:meth:`Alignment.Alignment.recodeDayhoff()` method or the
-:meth:`Alignment.Alignment.recodeProteinIntoGroups` method.  Here the
+:meth:`p4.alignment.Alignment.recodeDayhoff()` method or the
+:meth:`p4.alignment.Alignment.recodeProteinIntoGroups` method.  Here the
 amino acid symbols are recoded to the numerals.  For example in
 Dayhoff recoding, since C (Cysteine) is in a group by itself, it is
 simply recoded as 1, but the amino acids S, T, P, A, and G are all

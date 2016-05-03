@@ -1,11 +1,11 @@
 Introduction
 ============
 
-
 What's it good for?
--------------------
 
-**Phylogenetics toolkit**
+
+It is a phylogenetics toolkit
+-----------------------------
 
 * P4 can be used as a phylogenetic toolkit, the elements of which you can string together in different ways depending on the job at hand. It is useful for programmatic manipulation of phylogenetic data and trees. If you want to do something interesting with your trees or data, p4 might have at least some of what you want to do already in place.
 
@@ -18,7 +18,8 @@ What's it good for?
 
 * P4 is meant to be easily extensible, so if you want to do something that it cannot do, it is often easy to add that functionality.
 
-**Heterogeneous models**
+It implements tree-heterogeneous models
+---------------------------------------
 
 Heterogeneity in the process of evolution should be reflected in
 heterogeneity in the models that we use. Different genes behave
@@ -31,7 +32,8 @@ of individual trees under flexible combinations of these
 models. (However, p4 does not do tree searching in ML).
 
 
-**Bayesian analysis**
+It does Bayesian phylogenetic analysis
+--------------------------------------
 
 P4 implements a MCMC for doing Bayesian phylogenetic analysis. It uses
 NNI (actually Larget and Simon's LOCAL) and eTBR for tree
@@ -45,7 +47,8 @@ has ended, or if you want to recover from a crash or power outage, it
 is possible to restart from a checkpoint. You can specify topological
 constraints in the trees.
 
-**A citation**
+A citation
+----------
 
 For the moment, until there is a better one, the best citation is 
 

@@ -1,0 +1,105 @@
+<svg version="1.1"
+  baseProfile="full"
+  width="334.23" height="323.79"
+  viewBox="90.77 -365.50 334.23 323.79"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+
+<style>
+text {
+    font-family: Helvetica, sans-serif;
+    font-weight: 400;
+}
+text.ttfamily {
+    font-family: "Courier New", Courier, monospace;
+}
+</style>
+<defs>
+</defs>
+
+<!--   barNameAxis -->
+<!-- Axis.getSvg() here.  19 ticks -->
+<text id="text-1"  x="274.75" y="-89.16" font-size="26.60" dx="-61.61" dy="26.91" >X-squared</text>
+<line x1="152.2" y1="-140.0" x2="152.2" y2="-133.0" stroke="black" stroke-width="0.99" />  <!-- tick at 0 -->
+<text id="text-2"  x="159.06" y="-133.00" font-size="21.28" dx="-19.84" dy="5.64" transform="rotate(-90.00, 159.06, -133.00)" >0</text>
+<line x1="165.9" y1="-140.0" x2="165.9" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="179.5" y1="-140.0" x2="179.5" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="193.1" y1="-140.0" x2="193.1" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="206.7" y1="-140.0" x2="206.7" y2="-133.0" stroke="black" stroke-width="0.99" />  <!-- tick at 4 -->
+<text id="text-3"  x="213.50" y="-133.00" font-size="21.28" dx="-20.16" dy="5.64" transform="rotate(-90.00, 213.50, -133.00)" >4</text>
+<line x1="220.3" y1="-140.0" x2="220.3" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="233.9" y1="-140.0" x2="233.9" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="247.5" y1="-140.0" x2="247.5" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="261.1" y1="-140.0" x2="261.1" y2="-133.0" stroke="black" stroke-width="0.99" />  <!-- tick at 8 -->
+<text id="text-4"  x="267.94" y="-133.00" font-size="21.28" dx="-19.80" dy="5.64" transform="rotate(-90.00, 267.94, -133.00)" >8</text>
+<line x1="274.8" y1="-140.0" x2="274.8" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="288.4" y1="-140.0" x2="288.4" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="302.0" y1="-140.0" x2="302.0" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="315.6" y1="-140.0" x2="315.6" y2="-133.0" stroke="black" stroke-width="0.99" />  <!-- tick at 12 -->
+<text id="text-5"  x="322.39" y="-133.00" font-size="21.28" dx="-30.33" dy="5.64" transform="rotate(-90.00, 322.39, -133.00)" >12</text>
+<line x1="329.2" y1="-140.0" x2="329.2" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="342.8" y1="-140.0" x2="342.8" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="356.4" y1="-140.0" x2="356.4" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="370.0" y1="-140.0" x2="370.0" y2="-133.0" stroke="black" stroke-width="0.99" />  <!-- tick at 16 -->
+<text id="text-6"  x="376.83" y="-133.00" font-size="21.28" dx="-30.39" dy="5.64" transform="rotate(-90.00, 376.83, -133.00)" >16</text>
+<line x1="383.6" y1="-140.0" x2="383.6" y2="-133.0" stroke="black" stroke-width="0.99" />
+<line x1="397.2" y1="-140.0" x2="397.2" y2="-133.0" stroke="black" stroke-width="0.99" />
+
+<!--  barValAxis -->
+<!-- Axis.getSvg() here.  4 ticks -->
+<line x1="140.0" y1="-152.2" x2="133.0" y2="-152.2" stroke="black" stroke-width="0.99" />  <!-- tick at 0 -->
+<text id="text-7"  x="133.00" y="-152.25" font-size="21.28" dx="-19.84" dy="5.64" >0</text>
+<line x1="140.0" y1="-210.2" x2="133.0" y2="-210.2" stroke="black" stroke-width="0.99" />  <!-- tick at 5 -->
+<text id="text-8"  x="133.00" y="-210.22" font-size="21.28" dx="-19.82" dy="5.64" >5</text>
+<line x1="140.0" y1="-268.2" x2="133.0" y2="-268.2" stroke="black" stroke-width="0.99" />  <!-- tick at 10 -->
+<text id="text-9"  x="133.00" y="-268.19" font-size="21.28" dx="-30.31" dy="5.64" >10</text>
+<line x1="140.0" y1="-326.2" x2="133.0" y2="-326.2" stroke="black" stroke-width="0.99" />  <!-- tick at 15 -->
+<text id="text-10"  x="133.00" y="-326.16" font-size="21.28" dx="-30.31" dy="5.64" >15</text>
+
+<!--  frame lines -->
+<line x1="140.0" y1="-140.0" x2="409.5" y2="-140.0" stroke="black" stroke-width="0.99" />
+<line x1="140.0" y1="-350.0" x2="409.5" y2="-350.0" stroke="black" stroke-width="0.99" />
+<line x1="140.0" y1="-140.0" x2="140.0" y2="-350.0" stroke="black" stroke-width="0.99" stroke-linecap="square" />
+<line x1="409.5" y1="-140.0" x2="409.5" y2="-350.0" stroke="black" stroke-width="0.99" stroke-linecap="square" />
+
+<!-- BarSet 0, fillColor black -->
+<!-- val=0.0 -->
+<!-- val=0.0 -->
+<rect id="rect-11"  x="181.11" y="-221.81" width="5.17" height="69.56" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=6.0 -->
+<rect id="rect-12"  x="194.72" y="-256.59" width="5.17" height="104.34" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=9.0 -->
+<rect id="rect-13"  x="208.33" y="-279.78" width="5.17" height="127.53" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=11.0 -->
+<rect id="rect-14"  x="221.94" y="-337.75" width="5.17" height="185.50" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=16.0 -->
+<rect id="rect-15"  x="235.55" y="-268.19" width="5.17" height="115.94" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=10.0 -->
+<rect id="rect-16"  x="249.16" y="-302.97" width="5.17" height="150.72" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=13.0 -->
+<rect id="rect-17"  x="262.77" y="-279.78" width="5.17" height="127.53" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=11.0 -->
+<rect id="rect-18"  x="276.38" y="-256.59" width="5.17" height="104.34" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=9.0 -->
+<rect id="rect-19"  x="289.99" y="-210.22" width="5.17" height="57.97" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=5.0 -->
+<rect id="rect-20"  x="303.61" y="-233.41" width="5.17" height="81.16" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=7.0 -->
+<!-- val=0.0 -->
+<!-- val=0.0 -->
+<!-- val=0.0 -->
+<!-- val=0.0 -->
+<rect id="rect-21"  x="371.66" y="-175.44" width="5.17" height="23.19" stroke-width="1.0" stroke="black" fill="black" /> <!-- val=2.0 -->
+<!-- val=0.0 -->
+
+<!-- BarSet 1, fillColor None -->
+<!-- val=0.0 -->
+<rect id="rect-22"  x="172.67" y="-163.84" width="5.17" height="11.59" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=1.0 -->
+<rect id="rect-23"  x="186.28" y="-233.41" width="5.17" height="81.16" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=7.0 -->
+<rect id="rect-24"  x="199.89" y="-268.19" width="5.17" height="115.94" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=10.0 -->
+<rect id="rect-25"  x="213.50" y="-268.19" width="5.17" height="115.94" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=10.0 -->
+<rect id="rect-26"  x="227.11" y="-314.56" width="5.17" height="162.31" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=14.0 -->
+<rect id="rect-27"  x="240.72" y="-268.19" width="5.17" height="115.94" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=10.0 -->
+<rect id="rect-28"  x="254.33" y="-337.75" width="5.17" height="185.50" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=16.0 -->
+<rect id="rect-29"  x="267.94" y="-233.41" width="5.17" height="81.16" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=7.0 -->
+<rect id="rect-30"  x="281.56" y="-279.78" width="5.17" height="127.53" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=11.0 -->
+<rect id="rect-31"  x="295.17" y="-198.62" width="5.17" height="46.38" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=4.0 -->
+<rect id="rect-32"  x="308.78" y="-175.44" width="5.17" height="23.19" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=2.0 -->
+<rect id="rect-33"  x="322.39" y="-198.62" width="5.17" height="46.38" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=4.0 -->
+<!-- val=0.0 -->
+<rect id="rect-34"  x="349.61" y="-175.44" width="5.17" height="23.19" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=2.0 -->
+<rect id="rect-35"  x="363.22" y="-163.84" width="5.17" height="11.59" stroke-width="1.0" stroke="black" fill="none" /> <!-- val=1.0 -->
+<!-- val=0.0 -->
+<!-- val=0.0 -->
+
+</svg>
