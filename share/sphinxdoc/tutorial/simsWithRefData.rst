@@ -302,11 +302,11 @@ I ran an MCMC using p4 with the same data ``d.phy`` as above, with the GTR+G mod
 
 .. figure:: ./simsDiffsB.svg
 
-    Differences between the original data and the simulated data, using p4.  Black bars use a refTree+model+refData, and white bars are without.
+    Differences between the original data and the simulated data, using p4.  White bars use a refTree+model+refData, and black bars are without.
 
 
 .. _fig-simsX2A-label:
 
 .. figure:: ./simsX2A.svg
 
-    X\ :sup:`2`\ values from the simulations using refTree+model+refData (black bars), and without (white bars).
+    X\ :sup:`2`\ values from the simulations using refTree+model+refData (white bars), and without (black bars).
