@@ -514,7 +514,7 @@ if True:
                 counters[k] = 0                # Initialize for next pos
             assert hitsAtThisPos, "pos %i had no symbol chars, only gaps and ambigs."
 
-            if thereIsASingleton:
+            if hitsAtThisPos == 2 and thereIsASingleton:
                 singletons[pos] = '1'
         return ''.join(singletons)
 
