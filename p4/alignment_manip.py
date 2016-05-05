@@ -318,7 +318,7 @@ if True:
         """Make and return a mask for those sites that are likelihood informative about the topology.
 
         Mostly this means no constant and singleton sites.  (Singletons are 
-        `autapomorphies<https://en.wikipedia.org/wiki/Autapomorphy>`, 
+        `autapomorphies <https://en.wikipedia.org/wiki/Autapomorphy>`_, 
         being a site that is all one character except for one taxon that
         has another character.)
 
@@ -478,7 +478,7 @@ if True:
         """Return a mask for autapomorphies 
 
         Returns a string of zeros and 1s, where the 1s are 
-        `autapomorphic sites<https://en.wikipedia.org/wiki/Autapomorphy>`.
+        `autapomorphic sites <https://en.wikipedia.org/wiki/Autapomorphy>`_.
 
         Gaps and ambiguities are ignored.
 
