@@ -2,16 +2,15 @@
 Simulations with reference data
 ===============================
 
-    :Date: 2016-05-03
 
 .. contents::
 
-
+- First version 2016-05-03
 
 The ususal way to simulate data based on a tree and a model
 -----------------------------------------------------------
 
-The way that p4 has been doing simulations, and I belived the way most other simulation programs do it, is to generate a random sequence for the root and evolve that sequence over the given tree using the given model.  The root sequence is random, but has the model composition.  For ``+G+I`` models, the discrete gamma category and whether it is an invariant site is also chosen for each site in the root sequence, and that choice is maintained throughout the tree.  
+The way that p4 has been doing simulations, and I believe the way most other simulation programs do it (please correct me if I am wrong!), is to generate a random sequence for the root and evolve that sequence over the given tree using the given model.  The root sequence is random, but has the model composition.  For ``+G+I`` models, the discrete gamma category and whether it is an invariant site is also chosen for each site in the root sequence, and that choice is maintained throughout the tree.  
 
 Here is an example simulation using p4.  It uses a GTR+G model; the pInvar model is not used here because some programs used below (PAML/evolver and PhyloBayes) do not use it.
 

@@ -221,6 +221,8 @@ class Alignment(SequenceList):
         ~Alignment.getAllGapsMask
         ~Alignment.getEnoughCharsMask
         ~Alignment.getLikelihoodTopologyInformativeSitesMask
+        ~Alignment.getMaskForAutapomorphies
+        ~Alignment.getMaskForCharDiversity
 
 
     You can also make masks with :func:`p4.func.maskFromNexusCharacterList`.
@@ -293,7 +295,7 @@ class Alignment(SequenceList):
 
     """
 
-    from alignment_manip import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,orMasks,andMasks,sequenceSlice,bluntEndLigate, concatenate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups, mrpSlice
+    from alignment_manip import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,getMaskForAutapomorphies,getMaskForCharDiversity,getCharDiversityDistribution,orMasks,andMasks,sequenceSlice,bluntEndLigate, concatenate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups, mrpSlice
     from alignment_readwrite import readOpenPhylipFile, _readPhylipSequential, _readPhylipInterleaved, _readPhylipSequentialStrict, _readPhylipInterleavedStrict, _readOpenClustalwFile,writeNexus,writePhylip,writeMolphy,_readOpenGdeFile
     from alignment_part import _initParts,initDataParts,resetSequencesFromParts,resetPartsContentFromSequences
     from alignment_logdet import logDet, _logDetSetReduceIgnores

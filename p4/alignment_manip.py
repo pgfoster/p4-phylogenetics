@@ -317,7 +317,8 @@ if True:
     def getLikelihoodTopologyInformativeSitesMask(self):
         """Make and return a mask for those sites that are likelihood informative about the topology.
 
-        Mostly this means no constant and singleton sites.  (Singleton
+        Mostly this means no constant and singleton sites.  (Singletons are 
+        `autapomorphies<https://en.wikipedia.org/wiki/Autapomorphy>`, 
         being a site that is all one character except for one taxon that
         has another character.)
 
@@ -328,7 +329,7 @@ if True:
         - If there are no ambigs or gaps, then constants and singletons are not informative.
         - If there are gaps but no ambigs,
 
-            + if there are only 2 characters or less -- not informative
+            + if there are only 2 characters or fewer -- not informative
             + if constant + gaps -- not informative
             + if singleton + gaps -- not informative
 
@@ -349,7 +350,10 @@ if True:
 
         Because of the above, we cannot be sure that each site indicated
         by a 1 in the mask is informative, but we can be sure that each 0
-        in the mask is uninformative.    
+        in the mask is uninformative. 
+
+        Returns:
+            a mask string
         """
 
         assert self.nTax > 2
@@ -470,41 +474,166 @@ if True:
         mask = "".join(mask)
         return mask
 
-    # def addMasks(self, maskA, maskB):
-    #     """Given two masks, this adds the string chars as integers.
+    def getMaskForAutapomorphies(self):
+        """Return a mask for autapomorphies 
 
-    #     Eg. 0010 and 1000 will return 1010.
-    #     or 0010 and 1010 will return 1020.
-    #     """
-    #     gm = ["Alignment.addMasks()"]
-    #     # check for silliness
-    #     if type(maskA) != type('str'):
-    #         gm.append("Masks must be strings.")
-    #         raise P4Error(gm)
-    #     if type(maskB) != type('str'):
-    #         gm.append("Masks must be strings.")
-    #         raise P4Error(gm)
-    #     if len(maskA) != self.length or len(maskB) != self.length:
-    #         gm.append("Masks must be the same length as the alignment.")
-    #         raise P4Error(gm)
-    #     l = self.length
-    #     import array
-    #     andMask = array.array('c', self.length * '0')
-    #     for i in range(l):
-    #         #if maskA[i] == '1' and maskB[i] == '1':
-    #         #    andMask[i] = '1'
-    #         try:
-    #             iA = int(maskA[i])
-    #             iB = int(maskB[i])
-    #         except ValueError:
-    #             gm.append("all mask characters must be convertable to integers")
-    #             raise P4Error(gm)
-    #         theSum = iA + iB
-    #         if theSum > 9:
-    #             gm.append("the sum of masks at each position must be less than 10")
-    #             raise P4Error(gm)
-    #         andMask[i] = repr(theSum)
-    #     return andMask.tostring()
+        Returns a string of zeros and 1s, where the 1s are 
+        `autapomorphic sites<https://en.wikipedia.org/wiki/Autapomorphy>`.
+
+        Gaps and ambiguities are ignored.
+
+        In an alignment site, if there are two kinds of character states (ie the
+        character diversity is 2) and one of the character states occurs once only,
+        then it will be called an autapomorphy (or singleton).
+
+        Returns:
+            a string nChar long, of zeros and 1s.
+
+        See also :meth:`~Alignment.getMaskForCharDiversity` and 
+        :meth:`~Alignment.getLikelihoodTopologyInformativeSitesMask`
+
+        """
+        singletons = ['0'] * self.nChar
+        counters = {}  # so that I can index it with a symbol rather than an int
+        for c in self.symbols:
+            counters[c] = 0
+        for pos in range(len(self)):
+            for seq in self.sequences:
+                c = seq.sequence[pos]
+                try:
+                    counters[c] += 1  # ie not gaps and ambiguities
+                except KeyError:
+                    pass
+            hitsAtThisPos = 0
+            thereIsASingleton = False  
+            for k,v in counters.iteritems():
+                if v:
+                    hitsAtThisPos += 1
+                    if v == 1:
+                        thereIsASingleton = True
+                counters[k] = 0                # Initialize for next pos
+            assert hitsAtThisPos, "pos %i had no symbol chars, only gaps and ambigs."
+
+            if thereIsASingleton:
+                singletons[pos] = '1'
+        return ''.join(singletons)
+
+
+
+    def getMaskForCharDiversity(self, diversity=1):
+        """Return a mask for a given character diversity
+
+        Gaps and ambiguities are ignored.
+
+        This makes a mask string with zeros and ones, with 1's showing the sites with
+        the chosen diversity, and zero for other sites.
+
+        So for example, if diversity is 1, that means constant sites, and this
+        method returns a simple constant sites mask, with gaps and ambigs ignored.
+
+        If the diversity is 2, it will return a mask showing sites with two kinds of
+        characters.  And so on.
+
+        Returns:
+            a string nChar long, of zeros and 1s.
+
+        See also :meth:`~Alignment.getMaskForAutapomorphies`
+        """
+        counters = {}  # so that I can index it with a symbol rather than an int
+        myMask = []
+        for c in self.symbols:
+            counters[c] = 0
+        for pos in range(len(self)):
+            for seq in self.sequences:
+                c = seq.sequence[pos]
+                try:
+                    counters[c] += 1  # ie ignore gaps and ambiguities
+                except KeyError:
+                    pass
+            hitsAtThisPos = 0
+            for k,v in counters.iteritems():
+                if v:
+                    hitsAtThisPos += 1
+                counters[k] = 0                # Initialize for next pos
+            if hitsAtThisPos == diversity:
+                myMask.append("1")
+            else:
+                myMask.append("0")
+            assert hitsAtThisPos, "pos %i had no symbol chars, only gaps and ambigs."
+
+        return ''.join(myMask)
+
+
+    def getCharDiversityDistribution(self):
+        """Distribution of different chars per site, as a distribution.
+
+        Gaps and ambiguities are ignored.
+
+        A tuple is returned, composed of
+
+        +----------+---------------------------------------------------------+
+        |    index | \                                                       |
+        +==========+=========================================================+
+        |        0 | num of sites with 2 kinds of char, singletons only      |
+        +----------+---------------------------------------------------------+
+        |        1 | num of simple constant sites                            |
+        +----------+---------------------------------------------------------+
+        |        2 | num of sites with 2 kinds of char, including singletons |
+        +----------+---------------------------------------------------------+
+        |        3 | num of sites with 3 kinds of char                       |
+        +----------+---------------------------------------------------------+
+        |      ... | ...                                                     |
+        +----------+---------------------------------------------------------+
+        | nSymbols | num of sites with some of each char                     |
+        +----------+---------------------------------------------------------+
+
+        I define singletons as sites with two kinds of characters, where there is
+        only one of one of the characters.  Eg AAATAAAAAAAA, ie autapomorphies.
+
+        So if there are 10 sites with 2 kinds of char, and 4 of those are
+        singletons, 30 constant sites, and 20 sites with 3 kinds of character, we
+        would have a distro like this --- (4, 30, 10, 20, ...)
+
+        This is in pure Python, and can be used for Alignments with one
+        part.
+
+        Returns:
+            a tuple of ints, showing counts of sites with different diversities.
+
+        See also :meth:`~Alignment.getMaskForCharDiversity`
+
+        """
+        #assert isinstance(self, Alignment)
+        distro = [0] * (len(self.symbols) + 1)
+        counters = {}  # so that I can index it with a symbol rather than an int
+        for c in self.symbols:
+            counters[c] = 0
+        for pos in range(len(self)):
+            for seq in self.sequences:
+                c = seq.sequence[pos]
+                try:
+                    counters[c] += 1  # ie ignore gaps and ambiguities
+                except KeyError:
+                    pass
+            hitsAtThisPos = 0
+            thereIsASingleton = False  
+            for k,v in counters.iteritems():
+                if v:
+                    hitsAtThisPos += 1
+                    if v == 1:
+                        thereIsASingleton = True
+                counters[k] = 0                # Initialize for next pos
+            assert hitsAtThisPos, "pos %i had no symbol chars, only gaps and ambigs."
+
+            distro[hitsAtThisPos] += 1
+            if hitsAtThisPos == 2:
+                if thereIsASingleton:
+                    distro[0] += 1
+        # Check
+        assert self.nChar == sum(distro[1:]), "Something is wrong. The distribution does not add up to nChar"
+        return tuple(distro)
+
+
 
     def orMasks(self, maskA, maskB):
         """Given two masks, this logically or's the string chars.
