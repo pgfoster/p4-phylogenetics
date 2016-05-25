@@ -1020,7 +1020,7 @@ if True:
         The formula is as given in Lockhart et al 94, the logDet paper.
         Its equation 4 there, page 608.  One pairwise distance is the
         square root of the sum of the squares of the differences between
-        the frequencies.
+        the frequencies of character states of one pair of sequences.
         """
 
         from distancematrix import DistanceMatrix
