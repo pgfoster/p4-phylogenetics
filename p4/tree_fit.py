@@ -1175,3 +1175,40 @@ if True:
         return l
 
 
+    def getEuclideanDistanceFromSelfDataToExpectedComposition(self):
+        """Calculate the c_E stat between self.data and model expected composition.
+
+        The expected composition comes from the current tree (self) and model.
+        There is an expected composition of each sequence in each part, and is
+        obtained via pf.p4_expectedComposition(cTree).  In non-stationary
+        evolution, the expected composition of sequences approach the model
+        composition asymptotically as the branch increases.
+
+        I am calling the Euclidean distance from self.data composition to
+        expected composition c_E.
+
+        Iterate over parts, iterate over sequences, iterate over character states,
+        collect sum of (self.dataValue - expectedValue)^2, and return the square
+        root of that sum.
+
+        Returns:
+            the c_E statistic
+        """
+
+        if not self.cTree:
+            self.calcLogLike(verbose=False)
+        expected = pf.p4_expectedComposition(self.cTree)
+        #print expected
+
+        mySum = 0.0
+        for seqNum in range(self.data.nTax):
+            for pNum in range(self.model.nParts):
+                thePart = self.data.parts[pNum]
+                expectedForPartSeq = expected[pNum][seqNum]
+                compForPartSeq = thePart.composition([seqNum])
+                #print expectedForPartSeq,
+                #print compForPartSeq
+                for cNum in range(thePart.dim):
+                    dif = expectedForPartSeq[cNum] - compForPartSeq[cNum]
+                    mySum += (dif * dif)
+        return math.sqrt(mySum)

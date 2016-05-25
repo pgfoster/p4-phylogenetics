@@ -153,6 +153,7 @@ class Tree(object):
         ~Tree.modelFitTests
         ~Tree.modelSanityCheck
         ~Tree.simsForModelFitTests
+        ~Tree.getEuclideanDistanceFromSelfDataToExpectedComposition
 
 **Setting a model**
 
@@ -229,7 +230,7 @@ class Tree(object):
     from tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, getSiteLikes, getSiteRates
     from tree_model import data, model, _setData, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setRjComp, setRjRMatrix, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
     from tree_write import patristicDistanceMatrix, tPickle, writeNexus, write, writePhylip, writeNewick, _getMcmcCommandComment, draw, textDrawList, eps
-    from tree_fit import simsForModelFitTests, modelFitTests, compoTestUsingSimulations, bigXSquaredSubM, compStatFromCharFreqs
+    from tree_fit import simsForModelFitTests, modelFitTests, compoTestUsingSimulations, bigXSquaredSubM, compStatFromCharFreqs, getEuclideanDistanceFromSelfDataToExpectedComposition
 
     def __init__(self):
         self.fName = None   # The name of the file it came from
