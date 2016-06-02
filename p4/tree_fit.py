@@ -1184,15 +1184,13 @@ if True:
         evolution, the expected composition of sequences approach the model
         composition asymptotically as the branch increases.
 
-        I am calling the Euclidean distance from self.data composition to
-        expected composition c_E.
-
-        Iterate over parts, iterate over sequences, iterate over character states,
-        collect sum of (self.dataValue - expectedValue)^2, and return the square
-        root of that sum.
+        I am calling the Euclidean distance from the actual sequence composition
+        to the expected composition c_E.
 
         Returns:
-            the c_E statistic
+            A list of lists --- the c_E for each sequence, for each part.  
+            Order of the sequences is as in the Data.
+
         """
 
         if not self.cTree:
@@ -1200,15 +1198,19 @@ if True:
         expected = pf.p4_expectedComposition(self.cTree)
         #print expected
 
-        mySum = 0.0
-        for seqNum in range(self.data.nTax):
-            for pNum in range(self.model.nParts):
-                thePart = self.data.parts[pNum]
+        allParts = []
+        for pNum in range(self.model.nParts):
+            thePart = self.data.parts[pNum]
+            statsForPart = []
+            for seqNum in range(self.data.nTax):
                 expectedForPartSeq = expected[pNum][seqNum]
                 compForPartSeq = thePart.composition([seqNum])
-                #print expectedForPartSeq,
-                #print compForPartSeq
+                c_E = 0.0
                 for cNum in range(thePart.dim):
                     dif = expectedForPartSeq[cNum] - compForPartSeq[cNum]
-                    mySum += (dif * dif)
-        return math.sqrt(mySum)
+                    c_E += (dif * dif)
+                c_E = math.sqrt(c_E)
+                statsForPart.append(c_E)
+            allParts.append(statsForPart)
+        return allParts
+    
