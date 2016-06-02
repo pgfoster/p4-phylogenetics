@@ -462,7 +462,7 @@ class PosteriorSamples(object):
 
         # t.model.dump()
 
-        splIndx = 4          # assuming Gen     LnL     LnPr    TL  ...
+        splIndx = 3          # but could be Gen     LnL     LnPr    TL  ...
         while splIndx < self.nPrams:
             pNum = 0
             # print "splIndx = %i, pramsHeader = %s" % (splIndx,
