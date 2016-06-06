@@ -317,26 +317,26 @@ if True:
     def getLikelihoodTopologyInformativeSitesMask(self):
         """Make and return a mask for those sites that are likelihood informative about the topology.
 
-        Mostly this means no constant and singleton sites.  (Singletons are 
-        `autapomorphies <https://en.wikipedia.org/wiki/Autapomorphy>`_, 
-        being a site that is all one character except for one taxon that
-        has another character.)
+        Mostly this means no constant and no autapomorphic sites.  
+        `Autapomorphies <https://en.wikipedia.org/wiki/Autapomorphy>`_
+        are sites that are all one character except for one taxon that
+        has another character.
 
         The rules, this week--
 
         Its not informative if:
 
-        - If there are no ambigs or gaps, then constants and singletons are not informative.
+        - If there are no ambigs or gaps, then constants and autapomorphies are not informative.
         - If there are gaps but no ambigs,
 
             + if there are only 2 characters or fewer -- not informative
             + if constant + gaps -- not informative
-            + if singleton + gaps -- not informative
+            + if autapomorphy + gaps -- not informative
 
         - If there are ambigs but no gaps,
 
             + if constant except for a single ambig, then not informative
-            + (a singleton plus a single ambig can sometimes be informative)
+            + (an autapomorphy plus a single ambig can sometimes be informative)
 
         Otherwise, I'm saying that it is informative.  That includes
 
@@ -574,11 +574,11 @@ if True:
         +----------+---------------------------------------------------------+
         |    index | \                                                       |
         +==========+=========================================================+
-        |        0 | num of sites with 2 kinds of char, singletons only      |
+        |        0 | num of autapomorphies                                   |
         +----------+---------------------------------------------------------+
         |        1 | num of simple constant sites                            |
         +----------+---------------------------------------------------------+
-        |        2 | num of sites with 2 kinds of char, including singletons |
+        |        2 | num of sites with 2 kinds of char                       |
         +----------+---------------------------------------------------------+
         |        3 | num of sites with 3 kinds of char                       |
         +----------+---------------------------------------------------------+
@@ -587,11 +587,11 @@ if True:
         | nSymbols | num of sites with some of each char                     |
         +----------+---------------------------------------------------------+
 
-        I define singletons as sites with two kinds of characters, where there is
-        only one of one of the characters.  Eg AAATAAAAAAAA, ie autapomorphies.
+        Autapomorphies are  sites with two kinds of characters, where there is
+        only one of one of the characters.
 
         So if there are 10 sites with 2 kinds of char, and 4 of those are
-        singletons, 30 constant sites, and 20 sites with 3 kinds of character, we
+        autapomorphies, 30 constant sites, and 20 sites with 3 kinds of character, we
         would have a distro like this --- (4, 30, 10, 20, ...)
 
         This is in pure Python, and can be used for Alignments with one

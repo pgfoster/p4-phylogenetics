@@ -187,7 +187,7 @@ what you typed is ambiguous, then the function or method is competed
 only up to the point of ambiguity. At a point of ambiguity, typing
 ``<tab><tab>`` tells you your options.
 
-(If you are using the mac, see :ref:`completion_on_the_mac`.)
+.. (If you are using the mac, see :ref:`completion_on_the_mac`.)
 
 For example, if you type::
 

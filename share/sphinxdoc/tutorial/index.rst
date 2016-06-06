@@ -12,7 +12,7 @@ Tutorials and Examples
 .. Doing a careful MCMC. How to tell if an Mcmc is good.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    tut_intro
    tut_using
@@ -30,5 +30,5 @@ Tutorials and Examples
    composition_tree
    mrp
    kosiol_ais
-
+   partitionCompositionDifferences
 

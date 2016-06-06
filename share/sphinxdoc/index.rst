@@ -27,10 +27,11 @@ It is hosted at `<https://github.com/pgfoster/p4-phylogenetics>`_
 
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 3
    :hidden:
 
    introduction
+   new
    installation
    tutorial/index
    scripts

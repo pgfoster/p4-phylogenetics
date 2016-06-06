@@ -3,14 +3,14 @@ Simulations with reference data
 ===============================
 
 
-.. contents::
+.. _simsWithRefData:
 
-- First version 2016-05-03
+- 2016-05-03
 
 The ususal way to simulate data based on a tree and a model
 -----------------------------------------------------------
 
-The way that p4 has been doing simulations, and I believe the way most other simulation programs do it (please correct me if I am wrong!), is to generate a random sequence for the root and evolve that sequence over the given tree using the given model.  The root sequence is random, but has the model composition.  For ``+G+I`` models, the discrete gamma category and whether it is an invariant site is also chosen for each site in the root sequence, and that choice is maintained throughout the tree.  
+The way that p4 has been doing simulations, and I belive the way most other simulation programs do it, is to generate a random sequence for the root and evolve that sequence over the given tree using the given model.  The root sequence is random, but has the model composition.  For ``+G+I`` models, the discrete gamma category and whether it is an invariant site is also chosen for each site in the root sequence, and that choice is maintained throughout the tree.  
 
 Here is an example simulation using p4.  It uses a GTR+G model; the pInvar model is not used here because some programs used below (PAML/evolver and PhyloBayes) do not use it.
 
@@ -57,8 +57,8 @@ Seq-Gen
 ~~~~~~~
 
 A commonly used simulation program is the venerable Seq-Gen, written by Andrew Rambaut, and
-available  `here <http://tree.bio.ed.ac.uk/software/seqgen>`_.
-It is described in the paper `here <http://bioinformatics.oxfordjournals.org/content/13/3/235.short>`_.
+available at  `http://tree.bio.ed.ac.uk/software/seqgen <http://tree.bio.ed.ac.uk/software/seqgen>`_.
+It is described in the paper available at `http://bioinformatics.oxfordjournals.org/content/13/3/235.short <http://bioinformatics.oxfordjournals.org/content/13/3/235.short>`_.
 In this example I am using ``v1.3.3``, with the command
 
 ::
@@ -81,8 +81,8 @@ Here is the resulting simulation ---
 INDELible
 ~~~~~~~~~
 
-INDELible is a very capable simulation program written by William Fletcher when he was in Ziheng Yang's group, and described `here <http://mbe.oxfordjournals.org/content/26/8/1879.full>`_.
-The manual, tutorial, and source code can be found `here <http://abacus.gene.ucl.ac.uk/software/indelible/>`_.
+INDELible is a very capable simulation program written by William Fletcher when he was in Ziheng Yang's group, and described in this paper `http://mbe.oxfordjournals.org/content/26/8/1879.full <http://mbe.oxfordjournals.org/content/26/8/1879.full>`_.
+The manual, tutorial, and source code can be found at `http://abacus.gene.ucl.ac.uk/software/indelible/ <http://abacus.gene.ucl.ac.uk/software/indelible/>`_.
 
 As in PAML, the composition (state frequencies) is given in the order ``TCAG``, and the rate matrix parameters are ``TC TA TG CA CG`` with  ``AG=1``.
 So my composition of ``ACGT = [0.1, 0.2, 0.3, 0.4]`` would be ``[0.4, 0.2, 0.1, 0.3]``, and 
@@ -114,7 +114,7 @@ The simulation resulted in this alignment ---
     C     CGTTCTTGCGCCGGTGTGGTTGTAGGTTTTGTTGTATCTTGCTGCTACTATTTCGGGGGGTGTCATTTTGGTGATCAGCC     
     E     CCTTGTTGCTCGGGTGTGGTTGTAGGTTGGTTTGTAGCTGGCTGGGACCATTTCGCGGGGGGGCAGGTCGTTGTTCAGCC     
 
-(In the 2009 Fletcher and Yang paper referred to above, the authors say that before INDELible  "... only MySSP (Rosenberg 2005) can simulate under nonstationary and nonhomogenous models."  It appears that they were not aware of my description of my ``p4`` software to do non-stationary, non-homogeneous simulations published in my 2004 paper `here <http://sysbio.oxfordjournals.org/content/53/3/485.full>`_.)
+(In the 2009 Fletcher and Yang paper referred to above, the authors say that before INDELible  "... only MySSP (Rosenberg 2005) can simulate under nonstationary and nonhomogenous models."  It appears that they were not aware of my description of my ``p4`` software to do non-stationary, non-homogeneous simulations published in my 2004 paper `http://sysbio.oxfordjournals.org/content/53/3/485.full <http://sysbio.oxfordjournals.org/content/53/3/485.full>`_.)
 
 Evolver from PAML
 ~~~~~~~~~~~~~~~~~
@@ -165,7 +165,7 @@ Ziheng Yang comments in the manual ---
 PhyloBayes has an unusual way to simulate data --- using a tree, model, and reference data
 ------------------------------------------------------------------------------------------
 
-`PhyloBayes <http://megasun.bch.umontreal.ca/People/lartillot/www/index.htm>`_ is an extraordinary Bayesian phylogenetics program written by Nicolas Lartillot, and first described `here <http://mbe.oxfordjournals.org/content/21/6/1095.short>`_.  It uses posterior predictive simulations to assess fit of the model to the data.  The simulations in PhyloBayes are unusual.  To show this, I will use PhyloBayes version 4.1c (not, in this case, the mpi version), and the data generated above by ``p4`` to run a short MCMC using the GTR+G model using a fixed topology --- the simulation tree above.  After that I tell the ancillary program ``ppred`` to simulate three sets of data from the last three posterior samples.
+`PhyloBayes <http://megasun.bch.umontreal.ca/People/lartillot/www/index.htm>`_ is an extraordinary Bayesian phylogenetics program written by Nicolas Lartillot, and first described in the paper `http://mbe.oxfordjournals.org/content/21/6/1095.short <http://mbe.oxfordjournals.org/content/21/6/1095.short>`_.  It uses posterior predictive simulations to assess fit of the model to the data.  The simulations in PhyloBayes are unusual.  To show this, I will use PhyloBayes version 4.1c (not, in this case, the mpi version), and the data generated above by ``p4`` to run a short MCMC using the GTR+G model using a fixed topology --- the simulation tree above.  After that I tell the ancillary program ``ppred`` to simulate three sets of data from the last three posterior samples.
 
 I think the following runs a GTR+G model ---
 
@@ -217,7 +217,7 @@ Simulations were made from Seq-Gen as above, and from PhyloBayes, collecting 100
 
 .. _fig-simsDiffsA-label:
 
-.. figure:: ./simsDiffsA.svg
+.. figure:: SimsWithRefDataFigs/simsDiffsA.svg
 
     Differences between the original data and the simulated data.  Black bars are from Seq-Gen, and white bars are from PhyloBayes.
 
@@ -299,13 +299,13 @@ I ran an MCMC using p4 with the same data ``d.phy`` as above, with the GTR+G mod
 
 .. _fig-simsDiffsB-label:
 
-.. figure:: ./simsDiffsB.svg
+.. figure:: SimsWithRefDataFigs/simsDiffsB.svg
 
     Differences between the original data and the simulated data, using p4.  White bars use a refTree+model+refData, and black bars are without.
 
 
 .. _fig-simsX2A-label:
 
-.. figure:: ./simsX2A.svg
+.. figure:: SimsWithRefDataFigs/simsX2A.svg
 
     X\ :sup:`2`\ values from the simulations using refTree+model+refData (white bars), and without (black bars).
