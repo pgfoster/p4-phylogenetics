@@ -1670,9 +1670,9 @@ if True:
         """Duplicates self, with no c-pointers.  And no parts"""
         from copy import deepcopy
         theDupe = deepcopy(self)
-        # for p in theDupe.parts:
-        #    p.alignment = theDupe
-        #    p.cPart = None
+        for p in theDupe.parts:
+           p.alignment = theDupe
+           p.cPart = None
         for p in theDupe.parts:
             del(p)
         theDupe.parts = []
