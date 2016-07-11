@@ -702,10 +702,10 @@ class TaxOrCharSet(object):
 
                 self.triplets.append(aTriplet)
         # print "xxy self.mask = %s" % self.mask
-        if not self.triplets and not self.mask:
-            gm.append("%s '%s' definition" % (self.className, self.name))
-            gm.append("Got no definition (no triplets or mask)")
-            raise P4Error(gm)
+        # if not self.triplets and not self.mask:
+        #     gm.append("%s '%s' definition" % (self.className, self.name))
+        #     gm.append("Got no definition (no triplets or mask)")
+        #     raise P4Error(gm)
 
         if 0:
             print gm[0]
@@ -727,10 +727,10 @@ class TaxOrCharSet(object):
                 print gm[0]
                 self.dump()
 
-            if not len(self.triplets):
-                gm.append(
-                    "standard format, but we have no triplets? - no definition?")
-                raise P4Error(gm)
+            # if not len(self.triplets):
+            #     gm.append(
+            #         "standard format, but we have no triplets? - no definition?")
+            #     raise P4Error(gm)
 
             if self.className == 'CharSet':
                 thisMaskLen = self.aligNChar
