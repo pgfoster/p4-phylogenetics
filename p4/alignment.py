@@ -802,8 +802,10 @@ class Alignment(SequenceList):
 
         a.length = theMask2.count(1)
         if a.length == 0:
-            gm.append("The mask has a length of zero.")
-            raise P4Error(gm)
+            if not var.allowEmptyCharSetsAndTaxSets:
+                gm.append("The mask has a length of zero.")
+                gm.append("(Allow by turning var.allowEmptyCharSetsAndTaxSets on.)")
+                raise P4Error(gm)
 
         # make a 2D array the same size as the sequences, filled.
         newList = []

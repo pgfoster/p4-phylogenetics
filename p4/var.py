@@ -322,6 +322,7 @@ class Var(object):
         # self._rMatrixNormalizeTo1 = 1
         self._interactiveHelper = None
         self._excepthookEditor = None
+        self.allowEmptyCharSetsAndTaxSets = False
 
 
     def _del_nothing(self):
