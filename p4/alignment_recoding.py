@@ -1,27 +1,39 @@
 """
 Module for recoding matrices.
-date: 24/08/2016
+date: 25/08/2016
 """
 import sys
 import os
 import types
 import subprocess
 import re
-import itertools
+import copy
+import warnings
 from Bio.Data import CodonTable
 from p4 import Alignment
-from p4 import GeneticCode
 from p4 import func
 from p4 import var
 from p4 import P4Error
 from p4 import read
-from p4.Code_utils import *
+from p4.code_utils import \
+        codon_position, \
+        codon_position_is_degenerate, \
+        codon_slice_has_aas, \
+        codon_slice_is_constant_aa, \
+        codon_slice_is_degenerate, \
+        codons_from_triplet_slice, \
+        degenerate_codon_slice, \
+        getBiopythonCode, nuc2val, \
+        recode_sequence, \
+        reduce_by_or, \
+        val2nuc, \
+        Code, R, Y
 
-import copy
-import warnings
 def formatwarning(message, category, filename, lineno, line):
     return "%s:%s: %s:%s" % (filename, lineno, category.__name__, message)
 warnings.formatwarning = formatwarning
+
+CAT = "".join
 
 # This method uses a generalized codon size, but this is not the case of everything in this module.
 def getCodonPositionMask(self, pos, codon_size=3):
@@ -32,7 +44,7 @@ def getCodonPositionMask(self, pos, codon_size=3):
             return "1"
         else:
             return "0"
-    return "".join([pos_mask(i+1) for i in range(self.length)])
+    return CAT([pos_mask(i+1) for i in range(self.length)])
 Alignment.getCodonPositionMask = getCodonPositionMask
 
 
@@ -47,11 +59,11 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
 
     The matrix is expected to start at a first codon position and stop at a third
     codon position.
-    
+
     *transl_table* is an integer used to determine under which genetic code
     the codons are to be interpreted. The default value of 1 corresponds to the
     standard genetic code. Other values can be found in p4.GeneticCode.py
-    
+
     Alternatively, the genetic code can be provided directly, using a
     dictionnary *code* whose keys are codons, and the values are the
     corresponding amino-acids. All triplets present in the matrix should also
@@ -66,7 +78,7 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
     where degeneracy is observed (or all of them if *all_3rd_positions* is True).
     Depending on the genetic code used, the type of amino-acid affected could
     be different.
-    
+
     The goal of the submatrix extraction using the produced mask is to remove
     the sites that could have been affected by composition bias: mutations
     within a set of synonymous codons are more likely to favour the codons that
@@ -79,7 +91,7 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
     AGY (serine) <-> TGY (cysteine) <-> TCY (serine)
     and
     AGY (serine) <-> ACY (threonine) <-> TCY (serine)
-    
+
     The current implementation (as of june 2012) does not check that a
     mutational path between synonymous codons exists, that consists only in
     synonymous point mutations. This may be considered as a bug, because you
@@ -91,7 +103,7 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
 
     if code is None:
         #code = GeneticCode(transl_table).code
-        # Use the generalized Code class defined in Code_utils.py
+        # Use the generalized Code class defined in code_utils.py
         code = Code(transl_table).code
 
     n_codons = self.length / 3
@@ -101,7 +113,8 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
         # 3 alignment slices. One for each codon position.
         slices = [self.sequenceSlice((3 * c) + pos-1) for pos in [1, 2, 3]]
         # The different codons found for the current triplet of sites.
-        codons = set([codon.lower() for codon in map(lambda c: "%s%s%s" % c, zip(slices[0], slices[1], slices[2]))])
+        codons = set([codon.lower() for codon in ["%s%s%s" % nnn for nnn in zip(
+            slices[0], slices[1], slices[2])]])
         # These are not Codon instances, this probably doesn't deal properly with ambiguity codes.
         # Record the amino-acids coded at the 3 nucleotides site, and the codons used for this aa.
         aas_codons = {}
@@ -111,8 +124,13 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
                 aa = '-'
             elif code.has_key(codon):
                 aa = code[codon]
+            elif 'n' in codon:
+                # This is a simplification. Some "degenerate" codons
+                # can still code an unambiguous amino-acid.
+                aa = 'x'
             else:
-                gm.append("Codon %s is not defined in the chosen code or translation table." % codon)
+                gm.append("Codon %s is not defined in the chosen code "
+                          "or translation table." % codon)
                 gm.append("%s" % str(code))
                 raise P4Error(gm)
             # Record the codon used for the aa.
@@ -126,25 +144,28 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
         for aa in aas_codons.keys():
             if len(aas_codons[aa]) > 1:
                 # Several codons have been found at this triplet for the amino-acid aa.
-                # For each position, count the number of different nucleotides present in the used codons.
+                # For each position, count the number of different nucleotides
+                # present in the used codons.
                 degeneracy = [len(set([cod[0] for cod in aas_codons[aa]])),
                               len(set([cod[1] for cod in aas_codons[aa]])),
                               len(set([cod[2] for cod in aas_codons[aa]]))]
                 if all_3rd_positions:
                     # Put a position in the mask if it is already in the mask
                     # or if it is degenerate, or if it is a 3rd position.
-                    codon_mask = [codon_mask[pos-1] or (degeneracy[pos-1] > 1) for pos in [1, 2]] + [True]
+                    codon_mask = [codon_mask[pos-1] or (degeneracy[pos-1] > 1)
+                                  for pos in [1, 2]] + [True]
                 else:
                     # Put a position in the mask if it is already in the mask
                     # or if it is degenerate.
-                    codon_mask = [codon_mask[pos-1] or (degeneracy[pos-1] > 1) for pos in [1, 2, 3]]
+                    codon_mask = [codon_mask[pos-1] or (degeneracy[pos-1] > 1)
+                                  for pos in [1, 2, 3]]
             if all(codon_mask):
                 # All positions of the triplet have been found to contribute to
                 # some codon degeneracy somewhere in the alignment.
                 # There is no need to search further.
                 break
         # Append the codon mask to the mask.
-        mask += "".join(map(lambda b: "1" if b else "0", codon_mask))
+        mask += CAT(map(lambda b: "1" if b else "0", codon_mask))
     return mask
 Alignment.getDegenerateSitesMask = getDegenerateSitesMask
 
@@ -156,7 +177,7 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
     of serines, like in :meth:`Alignment.recode23aa()`.
 
     *self* is translated using :attribute:`Code(transl_table).code`.
-    
+
     Alternatively, the genetic code can be provided through the parameter *code*.
     If such a code is provided, the value of *transl_table* is ignored.
     The parameter *code* can take to types of values:
@@ -168,8 +189,8 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
     and the corresponding amino-acids are expected to be in lower case.
     It may be possible to use a code based on another codon length as 3,
     but this has not been tested as of June 2012.
-    
-    
+
+
     At the moment, we can only do translations where the sequences are phased
     with the coding frame, ie the first sequence position is the first position
     of the codon, and the last sequence position should be a last codon position.
@@ -186,7 +207,7 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
         elif transl_table == 9: # echinoderm mito
 
         and now 6, 10, 11, 12, 13, 14, 21.
-    
+
     (These are found in p4.GeneticCode.py or in :class:`Code`)
 
     *transl_table* may also be provided as text consisting in blank-separated elements.
@@ -200,10 +221,10 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
         TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG
         TTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGGTTTTCCCCAAAAGGGG
         TCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAGTCAG
-    
+
     """
 
-    gm = ['p4.Alignment_recoding.pseudoTranslate()']
+    gm = ['p4.alignment_recoding.pseudoTranslate()']
     if self.dataType != 'dna':
         gm.append("Self should be a DNA alignment")
         raise P4Error(gm)
@@ -214,7 +235,7 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
         codelength = Code(transl_table).codelength
     else:
         if isinstance(code, types.StringType):
-            code = getBiopythonCode(code) # defined in Code_utils.py
+            code = getBiopythonCode(code) # defined in code_utils.py
         # We assume that the "codons" have all the same length,
         # and we look at the first codon in the dictionary to know this length.
         codelength = len(code.keys()[0])
@@ -226,26 +247,26 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
         gm.append("The length of self should be a multiple of %i" % codelength)
         raise P4Error(gm)
 
-    a = self.dupe()
-    a.dataType = out_type
-    a.length = self.length / codelength
-    a.symbols = "".join(sorted(set(code.values())))
-    a.equates = {}
-    a.dim = len(a.symbols)
-    a.nexusSets = None
-    a.parts = []
-    a.excludeDelete = None
-    for s in a.sequences:
+    ali = self.dupe()
+    ali.dataType = out_type
+    ali.length = self.length / codelength
+    ali.symbols = CAT(sorted(set(code.values())))
+    ali.equates = {}
+    ali.dim = len(ali.symbols)
+    ali.nexusSets = None
+    ali.parts = []
+    ali.excludeDelete = None
+    for seq in ali.sequences:
         # Initialize an all-gap sequence.
-        s.sequence = ['-'] * a.length
-        s.dataType = out_type
+        seq.sequence = ['-'] * ali.length
+        seq.dataType = out_type
 
     for i in range(len(self.sequences)):
         # the original sequence
         dnaSeq = self.sequences[i].sequence
         # the future pseudo-translation
-        pseudoProtSeq = a.sequences[i].sequence
-        for j in range(a.length):
+        pseudoProtSeq = ali.sequences[i].sequence
+        for j in range(ali.length):
             theCodon = dnaSeq[(j * codelength):((j+1) * codelength)]
             if code.has_key(theCodon):
                 pseudoProtSeq[j] = code[theCodon]
@@ -254,19 +275,21 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
                 pseudoProtSeq[j] = '-'
             elif theCodon.count('-'):
                 # partial indel
-                gm.append("    seq %i, position %4i, dnaSeq %4i, codon '%s' is incomplete" % (i, j, (j*codelength), theCodon))
+                gm.append("    seq %i, position %4i, dnaSeq %4i, codon '%s' is incomplete" % (
+                    i, j, (j*codelength), theCodon))
                 raise P4Error(gm)
             else:
-                # Should we use a CodonTranslationError (defined in Code_utils.py) here ?
-                gm.append("    seq %i position %4i, dnaSeq %4i, codon '%s' is not a known codon" % (i, j, (j*codelength), theCodon))
+                # Should we use a CodonTranslationError (defined in code_utils.py) here ?
+                gm.append("    seq %i position %4i, dnaSeq %4i, codon '%s' is not a known codon" % (
+                    i, j, (j*codelength), theCodon))
                 raise P4Error(gm)
 
-    for s in a.sequences:
+    for seq in ali.sequences:
         # Convert from list to string.
         #s.sequence = string.join(s.sequence, '')
-        s.sequence = "".join(s.sequence)
+        seq.sequence = CAT(seq.sequence)
         #print s.sequence
-    return a
+    return ali
 Alignment.pseudoTranslate = pseudoTranslate
 
 def recode23aa(self):
@@ -322,7 +345,7 @@ Alignment.iter_codon_slices = iter_codon_slices
 
 def getHasAAsMask(self, aas, transl_table=1, code=None):
     """
-    
+
     This method returns a mask corresponding to the triplets of sites where
     at least one amino-acid present in *aas* is coded. This is intended
     to be used for submatrix extraction using :meth:`Alignment.getSubsetUsingMask`
@@ -331,11 +354,11 @@ def getHasAAsMask(self, aas, transl_table=1, code=None):
 
     The matrix is expected to start at a first codon position and stop at a third
     codon position.
-    
+
     *transl_table* is an integer used to determine under which genetic code
     the codons are to be interpreted. The default value of 1 corresponds to the
     standard genetic code. Other values can be found in p4.GeneticCode.py
-    
+
     Alternatively, the genetic code can be provided through the parameter *code*.
     If such a code is provided, the value of *transl_table* is ignored.
     The parameter *code* can take to types of values:
@@ -353,39 +376,41 @@ def getHasAAsMask(self, aas, transl_table=1, code=None):
 
     """
 
-    gm = ["Alignment.getConstantAAMask()"]
+    gm = ["Alignment.getHasAAsMask()"]
 
     if code is None:
         code = Code(transl_table).code
     elif isinstance(code, types.StringType):
         code = getBiopythonCode(code)
     else:
-        assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
 
-    return "".join(map(lambda c_slice : "111" if codon_slice_has_aas(c_slice, aas) else "000",
-                       self.iter_codon_slices(code)))
+    return CAT(map(
+        lambda c_slice: "111" if codon_slice_has_aas(c_slice, aas) else "000",
+        self.iter_codon_slices(code)))
 Alignment.getHasAAsMask = getHasAAsMask
 
 
 def getConstantAAMask(self, transl_table=1, code=None, restrict_to=[]):
     """
-    
+
     This method returns a mask corresponding to the triplets of sites where
     only one amino-acid is coded. This is intended to be used for submatrix
     extraction using :meth:`Alignment.getSubsetUsingMask` (with the option
     *inverse=True*, to get the non-constant sites).
-    
+
     If *restrict_to* is not empty, only those sites that are constant and code
     for one of the amino-acids the one-letter code of which is in *restrict_to*
     will be considered constant.
-    
+
     The matrix is expected to start at a first codon position and stop at a third
     codon position.
-    
+
     *transl_table* is an integer used to determine under which genetic code
     the codons are to be interpreted. The default value of 1 corresponds to the
     standard genetic code. Other values can be found in p4.GeneticCode.py
-    
+
     Alternatively, the genetic code can be provided through the parameter *code*.
     If such a code is provided, the value of *transl_table* is ignored.
     The parameter *code* can take to types of values:
@@ -408,32 +433,38 @@ def getConstantAAMask(self, transl_table=1, code=None, restrict_to=[]):
     if code is None:
         code = Code(transl_table).code
     elif isinstance(code, types.StringType):
-        code = getBiopythonCode(code) # defined in Code_utils.py
+        code = getBiopythonCode(code) # defined in code_utils.py
     else:
-        assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
 
-    return "".join(map(lambda c_slice : "111" if codon_slice_is_constant_aa(c_slice, restrict_to) else "000", self.iter_codon_slices(code)))
+    return CAT(
+        map(lambda c_slice: "111" if codon_slice_is_constant_aa(c_slice, restrict_to) else "000",
+            self.iter_codon_slices(code)))
 Alignment.getConstantAAMask = getConstantAAMask
 
 
-def getDegenerateCodonsMask(self, transl_table=1, code=None, restrict_to=[]):
+def getDegenerateCodonsMask(self, transl_table=1, code=None, restrict_to=[], ignore=[]):
     """
-    
+
     This method returns a mask corresponding to the triplets of sites where
     degeneracy has been observed. This is intended to be used for submatrix
     extraction using :meth:`Alignment.getSubsetUsingMask` (with the option
     *inverse=True*, to get the sites with no degenerate codons).
-    
+
     If *restrict_to* is not empty, only those amino-acid the one-lettre code of
     which is in *restrict_to* are considered.
-    
+
+    If *ignore* is not empty, only those amino-acid the one-lettre code of
+    which is not in *ignore* are considered.
+
     The matrix is expected to start at a first codon position and stop at a third
     codon position.
-    
+
     *transl_table* is an integer used to determine under which genetic code
     the codons are to be interpreted. The default value of 1 corresponds to the
     standard genetic code. Other values can be found in p4.GeneticCode.py
-    
+
     Alternatively, the genetic code can be provided through the parameter *code*.
     If such a code is provided, the value of *transl_table* is ignored.
     The parameter *code* can take to types of values:
@@ -457,9 +488,10 @@ def getDegenerateCodonsMask(self, transl_table=1, code=None, restrict_to=[]):
         #code = GeneticCode(transl_table).code
         code = Code(transl_table).code
     elif isinstance(code, types.StringType):
-        code = getBiopythonCode(code) # defined in Code_utils.py
+        code = getBiopythonCode(code) # defined in code_utils.py
     else:
-        assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
 
     # Experiments to test the speed of execution.
     #mask= "".join(("111" if codon_slice_is_degenerate(cod_slice, restrict_to) else "000") for cod_slice in self.iter_codon_slices(code))
@@ -484,28 +516,35 @@ def getDegenerateCodonsMask(self, transl_table=1, code=None, restrict_to=[]):
     #mask = "".join(map(lambda c_slice : "111" if codon_slice_is_degenerate(c_slice, restrict_to) else "000", [codons_from_triplet_slice(self.triplet_slice(i), code) for i in xrange(0, self.length, 3)]))
     #return "".join(map(lambda c_slice : "111" if codon_slice_is_degenerate(c_slice, restrict_to) else "000", [codons_from_triplet_slice(self.triplet_slice(i), code) for i in range(0, self.length, 3)]))
     #return mask
-    return "".join(map(lambda c_slice : "111" if codon_slice_is_degenerate(c_slice, restrict_to) else "000", self.iter_codon_slices(code)))
+    #return "".join(map(lambda c_slice : "111" if codon_slice_is_degenerate(c_slice, restrict_to) else "000", self.iter_codon_slices(code)))
+    return CAT(map(
+        lambda c_slice: "111" if codon_slice_is_degenerate(
+            c_slice, restrict_to, ignore) else "000",
+        self.iter_codon_slices(code)))
 Alignment.getDegenerateCodonsMask = getDegenerateCodonsMask
 
-def getDegenerateSiteMaskForPos(self, pos, transl_table=1, code=None, restrict_to=[]):
+def getDegenerateSiteMaskForPos(self, pos, transl_table=1, code=None, restrict_to=[], ignore=[]):
     """
-    
+
     This method returns a mask corresponding to the sites where degeneracy has
     been observed if they correspond to a *pos*-th codon position.
     This is intended to be used for submatrix extraction using
     :meth:`Alignment.getSubsetUsingMask` (with the option *inverse=True*, to
     get the degeneracy-free sites).
-    
+
     If *restrict_to* is not empty, only those amino-acids
     the one-lettre code of which is in *restrict_to* are considered.
 
+    If *ignore* is not empty, only those amino-acid the one-lettre code of
+    which is not in *ignore* are considered.
+
     The matrix is expected to start at a first codon position and stop at a third
     codon position.
-    
+
     *transl_table* is an integer used to determine under which genetic code
     the codons are to be interpreted. The default value of 1 corresponds to the
     standard genetic code. Other values can be found in p4.GeneticCode.py
-    
+
     Alternatively, the genetic code can be provided through the parameter *code*.
     If such a code is provided, the value of *transl_table* is ignored.
     The parameter *code* can take to types of values:
@@ -528,9 +567,10 @@ def getDegenerateSiteMaskForPos(self, pos, transl_table=1, code=None, restrict_t
     if code is None:
         code = Code(transl_table).code
     elif isinstance(code, types.StringType):
-        code = getBiopythonCode(code) # defined in Code_utils.py
+        code = getBiopythonCode(code) # defined in code_utils.py
     else:
-        assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
 
     def pos_mask(i):
         if i == pos:
@@ -539,21 +579,25 @@ def getDegenerateSiteMaskForPos(self, pos, transl_table=1, code=None, restrict_t
             return "0"
     def triplet_mask(selected):
         if selected:
-            return "".join(map(pos_mask, [1, 2, 3]))
+            return CAT(map(pos_mask, [1, 2, 3]))
         else:
             return "000"
     # Iterate over the slices, find the triplets that will be included in the mask
     # (those where degeneracy occurs), generate the corresponding mask portions,
     # and join the mask portions to make the matrix mask.
-    return "".join(map(triplet_mask, [codon_position_is_degenerate(cod_slice, pos, restrict_to) for cod_slice in self.iter_codon_slices(code)]))
+    return CAT(map(
+        triplet_mask, [codon_position_is_degenerate(
+            cod_slice, pos, restrict_to, ignore) for cod_slice in self.iter_codon_slices(code)]))
 Alignment.getDegenerateSiteMaskForPos = getDegenerateSiteMaskForPos
 
 
-def degenerate(self, code="Standard", positions=[1,2,3], restrict_to=[], sub_code=None):
+def degenerate(self, code="Standard", positions=[1, 2, 3], restrict_to=[], ignore=[], sub_code=None):
     """
     This method returns a copy of *self* where the codons are replaced with degenerate versions.
     If *restrict_to* is not empty, only those codons that code amino-acids listed in *restrict_to*
     will be degenerated.
+    If *ignore* is not empty, those codons that code amino-acids listed in *ignore*
+    will not be degenerated.
     *positions* determines which codon positions are degenerated. By default, the whole codons are
     degenerated (if there is degeneracy of course).
     *code* is the Biopython name of the genetic code under which degeneracy has to be interpreted
@@ -565,23 +609,32 @@ def degenerate(self, code="Standard", positions=[1,2,3], restrict_to=[], sub_cod
     in *sub_code* will be considered as coding for the amino-acid defined there instead of
     the one defined by *code*. This can be used for instance to keep two distinct types of
     serine codons, with degeneracy only within each type. The codons still count as coding
-    their original amino-acid with respect to the *restrict_to* option.
+    their original amino-acid with respect to the *restrict_to* and *ignore* options.
     """ % "\n".join(sorted(CodonTable.unambiguous_dna_by_name.keys()))
     if isinstance(code, types.StringType):
-        code = getBiopythonCode(code) # defined in Code_utils.py
+        code = getBiopythonCode(code) # defined in code_utils.py
     else:
-        assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
     # codons belonging to different sub-groups of codons for one amino-acid
-    # can be considered as coding different amino-acids (sub-amino-acids of the "normal" amino-acid, for instance two types of serine)
+    # can be considered as coding different amino-acids
+    # (sub-amino-acids of the "normal" amino-acid, for instance two types of serine)
     if sub_code is None:
         sub_code = {}
     else:
         assert isinstance(sub_code, dict), "sub_code must be a dictionary."
-        sub_code = copy.copy(sub_code) # otherwise there are side effects: the content of sub_code can be modified in the calling context
+        sub_code = copy.copy(sub_code) # otherwise there are side effects:
+                                       # the content of sub_code can be modified
+                                       # in the calling context
         if any([sub_aa in code.values() for sub_aa in sub_code.values()]):
-            warnings.warn("Note that at least one sub-aminoacid provided in sub_code is identical to an amino-acid provided by the chosen genetic code.\nThe sub-amino-acids are:\n%s\n" % ", ".join([str(aa) for aa in sub_code.values()]))
+            msg = CAT(["Note that at least one sub-aminoacid provided in sub_code ",
+                       "is identical to an amino-acid provided by the chosen genetic code.\n",
+                       "The sub-amino-acids are:\n%s\n" % ", ".join(
+                           [str(aa) for aa in sub_code.values()])])
+            warnings.warn(msg)
     # Ensure the amino-acids are in lowercase.
     restrict_to = set([aa.lower() for aa in restrict_to])
+    ignored_aas = set([aa.lower() for aa in ignore])
     # Find the groups of synonymous codons.
     # The keys are amino-acids, the values are lists of codons that code the amino-acid.
     aas_codons = {}
@@ -591,7 +644,7 @@ def degenerate(self, code="Standard", positions=[1,2,3], restrict_to=[], sub_cod
             sub_code[codon] = aa # sub_aa will be the same as aa
         sub_aa = sub_code[codon]
         # Only consider codons that are compatible with the restriction rule, if there is one.
-        if len(restrict_to) == 0 or aa.lower() in restrict_to:
+        if (len(restrict_to) == 0 or aa.lower() in restrict_to) and not (aa.lower() in ignored_aas) :
             #if aas_codons.has_key(aa):
             if aas_codons.has_key(sub_aa):
                 #aas_codons[aa].append(codon)
@@ -606,30 +659,30 @@ def degenerate(self, code="Standard", positions=[1,2,3], restrict_to=[], sub_cod
         # Compute degeneracy values at the 3 positions
         # The degenerate value at a position is the binary union
         # of the values of the nucleotides found at that position.
-        # nuc2val and reduce_by_or are defined in Code_utils.py
+        # nuc2val and reduce_by_or are defined in code_utils.py
         degen1 = reduce_by_or([nuc2val[cod[0]] for cod in codons])
         degen2 = reduce_by_or([nuc2val[cod[1]] for cod in codons])
         degen3 = reduce_by_or([nuc2val[cod[2]] for cod in codons])
         # Compute the string representation of the resulting degenerate codon.
-        # val2nuc is defined in Code_utils.py
+        # val2nuc is defined in code_utils.py
         degenerate_codon = val2nuc[degen1] + val2nuc[degen2] + val2nuc[degen3]
         # Associate this representation to all the synonymous codons it represents.
         for cod in codons:
             cod2degen[cod.lower()] = degenerate_codon.lower()
             # If restrict_to is not empty, it is likely that not all codons
-            # are present in cod2degen, but the Code_utils.recode_sequence function
+            # are present in cod2degen, but the code_utils.recode_sequence function
             # will just keep those codons as is.
     # Make a copy of self.
-    a = self.dupe()
-    for s in a.sequences:
+    ali = self.dupe()
+    for seq in ali.sequences:
         # Recode the sequence using the conversion dictionary built previously.
         # recode_sequence is defined in Codon_utils.py
-        s.sequence = recode_sequence(s.sequence, cod2degen, positions)
-    return a
+        seq.sequence = recode_sequence(seq.sequence, cod2degen, positions, code=code)
+    return ali
 Alignment.degenerate = degenerate
 
 
-def recodeRY(self, positions=[1,2,3]):
+def recodeRY(self, positions=[1, 2, 3]):
     """
     This method returns a copy of *self* where purines are replaced with IUPAC ambiguity code R
     and pyrimidines are replaced with IUPAC ambiguity code Y.
@@ -638,16 +691,16 @@ def recodeRY(self, positions=[1,2,3]):
     """
     recode_table = {}
     # Make a copy of self.
-    a = self.dupe()
-    for s in a.sequences:
+    ali = self.dupe()
+    for seq in ali.sequences:
         new_seq = []
         pos = 0
-        while pos < len(s.sequence):
-            # codon_position is defined in Code_utils.py
+        while pos < len(seq.sequence):
+            # codon_position is defined in code_utils.py
             if codon_position(pos + 1) in positions:
-                letter = s.sequence[pos]
+                letter = seq.sequence[pos]
                 if not recode_table.has_key(letter):
-                    # nuc2val, R and Y are defined in Code_utils.py
+                    # nuc2val, R and Y are defined in code_utils.py
                     val = nuc2val[letter]
                     if (val & R) and (val & Y):
                         # letter is an ambiguity code representing both purines and pyrimidines.
@@ -657,15 +710,16 @@ def recodeRY(self, positions=[1,2,3]):
                     elif val & Y:
                         recode_table[letter] = "y"
                     else:
-                        assert letter == "-", "Letter %s should be the code for a gap ('-')." % letter
+                        msg = "Letter %s should be the code for a gap ('-')." % letter
+                        assert letter == "-", msg
                         recode_table[letter] = "-"
                 new_seq.append(recode_table[letter])
             else:
                 # For consistency, all characters re-written in lower case.
-                new_seq.append(s.sequence[pos].lower())
+                new_seq.append(seq.sequence[pos].lower())
             pos += 1
-        s.sequence = "".join(new_seq)
-    return a
+        seq.sequence = CAT(new_seq)
+    return ali
 Alignment.recodeRY = recodeRY
 
 
@@ -683,9 +737,10 @@ def degenerateByCodonColumn(self, code="Standard", restrict_to=[]):
     %s
     """ % "\n".join(sorted(CodonTable.unambiguous_dna_by_name.keys()))
     if isinstance(code, types.StringType):
-        code = getBiopythonCode(code) # defined in Code_utils.py
+        code = getBiopythonCode(code) # defined in code_utils.py
     else:
-        assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
     # Ensure the amino-acids are in lowercase.
     restrict_to = set([aa.lower() for aa in restrict_to])
     # The matrix will be rebuilt column-wise,
@@ -694,11 +749,11 @@ def degenerateByCodonColumn(self, code="Standard", restrict_to=[]):
     for cod_slice in iter_codon_slices(self, code):
         new_slices.append(degenerate_codon_slice(cod_slice, restrict_to))
     # Make a copy of self.
-    a = self.dupe()
+    ali = self.dupe()
     # Loop over the sequences.
     for i in range(self.nChar):
-        a.sequences[i].sequence = "".join([str(cod_slice[i]) for cod_slice in new_slices])
-    return a
+        ali.sequences[i].sequence = CAT([str(cod_slice[i]) for cod_slice in new_slices])
+    return ali
 Alignment.degenerateByCodonColumn = degenerateByCodonColumn
 
 
@@ -712,9 +767,10 @@ def indelizeCodons(self, aas, code="Standard"):
     %s
     """ % "\n".join(sorted(CodonTable.unambiguous_dna_by_name.keys()))
     if isinstance(code, types.StringType):
-        code = getBiopythonCode(code) # defined in Code_utils.py
+        code = getBiopythonCode(code) # defined in code_utils.py
     else:
-        assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
     # Ensure the amino-acids are in lowercase.
     aas = set([aa.lower() for aa in aas])
     # Build a conversion dictionary.
@@ -726,12 +782,12 @@ def indelizeCodons(self, aas, code="Standard"):
         else:
             cod2indels[codon] = codon
     # Make a copy of self.
-    a = self.dupe()
-    for s in a.sequences:
+    ali = self.dupe()
+    for seq in ali.sequences:
         # Recode the sequence using the conversion dictionary built previously.
         # recode_sequence is defined in Codon_utils.py
-        s.sequence = recode_sequence(s.sequence, cod2indels)
-    return a
+        seq.sequence = recode_sequence(seq.sequence, cod2indels, code=code)
+    return ali
 Alignment.indelizeCodons = indelizeCodons
 
 def blend_matrices(*matrices):
@@ -743,15 +799,16 @@ def blend_matrices(*matrices):
     They should also have the same taxa, and the taxa should be in the same order
     in the different matrices.
     """
-    n_matrices = len(matrices)
-    l = matrices[0].nChar
-    assert all([m.nChar == l for m in matrices[1:]]), "All matrices should have the same length."
-    assert l % len(matrices) == 0, "The length of the matrices should be a multiple of the number of matrices to blend."
+    mat_len = matrices[0].nChar
+    msg = "All matrices should have the same length."
+    assert all([mat.nChar == mat_len for mat in matrices[1:]]), msg
+    msg = "The length of the matrices should be a multiple of the number of matrices to blend."
+    assert mat_len % len(matrices) == 0, msg
     # Start with a copy of the first matrix.
-    a = matrices[0].dupe()
-    for i in range(a.nTax):
-        a.sequences[i].sequence = blend_sequences([m.sequences[i].sequence for m in matrices])
-    return a
+    ali = matrices[0].dupe()
+    for i in range(ali.nTax):
+        ali.sequences[i].sequence = blend_sequences([m.sequences[i].sequence for m in matrices])
+    return ali
 
 def blend_sequences(sequences):
     """This function returns a chain of characters made by taking characters in turn from the
@@ -764,12 +821,12 @@ def blend_sequences(sequences):
     #    seq += sequences[i % n_seq][i]
     #    i += 1
     #return seq
-    return "".join([sequences[i % n_seq][i] for i in range(len(sequences[-1]))])
+    return CAT([sequences[i % n_seq][i] for i in range(len(sequences[-1]))])
 
-def treeFinderMAPAnalysis(alignment, groups, gamma=True, invariant=True,
-        bootstrap=False, nreplicates=100, remove_files=False, run_analysis=True,
-        verbose=False):
-
+def treeFinderMAPAnalysis(alignment, groups,
+                          gamma=True, invariant=True, bootstrap=False,
+                          nreplicates=100,
+                          remove_files=False, run_analysis=True, verbose=False):
     """
     Uses TreeFinder to estimate a Maximum Likelihood tree using the MAP
     substitution model for grouped amino-acids.
@@ -783,26 +840,26 @@ def treeFinderMAPAnalysis(alignment, groups, gamma=True, invariant=True,
     - *nreplicates*: number of bootstrap replicates
     - *invariant*: include a proportion of invariant sites
     - *run_analysis*: run the analysis if TreeFinder in $PATH, else just write the
-      control file 
+      control file
     - *remove_files*: remove analysis files. Only available if run_analysis=True
 
     """
 
-    gm = ["p4.Alignment_recoding.treeFinderMAPAnalysis()"]
+    gm = ["p4.alignment_recoding.treeFinderMAPAnalysis()"]
 
     if not isinstance(alignment, Alignment):
         msg = "alignment must be a Alignment object"
         gm.append(msg)
         raise P4Error(gm)
 
-    if not alignment.dataType == "protein":
+    if alignment.dataType != "protein":
         msg = "alignment should be the original protein data from" + \
               "which the groups were defined. Doing nothing."
         gm.append(msg)
         raise P4Error(gm)
 
-    for param in [gamma, invariant, bootstrap, remove_files,
-            run_analysis, verbose]:
+    for param in [gamma, invariant, bootstrap,
+                  remove_files, run_analysis, verbose]:
         if not isinstance(param, types.BooleanType):
             msg = "%s value must be either True or False" % param
             gm.append(msg)
@@ -846,7 +903,7 @@ def treeFinderMAPAnalysis(alignment, groups, gamma=True, invariant=True,
         od["nreplicates"] = ",NReplicates->%i" % nreplicates
     else:
         od["bootstrap"] = "False"
-        od["nreplicates"] =  ""
+        od["nreplicates"] = ""
     od["outfile"] = "tf_reconstruction.output"
     od["map"] = ",".join(['"%s"' % i for i in [group.upper() for group in groups]])
 
@@ -869,11 +926,11 @@ def treeFinderMAPAnalysis(alignment, groups, gamma=True, invariant=True,
         child = subprocess.Popen("tf tf_control.tl", stderr=direct, shell=True)
 
         if verbose:
-            print "Running TreeFinder, this could take some time...", 
+            print "Running TreeFinder, this could take some time...",
             sys.stdout.flush()
 
         child.communicate()
-        
+
         if verbose:
             print "done."
             sys.stdout.flush()
@@ -959,9 +1016,8 @@ def treeFinderMAPAnalysis(alignment, groups, gamma=True, invariant=True,
             print "\nLikelihood: %.4f\n" % rd["Likelihood"]
 
         return result_tree, rd
-    
+
     else:
         print tls % od
         return (None, None)
-
 

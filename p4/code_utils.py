@@ -1,33 +1,27 @@
 """
 Utilities relating to genetic codes.
-date: 24/08/2016
+date: 25/08/2016
 """
 import sys
-import os
-import types
-import subprocess
-import re
-import itertools
-import operator
-from Bio.Data import CodonTable
-from p4 import Alignment
-from p4 import GeneticCode
-from p4 import func
-from p4 import var
-from p4 import P4Error
-from p4 import read
-
 import copy
 import warnings
+import types
+from itertools import combinations, product
+import operator
+from Bio.Data import CodonTable
+from p4 import P4Error
+
 def formatwarning(message, category, filename, lineno, line):
     return "%s:%s: %s:%s" % (filename, lineno, category.__name__, message)
 warnings.formatwarning = formatwarning
 
-def reduce_by_or(l):
-    """This function returns the 'or' of the elements of the list *l*.
+CAT = "".join
+
+def reduce_by_or(the_list):
+    """This function returns the 'or' of the elements of the list *the_list*.
     This can be used to obtain a degenerate codon representing a list of codons,
     or to merge a list of sets of elements into a single set."""
-    return reduce(operator.or_, l)
+    return reduce(operator.or_, the_list)
 
 # numerical values for nucleotides to help with degeneracy and codon sets representation.
 A = 1
@@ -48,8 +42,14 @@ W = A | T
 Y = C | T
 nucleotides = (A, C, G, T, 0) # 0 is for the gap
 # gives the value of a nucleotide letter, upper case and lower case are in this dictionary.
-nuc2val = {'A':A, 'C':C, 'G':G, 'T':T, 'B':B, 'D':D, 'H':H, 'K':K, 'M':M, 'N':N, 'R':R, 'S':S, 'V':V, 'W':W, 'Y':Y, '-':0, 'a':A, 'c':C, 'g':G, 't':T, 'b':B, 'd':D, 'h':H, 'k':K, 'm':M, 'n':N, 'r':R, 's':S, 'v':V, 'w':W, 'y':Y}
-#nuc2val = {'A':A, 'C':C, 'G':G, 'T':T, 'B':B, 'D':D, 'H':H, 'K':K, 'M':M, 'N':N, 'R':R, 'S':S, 'V':V, 'W':W, 'Y':Y}
+nuc2val = {'A':A, 'C':C, 'G':G, 'T':T,
+           'B':B, 'D':D, 'H':H, 'K':K,
+           'M':M, 'N':N, 'R':R, 'S':S,
+           'V':V, 'W':W, 'Y':Y, '-':0,
+           'a':A, 'c':C, 'g':G, 't':T,
+           'b':B, 'd':D, 'h':H, 'k':K,
+           'm':M, 'n':N, 'r':R, 's':S,
+           'v':V, 'w':W, 'y':Y}
 # reverse table: gives the upper case letter corresponding to a 'nucleotidic value'
 val2nuc = {}
 for k in nuc2val.keys():
@@ -84,7 +84,8 @@ def getBiopythonCode(code_name):
 
 # Adapted from GeneticCode.GeneticCode
 class Code(object):
-    """A generalized container for translation and recoding tables, adapted from :class:`GeneticCode`.
+    """A generalized container for translation and recoding tables,
+    adapted from :class:`GeneticCode`.
     This provides:
     
     - ``code`` A dictionary.  So you can ask for eg myCode.code['ggg']
@@ -141,7 +142,8 @@ class Code(object):
             symbols = "ACGT"
 
         elif transl_table == 4: # Mold, Protozoan,
-                                # and Coelenterate Mitochondrial Code and the Mycoplasma/Spiroplasma Code
+                                # and Coelenterate Mitochondrial Code
+                                # and the Mycoplasma/Spiroplasma Code
             AAs    = 'FFLLSSSSYY**CCWWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
             Starts = '--MM---------------M------------MMMM---------------M------------'
             Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
@@ -159,7 +161,8 @@ class Code(object):
             Bases = [Base1, Base2, Base3]
             symbols = "ACGT"
 
-        elif transl_table == 6: # The Ciliate, Dasycladacean and Hexamita Nuclear Code (transl_table=6)
+        elif transl_table == 6: # The Ciliate, Dasycladacean
+                                # and Hexamita Nuclear Code (transl_table=6)
             AAs    = 'FFLLSSSSYYQQCC*WLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG'
             Starts = '-----------------------------------M----------------------------'
             Base1  = 'TTTTTTTTTTTTTTTTCCCCCCCCCCCCCCCCAAAAAAAAAAAAAAAAGGGGGGGGGGGGGGGG'
@@ -241,9 +244,8 @@ class Code(object):
             AAs = lines[0]
             Starts = lines[1]
             Bases = lines[2:]
-            #symbols = "".join(sorted(reduce(lambda s, t: s | t, [set([c for c in Bases[i]]) for i in range(len(Bases))])))
-            #symbols = "".join(sorted(reduce(operator.or_, [set([c for c in Bases[i]]) for i in range(len(Bases))])))
-            symbols = "".join(sorted(reduce_by_or([set([c for c in Bases[i]]) for i in range(len(Bases))])))
+            symbols = CAT(sorted(reduce_by_or(
+                [set([c for c in Bases[i]]) for i in range(len(Bases))])))
 
         # Find the length of a codon.
         self.codelength = len(Bases)
@@ -287,14 +289,15 @@ class Codon(object):
             self._decomposition = [self]
         else:
             self.degenerate = True
-            self._decomposition = None # The decomposition into non-degenerate codons will have to be computed.
+            self._decomposition = None # The decomposition into non-degenerate
+                                       # codons will have to be computed.
         # The maximum value at a given position is A + C + G + T = 15
         # The following formula should therefore give a unique id to a given codon.
         self.id = self.v3 + 16 * (self.v2 + 16 * self.v1)
         # TODO: Since codons are hashable / uniquely defined, time might be saved by checking
         # wether a given codon has already been created when an operation requires the creation
         # of a codon, and use that already defined codon. Some clever programming pattern might
-        # apply here. Maybe use the Mutation_graph object to store the codons?
+        # apply here. Maybe use the MutationGraph object to store the codons?
         
         # dictionary to record mutational distances
         # The keys are codon id values.
@@ -305,7 +308,8 @@ class Codon(object):
         if isinstance(code, types.StringType):
             self.code = getBiopythonCode(code)
         else:
-            assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+            msg = "code must be a dictionary, or a string naming the code in Biopython."
+            assert isinstance(code, dict), msg
             self.code = code
         # set of amino-acid coded by the codon
         self.aas = None
@@ -322,7 +326,7 @@ class Codon(object):
         or1 = self.v1 | other.v1
         or2 = self.v2 | other.v2
         or3 = self.v3 | other.v3
-        return Codon(val2nuc[or1] + val2nuc[or2] + val2nuc[or3], code=self.code)
+        return Codon(val2nuc[or1] + val2nuc[or2] + val2nuc[or3], self.code)
 
     def __and__(self, other):
         """The and operation is somewhat artificial in that it returns indels
@@ -330,10 +334,11 @@ class Codon(object):
         and1 = self.v1 & other.v1
         and2 = self.v2 & other.v2
         and3 = self.v3 & other.v3
-        return Codon(val2nuc[or1] + val2nuc[or2] + val2nuc[or3], code=self.code)
+        return Codon(val2nuc[and1] + val2nuc[and2] + val2nuc[and3], self.code)
 
     def __contains__(self, other):
-        """A codon 'contains' another codon if it is a degenerate or identical version of the other."""
+        """A codon 'contains' another codon if it is a degenerate
+        or identical version of the other."""
         cont1 = self.v1 & other.v1 == other.v1
         cont2 = self.v2 & other.v2 == other.v2
         cont3 = self.v3 & other.v3 == other.v3
@@ -372,12 +377,14 @@ class Codon(object):
             dec2 = sorted(set([self.v2 & nuc for nuc in [A, C, G, T]]) - set([0]))
             dec3 = sorted(set([self.v3 & nuc for nuc in [A, C, G, T]]) - set([0]))
             # Generate the list of implied codons.
-            decomposition = [Codon(val2nuc[cod[0]] + val2nuc[cod[1]] + val2nuc[cod[2]], code=self.code) for cod in itertools.product(dec1, dec2, dec3)]
+            decomposition = [Codon(
+                val2nuc[cod[0]] + val2nuc[cod[1]] + val2nuc[cod[2]],
+                self.code) for cod in product(dec1, dec2, dec3)]
             if decomposition:
                 self._decomposition = decomposition
             else:
                 # We don't want to return an empty list, so we return a 'gap codon' instead.
-                self._decomposition = [Codon("---", code=self.code)]
+                self._decomposition = [Codon("---", self.code)]
         #else:
         #    pass # no need to re-compute it
         return self._decomposition
@@ -397,7 +404,8 @@ class Codon(object):
         elif isinstance(code, types.StringType):
             code = getBiopythonCode(code)
         else:
-            assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+            msg = "code must be a dictionary, or a string naming the code in Biopython."
+            assert isinstance(code, dict), msg
         # We assume that the "codons" have all the same length,
         # and we look at the first codon in the dictionary to know this length.
         codelength = len(code.keys()[0])
@@ -408,7 +416,8 @@ class Codon(object):
             else:
                 self.aas = set([code[str(self)]])
         except KeyError:
-            raise CodonTranslationError("The code does not say what the translation of %s should be.\n" % str(self))
+            raise CodonTranslationError("The code does not say what the translation "
+                                        "of %s should be.\n" % str(self))
 
     def distance(self, other):
         """This method returns the mutational distance between *self* and *other*.
@@ -418,22 +427,26 @@ class Codon(object):
             # The distance has already been calculated.
             # It should be known also on the other side.
             # other._distances[self.id] = self._distances[other.id]
-            assert other._distances[self.id] == self._distances[other.id], "The distances should be symmetrical."
+            msg = "The distances should be symmetrical."
+            assert other._distances[self.id] == self._distances[other.id], msg
             #pass
         elif other._distances.has_key(self.id):
             # The distance is not known, but strangely it is known on the other side.
-            warnings.warn("It is unexpected that the distance is already known on the other side but not on the side of self.\n")
+            warnings.warn("It is unexpected that the distance is already known "
+                          "on the other side but not on the side of self.\n")
             self._distances[other.id] = other._distances[self.id]
         # With degenerate codons, we use the shortest mutational path between the represented
         # sets of non-degenerate codons.
         elif self.degenerate:
             # Recursion may happen during the calculation of other.distance().
-            self._distances[other.id] = min([other.distance(cod.id) for cod in self.decomposition()])
+            self._distances[other.id] = min([
+                other.distance(cod.id) for cod in self.decomposition()])
             # This is not yet know. Fix it now.
             other._distances[self.id] = self._distances[other.id]
         elif other.degenerate:
             # self is not degenerate.
-            self._distances[other.id] = min([self.distance(cod.id) for cod in other.decomposition()])
+            self._distances[other.id] = min([
+                self.distance(cod.id) for cod in other.decomposition()])
             # This is not yet know. Fix it now.
             other._distances[self.id] = self._distances[other.id]
         else:
@@ -462,7 +475,7 @@ def codon_position(n, codon_length=3):
         return pos
 
 #TODO: compute mutational paths between codons
-class Mutation_graph(object):
+class MutationGraph(object):
     """This object represents a graph of codons (and contains also other
     useful stuff that I should document / reorganize.).
     Non-degenerate codons are neighbours if they differ by only one nucleotide.
@@ -471,7 +484,8 @@ class Mutation_graph(object):
         if isinstance(code, types.StringType):
             self.code = getBiopythonCode(code)
         else:
-            assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+            msg = "code must be a dictionary, or a string naming the code in Biopython."
+            assert isinstance(code, dict), msg
             self.code = code
         # dictionary of non-degenerate codons
         # The keys are codon id values.
@@ -489,7 +503,7 @@ class Mutation_graph(object):
         for n1 in ['A', 'C', 'G', 'T']:
             for n2 in ['A', 'C', 'G', 'T']:
                 for n3 in ['A', 'C', 'G', 'T']:
-                    codon = Codon(n1+n2+n3, code=self.code)
+                    codon = Codon(n1+n2+n3, self.code)
                     self.non_degen[codon.id] = codon
                     for cod in self.non_degen.values():
                         pair = frozenset([cod.id, codon.id])
@@ -533,10 +547,9 @@ class Mutation_graph(object):
                 # The codons are grouped on the basis of the nucleotide they have
                 # at the considered position.
                 self.degen_groups[aa] = {
-                        1 : {A : set([]), C : set([]), G : set([]), T : set([])},
-                        2 : {A : set([]), C : set([]), G : set([]), T : set([])},
-                        3 : {A : set([]), C : set([]), G : set([]), T : set([])}
-                        }
+                    1 : {A : set([]), C : set([]), G : set([]), T : set([])},
+                    2 : {A : set([]), C : set([]), G : set([]), T : set([])},
+                    3 : {A : set([]), C : set([]), G : set([]), T : set([])}}
             self.degen_groups[aa][1][n1].add(codon)
             self.degen_groups[aa][2][n2].add(codon)
             self.degen_groups[aa][3][n3].add(codon)
@@ -604,7 +617,9 @@ class Mutation_graph(object):
         # representing a given codon and that have the same nucleotide at the position.
         # The keys are positions, the values start as (almost) empty dictionaries
         # and will be filled if necessary when self.give_degen is used.
-        self.cod2degen = {1:{Codon("---"):Codon("---")}, 2:{Codon("---"):Codon("---")}, 3:{Codon("---"):Codon("---")}}
+        self.cod2degen = {1 : {Codon("---") : Codon("---")},
+                          2 : {Codon("---") : Codon("---")},
+                          3 : {Codon("---") : Codon("---")}}
 
     def give_degen(self, codon, pos=1):
         """This method returns the degenerate codon representing the group of codons
@@ -613,7 +628,10 @@ class Mutation_graph(object):
             if len(codon.aas) == 1:
                 aa = list(codon.aas)[0]
             else:
-                raise NotImplementedError, "%s is already a degenerate codon. More thinking will be necessary in order to decide how to deal with such a case.\n" % (codon)
+                msg = CAT(["%s is already a degenerate codon." % codon,
+                           "More thinking will be necessary in order to decide ",
+                           "how to deal with such a case.\n"])
+                raise NotImplementedError, msg
             for degenerate in list(self.degen_by_aa[aa][pos]):
                 if codon in degenerate:
                     self.cod2degen[pos][codon] = degenerate
@@ -621,8 +639,13 @@ class Mutation_graph(object):
         try:
             return self.cod2degen[pos][codon]
         except KeyError:
-            # The loop on the list of degenerate codons finished without a suitable codon to be found.
-            raise NotImplementedError, "The degenerate codon for %s having the same nucleotide at position %d cannot be found.\nIt could be that %s is already degenerate and spans several degeneracy classes.\n" % (codon, pos, codon)
+            # The loop on the list of degenerate codons
+            # finished without a suitable codon to be found.
+            msg = CAT(["The degenerate codon for %s " % codon,
+                       "having the same nucleotide at position %d " % pos,
+                       "cannot be found.\nIt could be that %s " % codon,
+                       "is already degenerate and spans several degeneracy classes.\n"])
+            raise NotImplementedError, msg
     
     def colour(self, codon):
         """This method returns the colour to be associated to the codon *codon*.
@@ -640,27 +663,28 @@ class Mutation_graph(object):
         # TODO
         raise NotImplementedError, "This method has not been implemented yet."
 
-standard_mutation_graph = Mutation_graph()
+standard_mutation_graph = MutationGraph()
 
 
 def codon_from_triplet_slice(trps, n, code="Standard"):
     """returns a Codon object corresponding to the triplet at position *n*
     in the triplet slice *trps*. A triplet slice is as returned by
-    Alignment.triplet_slice, defined in Alignment_recoding.py"""
+    Alignment.triplet_slice, defined in alignment_recoding.py"""
     return Codon(trps[0][n] + trps[1][n] + trps[2][n], code)
 
 
 def codons_from_triplet_slice(trps, code="Standard"):
     """returns the list of the codons corresponding to the triplet slice *trps*.
     A triplet slice is as returned by Alignment.triplet_slice, defined in
-    Alignment_recoding.py"""
-    return [Codon(codon, code) for codon in map(lambda c: "%s%s%s" % c, zip(trps[0], trps[1], trps[2]))]
+    alignment_recoding.py"""
+    return [Codon(codon, code) for codon in ["%s%s%s" % nnn for nnn in zip(
+        trps[0], trps[1], trps[2])]]
 
 # generalization of codons_from_triplet_slice, will not work while Codon has not been generalized.
 #def codons_from_nuplet_slice(nps, code="Standard", n=3):
 #    """returns the list of the codons corresponding to the n-uplet slice *nps*.
 #    A n-uplet slice is as returned by Alignment.nuplet_slice, defined in
-#    Alignment_recoding.py"""
+#    alignment_recoding.py"""
 #    return [Codon(codon, code) for codon in map(lambda c: "%s" * n % c, zip(*nps))]
 
 def codon_slice_has_aas(cod_slice, aas):
@@ -683,7 +707,9 @@ def codon_slice_is_constant_aa(cod_slice, restrict_to=[]):
     codons = set(cod_slice)
     if len(codons - set([Codon("---")])) == 0:
         # There are only indels here.
-        warnings.warn("A slice of the matrix was found for which there were only indels. It will be considered constant unless some amino-acids were specified with the restrict_to option.\n")
+        warnings.warn("A slice of the matrix was found for which there were only indels. "
+                      "It will be considered constant unless some amino-acids "
+                      "were specified with the restrict_to option.\n")
         if restrict_to == set(["-"]) or len(restrict_to) == 0:
             return True
         else:
@@ -706,11 +732,13 @@ def codon_slice_is_constant_aa(cod_slice, restrict_to=[]):
     else:
         return False
 
-def codon_slice_is_degenerate(cod_slice, restrict_to=[]):
+#TODO: document ignore and implement in more functions
+def codon_slice_is_degenerate(cod_slice, restrict_to=[], ignore=[]):
     """returns True if the codon slice *cod_slice* contains two different codons
     that code the same amino-acid. If *restrict_to* is not empty, only those
     amino-acid the one-lettre code of which is in *restrict_to* are considered.
     *cod_slice* should be a list of Codon objects."""
+    ignored_aas = set([aa.lower() for aa in ignore])
     if len(restrict_to):
         # Convert to lower case and remove duplicates.
         restricted_aas = set([aa.lower() for aa in restrict_to])
@@ -722,21 +750,22 @@ def codon_slice_is_degenerate(cod_slice, restrict_to=[]):
     # Is a set an iterable ?
     #codons = sorted(codons)
     # It seems so: no need to convert to a list.
-    for pair in itertools.combinations(codons, 2):
-        if len(pair[0].aas & pair[1].aas):
+    for (cod1, cod2) in combinations(codons, 2):
+        if len((cod1.aas & cod2.aas) - ignored_aas):
             # There are common amino-acids coded by the two different codons.
             return True
     # If we still haven't returned at this point, this means that no degeneracy has been found.
     return False
 
 #TODO: check that the behaviour is correct when there are degenerate codons in the matrix.
-def codon_position_is_degenerate(cod_slice, pos, restrict_to=[]):
+def codon_position_is_degenerate(cod_slice, pos, restrict_to=[], ignore=[]):
     """returns True if the codon slice *cod_slice* contains two codons that
     code the same amino-acid and differ at position *pos*.
     *pos* should be 1, 2 or 3.
     If *restrict_to* is not empty, only those amino-acids
     the one-lettre code of which is in *restrict_to* are considered.
     *cod_slice* should be a list of Codon objects."""
+    ignored_aas = set([aa.lower() for aa in ignore])
     if len(restrict_to):
         # Convert to lower case and remove duplicates.
         restricted_aas = set([aa.lower() for aa in restrict_to])
@@ -748,11 +777,9 @@ def codon_position_is_degenerate(cod_slice, pos, restrict_to=[]):
     # Is a set an iterable ?
     #codons = sorted(codons)
     # It seems so: no need to convert to a list.
-    for pair in itertools.combinations(codons, 2):
-        cod1 = pair[0]
-        cod2 = pair[1]
+    for (cod1, cod2) in combinations(codons, 2):
         #inter_aas = cod1.aas & cod2.aas
-        if len(cod1.aas & cod2.aas):
+        if len((cod1.aas & cod2.aas) - ignored_aas):
             # There are common amino-acids coded by the two different codons.
             if cod1[pos] & cod2[pos] == 0:
                 # The codons do not share a nucleotide at the considered position.
@@ -771,7 +798,9 @@ def degenerate_codon_slice(cod_slice, restrict_to=[]):
     If *restrict_to* is not empty, only those codons that code amino-acids
     listed in *restrict_to* are degenerated.
     """
-    assert not any([cod.degenerate for cod in cod_slice]), "The programmer was too lazy to make sure the code makes sense with already degenerate codons, so such codons are not allowed."
+    msg = CAT(["The programmer was too lazy to make sure the code makes sense ",
+               "with already degenerate codons, so such codons are not allowed."])
+    assert not any([cod.degenerate for cod in cod_slice]), msg
     # Ensure the amino-acids are in lowercase.
     restrict_to = set([aa.lower() for aa in restrict_to])
     n_seq = len(cod_slice)
@@ -789,24 +818,31 @@ def degenerate_codon_slice(cod_slice, restrict_to=[]):
                 # Error discovered the 04/06/2012
                 #common_aas = cod1.aas & cod1.aas
                 # What does it affect? Nothing, because degenerate_codon_slice is used
-                # in degenerateByCodonColumn in Alignment_recoding.py,
+                # in degenerateByCodonColumn in alignment_recoding.py,
                 # and this is not used in recode_matrix.py
                 common_aas = cod1.aas & cod2.aas
-                # Only consider codons that are compatible with the restriction rule, if there is one.
-                if (len(restrict_to) == 0 and len(common_aas) != 0) or (len(restrict_to & common_aas) != 0):
+                # Only consider codons that are compatible
+                # with the restriction rule, if there is one.
+                if (len(restrict_to) == 0 and len(common_aas) != 0) \
+                   or (len(restrict_to & common_aas) != 0):
                     # There is at least one amino-acid coded in common.
                     new_slice[i] = new_slice[i] | cod2
                     new_slice[j] = new_slice[j] | cod1
                 j += 1
     return new_slice
 
-def recode_sequence(sequence, converter, positions=None):
+def recode_sequence(sequence, converter, positions=None, code="Standard"):
     """uses the correspondence rules provided by the dictionary *converter*
     to produce a recoded version of *sequence*, and returns it.
     *positions* determines which codon positions are recoded.
     By default, all positions are recoded.
     """
-    gm = ['p4.Code_utils.recode_sequence()']
+    gm = ['p4.code_utils.recode_sequence()']
+    if isinstance(code, types.StringType):
+        code = getBiopythonCode(code)
+    else:
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
     # To get the size of the motifs being substituted, we look at the first one in the dictionary.
     subst_size = len(converter.keys()[0])
     if len(sequence) % subst_size != 0:
@@ -817,34 +853,42 @@ def recode_sequence(sequence, converter, positions=None):
         for codon in converter.keys():
             convert = converter[codon]
             # Replace the positions to be recoded by the converted codon, but keep the others.
-            converter[codon] = "".join([(convert[i-1] if i in positions else codon[i-1]) for i in range(1, subst_size+1)])
+            converter[codon] = CAT(
+                [(convert[i-1] if i in positions else codon[i-1]) for i in range(
+                    1, subst_size+1)])
     # Build the recoded version of the sequence.
     new_seq = ""
     # Loop over the codons (triplets, if subst_size == 3).
     for i in range(len(sequence) / subst_size):
         try:
             # Make a Codon instance (to convert it afterwards).
-            codon = Codon(sequence[(subst_size * i):(subst_size * (i+1))])
+            codon = Codon(sequence[(subst_size * i):(subst_size * (i+1))], code)
         except CodonTranslationError, e:
-            sys.stderr.write("%s\nProblem at sequence slice %i:%i\n" % (e, subst_size * i, subst_size * (i+1)))
-            warnings.warn("We will replace the codon by indels.")
+            sys.stderr.write(
+                "%s\nProblem at sequence slice %i:%i\n" % (
+                    e, subst_size * i, subst_size * (i+1)))
+            warnings.warn("We will replace the codon by indels.\n")
             try:
-                codon = Codon("-" * subst_size)
+                codon = Codon("-" * subst_size, code)
             except CodonTranslationError, e:
-                sys.stderr.write("We still don't know how to translate the codon. Bad implementation?\n")
+                sys.stderr.write("We still don't know how to translate the codon. "
+                                 "Bad implementation?\n")
                 sys.exit(1)
         # Convert the codon.
         # If the converter has no entry for the codon, we don't convert it,
         # hence the converter.get() syntax, using a default value.
         if codon.degenerate:
             # The codon is decomposed into non-degenerate codons.
-            # These codons are converted, and the resulting conversions are "recomposed" into a new codon.
+            # These codons are converted, and the resulting conversions
+            # are "recomposed" into a new codon.
             # Can it be done more efficiently ?
-            new_seq += str(reduce_by_or([Codon(converter.get(motif, motif)) for motif in [str(cod) for cod in codon.decomposition()]]))
+            new_seq += str(reduce_by_or(
+                [Codon(converter.get(
+                    motif, motif), code) for motif in [str(cod) for cod in codon.decomposition()]]))
         else:
             #motif = str(codon)
             #new_seq += str(Codon(converter.get(motif, motif)))
-            new_seq += str(Codon(converter.get(str(codon), str(codon))))
+            new_seq += str(Codon(converter.get(str(codon), str(codon)), code))
     return new_seq
 
 def codon_usage(sequence, code="Standard"):
@@ -857,7 +901,8 @@ def codon_usage(sequence, code="Standard"):
     if isinstance(code, types.StringType):
         code = getBiopythonCode(code)
     else:
-        assert isinstance(code, dict), "code must be a dictionary, or a string naming the code in Biopython."
+        msg = "code must be a dictionary, or a string naming the code in Biopython."
+        assert isinstance(code, dict), msg
     # We assume that the "codons" have all the same length,
     # and we look at the first codon in the dictionary to know this length.
     codelength = len(code.keys()[0])
@@ -865,7 +910,10 @@ def codon_usage(sequence, code="Standard"):
     # Number of codons.
     n_codons = len(sequence) / codelength
     if n_codons * codelength !=  len(sequence):
-        warnings.warn("The sequence does not contain an integral number of codons.\nIt will be assumed that it starts at a first position, and the extra nucleotides will not be taken into account.\n")
+        msg = CAT(["The sequence does not contain an integral number of codons.\n",
+                   "It will be assumed that it starts at a first position, "
+                   "and the extra nucleotides will not be taken into account.\n"])
+        warnings.warn(msg)
     aa_stats = {}
     for i in range(n_codons):
         codon = Codon(sequence[i*codelength:(i+1)*codelength], code)
