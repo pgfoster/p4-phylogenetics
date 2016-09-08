@@ -341,7 +341,7 @@ pf_pokePartTaxListAtIndex(PyObject *self, PyObject *args)
     }
     else {
         printf("pf_pokePartTaxListAtIndex: no taxList\n");
-        exit(0);
+        exit(1);
     }
     Py_INCREF(Py_None);
     return Py_None;
@@ -578,7 +578,7 @@ pf_setRellMemory(PyObject *self, PyObject *args)
     rStuff = malloc(sizeof(rellStuff));
     if(!rStuff) {
         printf("Failed to make rellStuff\n");
-        exit(0);
+        exit(1);
     }
     rStuff->nTrees = nTrees;
     rStuff->nChar = nChar;
@@ -588,7 +588,7 @@ pf_setRellMemory(PyObject *self, PyObject *args)
     rStuff->gsl_rng = gsl_rng_alloc(T);
     if(!rStuff->gsl_rng) {
         printf("setRellMemory.  Failed to make a gsl_rng.\n");
-        exit(0);
+        exit(1);
     }
     // set the seed for the random number generator
     gsl_rng_set(rStuff->gsl_rng, (unsigned long int)gslrng_seed);
@@ -665,7 +665,7 @@ pf_get_gsl_rng(PyObject *self, PyObject *args)
     gsl_rng = gsl_rng_alloc(T);
     if(!gsl_rng) {
         printf("pf_get_gsl_rng.  Failed to make a gsl_rng.\n");
-        exit(0);
+        exit(1);
     }
     return Py_BuildValue("l", (long int)gsl_rng);
 }
@@ -955,7 +955,7 @@ pf_gsl_combination_alloc(PyObject *self, PyObject *args)
     c = gsl_combination_alloc(n, k);
     if(!c) {
         printf("pf_gsl_combination_alloc.  Failed to alloc.\n");
-        exit(0);
+        exit(1);
     }
     return Py_BuildValue("l", (long int)c);
 }
@@ -1363,16 +1363,14 @@ pf_p4_newModelPart(PyObject *self, PyObject *args)
     int         isMixture;
     int         mixtureIsFree;
     int         pInvarFree;
-    int         doTSCovarion;
-    int         tSCovIsFree;
     PyArrayObject *bQETneedsResetO;
 	
 
-    if(!PyArg_ParseTuple(args, "liiiiiiiiiiiO", &aModel, &pNum, &dim, &nComps, &nRMatrices, &nGdasrvs, &nCat, &isMixture, &mixtureIsFree, &pInvarFree, &doTSCovarion, &tSCovIsFree, &bQETneedsResetO)) {
+    if(!PyArg_ParseTuple(args, "liiiiiiiiiO", &aModel, &pNum, &dim, &nComps, &nRMatrices, &nGdasrvs, &nCat, &isMixture, &mixtureIsFree, &pInvarFree, &bQETneedsResetO)) {
         printf("Error pf_p4_newModelPart: couldn't parse tuple\n");
         return NULL;
     }
-    p4_newModelPart(aModel, pNum, dim, nComps, nRMatrices, nGdasrvs, nCat, isMixture, mixtureIsFree, pInvarFree, doTSCovarion, tSCovIsFree, (int *)(bQETneedsResetO->data));
+    p4_newModelPart(aModel, pNum, dim, nComps, nRMatrices, nGdasrvs, nCat, isMixture, mixtureIsFree, pInvarFree, (int *)(bQETneedsResetO->data));
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -1468,19 +1466,13 @@ pf_p4_setCompVal(PyObject *self, PyObject *args)
     int         cNum;
     int         vNum;
     double      val;
-    int         doTSCovShortComp = 0;
 	
-    if(!PyArg_ParseTuple(args, "liiidi", &aModel, &pNum, &cNum, &vNum, &val, &doTSCovShortComp)) {
+    if(!PyArg_ParseTuple(args, "liiid", &aModel, &pNum, &cNum, &vNum, &val)) {
         printf("Error pf_p4_setCompVal: couldn't parse tuple\n");
         return NULL;
     }
 
-    if(doTSCovShortComp) {
-        aModel->parts[pNum]->tSCov->halfComp[vNum] = val;
-    }
-    else {
-        aModel->parts[pNum]->comps[cNum]->val[vNum] = val;
-    }
+    aModel->parts[pNum]->comps[cNum]->val[vNum] = val;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -1691,30 +1683,6 @@ pf_p4_setMixtureFreqAndRate(PyObject *self, PyObject *args)
 }
 
 
-static PyObject *
-pf_p4_setTSCovarionVals(PyObject *self, PyObject *args)
-{
-    p4_model  *aModel;
-    int       partNum;
-    double    s1;
-    double    s2;
-
-    if(!PyArg_ParseTuple(args, "lidd", &aModel, &partNum, &s1, &s2)) {
-        printf("Error pf_p4_setTSCovarionVals: couldn't parse tuple\n");
-        return NULL;
-    }
-
-    aModel->parts[partNum]->tSCov->s1[0] = s1; // rate of on->off
-    aModel->parts[partNum]->tSCov->s2[0] = s2; // rate of off->on
-    aModel->parts[partNum]->tSCov->pOn = s2 / (s1 + s2);
-    aModel->parts[partNum]->tSCov->pOff = 1.0 - aModel->parts[partNum]->tSCov->pOn;
-	
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-
 //--------------------------------------------------
 
 
@@ -1747,7 +1715,7 @@ pf_p4_setNodeRelation(PyObject *self, PyObject *args)
     }
     else {
         printf("Error in p4_setNodeRelation: \"relation\" is out of range\n");
-        exit(0);
+        exit(1);
     }
 	
     Py_INCREF(Py_None);
@@ -2111,24 +2079,6 @@ pf_p4_getRelRate(PyObject *self, PyObject *args)
  
     return Py_BuildValue("d", theModel->parts[partNum]->relRate[0]);
 	
-}
-
-
-
-static PyObject *
-pf_p4_simplexOptimize(PyObject *self, PyObject *args)
-{
-    p4_tree *aTree;
-    PyObject *treeObject;
-    PyObject *theMethod;
-	
-    if(!PyArg_ParseTuple(args, "lOO", &aTree, &treeObject, &theMethod)) {
-        printf("Error pf_p4_simplexOptimize: couldn't parse tuple\n");
-        return NULL;
-    }
-    p4_simplexOptimize(aTree, treeObject, theMethod);
-    Py_INCREF(Py_None);
-    return Py_None;
 }
 
 //----------------------------------------
@@ -2770,7 +2720,6 @@ static PyMethodDef pfMethods[] = {
     {"p4_setPInvarVal", pf_p4_setPInvarVal, METH_VARARGS},
     {"p4_setRelRateVal", pf_p4_setRelRateVal, METH_VARARGS},
     {"p4_setMixtureFreqAndRate", pf_p4_setMixtureFreqAndRate, METH_VARARGS},
-    {"p4_setTSCovarionVals", pf_p4_setTSCovarionVals, METH_VARARGS},
 
     {"p4_setNodeRelation", pf_p4_setNodeRelation, METH_VARARGS},
     {"p4_setTreeRoot", pf_p4_setTreeRoot, METH_VARARGS},
@@ -2795,7 +2744,6 @@ static PyMethodDef pfMethods[] = {
     {"p4_getBrLens", pf_p4_getBrLens, METH_VARARGS},
     {"p4_getFreePrams", pf_p4_getFreePrams, METH_VARARGS},
     {"p4_getRelRate", pf_p4_getRelRate, METH_VARARGS},
-    {"p4_simplexOptimize", pf_p4_simplexOptimize, METH_VARARGS},
     {"p4_simulate", pf_p4_simulate, METH_VARARGS},
     {"p4_drawAncState", pf_p4_drawAncState, METH_VARARGS},
     {"p4_expectedCompositionCounts", pf_p4_expectedCompositionCounts, METH_VARARGS, doc_p4_expectedCompositionCounts},

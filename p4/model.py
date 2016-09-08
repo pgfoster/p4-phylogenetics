@@ -122,8 +122,6 @@ class ModelPart(object):
         self.relRate = 1.0
         self.isMixture = 0
         self.mixture = None
-        self.doTSCovarion = 0
-        self.tSCovarion = None
         self.isHet = 0
         self.symbols = None
         #self.bigQAndEigArray = None
@@ -173,7 +171,7 @@ class ModelPart(object):
                     gm.append("Programming error!  This should not happen.")
                     raise P4Error(gm)
                 pf.p4_setCompVal(
-                    theModel.cModel, self.num, mNum, i, mt.val[i], 0)
+                    theModel.cModel, self.num, mNum, i, mt.val[i])
 
         # Do the rMatrices
         for mNum in range(self.nRMatrices):
@@ -668,12 +666,6 @@ class Model(object):
                 print mp.nGammaCat,
                 print mp.isMixture,
                 print mp.pInvar.free,
-                print mp.doTSCovarion,
-                print mp.tSCovarion.free,
-            if mp.doTSCovarion:
-                tSCovIsFree = mp.tSCovarion.free
-            else:
-                tSCovIsFree = 0
 
             # A hack to accommodate isMixture
             if mp.isMixture:
@@ -690,8 +682,7 @@ class Model(object):
 
             pf.p4_newModelPart(self.cModel,
                                pNum, mp.dim, mp.nComps, mp.nRMatrices, mp.nGdasrvs, nGammaCat,
-                               mp.isMixture, isMixtureFree, mp.pInvar.free, mp.doTSCovarion,
-                               tSCovIsFree, mp.bQETneedsReset)
+                               mp.isMixture, isMixtureFree, mp.pInvar.free, mp.bQETneedsReset)
             for mNum in range(mp.nComps):
                 mt = mp.comps[mNum]
                 pf.p4_newComp(self.cModel, pNum, mNum, mt.free)
@@ -858,12 +849,6 @@ class Model(object):
             if mp.pInvar.free:
                 mp.pInvar.val = prams[pos]
                 pos += 1
-
-            # Covarion
-            if mp.doTSCovarion and mp.tSCovarion.free:
-                mp.tSCovarion.s1 = prams[pos]
-                pos += 1
-                mp.tSCovarion.s2 = prams[pos]
 
             # mixture
             if mp.isMixture and mp.mixture.free:

@@ -15,7 +15,6 @@ typedef struct p4_rMatrixStruct p4_rMatrix;
 typedef struct p4_gdasrvStruct p4_gdasrv;
 typedef struct p4_pInvarStruct p4_pInvar;
 typedef struct p4_mixtureStruct p4_mixture;
-typedef struct p4_tSCovarionStruct p4_tSCovarion;
 typedef struct p4_bigQAndEigStruct p4_bigQAndEig;
 
 typedef struct nexusTokenStruct nexusToken;
@@ -170,8 +169,6 @@ struct p4_modelPartStruct {
     p4_mixture        *mixture;
     double            *relRate;
     p4_bigQAndEig   ***bigQAndEigThing; // nComps * nRMatrices
-    int                doTSCovarion;
-    p4_tSCovarion     *tSCov;
     double            *freqsTimesOneMinusPInvar;
     int               *bQETneedsReset;//a numpy int vector, nComps * nRMatrices, accessed by [(cNum * nRMatrices) + rNum]
     double            *charStatePicker;
@@ -211,17 +208,6 @@ struct p4_mixtureStruct {
     double    *rates;
 };
 
-
-
-struct p4_tSCovarionStruct {
-    int        free;
-    double    *s1; // rate on->off
-    double    *s2; // rate off->on
-    //int        halfDim;
-    double    *halfComp;
-    double     pOn;
-    double     pOff;
-};
 
 struct p4_bigQAndEigStruct {
     double    **bigQ;

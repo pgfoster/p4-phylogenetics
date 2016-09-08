@@ -197,12 +197,6 @@ if True:
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
 
-        # for i in range(len(self.nodes)):
-        # pf.p4_setPreAndPostOrder(self.cTree, i, self.preOrder[i],
-        # self.postOrder[i]) # no longer needed
-
-        # print "finished Tree.setCStuff()"
-
     def _commonCStuff(self, resetEmpiricalComps=True):
         """Allocate and set c-stuff, and setPrams."""
         if not self.data:
@@ -239,17 +233,15 @@ if True:
         if verbose:
             print "Tree.calcLogLike(). %f" % self.logLike
 
-    def optLogLike(self, verbose=1, newtAndBrentPowell=1, allBrentPowell=0, simplex=0):
+    def optLogLike(self, verbose=1, newtAndBrentPowell=1, allBrentPowell=0):
         """Calculate the likelihood of the tree, with optimization.
 
-        There are 3 optimization methods-- choose one.  I've made
+        There are two optimization methods-- choose one.  I've made
         'newtAndBrentPowell' the default, as it is fast and seems to be
         working.  The 'allBrentPowell' optimizer used to be the default,
         as it seems to be the most robust, although it is slow.  It would
-        be good for checking important calculations.  The simplex
-        optimizer is the slowest, and will sometimes find better optima
-        for difficult data, but often fails to optimize (with no
-        warning)."""
+        be good for checking important calculations.  
+        """
 
         if verbose:
             theStartTime = time.clock()
@@ -260,9 +252,7 @@ if True:
             newtAndBrentPowell = 1
         if allBrentPowell:
             allBrentPowell = 1
-        if simplex:
-            simplex = 1
-        if (newtAndBrentPowell + allBrentPowell + simplex) != 1:
+        if (newtAndBrentPowell + allBrentPowell) != 1:
             gm = ['Tree.optLogLike()']
             gm.append("Choose 1 opt method.")
             raise P4Error(gm)
@@ -270,8 +260,6 @@ if True:
         # Do the opt.
         if allBrentPowell:
             pf.p4_allBrentPowellOptimize(self.cTree)
-        elif simplex:
-            pf.p4_simplexOptimize(self.cTree, self, Tree.simplexDump)
         else:
             pf.p4_newtSetup(self.cTree)
             pf.p4_newtAndBrentPowellOpt(self.cTree)

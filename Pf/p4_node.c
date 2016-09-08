@@ -38,7 +38,7 @@ p4_node *p4_newNode(int nodeNum, p4_tree *aTree, int seqNum, int isLeaf, int inT
     aNode->compNums = malloc(aNode->nParts * sizeof(int));
     if(!aNode->compNums) {
         printf("Failed to allocate memory for compNums\n");
-        exit(0);
+        exit(1);
     }
     for(i = 0; i < aNode->nParts; i++) {
         aNode->compNums[i] = 0;
@@ -58,7 +58,7 @@ p4_node *p4_newNode(int nodeNum, p4_tree *aTree, int seqNum, int isLeaf, int inT
     aNode->gdasrvNums = malloc(aNode->nParts * sizeof(int));
     if(!aNode->gdasrvNums) {
         printf("Failed to allocate memory for gdasrvNums\n");
-        exit(0);
+        exit(1);
     }
     for(i = 0; i < aNode->nParts; i++) {
         aNode->gdasrvNums[i] = 0;
@@ -533,7 +533,7 @@ void p4_calculatePickerDecks(p4_node *aNode)
         aNode->pickerDecks = (double ****)malloc(sizeof(double ***) * aNode->nParts);
         if(!aNode->pickerDecks) {
             printf("Failed to allocate memory for pickerDecks.\n");
-            exit(0);
+            exit(1);
         }
         for(i = 0; i < aNode->nParts; i++) {
             mp = aNode->tree->model->parts[i];
@@ -541,7 +541,7 @@ void p4_calculatePickerDecks(p4_node *aNode)
             aNode->pickerDecks[i] = (double ***)malloc(mp->nCat * sizeof(double **));
             if(!aNode->pickerDecks[i]) {
                 printf("Failed to allocate memory for pickerDecks[i].\n");
-                exit(0);
+                exit(1);
             }
             for(j = 0; j < mp->nCat; j++) {
                 aNode->pickerDecks[i][j] = psdmatrix(mp->dim);
@@ -637,17 +637,10 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
                             exit(1);
                         }
 #endif
-                        if(mp->doTSCovarion) {
-                            aNode->cl[pNum][rate][symb][seqPos] = 
-                                aNode->leftChild->bigPDecks[pNum][rate][symb][charCode] + 
-                                aNode->leftChild->bigPDecks[pNum][rate][symb][charCode + dp->dim];
-                        }
-                        else {
-                            //printf("  Setting cl[%i] to %f\n", 
-                            //symb, aNode->leftChild->bigPDecks[pNum][rate][symb][charCode]);
-                            aNode->cl[pNum][rate][symb][seqPos] = 
-                                aNode->leftChild->bigPDecks[pNum][rate][symb][charCode];
-                        }
+                        //printf("  Setting cl[%i] to %f\n", 
+                        //symb, aNode->leftChild->bigPDecks[pNum][rate][symb][charCode]);
+                        aNode->cl[pNum][rate][symb][seqPos] = 
+                            aNode->leftChild->bigPDecks[pNum][rate][symb][charCode];
                     }
                     else if (charCode == GAP_CODE || charCode == QMARK_CODE) {
                         aNode->cl[pNum][rate][symb][seqPos] = 1.0;
@@ -683,7 +676,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
                     else {
                         printf("node %i: setConditionalLikelihoodsOfInteriorNodes:\n", aNode->nodeNum);
                         printf("   Programming error.  This shouldn't happen\n");
-                        exit(0);
+                        exit(1);
                     }
 						
                 }
@@ -719,25 +712,19 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
                         charCode = dp->patterns[child->seqNum][seqPos];
                         //printf("leaf sibs Got charCode = %i\n", charCode);
                         if(charCode >= 0) {
-                            if(mp->doTSCovarion) {
-                                aNode->cl[pNum][rate][symb][seqPos] *= (child->bigPDecks[pNum][rate][symb][charCode] + 
-                                                                        child->bigPDecks[pNum][rate][symb][charCode + dp->dim]);
-                            }
-                            else {
 #if 0
-                                printf("node %i, adding cl for leaf node %i, charCode=%i, bigP=%f\n",
-                                       aNode->nodeNum,
-                                       child->nodeNum,
-                                       charCode,
-                                       child->bigPDecks[pNum][rate][symb][charCode]);
-                                printf("   cl(before)=%f   %f * %f = ", 
-                                       aNode->cl[pNum][rate][symb][seqPos],
-                                       aNode->cl[pNum][rate][symb][seqPos],
-                                       child->bigPDecks[pNum][rate][symb][charCode]);
+                            printf("node %i, adding cl for leaf node %i, charCode=%i, bigP=%f\n",
+                                   aNode->nodeNum,
+                                   child->nodeNum,
+                                   charCode,
+                                   child->bigPDecks[pNum][rate][symb][charCode]);
+                            printf("   cl(before)=%f   %f * %f = ", 
+                                   aNode->cl[pNum][rate][symb][seqPos],
+                                   aNode->cl[pNum][rate][symb][seqPos],
+                                   child->bigPDecks[pNum][rate][symb][charCode]);
 #endif
-                                aNode->cl[pNum][rate][symb][seqPos] *= child->bigPDecks[pNum][rate][symb][charCode];
-                                //printf("%f\n", aNode->cl[pNum][rate][symb][seqPos]);
-                            }
+                            aNode->cl[pNum][rate][symb][seqPos] *= child->bigPDecks[pNum][rate][symb][charCode];
+                            //printf("%f\n", aNode->cl[pNum][rate][symb][seqPos]);
                         }
                         else if (charCode == GAP_CODE || charCode == QMARK_CODE) {
                             //aNode->cl[pNum][rate][symb][seqPos] *= 1.0;
@@ -770,7 +757,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
                         else {
                             printf("node %i: setConditionalLikelihoodsOfInteriorNodes:\n", aNode->nodeNum);
                             printf("x   Programming error.  This shouldn't happen\n");
-                            exit(0);
+                            exit(1);
                         }
                         //printf("                                  after sib, cl[%i] = %f\n", 
                         //	   symb, aNode->cl[pNum][rate][symb][seqPos]);
@@ -812,7 +799,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
     for(seqPos = 0; seqPos < 1; seqPos++) {			
         for(rate = 0; rate < 2; rate++){
             printf("seqPos %i, rate %i: ", seqPos, rate);
-            for(symb = 0; symb < mp->dim; symb++) {  // if covarion, full dim
+            for(symb = 0; symb < mp->dim; symb++) {
                 printf(" %6g", aNode->cl[pNum][rate][symb][seqPos]);
             }
             printf("\n");
@@ -834,7 +821,7 @@ void p4_initializeCL2ToRootComp(p4_node *aNode)
     for(pNum = 0; pNum < aNode->nParts; pNum++) {
         dp = aNode->tree->data->parts[pNum];
         mp = aNode->tree->model->parts[pNum];
-        dim = mp->dim; // in case it is covarion, take dim from model, not the data
+        dim = mp->dim; 
         if(mp->isMixture) {
             for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
                 rate = 0;
@@ -949,15 +936,8 @@ void p4_setCL2Down(p4_node *cl2Node, p4_node *aNode)
                     if(aNode->isLeaf) {
                         charCode = dp->patterns[aNode->seqNum][seqPos];
                         if(charCode >= 0) {
-                            if(mp->doTSCovarion) {
-                                cl2Node->cl2[pNum][rate][symb][seqPos] *=
-                                    aNode->bigPDecks[pNum][rate][symb][charCode] +
-                                    aNode->bigPDecks[pNum][rate][symb][charCode + dp->dim];
-                            }
-                            else {
-                                cl2Node->cl2[pNum][rate][symb][seqPos] *= 
-                                    aNode->bigPDecks[pNum][rate][symb][charCode];
-                            }
+                            cl2Node->cl2[pNum][rate][symb][seqPos] *= 
+                                aNode->bigPDecks[pNum][rate][symb][charCode];
                         }
                         else if(charCode == GAP_CODE || charCode == QMARK_CODE) {
                             //cl2Node->cl2[pNum][rate][symb][seqPos] *= 1.0;
@@ -1035,7 +1015,7 @@ void p4_calculateExpectedComp(p4_node *aNode)
 
     //if(aNode != aNode->tree->root && aNode->bigPDecks[0][0][0][0] < 0.001) {
     //	printf("p4_calculateExpectedComp node %i bad bigP\n", aNode->nodeNum);
-    //	exit(0);
+    //	exit(1);
     //}
 	
     // Note that the expectedComp for a given part is not a vector,
@@ -1049,7 +1029,7 @@ void p4_calculateExpectedComp(p4_node *aNode)
         aNode->expectedComp = malloc(aNode->nParts * sizeof(double **));
         if(!aNode->expectedComp) {
             printf("Problem allocating memory for aNode->expectedComp\n");
-            exit(0);
+            exit(1);
         }
         for(pNum = 0; pNum < aNode->nParts; pNum++) {
             mp = aNode->tree->model->parts[pNum];

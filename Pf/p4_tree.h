@@ -21,7 +21,6 @@ PyObject *p4_getFreePrams(p4_tree *aTree);
 void p4_unWindParameters(p4_tree *aTree, double *parameters);
 double p4_minusLogLikeForBrent(double *parameters);
 void p4_allBrentPowellOptimize(p4_tree *aTree);
-void p4_simplexOptimize(p4_tree *aTree, PyObject *treeObject, PyObject *theMethod);
 void p4_newtAndBrentPowellOpt(p4_tree *aTree);
 void p4_newtAnd1DBrent(p4_tree *aTree);
 void p4_bracketTheMinimum(p4_tree *aTree, double *guess1, double *guess2, double *lBound, double *uBound, double *pram, double downFactor);

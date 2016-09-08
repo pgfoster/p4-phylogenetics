@@ -251,7 +251,7 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
 	
 
 
-#if 0  // I'll need to do this when I have a free kappa.  And doTSCovarion.
+#if 0  // I'll need to do this when I have a free kappa. 
     // rMatrix
     //printf("\np4_tree setPramsPart(): about to set rMatrix\n");
     mp = aTree->model->parts[pNum];
@@ -313,50 +313,6 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
         }
     }
 	
-
-
-#if 1
-    // doTSCovarion
-    mp = aTree->model->parts[pNum];
-    dp = aTree->data->parts[pNum];
-    if(mp->doTSCovarion) {
-        //printf("p4_setPrams().  s1=%f, s2=%f, pOn=%f, pOff=%f\n", 
-        //	   mp->tSCov->s1[0], mp->tSCov->s2[0], mp->tSCov->pOn, mp->tSCov->pOff);
-        r = mp->rMatrices[0]; // only one is possible, this week
-        for(i = 0; i < dp->dim; i++) {
-            for(j = dp->dim; j < mp->dim; j++) {
-                if((i + dp->dim) == j) {
-                    r->bigR[i][j] = mp->tSCov->s1[0];
-                } else {
-                    r->bigR[i][j] = 0.0;
-                }
-            }
-        }
-        for(i = dp->dim; i < mp->dim; i++) {
-            for(j = 0; j < dp->dim; j++) {
-                if(i == (j + dp->dim)) {
-                    r->bigR[i][j] = mp->tSCov->s2[0];
-                } else {
-                    r->bigR[i][j] = 0.0;
-                }
-            }
-        }
-        for(i = dp->dim; i < mp->dim; i++) {
-            for(j = dp->dim; j < mp->dim; j++) {
-                r->bigR[i][j] = 0.0;
-            }
-        }
-
-        // The long comp, in mp->comps[0]->val, is calculated from the short comp, in mp->tSCov->halfComp
-        for(i = 0; i< dp->dim; i++) {
-            mp->comps[0]->val[i] = mp->tSCov->halfComp[i] * mp->tSCov->pOn;
-            mp->comps[0]->val[i + dp->dim] = mp->tSCov->halfComp[i] * mp->tSCov->pOff;
-        }
-    }
-	
-#endif			
-
-
 	
 #if 0
     // Write out some model usage info. ie what nodes use what comps etc.
@@ -972,13 +928,13 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
             dp->siteLikes = malloc(dp->nChar * sizeof(double));
             if(!dp->siteLikes) {
                 printf("Failed to malloc siteLikes.\n");
-                exit(0);
+                exit(1);
             }
         }
         patternLikes = malloc(dp->nPatterns * sizeof(double));
         if(!patternLikes) {
             printf("Failed to malloc patternLikes.\n");
-            exit(0);
+            exit(1);
         }
         for(seqPos = 0; seqPos < dp->nChar; seqPos++) {
             dp->siteLikes[seqPos] = 0.0;
@@ -1005,7 +961,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         mp->freqsTimesOneMinusPInvar = malloc(mp->nCat * sizeof(double));
         if(!mp->freqsTimesOneMinusPInvar) {
             printf("memory allocation error, modelpart->freqsTimesOneMinusPInvar\n");
-            exit(0);
+            exit(1);
         }
     }
 
@@ -1074,7 +1030,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
                 //printf("treeLogLike: invarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);				
                 //printf("treeLogLike: doing invarSite contribution\n");
                 // See part.c for an explanation of the magic of the globalInvarSitesArray
-                // The globalInvarSitesArray only goes to dp->dim, but mp->dim might be bigger if covarion.
+                // The globalInvarSitesArray goes to dp->dim
                 if(mp->isMixture) {
                     for(i = 0; i < dp->dim; i++) {
                         if(dp->globalInvarSitesArray[i][seqPos]) {
@@ -1231,13 +1187,13 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
             dp->siteLikes = malloc(dp->nChar * sizeof(double));
             if(!dp->siteLikes) {
                 printf("Failed to malloc siteLikes.\n");
-                exit(0);
+                exit(1);
             }
         }
         patternLikes = malloc(dp->nPatterns * sizeof(double));
         if(!patternLikes) {
             printf("Failed to malloc patternLikes.\n");
-            exit(0);
+            exit(1);
         }
         for(seqPos = 0; seqPos < dp->nChar; seqPos++) {
             dp->siteLikes[seqPos] = 0.0;
@@ -1246,18 +1202,18 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
 
     if(mp->nGdasrvs != 1) {
         printf("nGdasrvs is %i, should be 1.\n", mp->nGdasrvs);
-        exit(0);
+        exit(1);
     }
 
     tempCategories = malloc(dp->nPatterns * sizeof(int));
     if(!tempCategories) {
         printf("Failed to malloc tempCategories.\n");
-        exit(0);
+        exit(1);
     }
     tempRates = malloc(dp->nPatterns * sizeof(double));
     if(!tempRates) {
         printf("Failed to malloc tempRates.\n");
-        exit(0);
+        exit(1);
     }
 
 #if 0
@@ -1280,7 +1236,7 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
         mp->freqsTimesOneMinusPInvar = malloc(mp->nCat * sizeof(double));
         if(!mp->freqsTimesOneMinusPInvar) {
             printf("memory allocation error, modelpart->freqsTimesOneMinusPInvar\n");
-            exit(0);
+            exit(1);
         }
     }
 
@@ -1351,7 +1307,7 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
                 //printf("treeLogLike: invarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);				
                 //printf("treeLogLike: doing invarSite contribution\n");
                 // See part.c for an explanation of the magic of the globalInvarSitesArray
-                // The globalInvarSitesArray only goes to dp->dim, but mp->dim might be bigger if covarion.
+                // The globalInvarSitesArray goes to dp->dim
                 if(mp->isMixture) {
                     for(i = 0; i < dp->dim; i++) {
                         if(dp->globalInvarSitesArray[i][seqPos]) {

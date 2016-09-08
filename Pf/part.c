@@ -137,7 +137,7 @@ void pokeSequences(part *thePart, char *theString)
   charsLikeN = (char *)malloc((thePart->nEquates + 2) * sizeof(char));
   if(!charsLikeN) {
     printf("Failed to malloc charsLikeN.\n");
-    exit(0);
+    exit(1);
   }
   for(i = 0; i < thePart->nEquates + 2; i++) {
     charsLikeN[i] = 'x';
@@ -221,7 +221,7 @@ void pokeSequences(part *thePart, char *theString)
 	printf("part.c pokeSequences.\n");
 	printf("    Got character %c.  This should not happen.\n", theChar);
 	printf("    It is not in the symbols nor equates.\n");
-	exit(0);
+	exit(1);
       }
 #endif	
 
@@ -252,7 +252,7 @@ void pokeSequences(part *thePart, char *theString)
 	printf("part.c pokeSequences.\n");
 	printf("    Got character %c.  This should not happen.\n", theChar);
 	printf("    It is not in the symbols nor in the equates.\n");
-	exit(0);
+	exit(1);
       }	
 #endif
     }
@@ -372,7 +372,7 @@ void makePatterns(part *thePart)
       //if(slice[j] >= thePart->dim) {
       //	printf("part.makePatterns(): Got bad character %i\n", slice[j]);
       //	printf("charPos = %i, seqNum = %i", i, j);
-      //	exit(0);
+      //	exit(1);
       //}
     }
     // check to see if already exists
@@ -414,7 +414,7 @@ void makePatterns(part *thePart)
       //printf("%3i", thePart->patterns[j][i]);
       if(thePart->patterns[j][i] >= thePart->dim) {
 	printf("bad character %i\n", thePart->patterns[j][i]);
-	exit(0);
+	exit(1);
       }
     }
     //printf("\n");
@@ -1137,7 +1137,7 @@ PyObject *symbolSequences(part *thePart)
 	  if(ch1 < QMARK_CODE || ch2 < QMARK_CODE) {
 	    printf("calcEmpiricalRMatrixViaMatrixLog()\n");
 	    printf("    This doesn\'t work if there are ambiguities.\n");
-	    exit(0);
+	    exit(1);
 	  }
 	  if(ch1 < 0 || ch2 < 0) {
 	    // pass
@@ -1326,12 +1326,12 @@ PyObject *symbolSequences(part *thePart)
 
     if(thePart->nTax < 4) {
       printf("part steelCRCInvariants().  Need a minimum of 4 sequences.  Got %i\n", thePart->nTax);
-      exit(0);
+      exit(1);
     }
     theArr = malloc(thePart->nTax * sizeof(int));
     if(!theArr) {
       printf("Failed to allocate memory for theArr\n");
-      exit(0);
+      exit(1);
     }
 	
     if (thePart->nTax > TaxNumCutOff) {
@@ -1455,7 +1455,7 @@ PyObject *symbolSequences(part *thePart)
     codesLikeN = (int *)malloc((thePart->nEquates + 3) * sizeof(int));
     if(!codesLikeN) {
       printf("Failed to malloc codesLikeN.\n");
-      exit(0);
+      exit(1);
     }
     for(i = 0; i < thePart->nEquates + 2; i++) {
       codesLikeN[i] = N_LIKE;

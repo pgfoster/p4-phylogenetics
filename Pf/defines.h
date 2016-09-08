@@ -50,8 +50,6 @@
 #define PIVEC_MAX 0.999
 #define RATE_MIN 1.0e-8
 #define RATE_MAX 1.0e8
-#define COVARION_S_MIN 1.0e-15
-#define COVARION_S_MAX 1.0e3
 #define RELRATE_MIN 1.0e-8
 #define RELRATE_MAX 1.0e8
 #define BRLEN_MIN 1.0e-8  // changed apr02 from 1e-18

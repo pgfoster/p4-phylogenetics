@@ -77,13 +77,13 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
         t->simSequences = malloc(d->nParts * sizeof(int **));
         if(!t->simSequences) {
             printf("Problem allocating memory for simSequences (1)\n");
-            exit(0);
+            exit(1);
         }
         for(pNum = 0; pNum < d->nParts; pNum++) {
             t->simSequences[pNum] = malloc(t->nNodes * sizeof(int *));
             if(!t->simSequences[pNum]) {
                 printf("Problem allocating memory for simSequences (2)\n");
-                exit(0);
+                exit(1);
             }
         }
     }
@@ -102,14 +102,14 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
         t->internalSequences = malloc(d->nParts * sizeof(int **));
         if(!t->internalSequences) {
             printf("Problem allocating memory for internalSequences (1)\n");
-            exit(0);
+            exit(1);
         }
         for(pNum = 0; pNum < d->nParts; pNum++) {
             dp = d->parts[pNum];
             t->internalSequences[pNum] = malloc(internSeqCounter * sizeof(int *));
             if(!t->internalSequences[pNum]) {
                 printf("Problem allocating memory for internalSequences (2)\n");
-                exit(0);
+                exit(1);
             }
             for(j = 0; j < internSeqCounter; j++) {
                 t->internalSequences[pNum][j] = pivector(dp->nChar);
@@ -207,7 +207,7 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
         }
         if(!mp->charStatePicker) {
             printf("Problem allocating memory for modelPart->charStatePicker.\n");
-            exit(0);
+            exit(1);
         }
     }
 
@@ -532,22 +532,6 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
         }
     }
     //printf("...finished simulate\n"); fflush(stdout);
-
-    // Collapse the covarion dim symbols into dim/2
-    for(pNum = 0; pNum < d->nParts; pNum++) {
-        mp = t->model->parts[pNum];
-        dp = d->parts[pNum];
-        if(mp->doTSCovarion) {
-            for(nNum = 0; nNum < t->nNodes; nNum++) {
-                for(j = 0; j < dp->nChar; j++) {
-                    if(t->simSequences[pNum][nNum][j] >= dp->dim) {
-                        t->simSequences[pNum][nNum][j] -= dp->dim;
-                    }
-                }
-            }
-        }
-    }
-
 
 #if 0
     printf("\n");

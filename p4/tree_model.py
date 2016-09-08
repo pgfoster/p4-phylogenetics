@@ -1534,18 +1534,6 @@ if True:
         # print "modelSanityCheck. relRatesAreFree=%s, doRelRates=%s" %
         # (self.model.relRatesAreFree, self.model.doRelRates)
 
-        # tSCovarion
-        for p in self.model.parts:
-            if p.tSCovarion:
-                if p.nComps > 1 or p.nRMatrices > 1 or p.nGammaCat > 1:
-                    gm.append(
-                        "When tSCovarion is on, there should be no heterogeneity in comps, rMatrices, and gdasrv.")
-                    raise P4Error(gm)
-                if p.pInvar.val > 0.0 or p.pInvar.free:
-                    gm.append(
-                        "When tSCovarion is on, you can't use pInvar.  Turn it off.")
-                    raise P4Error(gm)
-
         # model.nFreePrams
         self.model.nFreePrams = 0
         for mp in self.model.parts:
@@ -1564,8 +1552,6 @@ if True:
                     self.model.nFreePrams += 1
             if mp.pInvar.free:
                 self.model.nFreePrams += 1
-            if mp.doTSCovarion and mp.tSCovarion.free:
-                self.model.nFreePrams += 2
             if mp.isMixture and mp.mixture.free:
                 self.model.nFreePrams += 2 * (len(mp.mixture.freqs) - 1)
         # print "Tree.modelSanityCheck().  Counted %i free params." %
@@ -1749,15 +1735,6 @@ class PInvar(object):
         self.partNum = None
         self.free = None
         self.val = None
-
-
-class TSCovarion(object):
-
-    def __init__(self):
-        self.partNum = None
-        self.free = None
-        self.s1 = None
-        self.s2 = None
 
 
 class Mixture(object):
