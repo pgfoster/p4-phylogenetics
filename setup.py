@@ -41,10 +41,15 @@ except ImportError:
 my_include_dirs = []
 my_lib_dirs = []
 
+# I am told that this is needed for centos 7
+# my_include_dirs = ['/usr/include/gsl']
+# my_lib_dirs = ['/usr/lib64']
+
 likelyDirs = [ "/usr",
                "/usr/local",
                "/sw",
                "/opt/local",
+               "/usr/lib64",
                os.path.expanduser('~')
                ]
 
