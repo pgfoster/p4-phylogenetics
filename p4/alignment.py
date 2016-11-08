@@ -1237,6 +1237,11 @@ class Alignment(SequenceList):
                     gm.append("taxSet %s" % ts.name)
                     gm.append("unknown format %s" % ts.format)
                     raise P4Error(gm)
+
+                # Now set ts.taxNames from the mask.  Note self.taxNames is a property
+                ts.taxNames = [self.taxNames[i] for i,c in enumerate(ts.mask) if c == '1']
+
+
         if self.nexusSets.charPartitions:
             pass
 

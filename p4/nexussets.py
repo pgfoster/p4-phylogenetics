@@ -162,12 +162,11 @@ class NexusSets(object):
         mySet.standardize()
 
     method.  For taxSets, you can use actual tax names (rather than
-    numbers or ranges) by invoking the method::
+    numbers or ranges) by setting::
 
-        myTaxSet.setUseTaxNames()
+        myTaxSet.useTaxNames = True  # default None
 
-    which sets the attribute 'useTaxNames' to True, and puts the
-    taxNames for the taxSet in the ::
+    Each taxSet has a::
 
         taxSet.taxNames
 
@@ -472,8 +471,7 @@ class TaxOrCharSet(object):
         if hasattr(self, 'aligNChar'):
             print "                              aligNChar: %s" % self.aligNChar
         print "                                 format: %s" % self.format
-        if hasattr(self, 'useTaxNames'):
-            print "                            useTaxNames: %s" % self.useTaxNames
+        print "                            useTaxNames: %s" % self.useTaxNames
         print "                               triplets: "
         for t in self.triplets:
             print "                                         %s" % t
@@ -1103,17 +1101,6 @@ class TaxSet(TaxOrCharSet):
 
             self.numberTriplets.append(numTr)
 
-    def setUseTaxNames(self):
-        if self.useTaxNames:
-            return
-        # if not self.mask:
-        #    self.setMask()
-        if not self.taxNames:
-            for pos in range(len(self.mask)):
-                c = self.mask[pos]
-                if c == '1':
-                    self.taxNames.append(self.nexusSets.taxNames[pos])
-        self.useTaxNames = True
 
 
 class CharPartitionSubset(object):

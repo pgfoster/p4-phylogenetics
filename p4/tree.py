@@ -1532,7 +1532,6 @@ class Tree(object):
                 if ts.format == 'standard':
                     ts.setNumberTriplets()
                     ts.setMask()
-                    # print ts.mask
                 elif ts.format == 'vector':
                     assert ts.mask
                     if len(ts.mask) != self.nTax:
@@ -1546,6 +1545,10 @@ class Tree(object):
                     gm.append("taxSet %s" % ts.name)
                     gm.append("unknown format %s" % ts.format)
                     raise P4Error(gm)
+
+                # Now set ts.taxNames from the mask
+                ts.taxNames = [self.taxNames[i] for i,c in enumerate(ts.mask) if c == '1']
+
 
     ###########################
     #
