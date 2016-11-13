@@ -73,7 +73,7 @@ void p4_dumpModel(p4_model *aModel)
 // modelPart
 //==========
 
-void p4_newModelPart(p4_model *aModel, int pNum, int dim, int nComps, int nRMatrices, int nGdasrvs, int nCat, int isMixture, int mixtureIsFree, int pInvarFree, int *bQETneedsReset)
+void p4_newModelPart(p4_model *aModel, int pNum, int dim, int nComps, int nRMatrices, int nGdasrvs, int nCat, int pInvarFree, int *bQETneedsReset)
 {
     p4_modelPart  *mp;
     int i,j;
@@ -127,9 +127,6 @@ void p4_newModelPart(p4_model *aModel, int pNum, int dim, int nComps, int nRMatr
         mp->gdasrvs[i] = NULL;
     }
 	
-
-    // set isMixture and nCat
-    mp->isMixture = isMixture;
     mp->nCat = nCat;
 	
     // pInvar
@@ -145,24 +142,6 @@ void p4_newModelPart(p4_model *aModel, int pNum, int dim, int nComps, int nRMatr
     }
     mp->pInvar->free = pInvarFree;
     mp->pInvar->val[0]  = -1.0;
-
-    // mixture
-    mp->mixture = NULL;
-    if(mp->isMixture) {
-        mp->mixture = (p4_mixture *)malloc(sizeof(p4_mixture));
-        if(!mp->mixture) {
-            printf("Failed to alloc memory for modelPart->mixture\n");
-            exit(1);
-        }
-        mp->mixture->freqs = malloc(mp->nCat * sizeof(double));
-        mp->mixture->rates = malloc(mp->nCat * sizeof(double));
-        if(!mp->mixture->freqs || !mp->mixture->rates) {
-            printf("Failed to alloc memory for mp->mixture->freqs/rates\n");
-            exit(1);
-        }
-        mp->mixture->free = mixtureIsFree;
-    }
-
 
     // relRate
     mp->relRate = (double *)malloc(sizeof(double));
@@ -282,16 +261,6 @@ void p4_freeModelPart(p4_modelPart *mp)
         }
         free(mp->pInvar);
         mp->pInvar = NULL;
-    }
-
-    // mixture
-    if(mp->mixture) {
-        free(mp->mixture->freqs);
-        mp->mixture->freqs = NULL;
-        free(mp->mixture->rates);
-        mp->mixture->rates = NULL;
-        free(mp->mixture);
-        mp->mixture = NULL;
     }
 
     // relRate

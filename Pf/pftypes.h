@@ -14,7 +14,6 @@ typedef struct p4_compStruct p4_comp;
 typedef struct p4_rMatrixStruct p4_rMatrix;
 typedef struct p4_gdasrvStruct p4_gdasrv;
 typedef struct p4_pInvarStruct p4_pInvar;
-typedef struct p4_mixtureStruct p4_mixture;
 typedef struct p4_bigQAndEigStruct p4_bigQAndEig;
 
 typedef struct nexusTokenStruct nexusToken;
@@ -165,8 +164,6 @@ struct p4_modelPartStruct {
     p4_gdasrv        **gdasrvs;
     int                nCat;
     p4_pInvar         *pInvar;
-    int                isMixture;
-    p4_mixture        *mixture;
     double            *relRate;
     p4_bigQAndEig   ***bigQAndEigThing; // nComps * nRMatrices
     double            *freqsTimesOneMinusPInvar;
@@ -201,13 +198,6 @@ struct p4_pInvarStruct {
     int        free;
     double    *val;
 };
-
-struct p4_mixtureStruct {
-    int        free;
-    double    *freqs; // length nCat
-    double    *rates;
-};
-
 
 struct p4_bigQAndEigStruct {
     double    **bigQ;

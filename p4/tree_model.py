@@ -318,7 +318,12 @@ if True:
         if symbol:
             mt.symbol = symbol
         else:
-            mt.symbol = var.modelSymbols[mt.num]
+            try:
+                mt.symbol = var.modelSymbols[mt.num]
+            except IndexError:
+                gm.append("You have asked for modelSymbol number %i" % mt.num)
+                gm.append("There are only %i in var.modelSymbols." % len(var.modelSymbols))
+                raise P4Error(gm)
 
         self.model.parts[partNum].comps.append(mt)
 
@@ -707,10 +712,6 @@ if True:
 
         self._checkModelThing(partNum, symbol, gm[0])
 
-        if self.model.parts[partNum].isMixture:
-            gm.append("Don't do this if it is a mixture.")
-            raise P4Error(gm)
-
         mt = Gdasrv()
         mt.nGammaCat = self.model.parts[partNum].nGammaCat
         mt.partNum = partNum
@@ -788,10 +789,6 @@ if True:
     def setModelThing(self, theModelThing, node=None, clade=1):
         complaintHead = '\nTree.setModelThing()'
         gm = [complaintHead]
-
-        if self.model.parts[theModelThing.partNum].isMixture:
-            gm.append("Don't do this if the part uses a mixture model.")
-            raise P4Error(gm)
 
         if theModelThing and \
             (isinstance(theModelThing, Comp) or
@@ -1133,9 +1130,6 @@ if True:
             gm.append("PartNum %s is out of range of %s parts." %
                       (partNum, self.model.nParts))
             raise P4Error(gm)
-        if self.model.parts[partNum].isMixture:
-            gm.append("Don't do this if the part uses a mixture model.")
-            raise P4Error(gm)
 
         try:
             x = int(nGammaCat)
@@ -1150,54 +1144,6 @@ if True:
             raise P4Error(gm)
         self.model.parts[partNum].nGammaCat = nGammaCat
 
-    # def setMixture(self, partNum=0, free=0, freqs=None, rates=None):
-    #     complaintHead = '\nTree.setMixture()'
-    #     gm = [complaintHead]
-
-    #     if 1:
-    #         gm.append("Sorry -- not turned on yet.")
-    #         raise P4Error(gm)
-
-    #     assert self.model and self.data
-    #     if self.model.cModel:
-    #         self.deleteCStuff()
-    #     if partNum < 0 or partNum >= self.model.nParts:
-    #         gm.append("PartNum %s is out of range of %s parts." % (partNum, self.model.nParts))
-    #         raise P4Error(gm)
-    #     mp = self.model.parts[partNum]
-
-    #     isHet = 0
-    #     for n in self.nodes:
-    #         if n.parts[partNum].compNum >= 0:
-    #             isHet = 1
-    #             break
-    #         if n != self.root:
-    #             if n.br.parts[partNum].rMatrixNum >= 0 or n.br.parts[partNum].gdasrvNum >= 0:
-    #                 isHet = 1
-    #                 break
-    #     if isHet:
-    #         gm.append("Can't be both hetero on the tree and a mixture model.")
-    #         gm.append("There seems to have been a previous setModelThing()")
-    #         raise P4Error(gm)
-    #     mp.isMixture = 1
-    #     mp.mixture = Mixture()
-    #     mp.mixture.free = free
-
-    #     #if freqs and rates:
-    #     nMix = mp.nComps * mp.nRMatrices
-    #     mp.mixture.freqs = numpy.zeros(nMix, numpy.float)
-    #     mp.mixture.rates = numpy.zeros(nMix, numpy.float)
-
-    #     try:
-    #         for i in range(nMix):
-    #             mp.mixture.freqs[i] = float(freqs[i])
-    #             mp.mixture.rates[i] = float(rates[i])
-    #     except:
-    #         gm.append('Args freqs and rates should be sequences of floats, each nComps * nMatrices long.')
-    #         raise P4Error(gm)
-    #     if len(freqs) != nMix or len(rates) != nMix:
-    #         gm.append('Args freqs and rates should be sequences of floats, each nComps * nMatrices long.')
-    #         raise P4Error(gm)
 
     def modelSanityCheck(self, resetEmpiricalComps=True):
         """Check that the tree, data, and model specs are good to go.
@@ -1210,9 +1156,8 @@ if True:
         Check that each part has at least 1 each from comps, rMatrices,
         and gdasrvs (if nGammaCat is > 1).
 
-        If it is not a mixture model for a particular part, check that
-        each node has a comp, rMatrix, and gdasr.  Check that all comps,
-        rMatrices, gdasrvs are used on a node somewhere.
+        Check that each node has a comp, rMatrix, and gdasr.  Check that all
+        comps, rMatrices, gdasrvs are used on a node somewhere.
 
         Here relRate, ie the relative rate of each data partition, is
         adjusted based on the size of the data partitions.
@@ -1309,175 +1254,111 @@ if True:
                         '    Part %s is dim 2, but rMatrix 0 is free' % pNum)
                     partIsBad = 1
 
-            # If isMixture, then it may not have nGdasrvs
-            if mp.isMixture:
-                if mp.nGdasrvs:
-                    complaints.append(
-                        '    If it isMixture, then gdasrv may not be on.')
-                    partIsBad = 1
-
-            # If isMixture, then it cannot be isHet
-            if mp.isMixture:
+            mp.nCat = mp.nGammaCat
+            # If the model part isHet, we need to check that all nodes
+            # have something assigned, and that all model things are
+            # used.  If the model part is not het, we can skip that,
+            # but we need to check that all the
+            # node.parts[pNum].compNum are 0, and all the
+            # node.br.parts[pNum].rMatrixNum and
+            # node.br.parts[pNum].gdasrvNum are set to 0.
+            if not mp.isHet:
+                # print "model part %i is not het" % pNum
                 for n in self.nodes:
-                    n.parts[pNum].compNum = -1
+                    # print "pNum = %i, n.nodeNum=%i, len n.parts = %i" %
+                    # (pNum, n.nodeNum, len(n.parts))
+                    n.parts[pNum].compNum = 0
                     if n != self.root:
-                        n.br.parts[pNum].rMatrixNum = -1
+                        n.br.parts[pNum].rMatrixNum = 0
                         if mp.nGammaCat > 1:
-                            n.br.parts[pNum].gdasrvNum = -1
+                            n.br.parts[pNum].gdasrvNum = 0
+            else:  # isHet
 
-            if mp.isMixture:
-                mt = mp.mixture
-                if not mt.freqs or not mt.rates:
-                    complaints.append(
-                        '    This week, you must specify mixture freqs and rates.')
-                    partIsBad = 1
-                print 'mt.freqs = %s' % mt.freqs
-                print 'mt.rates = %s' % mt.rates
-                if len(mt.freqs) != len(mt.rates):
-                    complaints.append(
-                        '    Lengths of mixture freqs and rates differ.')
-                    partIsBad = 1
-                mp.nCat = mp.nComps * mp.nRMatrices
-                # if nCompsTimesNRMatrices == 1:
-                #    complaints.append('    nComps * nRMatrices = 1, no point in having a mixture.')
-                #    partIsBad = 1
-                if len(mt.freqs) != mp.nCat:
-                    complaints.append(
-                        '    Wrong length of mixture freqs and rates.  Should be %i' % mp.nCat)
-                    partIsBad = 1
-
-                # print "Freqs = %s" % mt.freqs
-                # print "Rates = %s" % mt.rates
-                theSum = sum(mt.freqs)
-                if theSum != 1.0:
-                    for i in range(len(mt.freqs)):
-                        mt.freqs[i] /= theSum
-                theSum = 0.0
-                for i in range(len(mt.freqs)):
-                    theSum += mt.freqs[i] * mt.rates[i]
-                # print "Mixture mean = %f (un-normalized)" % theSum
-                if theSum != 1.0:
-                    for i in range(len(mt.freqs)):
-                        mt.rates[i] /= theSum
-                if 1:
-                    theSum = 0
-                    for i in range(len(mt.freqs)):
-                        theSum += mt.freqs[i] * mt.rates[i]
-                    if theSum < 1.0 - 1.0e-9 or theSum > 1.0 + 1.0e-9:
-                        gm.append(
-                            "Failed to normalize mixture rates.  Sum = %19.17f" % theSum)
-                        raise P4Error(gm)
-                    # else:
-                    #    print "...successfully normalized mixture rates."
-                    # print "Freqs = %s" % mt.freqs
-                    # print "Rates = %s" % mt.rates
-
-            else:  # not isMixture
-                mp.nCat = mp.nGammaCat
-                # If the model part isHet, we need to check that all nodes
-                # have something assigned, and that all model things are
-                # used.  If the model part is not het, we can skip that,
-                # but we need to check that all the
-                # node.parts[pNum].compNum are 0, and all the
-                # node.br.parts[pNum].rMatrixNum and
-                # node.br.parts[pNum].gdasrvNum are set to 0.
-                if not mp.isHet:
-                    # print "model part %i is not het" % pNum
+                # If there is only one comp, rMatrix, or gdasrv, then
+                # simply set it.
+                if mp.nComps == 1:
                     for n in self.nodes:
-                        # print "pNum = %i, n.nodeNum=%i, len n.parts = %i" %
-                        # (pNum, n.nodeNum, len(n.parts))
                         n.parts[pNum].compNum = 0
+                if mp.nRMatrices == 1:
+                    for n in self.nodes:
                         if n != self.root:
                             n.br.parts[pNum].rMatrixNum = 0
-                            if mp.nGammaCat > 1:
-                                n.br.parts[pNum].gdasrvNum = 0
-                else:  # isHet
-
-                    # If there is only one comp, rMatrix, or gdasrv, then
-                    # simply set it.
-                    if mp.nComps == 1:
-                        for n in self.nodes:
-                            n.parts[pNum].compNum = 0
-                    if mp.nRMatrices == 1:
-                        for n in self.nodes:
-                            if n != self.root:
-                                n.br.parts[pNum].rMatrixNum = 0
-                    if mp.nGammaCat > 1 and mp.nGdasrvs == 1:
-                        for n in self.nodes:
-                            if n != self.root:
-                                n.br.parts[pNum].gdasrvNum = 0
-
-                    # print "model part %i is het" % pNum
-                    # New ad hoc attribute 'isUsed', to keep track of whether
-                    # any node uses it.
-                    for mt in mp.comps:
-                        mt.isUsed = 0
-                    for mt in mp.rMatrices:
-                        mt.isUsed = 0
-                    for mt in mp.gdasrvs:
-                        mt.isUsed = 0
-
-                    # Does every node have all required things?
+                if mp.nGammaCat > 1 and mp.nGdasrvs == 1:
                     for n in self.nodes:
-                        mtNum = n.parts[pNum].compNum
-                        if mtNum >= 0 and mtNum < mp.nComps:
-                            mt = mp.comps[mtNum]
+                        if n != self.root:
+                            n.br.parts[pNum].gdasrvNum = 0
+
+                # print "model part %i is het" % pNum
+                # New ad hoc attribute 'isUsed', to keep track of whether
+                # any node uses it.
+                for mt in mp.comps:
+                    mt.isUsed = 0
+                for mt in mp.rMatrices:
+                    mt.isUsed = 0
+                for mt in mp.gdasrvs:
+                    mt.isUsed = 0
+
+                # Does every node have all required things?
+                for n in self.nodes:
+                    mtNum = n.parts[pNum].compNum
+                    if mtNum >= 0 and mtNum < mp.nComps:
+                        mt = mp.comps[mtNum]
+                        mt.isUsed = 1
+                    else:
+                        complaints.append(
+                            '    Part %s, node %s has no comp.' % (pNum, n.nodeNum))
+                        partIsBad = 1
+
+                    if n != self.root:
+                        mtNum = n.br.parts[pNum].rMatrixNum
+                        if mtNum >= 0 and mtNum < mp.nRMatrices:
+                            mt = mp.rMatrices[n.br.parts[pNum].rMatrixNum]
                             mt.isUsed = 1
                         else:
                             complaints.append(
-                                '    Part %s, node %s has no comp.' % (pNum, n.nodeNum))
+                                '    Part %s, node %s has no rMatrix.' % (pNum, n.nodeNum))
                             partIsBad = 1
-
-                        if n != self.root:
-                            mtNum = n.br.parts[pNum].rMatrixNum
-                            if mtNum >= 0 and mtNum < mp.nRMatrices:
-                                mt = mp.rMatrices[n.br.parts[pNum].rMatrixNum]
+                        if mp.nGammaCat > 1:
+                            mtNum = n.br.parts[pNum].gdasrvNum
+                            if mtNum >= 0 and mtNum < mp.nGdasrvs:
+                                mt = mp.gdasrvs[n.br.parts[pNum].gdasrvNum]
                                 mt.isUsed = 1
                             else:
-                                complaints.append(
-                                    '    Part %s, node %s has no rMatrix.' % (pNum, n.nodeNum))
+                                complaints.append('    Part %s, node %s has no gdasrv. nGammaCat=%s' % (
+                                    pNum, n.nodeNum, mp.nGammaCat))
                                 partIsBad = 1
-                            if mp.nGammaCat > 1:
-                                mtNum = n.br.parts[pNum].gdasrvNum
-                                if mtNum >= 0 and mtNum < mp.nGdasrvs:
-                                    mt = mp.gdasrvs[n.br.parts[pNum].gdasrvNum]
-                                    mt.isUsed = 1
-                                else:
-                                    complaints.append('    Part %s, node %s has no gdasrv. nGammaCat=%s' % (
-                                        pNum, n.nodeNum, mp.nGammaCat))
-                                    partIsBad = 1
-                            if mp.nGammaCat == 1:
-                                if n.br.parts[pNum].gdasrvNum != -1:
-                                    complaints.append('    Part %s, node %s has a gdasrv, but nGammaCat is 1.' % (
-                                        pNum, n.nodeNum))
-                                    partIsBad = 1
+                        if mp.nGammaCat == 1:
+                            if n.br.parts[pNum].gdasrvNum != -1:
+                                complaints.append('    Part %s, node %s has a gdasrv, but nGammaCat is 1.' % (
+                                    pNum, n.nodeNum))
+                                partIsBad = 1
 
-                    # Is every model thing used?
-                    if not mp.rjComp:
-                        for mt in mp.comps:
-                            if not mt.isUsed:
-                                complaints.append(
-                                    '    Part %s, comp %s is not used.' % (pNum, mt.num))
-                                partIsBad = 1
-                    if not mp.rjRMatrix:
-                        for mt in mp.rMatrices:
-                            if not mt.isUsed:
-                                complaints.append(
-                                    '    Part %s, rMatrix %s is not used.' % (pNum, mt.num))
-                                partIsBad = 1
-                    for mt in mp.gdasrvs:
+                # Is every model thing used?
+                if not mp.rjComp:
+                    for mt in mp.comps:
                         if not mt.isUsed:
                             complaints.append(
-                                '    Part %s, gdasrv %s is not used.' % (pNum, mt.num))
+                                '    Part %s, comp %s is not used.' % (pNum, mt.num))
                             partIsBad = 1
-
-                    # Clean up ad hoc attr 'isUsed'
-                    for mt in mp.comps:
-                        del(mt.isUsed)
+                if not mp.rjRMatrix:
                     for mt in mp.rMatrices:
-                        del(mt.isUsed)
-                    for mt in mp.gdasrvs:
-                        del(mt.isUsed)
+                        if not mt.isUsed:
+                            complaints.append(
+                                '    Part %s, rMatrix %s is not used.' % (pNum, mt.num))
+                            partIsBad = 1
+                for mt in mp.gdasrvs:
+                    if not mt.isUsed:
+                        complaints.append(
+                            '    Part %s, gdasrv %s is not used.' % (pNum, mt.num))
+                        partIsBad = 1
+
+                # Clean up ad hoc attr 'isUsed'
+                for mt in mp.comps:
+                    del(mt.isUsed)
+                for mt in mp.rMatrices:
+                    del(mt.isUsed)
+                for mt in mp.gdasrvs:
+                    del(mt.isUsed)
 
             if partIsBad:
                 isBad = 1
@@ -1552,8 +1433,6 @@ if True:
                     self.model.nFreePrams += 1
             if mp.pInvar.free:
                 self.model.nFreePrams += 1
-            if mp.isMixture and mp.mixture.free:
-                self.model.nFreePrams += 2 * (len(mp.mixture.freqs) - 1)
         # print "Tree.modelSanityCheck().  Counted %i free params." %
         # self.model.nFreePrams
 
@@ -1706,9 +1585,10 @@ class Gdasrv(object):
         # Use either the p4_gdasrvStruct, or just use the NumPy
         # array vals (np = NumPy).
         # print "self.c = %s" % self.c
-        if self.c:
+        if self.c:  # this week, this is not used
             pf.gdasrvCalcRates(self.c)
         else:
+            # this week, this is the one that is used
             pf.gdasrvCalcRates_np(
                 self.nGammaCat, self._val[0], self.freqs, self.rates)
         # print 'xxx self.rates = %s, val=%s' % (self.rates, self._val[0])
@@ -1736,12 +1616,3 @@ class PInvar(object):
         self.free = None
         self.val = None
 
-
-class Mixture(object):
-
-    def __init__(self):
-        self.partNum = None
-        self.free = None
-        self.freqs = None
-        self.rates = None
-        self.nMix = None

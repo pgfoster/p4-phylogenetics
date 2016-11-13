@@ -216,7 +216,6 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
     int ret;
     double alpha, beta;
     p4_modelPart   *mp;
-    part           *dp;
     p4_gdasrv      *g;
     p4_rMatrix     *r;
     p4_node        *n;
@@ -912,9 +911,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
 {
     double lnL = 0.0;
     double like = 0.0;
-    //double rateLike = 0.0;
-    double theSum = 0.0;
-    int    i, seqPos, rate, cNum, rNum;
+    int    i, seqPos, rate;
     double *patternLikes = NULL;
     double  oneMinusPInvar = 1.0;
     p4_modelPart   *mp = aTree->model->parts[pNum];
@@ -965,17 +962,10 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         }
     }
 
-    if(mp->isMixture) {
-        for(rate = 0; rate < mp->nCat; rate++) {
-            mp->freqsTimesOneMinusPInvar[rate] = oneMinusPInvar * mp->mixture->freqs[rate];
-        }
-    }
-    else {
-        for(rate = 0; rate < mp->nCat; rate++) {
-            //mp->freqsTimesOneMinusPInvar[rate] = 
-            //	aTree->root->models[pNum]->gammaFreqs[rate] * oneMinusPInvar;
-            mp->freqsTimesOneMinusPInvar[rate] = oneMinusPInvar / (double)(mp->nCat);
-        }
+    for(rate = 0; rate < mp->nCat; rate++) {
+        //mp->freqsTimesOneMinusPInvar[rate] = 
+        //	aTree->root->models[pNum]->gammaFreqs[rate] * oneMinusPInvar;
+        mp->freqsTimesOneMinusPInvar[rate] = oneMinusPInvar / (double)(mp->nCat);
     }
 
     for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
@@ -985,85 +975,52 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         if(mp->pInvar->val[0]) { // do pInvar
             // first deal with the contribution due to the possibility that it is a variable site
 
-            if(mp->isMixture) {
-                rate = 0;
-                for(cNum = 0; cNum < mp->nComps; cNum++) {
-                    for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                        theSum = 0.0;
-                        for(i = 0; i < mp->dim; i++) {
-                            theSum += mp->comps[cNum]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                        }
-                        theSum *= mp->freqsTimesOneMinusPInvar[rate];
-                        like += theSum;
-                        rate++;
-                    }
+            for(rate = 0; rate < mp->nCat; rate++) {
+                for(i = 0; i < mp->dim; i++) {
+                    like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+#if 0
+                    printf("a comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
+                           i,
+                           mp->comps[aTree->root->compNums[pNum]]->val[i],
+                           i,
+                           aTree->root->cl[pNum][rate][i][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[i],
+                           aTree->root->cl[pNum][rate][i][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
+                           like
+                        );
+#endif
                 }
             }
-            else {
-                for(rate = 0; rate < mp->nCat; rate++) {
-                    for(i = 0; i < mp->dim; i++) {
-                        like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
 #if 0
-                        printf("a comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
-                               i,
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
-                               i,
-                               aTree->root->cl[pNum][rate][i][seqPos],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
-                               aTree->root->cl[pNum][rate][i][seqPos],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
-                               like
-                            );
+            printf("scaling by pVariable=%f.  %f * %f = %f\n", 
+                   mp->freqsTimesOneMinusPInvar[0], 
+                   like, mp->freqsTimesOneMinusPInvar[0], 
+                   like * mp->freqsTimesOneMinusPInvar[0]);
 #endif
-                    }
-                }
-#if 0
-                printf("scaling by pVariable=%f.  %f * %f = %f\n", 
-                       mp->freqsTimesOneMinusPInvar[0], 
-                       like, mp->freqsTimesOneMinusPInvar[0], 
-                       like * mp->freqsTimesOneMinusPInvar[0]);
-#endif
-                like *=  mp->freqsTimesOneMinusPInvar[0];
-            }
+            like *=  mp->freqsTimesOneMinusPInvar[0];
+            
             // Now deal with the invariant site contribution
             if(dp->globalInvarSitesVec[seqPos] > 0) { // ie its an invar site
                 //printf("treeLogLike: invarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);				
                 //printf("treeLogLike: doing invarSite contribution\n");
                 // See part.c for an explanation of the magic of the globalInvarSitesArray
                 // The globalInvarSitesArray goes to dp->dim
-                if(mp->isMixture) {
-                    for(i = 0; i < dp->dim; i++) {
-                        if(dp->globalInvarSitesArray[i][seqPos]) {
-                            // add up the comp->val[i] over all mixture components
-                            rate = 0;
-                            theSum = 0.0;
-                            for(cNum = 0; cNum < mp->nComps; cNum++) {
-                                for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                                    theSum += mp->comps[cNum]->val[i] * mp->mixture->freqs[rate];
-                                    rate++;
-                                }
-                            }
-                            like += theSum * mp->pInvar->val[0];
-                        }
-                    }
-                }
-                else {
-                    for(i = 0; i < dp->dim; i++) {
-                        if(dp->globalInvarSitesArray[i][seqPos]) {
-                            like += mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0];
+                for(i = 0; i < dp->dim; i++) {
+                    if(dp->globalInvarSitesArray[i][seqPos]) {
+                        like += mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0];
 #if 0
-                            printf("b comp[%i]=%f, pInvar=%f;   comp*pInvar=%f * %f = %f; cumLike=%f\n", 
-                                   i,
-                                   mp->comps[aTree->root->compNums[pNum]]->val[i],
-                                   mp->pInvar->val[0],
-                                   mp->comps[aTree->root->compNums[pNum]]->val[i],
-                                   mp->pInvar->val[0],
-                                   mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0],
-                                   like
-                                );
+                        printf("b comp[%i]=%f, pInvar=%f;   comp*pInvar=%f * %f = %f; cumLike=%f\n", 
+                               i,
+                               mp->comps[aTree->root->compNums[pNum]]->val[i],
+                               mp->pInvar->val[0],
+                               mp->comps[aTree->root->compNums[pNum]]->val[i],
+                               mp->pInvar->val[0],
+                               mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0],
+                               like
+                            );
 #endif
 
-                        }
                     }
                 }
             }
@@ -1071,49 +1028,32 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
 
 
         else {  // pInvar is not part of the equation
-            if(mp->isMixture) {
-                rate = 0;
-                for(cNum = 0; cNum < mp->nComps; cNum++) {
-                    for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                        theSum = 0.0;
-                        for(i = 0; i < mp->dim; i++) {
-                            theSum += mp->comps[cNum]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                        }
-                        theSum *= mp->mixture->freqs[rate];
-                        like += theSum;
-                        rate++;
-                    }
-                }
-				
-            }
-            else {
-                for(rate = 0; rate < mp->nCat; rate++) {
-                    //rateLike = 0.0;
-                    for(i = 0; i < mp->dim; i++) {
-                        like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                        //rateLike += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+            for(rate = 0; rate < mp->nCat; rate++) {
+                //rateLike = 0.0;
+                for(i = 0; i < mp->dim; i++) {
+                    like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+                    //rateLike += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
 #if 0
-                        printf("d comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
-                               i,
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
-                               i,
-                               aTree->root->cl[pNum][rate][i][seqPos],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
-                               aTree->root->cl[pNum][rate][i][seqPos],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
-                               like
-                            );
+                    printf("d comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
+                           i,
+                           mp->comps[aTree->root->compNums[pNum]]->val[i],
+                           i,
+                           aTree->root->cl[pNum][rate][i][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[i],
+                           aTree->root->cl[pNum][rate][i][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
+                           like
+                        );
 #endif
-                    }
-                    //printf("seqPos %3i rate %i, rateLike=%.12f\n", seqPos, rate, rateLike);
                 }
-                // If gamma freqs are not the same, it should be something like this:
-                //like = like * aTree->model->parts[pNum]->gammaFreqs[0];
-                // But the following will do if we have equal gamma freqs.
-                if(mp->nCat > 1) {
-                    like = like / (double)(mp->nCat);
-                    //printf("seqPos %3i   like=%.12f\n", seqPos, like);
-                }
+                //printf("seqPos %3i rate %i, rateLike=%.12f\n", seqPos, rate, rateLike);
+            }
+            // If gamma freqs are not the same, it should be something like this:
+            //like = like * aTree->model->parts[pNum]->gammaFreqs[0];
+            // But the following will do if we have equal gamma freqs.
+            if(mp->nCat > 1) {
+                like = like / (double)(mp->nCat);
+                //printf("seqPos %3i   like=%.12f\n", seqPos, like);
             }
         }
 
@@ -1171,8 +1111,7 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
 {
     double lnL = 0.0;
     double like = 0.0;
-    double theSum = 0.0;
-    int    i, seqPos, rate, cNum, rNum;
+    int    i, seqPos, rate;
     double *patternLikes = NULL;
     double  oneMinusPInvar = 1.0;
     double  temp;
@@ -1240,17 +1179,10 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
         }
     }
 
-    if(mp->isMixture) {
-        for(rate = 0; rate < mp->nCat; rate++) {
-            mp->freqsTimesOneMinusPInvar[rate] = oneMinusPInvar * mp->mixture->freqs[rate];
-        }
-    }
-    else {
-        for(rate = 0; rate < mp->nCat; rate++) {
-            //mp->freqsTimesOneMinusPInvar[rate] = 
-            //	aTree->root->models[pNum]->gammaFreqs[rate] * oneMinusPInvar;
-            mp->freqsTimesOneMinusPInvar[rate] = oneMinusPInvar / (double)(mp->nCat);
-        }
+    for(rate = 0; rate < mp->nCat; rate++) {
+        //mp->freqsTimesOneMinusPInvar[rate] = 
+        //	aTree->root->models[pNum]->gammaFreqs[rate] * oneMinusPInvar;
+        mp->freqsTimesOneMinusPInvar[rate] = oneMinusPInvar / (double)(mp->nCat);
     }
 
     for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
@@ -1260,87 +1192,54 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
         if(mp->pInvar->val[0]) { // do pInvar
             // first deal with the contribution due to the possibility that it is a variable site
 
-            if(mp->isMixture) {
-                rate = 0;
-                for(cNum = 0; cNum < mp->nComps; cNum++) {
-                    for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                        theSum = 0.0;
-                        for(i = 0; i < mp->dim; i++) {
-                            theSum += mp->comps[cNum]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                        }
-                        theSum *= mp->freqsTimesOneMinusPInvar[rate];
-                        like += theSum;
-                        rate++;
-                    }
+            for(rate = 0; rate < mp->nCat; rate++) {
+                work[rate] = 0.0;
+                for(i = 0; i < mp->dim; i++) {
+                    like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+                    work[rate] += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+#if 0
+                    printf("a comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
+                           i,
+                           mp->comps[aTree->root->compNums[pNum]]->val[i],
+                           i,
+                           aTree->root->cl[pNum][rate][i][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[i],
+                           aTree->root->cl[pNum][rate][i][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
+                           like
+                        );
+#endif
                 }
             }
-            else {
-                for(rate = 0; rate < mp->nCat; rate++) {
-                    work[rate] = 0.0;
-                    for(i = 0; i < mp->dim; i++) {
-                        like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                        work[rate] += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
 #if 0
-                        printf("a comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
-                               i,
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
-                               i,
-                               aTree->root->cl[pNum][rate][i][seqPos],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
-                               aTree->root->cl[pNum][rate][i][seqPos],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
-                               like
-                            );
+            printf("scaling by pVariable=%f.  %f * %f = %f\n", 
+                   mp->freqsTimesOneMinusPInvar[0], 
+                   like, mp->freqsTimesOneMinusPInvar[0], 
+                   like * mp->freqsTimesOneMinusPInvar[0]);
 #endif
-                    }
-                }
-#if 0
-                printf("scaling by pVariable=%f.  %f * %f = %f\n", 
-                       mp->freqsTimesOneMinusPInvar[0], 
-                       like, mp->freqsTimesOneMinusPInvar[0], 
-                       like * mp->freqsTimesOneMinusPInvar[0]);
-#endif
-                like *=  mp->freqsTimesOneMinusPInvar[0];
-            }
+            like *=  mp->freqsTimesOneMinusPInvar[0];
+            
             // Now deal with the invariant site contribution
             if(dp->globalInvarSitesVec[seqPos] > 0) { // ie its an invar site
                 //printf("treeLogLike: invarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);				
                 //printf("treeLogLike: doing invarSite contribution\n");
                 // See part.c for an explanation of the magic of the globalInvarSitesArray
                 // The globalInvarSitesArray goes to dp->dim
-                if(mp->isMixture) {
-                    for(i = 0; i < dp->dim; i++) {
-                        if(dp->globalInvarSitesArray[i][seqPos]) {
-                            // add up the comp->val[i] over all mixture components
-                            rate = 0;
-                            theSum = 0.0;
-                            for(cNum = 0; cNum < mp->nComps; cNum++) {
-                                for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                                    theSum += mp->comps[cNum]->val[i] * mp->mixture->freqs[rate];
-                                    rate++;
-                                }
-                            }
-                            like += theSum * mp->pInvar->val[0];
-                        }
-                    }
-                }
-                else {
-                    for(i = 0; i < dp->dim; i++) {
-                        if(dp->globalInvarSitesArray[i][seqPos]) {
-                            like += mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0];
+                for(i = 0; i < dp->dim; i++) {
+                    if(dp->globalInvarSitesArray[i][seqPos]) {
+                        like += mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0];
 #if 0
-                            printf("b comp[%i]=%f, pInvar=%f;   comp*pInvar=%f * %f = %f; cumLike=%f\n", 
-                                   i,
-                                   mp->comps[aTree->root->compNums[pNum]]->val[i],
-                                   mp->pInvar->val[0],
-                                   mp->comps[aTree->root->compNums[pNum]]->val[i],
-                                   mp->pInvar->val[0],
-                                   mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0],
-                                   like
-                                );
+                        printf("b comp[%i]=%f, pInvar=%f;   comp*pInvar=%f * %f = %f; cumLike=%f\n", 
+                               i,
+                               mp->comps[aTree->root->compNums[pNum]]->val[i],
+                               mp->pInvar->val[0],
+                               mp->comps[aTree->root->compNums[pNum]]->val[i],
+                               mp->pInvar->val[0],
+                               mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0],
+                               like
+                            );
 #endif
 
-                        }
                     }
                 }
             }
@@ -1348,47 +1247,30 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
 
 
         else {  // pInvar is not part of the equation
-            if(mp->isMixture) {
-                rate = 0;
-                for(cNum = 0; cNum < mp->nComps; cNum++) {
-                    for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                        theSum = 0.0;
-                        for(i = 0; i < mp->dim; i++) {
-                            theSum += mp->comps[cNum]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                        }
-                        theSum *= mp->mixture->freqs[rate];
-                        like += theSum;
-                        rate++;
-                    }
-                }
-				
-            }
-            else {
-                for(rate = 0; rate < mp->nCat; rate++) {
-                    work[rate] = 0.0;
-                    for(i = 0; i < mp->dim; i++) {
-                        like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                        work[rate] += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+            for(rate = 0; rate < mp->nCat; rate++) {
+                work[rate] = 0.0;
+                for(i = 0; i < mp->dim; i++) {
+                    like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+                    work[rate] += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
 #if 0
-                        printf("d comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
-                               i,
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
-                               i,
-                               aTree->root->cl[pNum][rate][i][seqPos],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
-                               aTree->root->cl[pNum][rate][i][seqPos],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
-                               like
-                            );
+                    printf("d comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
+                           i,
+                           mp->comps[aTree->root->compNums[pNum]]->val[i],
+                           i,
+                           aTree->root->cl[pNum][rate][i][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[i],
+                           aTree->root->cl[pNum][rate][i][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
+                           like
+                        );
 #endif
-                    }
                 }
-                // If gamma freqs are not the same, it should be something like this:
-                //like = like * aTree->model->parts[pNum]->gammaFreqs[0];
-                // But the following will do if we have equal gamma freqs.
-                if(mp->nCat > 1) {
-                    like = like / (double)(mp->nCat);
-                }
+            }
+            // If gamma freqs are not the same, it should be something like this:
+            //like = like * aTree->model->parts[pNum]->gammaFreqs[0];
+            // But the following will do if we have equal gamma freqs.
+            if(mp->nCat > 1) {
+                like = like / (double)(mp->nCat);
             }
         }
 

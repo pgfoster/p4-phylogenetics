@@ -1685,13 +1685,20 @@ if True:
         protein alignment.  The DNA is input as a SequenceList object,
         'theDnaSequenceList'.  It creates and returns a new DNA alignment.
 
-        For example:
+        For example::
+
             read('myProteinAlignment.nex')
             pAlign = var.alignments[0]
             read('myUnalignedDna.fasta')
             sl = var.sequenceLists[0]
             newDnaAlign = pAlign.putGaps(sl)
             newDnaAlign.writeNexus('d.nex')
+
+        Args:
+            a DNA SequenceList object
+
+        Returns:
+            a new Alignment object
 
         """
 

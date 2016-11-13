@@ -417,7 +417,6 @@ if True:
         for p in self.data.parts:
             self.siteLikes += pf.getSiteLikes(p.cPart)
 
-    # def getWinningGammaCats(self):
     def getSiteRates(self):
         """Get posterior mean site rate, and gamma category.
 

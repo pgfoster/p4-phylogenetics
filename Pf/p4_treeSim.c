@@ -14,11 +14,9 @@
 void p4_simulate(p4_tree *t, p4_tree *refTree)
 {
 
-    double  *picker = NULL; 
     double  theRanDoubleUpToOne;
     int i, j, k, l;
-    int pNum, nNum, cNum, rNum, patNum, seqPos;
-    int posCounter;
+    int pNum, nNum, seqPos;
     int simCat, parentState;
     data  *d;
     part  *dp;
@@ -239,49 +237,49 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
             // }
             // printf("\n");
 
-            posCounter = 0;  // a counter for seq positions filled
-            for(patNum = 0; patNum < dp->nPatterns; patNum++) {
-                // printf("patNum %i, ", patNum);
-                // printf("patternCounts %i for this pattern\n", dp->patternCounts[patNum]);
-                seqPos = -1;
-                for(i = 0; i < dp->patternCounts[patNum]; i++) {
-                    while(1) {
-                        seqPos += 1;
-                        if(dp->sequencePositionPatternIndex[seqPos] == patNum) {
-                            break;
-                        }
-                        if(seqPos >= dp->nChar) {
-                            printf("bad seqPos %i, patNum %i, nChar %i\n", seqPos, patNum, dp->nChar);
-                            exit(1);
-                        }
-                    }
-                    posCounter += 1;
-                    // printf("    seqPos %i ", seqPos);
-                    p4_drawAncState(refTree, pNum, patNum);
-                    if(dp->drawAncStResults->isInvar) {
-                        // printf("isInvar %i, invarChNum %i\n",
-                        //        dp->drawAncStResults->isInvar,
-                        //        dp->drawAncStResults->invarChNum);
-                        t->simSequences[pNum][t->root->nodeNum][seqPos] = dp->drawAncStResults->invarChNum;
-                        d->parts[pNum]->globalInvarSitesVec[seqPos] = 1;
-                    }
-                    else {
-                        // printf("catNum %i, chStNum %i\n",
-                        //        dp->drawAncStResults->catNum,
-                        //        dp->drawAncStResults->chStNum);
-                        d->parts[pNum]->simCats[seqPos] = dp->drawAncStResults->catNum;
-                        t->simSequences[pNum][t->root->nodeNum][seqPos] = dp->drawAncStResults->chStNum;
-                        d->parts[pNum]->globalInvarSitesVec[seqPos] = 0;
-                    }
-                        
-                    
-                    
+            for(seqPos = 0; seqPos < dp->nChar; seqPos++) {
+                p4_drawAncState(refTree, pNum, seqPos);
+                if(dp->drawAncStResults->isInvar) {
+                    // printf("isInvar %i, invarChNum %i\n",
+                    //        dp->drawAncStResults->isInvar,
+                    //        dp->drawAncStResults->invarChNum);
+                    t->simSequences[pNum][t->root->nodeNum][seqPos] = dp->drawAncStResults->invarChNum;
+                    d->parts[pNum]->globalInvarSitesVec[seqPos] = 1;
+                }
+                else {
+                    // printf("catNum %i, chStNum %i\n",
+                    //        dp->drawAncStResults->catNum,
+                    //        dp->drawAncStResults->chStNum);
+                    d->parts[pNum]->simCats[seqPos] = dp->drawAncStResults->catNum;
+                    t->simSequences[pNum][t->root->nodeNum][seqPos] = dp->drawAncStResults->chStNum;
+                    d->parts[pNum]->globalInvarSitesVec[seqPos] = 0;
                 }
             }
-            if(posCounter != dp->nChar) {
-                printf("something wrong --- not all sequence postions filled?\n");
-                exit(1);
+
+            // print the simCats, root sequence, and pInvar.
+            // Note we have dp from refTree->data, and we have d->parts[pNum] where the sim results are.
+            if(0) {
+                if(d->parts[pNum]->simCats) {
+                    //printf("part %i dp->simCats.  nCat=%i\n", pNum, refTree->model->parts[pNum]->nCat);
+                    for(i = 0; i < dp->nChar; i++) {
+                        printf("%1i", d->parts[pNum]->simCats[i]);
+                    }
+                    printf("\n");
+                }
+                //printf("Part %i root node sequence \n", pNum);
+                for(i = 0; i < dp->nChar; i++) {
+                    printf("%1i", t->simSequences[pNum][t->root->nodeNum][i]);
+                }
+                printf("\n");
+                if(d->parts[pNum]->globalInvarSitesVec) {
+                    //printf("globalInvarSitesVec\n");
+                    for(i = 0; i < dp->nChar; i++) {
+                        printf("%1i", d->parts[pNum]->globalInvarSitesVec[i]);
+                    }
+                    printf("\n");
+                }
             }
+
         }
 
     }   // if(refTree)
@@ -294,42 +292,16 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
         for(pNum = 0; pNum < d->nParts; pNum++) {
             dp = d->parts[pNum];
             mp = t->model->parts[pNum];
-            if(mp->isMixture) {
-                // fill a picker based on mp->mixture->freqs
-                picker[0] = mp->mixture->freqs[0];
-                for(i = 1; i < mp->nCat - 1; i++) {
-                    picker[i] = picker[i - 1] + mp->mixture->freqs[i];
+            if(mp->nCat > 1) {
+                for(i = 0; i < dp->nChar; i++) {
+                    dp->simCats[i] = (int)floor(((double)mp->nCat) * ranDoubleUpToOne());
                 }
-                picker[mp->nCat - 1] = 1.0;
-                if(0) {
-                    printf("Part %i: picker for simCats is: ", pNum);
-                    for(j = 0; j < mp->nCat; j++) {
-                        printf(" %7.4f", picker[j]);
-                    }
-                    printf("\n");
-                }
-                for(j = 0; j < dp->nChar; j++) {
-                    theRanDoubleUpToOne = ranDoubleUpToOne();
-                    for(k = 0; k < mp->nCat; k++) {
-                        if(theRanDoubleUpToOne < picker[k]) {
-                            dp->simCats[j] = k;
-                            break;
-                        }
-                    }
-                }
-			
-            }
-            else {
-                if(mp->nCat > 1) {
-                    for(i = 0; i < dp->nChar; i++) {
-                        dp->simCats[i] = (int)floor(((double)mp->nCat) * ranDoubleUpToOne());
-                    }
-                } else {
-                    for(i = 0; i < dp->nChar; i++) {
-                        dp->simCats[i] = 0;
-                    }
+            } else {
+                for(i = 0; i < dp->nChar; i++) {
+                    dp->simCats[i] = 0;
                 }
             }
+            
             if(0) {
                 printf("part %i dp->simCats.  nCat=%i\n", pNum, mp->nCat);
                 for(i = 0; i < dp->nChar; i++) {
@@ -344,63 +316,27 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
         for(pNum = 0; pNum < d->nParts; pNum++) {
             dp = d->parts[pNum];
             mp = t->model->parts[pNum];
-            if(mp->isMixture) {
-                //printf("simulate()  isMixture.\n");
-                i = 0; // counter for "nCat"
-                for(cNum = 0; cNum < mp->nComps; cNum++) {
-                    // fill a comp picker for cats with this comp
-                    picker[0] = mp->comps[cNum]->val[0];
-                    for(j = 1; j < mp->dim - 1; j++) {
-                        picker[j] = picker[j - 1] + mp->comps[cNum]->val[j];
-                    }
-                    picker[mp->dim -1] = 1.0;
-                    if(0) {
-                        printf("Part %i: picker for cat %i is: ", pNum, i);
-                        for(j = 0; j < mp->dim; j++) {
-                            printf(" %7.4f", picker[j]);
-                        }
-                        printf("\n");
-                    }
-                    for(rNum = 0; rNum < mp->nRMatrices; rNum++) {  // use the same picker for all cats with the same comp
-                        // simulate root sequence only for sites where dp->simCats[j] == i
-                        for(j = 0; j < d->parts[pNum]->nChar; j++) {
-                            if(dp->simCats[j] == i) {
-                                theRanDoubleUpToOne = ranDoubleUpToOne();
-                                for(k = 0; k < mp->dim; k++) {
-                                    if(theRanDoubleUpToOne < picker[k]) {
-                                        t->simSequences[pNum][t->root->nodeNum][j] = k;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                        i++;
-                    }
-                }
+            mp->charStatePicker[0] = mp->comps[t->root->compNums[pNum]]->val[0];
+            for(j = 1; j < mp->dim - 1; j++) {
+                mp->charStatePicker[j] = mp->charStatePicker[j - 1] + mp->comps[t->root->compNums[pNum]]->val[j];
             }
-            else {
-                mp->charStatePicker[0] = mp->comps[t->root->compNums[pNum]]->val[0];
-                for(j = 1; j < mp->dim - 1; j++) {
-                    mp->charStatePicker[j] = mp->charStatePicker[j - 1] + mp->comps[t->root->compNums[pNum]]->val[j];
-                }
-                mp->charStatePicker[mp->dim -1] = 1.0;
+            mp->charStatePicker[mp->dim -1] = 1.0;
 
-                if(0) {
-                    printf("Part %i mp->charStatePicker is\n", pNum);
-                    for(j = 0; j < mp->dim; j++) {
-                        printf("%7.4f", mp->charStatePicker[j]);
-                    }
-                    printf("\n");
+            if(0) {
+                printf("Part %i mp->charStatePicker is\n", pNum);
+                for(j = 0; j < mp->dim; j++) {
+                    printf("%7.4f", mp->charStatePicker[j]);
                 }
+                printf("\n");
+            }
 
-                // simulate root sequence
-                for(j = 0; j < d->parts[pNum]->nChar; j++) {
-                    theRanDoubleUpToOne = ranDoubleUpToOne();
-                    for(k = 0; k < mp->dim; k++) {
-                        if(theRanDoubleUpToOne < mp->charStatePicker[k]) {
-                            t->simSequences[pNum][t->root->nodeNum][j] = k;
-                            break;
-                        }
+            // simulate root sequence
+            for(j = 0; j < d->parts[pNum]->nChar; j++) {
+                theRanDoubleUpToOne = ranDoubleUpToOne();
+                for(k = 0; k < mp->dim; k++) {
+                    if(theRanDoubleUpToOne < mp->charStatePicker[k]) {
+                        t->simSequences[pNum][t->root->nodeNum][j] = k;
+                        break;
                     }
                 }
             }
@@ -443,10 +379,10 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
                     dp->globalInvarSitesVec[i] = 0;
                 }
             }
-            //for(i = 0; i < dp->nChar; i++) {
-            //	printf("%1i", dp->globalInvarSitesVec[i]);
-            //}
-            //printf("\n");
+            // for(i = 0; i < dp->nChar; i++) {
+            // 	printf("%1i", dp->globalInvarSitesVec[i]);
+            // }
+            // printf("\n");
         }
     }
 		
@@ -564,6 +500,79 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
 #endif
 
 #if 0
+    // Some diagnostics code.
+    {
+        int sumInvar = 0;
+        int hits = 0;
+        int *catSums;
+        int *charSums;
+        //int hits2 = 0;
+        
+        for(pNum = 0; pNum < d->nParts; pNum++) {
+            dp = d->parts[pNum];
+            mp = t->model->parts[pNum];
+            catSums = pivector(mp->nCat);
+            for(i = 0; i < mp->nCat; i++) {
+                catSums[i] = 0;
+            }
+            charSums = pivector(dp->dim);
+            for(i = 0; i < dp->dim; i++) {
+                charSums[i] = 0;
+            }
+            
+            for(seqPos = 0; seqPos < dp->nChar; seqPos++) {
+                // Look for a certain pattern; only for three=node trees.
+                if(t->simSequences[pNum][1][seqPos] == 0 && t->simSequences[pNum][2][seqPos] == 1) {
+                    hits += 1;
+                    //if(dp->simCats[seqPos] == 0 && t->simSequences[pNum][t->root->nodeNum][seqPos] == 0) {
+                    //    hits2 += 1;
+                    //}
+                    if(dp->globalInvarSitesVec[seqPos]) {
+                        sumInvar += 1;
+                    } else {
+                        catSums[dp->simCats[seqPos]] += 1;
+                    }
+                    charSums[t->simSequences[pNum][t->root->nodeNum][seqPos]] += 1;
+                }
+            }
+            
+            printf("hits %i, pInvar %i\n", hits, sumInvar);
+            //printf("hits2 %i\n", hits2);
+            printf("pInvar / hits : %.4f \n", (double)sumInvar / (double)hits);
+            printf("catSums ");
+            for(i = 0; i < mp->nCat; i++) {
+                printf("%6i ", catSums[i]);
+            }
+            printf("\n");
+
+            printf("catSums / hits : ");
+            for(i = 0; i < mp->nCat; i++) {
+                printf("%.4f ", (double)catSums[i] / (double)hits);
+            }
+            printf("\n");
+
+            printf("charSums: ");
+            for(i = 0; i < dp->dim; i++) {
+                printf("%6i ", charSums[i]);
+            }
+            printf("\n");
+            printf("charSums / hits : ");
+            for(i = 0; i < dp->dim; i++) {
+                printf("%.4f ", (double)charSums[i] / (double)hits);
+            }
+            printf("\n");
+            
+            free(catSums);
+            catSums = NULL;
+            free(charSums);
+            charSums = NULL;
+
+
+        }
+    }
+#endif
+
+#if 0
     printf("\n");
     printf("part[0] is %li\n", (long int)d->parts[0]);
     printf("Part 0: sequence for first taxon\n");
@@ -580,21 +589,25 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
 //==================================================
 
 
-void p4_drawAncState(p4_tree *t, int partNum, int patNum)
+void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
 {
     part  *dp;
     p4_modelPart  *mp;
-    int catNum, chStNum;
+    int catNum, chStNum, patNum;
     int gotIt, isInvar;
     //double diff;
     double sLike, sLikeC;
+    double mySum, mySum2, myPInvarSum;
     int i,k;
     //int j;
     double theRanDouble;
     // int cNum;
 
+
     dp = t->data->parts[partNum];
     mp = t->model->parts[partNum];
+
+    patNum = dp->sequencePositionPatternIndex[seqPos];
     // printf("There are %i patterns\n", dp->nPatterns);
     // for(cNum = 0; cNum < dp->nChar; cNum++) {
     //     printf(" %i", dp->sequencePositionPatternIndex[cNum]);
@@ -613,6 +626,10 @@ void p4_drawAncState(p4_tree *t, int partNum, int patNum)
             printf("Problem allocating memory for modelPart->ancStPicker.\n");
             exit(1);
         }
+    }
+    
+    for(i = 0; i <  (mp->dim * (mp->nCat + 1)); i++) {
+        mp->ancStPicker[i] = 0.0;
     }
 
     if(!dp->drawAncStResults) {
@@ -657,7 +674,7 @@ void p4_drawAncState(p4_tree *t, int partNum, int patNum)
             sLike += sLikeC;
             mp->ancStPicker[i] = sLike;
             i++;
-            // printf("    patNum %i  catNum %i chStNum %i  sLikeC %10.8f  sLike %10.8f\n",
+            //printf("    patNum %i  catNum %i chStNum %i  sLikeC %10.8f  sLike %10.8f\n",
             //        patNum, catNum, chStNum, sLikeC, sLike);
         }
     }
@@ -667,13 +684,71 @@ void p4_drawAncState(p4_tree *t, int partNum, int patNum)
                 sLikeC = mp->comps[t->root->compNums[partNum]]->val[chStNum] * mp->pInvar->val[0];
                 sLike += sLikeC;
                 mp->ancStPicker[i] = sLike;
-                i++;
-                // printf("    patNum %i  pInvar   chStNum %i  sLikeC %10.8f  sLike %10.8f\n",
-                //        patNum, chStNum, sLikeC, sLike);
             }
+            i++;
+            //printf("    patNum %i  pInvar   chStNum %i  sLikeC %10.8f  sLike %10.8f\n",
+            //       patNum, chStNum, sLikeC, sLike);
+            
         }
-        // printf("\n");
+        //printf("\n");
     }
+
+    if(0) {
+        // Some diagnostics ...
+        for(i = 0; i <  (mp->dim * (mp->nCat + 1)); i++) {
+            printf("    %3i  %10.8f \n", i, mp->ancStPicker[i]);
+        }
+
+        // Calculate the prob of each char state, summed over rateCats.
+        i = 0;
+        mySum2 = 0.0;
+        myPInvarSum = 0.0;
+        for(chStNum = 0; chStNum < dp->dim; chStNum++) {
+            mySum = 0.0;
+            for(catNum = 0; catNum < mp->nCat; catNum++) {
+                sLikeC = mp->comps[t->root->compNums[partNum]]->val[chStNum] * 
+                    t->root->cl[partNum][catNum][chStNum][patNum];
+                sLikeC *= mp->freqsTimesOneMinusPInvar[catNum];
+                //printf("chStNum %2i, catNum %i, sLikeC = %10.8f \n", chStNum, catNum, sLikeC);
+                mySum += sLikeC;
+            }
+
+            // if it is invar
+            // Using the globalInvarSitesArray accommodates ambiguities.
+            if(dp->globalInvarSitesArray[chStNum][patNum]) {
+                sLikeC = mp->comps[t->root->compNums[partNum]]->val[chStNum] * mp->pInvar->val[0];
+                //printf("chStNum %2i, pInvar, sLikeC = %10.8f \n", chStNum, sLikeC);
+                mySum += sLikeC;
+                myPInvarSum += sLikeC;
+            }
+
+            mySum /= sLike;
+            mySum2 += mySum;
+            printf("Char state %2i  prob %10.8f \n", chStNum, mySum);
+        }
+        myPInvarSum /= sLike;
+        printf("pInvar prob %10.8f \n", myPInvarSum);
+        printf("Cumulative prob of char states %10.8f \n", mySum2);
+
+        // Calculate the prob of each rate category
+        mySum2 = myPInvarSum;   // cumulative over site rates
+        for(catNum = 0; catNum < mp->nCat; catNum++) {
+            mySum = 0.0;
+            for(chStNum = 0; chStNum < dp->dim; chStNum++) {
+                sLikeC = mp->comps[t->root->compNums[partNum]]->val[chStNum] * 
+                    t->root->cl[partNum][catNum][chStNum][patNum];
+                sLikeC *= mp->freqsTimesOneMinusPInvar[catNum];
+                //printf("chStNum %2i, catNum %i, sLikeC = %10.8f \n", chStNum, catNum, sLikeC);
+                mySum += sLikeC;
+            }
+            mySum /= sLike;
+            printf("catNum %i prob %10.8f \n", catNum, mySum);
+            mySum2 += mySum;
+        }
+        printf("Cumulative prob of rate cats, including pInvar:  %10.8f \n", mySum2);
+    }
+
+
     // check that dp->siteLikes has the same numbers as calculated
     // here.  This would only work if siteLikes have been calculated
     // in the t, and we cannot be sure of that, so this bit is
@@ -697,8 +772,10 @@ void p4_drawAncState(p4_tree *t, int partNum, int patNum)
     //     exit(1);
     // }
 
+    // The random number is not from zero to one, it is from zero to sLike.
+    // That way we do not need to change the ancStPicker
     theRanDouble = ((double)random() * sLike) / ((double)((long)RAND_MAX));
-    // printf("Got theRanDouble %f\n", theRanDouble);
+    //printf("Got theRanDouble %f\n", theRanDouble);
                 
     // Now pick an ancestral state --- cat, chSt, invar, and invarChar.
     gotIt = 0;
@@ -753,14 +830,28 @@ void p4_drawAncState(p4_tree *t, int partNum, int patNum)
         dp->drawAncStResults->catNum = -1;
         dp->drawAncStResults->chStNum = -1;
     }
-    // printf("catNum %i, chStNum %i, isInvar %i, invarChNum %i\n", 
-    //        dp->drawAncStResults->catNum,
-    //        dp->drawAncStResults->chStNum,
-    //        dp->drawAncStResults->isInvar,
-    //        dp->drawAncStResults->invarChNum);
+    if(0) {
+        printf("chStNum %i, catNum %i, isInvar %i, invarChNum %i\n", 
+               dp->drawAncStResults->chStNum,
+               dp->drawAncStResults->catNum,
+               dp->drawAncStResults->isInvar,
+               dp->drawAncStResults->invarChNum);
+    }
 
 }
 
+// This is called by a pf method, in pfmodule.c
+void p4_drawAncStateP(p4_tree *t, int partNum, int seqPos, int *draw)
+{
+    part *dp;
+
+    dp = t->data->parts[partNum];
+    p4_drawAncState(t, partNum, seqPos);
+    draw[0] = dp->drawAncStResults->chStNum;
+    draw[1] = dp->drawAncStResults->catNum;
+    draw[2] = dp->drawAncStResults->isInvar;
+    draw[3] = dp->drawAncStResults->invarChNum;
+}
 
 PyObject *p4_expectedCompositionCounts(p4_tree *t, int partNum)
 {

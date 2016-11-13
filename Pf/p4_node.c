@@ -301,71 +301,50 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
     p4_gdasrv     *aGdasrv=NULL;
 	
     mp = aNode->tree->model->parts[pNum];
-    if(mp->isMixture) {
-        rate = 0;
-        for(cNum = 0; cNum < mp->nComps; cNum++) {
-            for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                aQE = aNode->tree->model->parts[pNum]->bigQAndEigThing[cNum][rNum];
-                if(mp->pInvar->val[0] == 0.0) {
-                    matrixExpTimesBranchLength(aQE->qEig,
-                                               (aNode->brLen[0] * mp->mixture->rates[rate] * mp->relRate[0]),
-                                               aNode->bigPDecks[pNum][rate]);
-                }
-                else {
-                    matrixExpTimesBranchLength(aQE->qEig,
-                                               (aNode->brLen[0] * mp->mixture->rates[rate] * mp->relRate[0]) / 
-                                               (1.0 - mp->pInvar->val[0]),
-                                               aNode->bigPDecks[pNum][rate]);
-                }
-                rate++;
-            }
-        }
-    }
-    else {
-        cNum = aNode->compNums[pNum];
-        rNum = aNode->rMatrixNums[pNum];
-        //printf("p4_calculateBigPDecksPart()  b  pNum=%i, cNum=%i, rNum=%i\n", pNum, cNum, rNum);
-        aQE = mp->bigQAndEigThing[cNum][rNum];
+    cNum = aNode->compNums[pNum];
+    rNum = aNode->rMatrixNums[pNum];
+    //printf("p4_calculateBigPDecksPart()  b  pNum=%i, cNum=%i, rNum=%i\n", pNum, cNum, rNum);
+    aQE = mp->bigQAndEigThing[cNum][rNum];
 
-        // This should not happen, but it might.
-        if(mp->bQETneedsReset[(cNum * mp->nRMatrices) + rNum]) {
-            printf("p4_calculateBigPDecksPart() pNum=%i, compNum=%i, rMatrixNum=%i, needsReset. Fix me.\n",
-                   pNum, cNum, rNum);
-            p4_resetBQET(aNode->tree->model, pNum, cNum, rNum);
-            //exit(1);
-        }
+    // This should not happen, but it might.
+    if(mp->bQETneedsReset[(cNum * mp->nRMatrices) + rNum]) {
+        printf("p4_calculateBigPDecksPart() pNum=%i, compNum=%i, rMatrixNum=%i, needsReset. Fix me.\n",
+               pNum, cNum, rNum);
+        p4_resetBQET(aNode->tree->model, pNum, cNum, rNum);
+        //exit(1);
+    }
 			
-        //printf("p4_calculateBigPDecksPart()  c\n");
-        if(mp->nGdasrvs) {
-            aGdasrv = mp->gdasrvs[aNode->gdasrvNums[pNum]];
-        }
-        for(rate = 0; rate < mp->nCat; rate++) {
-            if(mp->pInvar->val[0] == 0.0) {
-                if(mp->nGdasrvs) {
-                    matrixExpTimesBranchLength(aQE->qEig,
-                                               (aNode->brLen[0] * aGdasrv->rates[rate] * mp->relRate[0]),
-                                               aNode->bigPDecks[pNum][rate]);
-                } else { // no gdasrvs, nCat must be 1
-                    matrixExpTimesBranchLength(aQE->qEig,
-                                               (aNode->brLen[0] * mp->relRate[0]),
-                                               aNode->bigPDecks[pNum][rate]);
-                }
-                //dump_psdmatrix(aNode->bigPDecks[pNum][rate], 4);
+    //printf("p4_calculateBigPDecksPart()  c\n");
+    if(mp->nGdasrvs) {
+        aGdasrv = mp->gdasrvs[aNode->gdasrvNums[pNum]];
+    }
+    for(rate = 0; rate < mp->nCat; rate++) {
+        if(mp->pInvar->val[0] == 0.0) {
+            if(mp->nGdasrvs) {
+                matrixExpTimesBranchLength(aQE->qEig,
+                                           (aNode->brLen[0] * aGdasrv->rates[rate] * mp->relRate[0]),
+                                           aNode->bigPDecks[pNum][rate]);
+            } else { // no gdasrvs, nCat must be 1
+                matrixExpTimesBranchLength(aQE->qEig,
+                                           (aNode->brLen[0] * mp->relRate[0]),
+                                           aNode->bigPDecks[pNum][rate]);
+            }
+            //dump_psdmatrix(aNode->bigPDecks[pNum][rate], 4);
 				
-            } else { // so pInvar is more than zero
-                if(mp->nGdasrvs) {
-                    matrixExpTimesBranchLength(aQE->qEig,
-                                               (aNode->brLen[0] * aGdasrv->rates[rate] * mp->relRate[0]) / 
-                                               (1.0 - mp->pInvar->val[0]),
-                                               aNode->bigPDecks[pNum][rate]);
-                } else { // no gdasrvs, nCat must be 1
-                    matrixExpTimesBranchLength(aQE->qEig,
-                                               (aNode->brLen[0] * mp->relRate[0]) / (1.0 - mp->pInvar->val[0]),
-                                               aNode->bigPDecks[pNum][rate]);
-                }
+        } else { // so pInvar is more than zero
+            if(mp->nGdasrvs) {
+                matrixExpTimesBranchLength(aQE->qEig,
+                                           (aNode->brLen[0] * aGdasrv->rates[rate] * mp->relRate[0]) / 
+                                           (1.0 - mp->pInvar->val[0]),
+                                           aNode->bigPDecks[pNum][rate]);
+            } else { // no gdasrvs, nCat must be 1
+                matrixExpTimesBranchLength(aQE->qEig,
+                                           (aNode->brLen[0] * mp->relRate[0]) / (1.0 - mp->pInvar->val[0]),
+                                           aNode->bigPDecks[pNum][rate]);
             }
         }
     }
+    
 }
 
 
@@ -379,67 +358,42 @@ void p4_calculateBigPDecks_1stD(p4_node *aNode)
 	
     for(pNum = 0; pNum < aNode->tree->model->nParts; pNum++) {
         mp = aNode->tree->model->parts[pNum];
-        if(mp->isMixture) {
-            rate = 0;
-            for(cNum = 0; cNum < mp->nComps; cNum++) {
-                for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                    aQE = aNode->tree->model->parts[pNum]->bigQAndEigThing[cNum][rNum];
-                    if(mp->pInvar->val[0] == 0.0) {
-                        firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                    (aNode->brLen[0] * mp->mixture->rates[rate] * mp->relRate[0]),
-                                                                    aNode->bigPDecks_1stD[pNum][rate],
-                                                                    mp->mixture->rates[rate] * mp->relRate[0]);
-                    }
-                    else {
-                        firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                    (aNode->brLen[0] * mp->mixture->rates[rate] * mp->relRate[0]) / 
-                                                                    (1.0 - mp->pInvar->val[0]),
-                                                                    aNode->bigPDecks_1stD[pNum][rate], 
-                                                                    (mp->mixture->rates[rate] * mp->relRate[0]) / 
-                                                                    (1.0 - mp->pInvar->val[0]));
-                    }
-                    rate++;
-                }
-            }
-
+        cNum = aNode->compNums[pNum];
+        rNum = aNode->rMatrixNums[pNum];
+        aQE = aNode->tree->model->parts[pNum]->bigQAndEigThing[cNum][rNum];				
+        if(mp->nGdasrvs) {
+            aGdasrv = mp->gdasrvs[aNode->gdasrvNums[pNum]];
         }
-        else {
-            cNum = aNode->compNums[pNum];
-            rNum = aNode->rMatrixNums[pNum];
-            aQE = aNode->tree->model->parts[pNum]->bigQAndEigThing[cNum][rNum];				
-            if(mp->nGdasrvs) {
-                aGdasrv = mp->gdasrvs[aNode->gdasrvNums[pNum]];
-            }
-            for(rate = 0; rate < mp->nCat; rate++) {
-                if(mp->pInvar->val[0] == 0.0) {
-                    if(mp->nGdasrvs) {
-                        temp = aGdasrv->rates[rate] * mp->relRate[0];
-                        firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                    (aNode->brLen[0] * temp),
-                                                                    aNode->bigPDecks_1stD[pNum][rate], 
-                                                                    temp);
-                    } else { // no gdasrvs, nCat must be 1
-                        firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                    (aNode->brLen[0] * mp->relRate[0]),
-                                                                    aNode->bigPDecks_1stD[pNum][rate], mp->relRate[0]);
-                    }
+        for(rate = 0; rate < mp->nCat; rate++) {
+            if(mp->pInvar->val[0] == 0.0) {
+                if(mp->nGdasrvs) {
+                    temp = aGdasrv->rates[rate] * mp->relRate[0];
+                    firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
+                                                                (aNode->brLen[0] * temp),
+                                                                aNode->bigPDecks_1stD[pNum][rate], 
+                                                                temp);
+                } else { // no gdasrvs, nCat must be 1
+                    firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
+                                                                (aNode->brLen[0] * mp->relRate[0]),
+                                                                aNode->bigPDecks_1stD[pNum][rate], mp->relRate[0]);
+                }
 				
-                } else { // so pInvar is more than zero
-                    if(mp->nGdasrvs) {
-                        temp = aGdasrv->rates[rate] * mp->relRate[0];
-                        firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                    (aNode->brLen[0] * temp) / (1.0 - mp->pInvar->val[0]),
-                                                                    aNode->bigPDecks_1stD[pNum][rate],
-                                                                    temp /(1.0 - mp->pInvar->val[0]));
-                    } else { // no gdasrvs, nCat must be 1
-                        firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                    (aNode->brLen[0] * mp->relRate[0]) / (1.0 - mp->pInvar->val[0]),
-                                                                    aNode->bigPDecks_1stD[pNum][rate],
-                                                                    mp->relRate[0] / (1.0 - mp->pInvar->val[0]));
-                    }
+            } else { // so pInvar is more than zero
+                if(mp->nGdasrvs) {
+                    temp = aGdasrv->rates[rate] * mp->relRate[0];
+                    firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
+                                                                (aNode->brLen[0] * temp) / (1.0 - mp->pInvar->val[0]),
+                                                                aNode->bigPDecks_1stD[pNum][rate],
+                                                                temp /(1.0 - mp->pInvar->val[0]));
+                } else { // no gdasrvs, nCat must be 1
+                    firstDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
+                                                                (aNode->brLen[0] * mp->relRate[0]) / (1.0 - mp->pInvar->val[0]),
+                                                                aNode->bigPDecks_1stD[pNum][rate],
+                                                                mp->relRate[0] / (1.0 - mp->pInvar->val[0]));
                 }
             }
         }
+        
     }
 }
 
@@ -455,67 +409,42 @@ void p4_calculateBigPDecks_2ndD(p4_node *aNode)
 	
     for(pNum = 0; pNum < aNode->tree->model->nParts; pNum++) {
         mp = aNode->tree->model->parts[pNum];
-        if(mp->isMixture) {
-            rate = 0;
-            for(cNum = 0; cNum < mp->nComps; cNum++) {
-                for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                    aQE = aNode->tree->model->parts[pNum]->bigQAndEigThing[cNum][rNum];
-                    if(mp->pInvar->val[0] == 0.0) {
-                        secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                     (aNode->brLen[0] * mp->mixture->rates[rate] * mp->relRate[0]),
-                                                                     aNode->bigPDecks_2ndD[pNum][rate],
-                                                                     mp->mixture->rates[rate] * mp->relRate[0]);
-                    }
-                    else {
-                        secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                     (aNode->brLen[0] * mp->mixture->rates[rate] * mp->relRate[0]) / 
-                                                                     (1.0 - mp->pInvar->val[0]),
-                                                                     aNode->bigPDecks_2ndD[pNum][rate], 
-                                                                     (mp->mixture->rates[rate] * mp->relRate[0]) / 
-                                                                     (1.0 - mp->pInvar->val[0]));
-                    }
-                    rate++;
-                }
-            }
-
+        cNum = aNode->compNums[pNum];
+        rNum = aNode->rMatrixNums[pNum];
+        aQE = aNode->tree->model->parts[pNum]->bigQAndEigThing[cNum][rNum];				
+        if(mp->nGdasrvs) {
+            aGdasrv = mp->gdasrvs[aNode->gdasrvNums[pNum]];
         }
-        else {
-            cNum = aNode->compNums[pNum];
-            rNum = aNode->rMatrixNums[pNum];
-            aQE = aNode->tree->model->parts[pNum]->bigQAndEigThing[cNum][rNum];				
-            if(mp->nGdasrvs) {
-                aGdasrv = mp->gdasrvs[aNode->gdasrvNums[pNum]];
-            }
-            for(rate = 0; rate < mp->nCat; rate++) {
-                if(mp->pInvar->val[0] == 0.0) {
-                    if(mp->nGdasrvs) {
-                        temp = aGdasrv->rates[rate] * mp->relRate[0];
-                        secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                     (aNode->brLen[0] * temp),
-                                                                     aNode->bigPDecks_2ndD[pNum][rate], 
-                                                                     temp * mp->relRate[0]);
-                    } else { // no gdasrvs, nCat must be 1
-                        secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                     (aNode->brLen[0] * mp->relRate[0]),
-                                                                     aNode->bigPDecks_2ndD[pNum][rate], mp->relRate[0]);
-                    }
+        for(rate = 0; rate < mp->nCat; rate++) {
+            if(mp->pInvar->val[0] == 0.0) {
+                if(mp->nGdasrvs) {
+                    temp = aGdasrv->rates[rate] * mp->relRate[0];
+                    secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
+                                                                 (aNode->brLen[0] * temp),
+                                                                 aNode->bigPDecks_2ndD[pNum][rate], 
+                                                                 temp * mp->relRate[0]);
+                } else { // no gdasrvs, nCat must be 1
+                    secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
+                                                                 (aNode->brLen[0] * mp->relRate[0]),
+                                                                 aNode->bigPDecks_2ndD[pNum][rate], mp->relRate[0]);
+                }
 				
-                } else { // so pInvar is more than zero
-                    if(mp->nGdasrvs) {
-                        temp = aGdasrv->rates[rate] * mp->relRate[0];
-                        secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                     (aNode->brLen[0] * temp) / (1.0 - mp->pInvar->val[0]),
-                                                                     aNode->bigPDecks_2ndD[pNum][rate],
-                                                                     temp /(1.0 - mp->pInvar->val[0]));
-                    } else { // no gdasrvs, nCat must be 1
-                        secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
-                                                                     (aNode->brLen[0] * mp->relRate[0]) / (1.0 - mp->pInvar->val[0]),
-                                                                     aNode->bigPDecks_2ndD[pNum][rate],
-                                                                     mp->relRate[0] / (1.0 - mp->pInvar->val[0]));
-                    }
+            } else { // so pInvar is more than zero
+                if(mp->nGdasrvs) {
+                    temp = aGdasrv->rates[rate] * mp->relRate[0];
+                    secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
+                                                                 (aNode->brLen[0] * temp) / (1.0 - mp->pInvar->val[0]),
+                                                                 aNode->bigPDecks_2ndD[pNum][rate],
+                                                                 temp /(1.0 - mp->pInvar->val[0]));
+                } else { // no gdasrvs, nCat must be 1
+                    secondDerivativeOfMatrixExpTimesBranchLength(aQE->qEig,
+                                                                 (aNode->brLen[0] * mp->relRate[0]) / (1.0 - mp->pInvar->val[0]),
+                                                                 aNode->bigPDecks_2ndD[pNum][rate],
+                                                                 mp->relRate[0] / (1.0 - mp->pInvar->val[0]));
                 }
             }
         }
+        
     }
 }
 
@@ -815,33 +744,17 @@ void p4_initializeCL2ToRootComp(p4_node *aNode)
     int	pNum, seqPos, symb, rate, dim, rootCompNum;
     part   *dp;         // a data part
     p4_modelPart  *mp;  // a modelPart
-    int cNum, rNum;
 
     //printf("p4_initializeCL2(), node %i\n", aNode->nodeNum);
     for(pNum = 0; pNum < aNode->nParts; pNum++) {
         dp = aNode->tree->data->parts[pNum];
         mp = aNode->tree->model->parts[pNum];
         dim = mp->dim; 
-        if(mp->isMixture) {
-            for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
-                rate = 0;
-                for(cNum = 0; cNum < mp->nComps; cNum++) {
-                    for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                        for(symb = 0; symb < dim; symb++) {
-                            aNode->cl2[pNum][rate][symb][seqPos] = mp->comps[cNum]->val[symb];
-                        }
-                        rate++;
-                    }
-                }
-            }
-        }
-        else {
-            rootCompNum = aNode->tree->root->compNums[pNum];
-            for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {			
-                for(rate = 0; rate < mp->nCat; rate++){
-                    for(symb = 0; symb < dim; symb++) {
-                        aNode->cl2[pNum][rate][symb][seqPos] = mp->comps[rootCompNum]->val[symb];
-                    }
+        rootCompNum = aNode->tree->root->compNums[pNum];
+        for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {			
+            for(rate = 0; rate < mp->nCat; rate++){
+                for(symb = 0; symb < dim; symb++) {
+                    aNode->cl2[pNum][rate][symb][seqPos] = mp->comps[rootCompNum]->val[symb];
                 }
             }
         }
@@ -861,12 +774,12 @@ void p4_setCL2Up(p4_node *cl2Node)
     //printf("p4_setCL2Up(), node %i\n", aNode->nodeNum);
 
     /*
-      +--------4:A
-      +--------cl2Node
-      +-------aNode    +--------5:B
-      |       |
+      .                           +--------4:A
+      .                  +--------cl2Node
+      .          +-------aNode    +--------5:B
+      .          |       |
       x:0--------1       +--------6:C
-      |
+      .          |
       .          +-------7:D
 
       We are doing cl2Node->cl2.  Node aNode->cl2 is already done,

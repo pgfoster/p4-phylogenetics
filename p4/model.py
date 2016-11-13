@@ -120,16 +120,12 @@ class ModelPart(object):
         self.nGammaCat = 1
         self.pInvar = None  # only one, not a list
         self.relRate = 1.0
-        self.isMixture = 0
-        self.mixture = None
         self.isHet = 0
         self.symbols = None
         #self.bigQAndEigArray = None
         self.bQETneedsReset = None
 
         self.nCat = 0      # This is set by Tree.modelSanityCheck()
-        # if self.isMixture:
-        #    self.nCat = len(self.comps) * len(self.rMatrices)
 
         self.rjComp = False
         self.rjComp_k = 1
@@ -664,25 +660,16 @@ class Model(object):
                 print mp.nRMatrices,
                 print mp.nGdasrvs,
                 print mp.nGammaCat,
-                print mp.isMixture,
                 print mp.pInvar.free,
 
-            # A hack to accommodate isMixture
-            if mp.isMixture:
-                raise P4Error("Model.allocCStuff. isMixture.  No workee.")
-
-                nCat = mp.nComps * mp.nRMatrices
-                isMixtureFree = mp.mixture.free
-            else:
-                nGammaCat = mp.nGammaCat
-                isMixtureFree = 0
+            nGammaCat = mp.nGammaCat
 
             mp.bQETneedsReset = numpy.ones(
                 (mp.nComps, mp.nRMatrices), numpy.int32)
 
             pf.p4_newModelPart(self.cModel,
                                pNum, mp.dim, mp.nComps, mp.nRMatrices, mp.nGdasrvs, nGammaCat,
-                               mp.isMixture, isMixtureFree, mp.pInvar.free, mp.bQETneedsReset)
+                               mp.pInvar.free, mp.bQETneedsReset)
             for mNum in range(mp.nComps):
                 mt = mp.comps[mNum]
                 pf.p4_newComp(self.cModel, pNum, mNum, mt.free)
@@ -849,23 +836,6 @@ class Model(object):
             if mp.pInvar.free:
                 mp.pInvar.val = prams[pos]
                 pos += 1
-
-            # mixture
-            if mp.isMixture and mp.mixture.free:
-                mt = mp.mixture
-                theSum = 0.0
-                for i in range(len(mt.freqs) - 1):
-                    mt.freqs[i] = prams[pos]
-                    theSum += prams[pos]
-                    pos += 1
-                    mt.rates[i] = prams[pos]
-                    pos += 1
-                mt.freqs[len(mt.freqs) - 1] = 1.0 - theSum
-                theSum = 0.0
-                for i in range(len(mt.freqs) - 1):
-                    theSum += mt.freqs[i] * mt.rates[i]
-                mt.rates[len(mt.freqs) - 1] = (1.0 - theSum) / \
-                    mt.freqs[len(mt.freqs) - 1]
 
         # Do the relRates, after the loop
         if self.relRatesAreFree:

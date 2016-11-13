@@ -217,7 +217,6 @@ void p4_newtNode(p4_node *aNode, double epsilon)
     p4_modelPart   *mp;
     part           *dp;
     int isN;
-    int cNum, rNum;
     //double startingLike;
 
     oldBrLen = aNode->brLen[0];
@@ -268,17 +267,11 @@ void p4_newtNode(p4_node *aNode, double epsilon)
                     exit(1);
                 }
             }
-            if(mp->isMixture) {
-                for(rate = 0; rate < mp->nCat; rate++) {
-                    mp->freqsTimesOneMinusPInvar[rate] = (1.0 - mp->pInvar->val[0]) *  mp->mixture->freqs[rate];
-                }
+
+            for(rate = 0; rate < mp->nCat; rate++) {
+                mp->freqsTimesOneMinusPInvar[rate] = (1.0 - mp->pInvar->val[0]) / (double)(mp->nCat);
             }
-            else {
-                for(rate = 0; rate < mp->nCat; rate++) {
-                    mp->freqsTimesOneMinusPInvar[rate] = (1.0 - mp->pInvar->val[0]) / (double)(mp->nCat);
-                }
-            }
-			
+	    	
             for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
                 //printf("        seqPos %i\n", seqPos);
                 likeS = firstS = secondS = 0.0;
@@ -375,49 +368,23 @@ void p4_newtNode(p4_node *aNode, double epsilon)
 							
                         }
 						
-                        // If it is a mixture, now we scale like by freq[rate]
-                        if(mp->isMixture) {
-                            //if(0) {
-                            like   *= mp->freqsTimesOneMinusPInvar[rate];
-                            first  *= mp->freqsTimesOneMinusPInvar[rate];
-                            second *= mp->freqsTimesOneMinusPInvar[rate];
-                        }
-						
                         likeS += like;
                         firstS += first;
                         secondS += second;
 						
                     }  // for(rate)
-                    if(!mp->isMixture) {
-                        likeS   *= mp->freqsTimesOneMinusPInvar[0];
-                        firstS  *= mp->freqsTimesOneMinusPInvar[0];
-                        secondS *= mp->freqsTimesOneMinusPInvar[0];
-                    }
+
+                    likeS   *= mp->freqsTimesOneMinusPInvar[0];
+                    firstS  *= mp->freqsTimesOneMinusPInvar[0];
+                    secondS *= mp->freqsTimesOneMinusPInvar[0];
 
                     // Now deal with the invariant site contribution
                     if(dp->globalInvarSitesVec[seqPos] > 0) {  // ie its an invar site
                         //printf("a non-varied sited.\n");
-                        if(mp->isMixture) {
-                            for(from = 0; from < mp->dim; from++) {
-                                if(dp->globalInvarSitesArray[from][seqPos]) {
-                                    rate = 0;
-                                    temp2 = 0.0;
-                                    for(cNum = 0; cNum < mp->nComps; cNum++) {
-                                        for(rNum = 0; rNum < mp->nRMatrices; rNum++) {
-                                            temp2 += mp->comps[cNum]->val[from] * mp->mixture->freqs[rate];
-                                            rate++;
-                                        }
-                                    }
-                                    likeS += temp2 * mp->pInvar->val[0];
-                                }
-                            }
-                        }
-                        else {
-                            for(from = 0; from < mp->dim; from++) {
-                                if(dp->globalInvarSitesArray[from][seqPos]) {
-                                    likeS += mp->comps[aNode->tree->root->compNums[pNum]]->val[from] * mp->pInvar->val[0];
-                                    // first and second are not affected
-                                }
+                        for(from = 0; from < mp->dim; from++) {
+                            if(dp->globalInvarSitesArray[from][seqPos]) {
+                                likeS += mp->comps[aNode->tree->root->compNums[pNum]]->val[from] * mp->pInvar->val[0];
+                                // first and second are not affected
                             }
                         }
                     }
@@ -433,7 +400,6 @@ void p4_newtNode(p4_node *aNode, double epsilon)
                                 for(from = 0; from < mp->dim; from++) {
                                     // Using temp2 speeds things up a tiny, tiny bit.
                                     temp2 = aNode->cl2[pNum][rate][from][seqPos];
-                                    //temp2 *= mp->mixture->freqs[rate];
                                     like += temp2 * aNode->bigPDecks[pNum][rate][from][charCode];
                                     first += temp2 * aNode->bigPDecks_1stD[pNum][rate][from][charCode];
                                     second += temp2 * aNode->bigPDecks_2ndD[pNum][rate][from][charCode];
@@ -507,38 +473,28 @@ void p4_newtNode(p4_node *aNode, double epsilon)
                             for(from = 0; from < mp->dim; from++) {
                                 for(to = 0; to < mp->dim; to++) {
                                     temp2 = aNode->cl2[pNum][rate][from][seqPos] * aNode->cl[pNum][rate][to][seqPos];
-                                    //temp2 *= mp->mixture->freqs[rate];
                                     like += temp2 * aNode->bigPDecks[pNum][rate][from][to];
                                     first += temp2 * aNode->bigPDecks_1stD[pNum][rate][from][to];
                                     second += temp2 * aNode->bigPDecks_2ndD[pNum][rate][from][to];
                                 }
                             }
                         }
-						
-                        // If it is a mixture, now we scale like by freq[rate]
-                        if(mp->isMixture) {
-                            //if(0) {
-                            like *= mp->mixture->freqs[rate];
-                            first *= mp->mixture->freqs[rate];
-                            second *= mp->mixture->freqs[rate];
-                        }
-						
+												
                         likeS += like;
                         firstS += first;
                         secondS += second;
 						
                     } // for(rate)
-                    if(!mp->isMixture) {
-                        // If it is not a mixture, we can do this outside the for(rate) loop.
-                        // If gamma freqs are not the same, it should be something like this:
-                        // like *= aTree->model->parts[pNum]->gammaFreqs[0];
-                        // But the following will do since we have equal gamma freqs.
-                        if(mp->nCat > 1) {
-                            likeS   /=  (double)(mp->nCat);
-                            firstS  /=  (double)(mp->nCat);
-                            secondS /=  (double)(mp->nCat);
-                        }
+
+                    // If gamma freqs are not the same, it should be something like this:
+                    // like *= aTree->model->parts[pNum]->gammaFreqs[0];
+                    // But the following will do since we have equal gamma freqs.
+                    if(mp->nCat > 1) {
+                        likeS   /=  (double)(mp->nCat);
+                        firstS  /=  (double)(mp->nCat);
+                        secondS /=  (double)(mp->nCat);
                     }
+                    
                 } // else pInvar does not apply
                 if(likeS < 1.0e-300) {
                     lnL += dp->patternCounts[seqPos] *      -100000;

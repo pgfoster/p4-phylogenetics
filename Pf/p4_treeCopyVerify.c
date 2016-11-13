@@ -170,16 +170,6 @@ void p4_copyModelPrams(p4_tree *treeA, p4_tree *treeB)
             b->pInvar->val[0] = a->pInvar->val[0];
         }
 
-        // mixture
-        if(a->isMixture) {
-            if(a->mixture->free) {
-                for(mtNum = 0; mtNum < a->nCat; mtNum++) {
-                    b->mixture->freqs[mtNum] = a->mixture->freqs[mtNum];
-                    b->mixture->rates[mtNum] = a->mixture->rates[mtNum];
-                }
-            }
-        }
-
         // relRate
         if(treeA->model->doRelRates && treeA->model->relRatesAreFree) {
             b->relRate[0] = a->relRate[0];
@@ -471,20 +461,6 @@ int p4_verifyModelPrams(p4_tree *treeA, p4_tree *treeB)
                 diff = fabs(a->pInvar->val[0] - b->pInvar->val[0]);
                 printf("  diff= %f (%g)\n", diff, diff);
                 return DIFFERENT;
-            }
-        }
-
-
-        // mixture
-        if(a->isMixture) {
-            if(a->mixture->free) {
-                for(mtNum = 0; mtNum < a->nCat; mtNum++) {
-                    if((fabs(b->mixture->freqs[mtNum] - a->mixture->freqs[mtNum]) > epsilon) || 
-                       (fabs(b->mixture->rates[mtNum] - a->mixture->rates[mtNum]) > epsilon)) {
-                        printf("verifyModelPrams(): mixtures differ.\n");
-                        return DIFFERENT;
-                    }
-                }
             }
         }
 

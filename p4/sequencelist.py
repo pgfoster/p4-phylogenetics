@@ -196,7 +196,7 @@ class Sequence(object):
         (These are found in :class:`GeneticCode.GeneticCode`)
 
         See also :meth:`Alignment.Alignment.checkTranslation` and
-        :meth:`Alignment.Alignment.checkTranslation`.
+        :meth:`Alignment.Alignment.translate`.
 
         If the arg *checkStarts* is turned on (by default it is not turned
         on) then this method checks whether the first codon is a start

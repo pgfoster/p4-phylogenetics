@@ -54,10 +54,6 @@
 #define RELRATE_MAX 1.0e8
 #define BRLEN_MIN 1.0e-8  // changed apr02 from 1e-18
 #define BRLEN_MAX 3.0
-#define MIXTURE_FREQ_MIN 0.0
-#define MIXTURE_FREQ_MAX 1.0
-#define MIXTURE_RATE_MIN 1.0e-3
-#define MIXTURE_RATE_MAX 1.0e3
 
 
 #define OPT_PIVEC      0

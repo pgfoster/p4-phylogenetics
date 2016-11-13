@@ -1360,17 +1360,15 @@ pf_p4_newModelPart(PyObject *self, PyObject *args)
     int         nRMatrices;
     int         nGdasrvs;
     int         nCat;
-    int         isMixture;
-    int         mixtureIsFree;
     int         pInvarFree;
     PyArrayObject *bQETneedsResetO;
 	
 
-    if(!PyArg_ParseTuple(args, "liiiiiiiiiO", &aModel, &pNum, &dim, &nComps, &nRMatrices, &nGdasrvs, &nCat, &isMixture, &mixtureIsFree, &pInvarFree, &bQETneedsResetO)) {
+    if(!PyArg_ParseTuple(args, "liiiiiiiO", &aModel, &pNum, &dim, &nComps, &nRMatrices, &nGdasrvs, &nCat, &pInvarFree, &bQETneedsResetO)) {
         printf("Error pf_p4_newModelPart: couldn't parse tuple\n");
         return NULL;
     }
-    p4_newModelPart(aModel, pNum, dim, nComps, nRMatrices, nGdasrvs, nCat, isMixture, mixtureIsFree, pInvarFree, (int *)(bQETneedsResetO->data));
+    p4_newModelPart(aModel, pNum, dim, nComps, nRMatrices, nGdasrvs, nCat, pInvarFree, (int *)(bQETneedsResetO->data));
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -1658,26 +1656,6 @@ pf_p4_setRelRateVal(PyObject *self, PyObject *args)
         return NULL;
     }
     aModel->parts[pNum]->relRate[0] = val;
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-static PyObject *
-pf_p4_setMixtureFreqAndRate(PyObject *self, PyObject *args)
-{
-    p4_model   *aModel;
-    int         pNum;
-    int         indx;
-    double      freq;
-    double      rate;
-	
-    if(!PyArg_ParseTuple(args, "liidd", &aModel, &pNum, &indx, &freq, &rate)) {
-        printf("Error pf_p4_setMixtureFreqAndRate: couldn't parse tuple\n");
-        return NULL;
-    }
-    aModel->parts[pNum]->mixture->freqs[indx] = freq;
-    aModel->parts[pNum]->mixture->rates[indx] = rate;
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -2107,16 +2085,30 @@ pf_p4_drawAncState(PyObject *self, PyObject *args)
 {
     p4_tree *aTree;
     int partNum;
-    int patNum;
+    int seqPos;
+    PyArrayObject *oResultsTuple;
 	
-    if(!PyArg_ParseTuple(args, "lii", &aTree, &partNum, &patNum)) {
+    if(!PyArg_ParseTuple(args, "liiO", &aTree, &partNum, &seqPos, &oResultsTuple)) {
         printf("Error pf_simulate: couldn't parse tuple\n");
         return NULL;
     }
-    p4_drawAncState(aTree, partNum, patNum);
+    // Note this calls p4_drawAncStateP() not p4_drawAncState()
+    p4_drawAncStateP(aTree, partNum, seqPos, (int *)oResultsTuple->data);
     Py_INCREF(Py_None);
     return Py_None;
 }
+PyDoc_STRVAR(doc_p4_drawAncState,
+             "pf.p4_drawAncState(p4_tree *t, int partNum, int seqPos, numpy.ndarray draw) -> None\n\
+Arg t is a eg myPythonTree.cTree\n\
+Arg seqPos is the sequence position in the part.\n\
+Arg draw is a numpy array of length 4, dtype numpy.int32\n\
+eg myDraw = numpy.zeros(4, numpy.int32)\n\
+\n\
+Make a draw from the tree ancestral state (at the root).  Results are in draw.\n\
+draw[0] = chStNum;      # char state number if variable\n\
+draw[1] = catNum;       # gamma category if variable\n\
+draw[2] = isInvar;\n\
+draw[3] = invarChNum;   # char state num if invariable");
 
 
 static PyObject *
@@ -2719,7 +2711,6 @@ static PyMethodDef pfMethods[] = {
     {"gdasrvCalcRates_np", pf_gdasrvCalcRates_np, METH_VARARGS},
     {"p4_setPInvarVal", pf_p4_setPInvarVal, METH_VARARGS},
     {"p4_setRelRateVal", pf_p4_setRelRateVal, METH_VARARGS},
-    {"p4_setMixtureFreqAndRate", pf_p4_setMixtureFreqAndRate, METH_VARARGS},
 
     {"p4_setNodeRelation", pf_p4_setNodeRelation, METH_VARARGS},
     {"p4_setTreeRoot", pf_p4_setTreeRoot, METH_VARARGS},
@@ -2745,7 +2736,7 @@ static PyMethodDef pfMethods[] = {
     {"p4_getFreePrams", pf_p4_getFreePrams, METH_VARARGS},
     {"p4_getRelRate", pf_p4_getRelRate, METH_VARARGS},
     {"p4_simulate", pf_p4_simulate, METH_VARARGS},
-    {"p4_drawAncState", pf_p4_drawAncState, METH_VARARGS},
+    {"p4_drawAncState", pf_p4_drawAncState, METH_VARARGS, doc_p4_drawAncState},
     {"p4_expectedCompositionCounts", pf_p4_expectedCompositionCounts, METH_VARARGS, doc_p4_expectedCompositionCounts},
     {"p4_expectedComposition", pf_p4_expectedComposition, METH_VARARGS, doc_p4_expectedComposition},
 

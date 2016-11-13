@@ -32,7 +32,8 @@ void BracketMinimum(double *pA, double *pB, double (*func)(double []), double mi
 
 // p4_treeSim.c
 void p4_simulate(p4_tree *t, p4_tree *refTree);
-void p4_drawAncState(p4_tree *t, int partNum, int patNum);
+void p4_drawAncState(p4_tree *t, int partNum, int seqPos);
+void p4_drawAncStateP(p4_tree *t, int partNum, int seqPos, int *draw);
 PyObject *p4_expectedCompositionCounts(p4_tree *t, int partNum);
 PyObject *p4_expectedComposition(p4_tree *t);
 

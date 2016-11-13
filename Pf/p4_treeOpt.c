@@ -23,7 +23,6 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
     p4_comp       *c;
     p4_rMatrix    *r;
     p4_gdasrv     *g;
-    p4_mixture    *m;
     p4_node       *n;
 
     //printf("p4_windUpParameters() here.\n");
@@ -95,24 +94,6 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
             pos++;
         }
 
-        // mixture
-        if(mp->isMixture && mp->mixture->free) {
-            m = mp->mixture;
-            for(i = 0; i < mp->nCat - 1; i++) {
-                parameters[pos] = m->freqs[i];
-                if(lBounds) {
-                    lBounds[pos] = MIXTURE_FREQ_MIN;
-                    uBounds[pos] = MIXTURE_FREQ_MAX;
-                }
-                pos++;
-                parameters[pos] = m->rates[i];
-                if(lBounds) {
-                    lBounds[pos] = MIXTURE_RATE_MIN;
-                    uBounds[pos] = MIXTURE_RATE_MAX;
-                }
-                pos++;
-            }
-        }
     }
 
     // relRates are done after the stuff above.  Ie out of the 'parts' loop.
@@ -210,75 +191,21 @@ PyObject *p4_getFreePrams(p4_tree *aTree)
 void p4_unWindParameters(p4_tree *aTree, double *parameters)
 {
     int pos = 0;
-    int savedPos = 0;
     int i, j, mtNum, pNum, totLen;
-    double     sum, sum2, diff;
-    double     par, freq, rate;
+    double     sum, sum2;
+    double     par;
     int hit_limit = 0;
     p4_modelPart  *mp = NULL;
     p4_comp       *c = NULL;
     p4_rMatrix    *r = NULL;
     p4_gdasrv     *g = NULL;
     p4_node       *n = NULL;
-    p4_mixture    *m = NULL;
 
     //printf("p4_unWindParameters() here.\n");
     // Do relRates after this loop.
     for(pNum = 0; pNum < aTree->nParts; pNum++) {
         mp = aTree->model->parts[pNum];
 
-#if 0
-        // comps
-        for(mtNum = 0; mtNum < mp->nComps; mtNum++) {
-            c = mp->comps[mtNum];
-            if(c->free) {
-                sum = 0.0;
-                for(i = 0; i < mp->dim - 1; i++) {
-                    par = parameters[pos];
-                    if(par < PIVEC_MIN) {
-                        hit_limit = 1;
-                        par = PIVEC_MIN + (PIVEC_MIN * 0.2) + (PIVEC_MIN * ranDoubleUpToOne());
-                    } else if(par > PIVEC_MAX) {
-                        par = PIVEC_MAX;
-                    }
-                    c->val[i] = par;
-                    sum += par;
-                    pos++;
-                }
-                c->val[mp->dim - 1] = 1.0 - sum;
-                if(c->val[mp->dim - 1] < PIVEC_MIN) {
-                    c->val[mp->dim - 1] = PIVEC_MIN + (PIVEC_MIN * 0.2) + (PIVEC_MIN * ranDoubleUpToOne());
-                } else if(c->val[mp->dim - 1] > PIVEC_MAX) {
-                    c->val[mp->dim - 1] = PIVEC_MAX;
-                }
-                sum += c->val[mp->dim - 1];
-                //printf("    a  %f  %f  %f  %f  %f\n", c->val[0], c->val[1], c->val[2], c->val[3], sum);
-                if(sum != 1.0) {
-                    printf("unwind. sum = %f\n", sum);
-                    for(i = 0; i < mp->dim; i++) {
-                        c->val[i] = c->val[i] / sum;
-                    }
-                }
-                //printf("    X  %f  %f  %f  %f  %f\n", c->val[0], c->val[1], c->val[2], c->val[3], sum);
-
-                // There's something wrong with setPrams and comps.  Is it from here?
-                sum2 = 0.0;
-                for(i = 0; i < mp->dim; i++) {
-                    if(c->val[i] < (0.9 * PIVEC_MIN)) {
-                        printf("unwind comp[%i] = %g, sum was %g\n", i, c->val[i], sum);
-						
-                    }
-                    sum2 += c->val[i];
-                }
-                if(fabs(sum2 - 1.0) > 1.0e-14) {
-                    printf("unwind comp sum2 = %g\n", sum2);
-                    printf("     previous sum = %g\n", sum);
-                }
-            }
-        }
-#endif
-
-#if 1
         // comps
         for(mtNum = 0; mtNum < mp->nComps; mtNum++) {
             c = mp->comps[mtNum];
@@ -349,7 +276,6 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
             }
         }
 
-#endif
         // rMatrices
         for(mtNum = 0; mtNum < mp->nRMatrices; mtNum++) {
             r = mp->rMatrices[mtNum];
@@ -491,128 +417,6 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
             pos++;
         }
 
-        // mixture
-        if(mp->isMixture && mp->mixture->free) {
-            m = mp->mixture;
-            savedPos = pos;
-            for(i = 0; i < mp->nCat - 1; i++) {
-                if(parameters[pos] < MIXTURE_FREQ_MIN) {
-                    hit_limit = 1;
-                    parameters[pos] = MIXTURE_FREQ_MIN;
-                } else if(parameters[pos] > MIXTURE_FREQ_MAX) {
-                    hit_limit = 1;
-                    parameters[pos] = MIXTURE_FREQ_MAX;
-                }
-                pos++;
-                if(parameters[pos] < MIXTURE_RATE_MIN) {
-                    hit_limit = 1;
-                    parameters[pos] = MIXTURE_RATE_MIN;
-                } else if(parameters[pos] > MIXTURE_RATE_MAX) {
-                    hit_limit = 1;
-                    parameters[pos] = MIXTURE_RATE_MAX;
-                }
-                pos++;
-            }
-
-            // restore freqs ...
-            pos = savedPos;
-            sum = 0.0;
-            for(i = 0; i < mp->nCat - 1; i++) {
-                sum += parameters[pos];
-                m->freqs[i] = parameters[pos];
-                pos++;
-                pos++;
-            }
-            m->freqs[mp->nCat - 1] = 1.0 - sum;
-            if(m->freqs[mp->nCat - 1] < MIXTURE_FREQ_MIN) {
-                hit_limit = 1;
-                m->freqs[mp->nCat - 1] = MIXTURE_FREQ_MIN;
-            } else if(m->freqs[mp->nCat - 1] > MIXTURE_FREQ_MAX) {
-                hit_limit = 1;
-                m->freqs[mp->nCat - 1] = MIXTURE_FREQ_MAX;
-            }
-            sum += m->freqs[mp->nCat - 1];
-            // ... and normalize if needed
-            if(sum != 1.0) {
-                for(i = 0; i < mp->nCat; i++) {
-                    m->freqs[i] /= sum;
-                }
-            }
-
-#if 1
-            // check mixture freqs
-            sum = 0.0;
-            for(i = 0; i < mp->nCat; i++) {
-                sum += m->freqs[i];
-            }
-            if(sum > 1.000000001 || sum < 0.999999999) {
-                printf("mixture freqs sum does not equal 1.0   Bad!\n");
-                printf("sum = %19.17f\n", sum);
-                exit(1);
-            }
-#endif
-
-#if 1
-            // restore rates ...
-            pos = savedPos;
-            sum = 0.0;
-            for(i = 0; i < mp->nCat - 1; i++) {
-                freq = m->freqs[i];
-                pos++;
-                rate = parameters[pos];
-                m->rates[i] = parameters[pos];
-                pos++;
-                sum += freq * rate;
-            }
-            // now calc and check m->rates[mp->nCat - 1]
-            rate = (1.0 - sum) / m->freqs[mp->nCat - 1];
-            if(rate < MIXTURE_RATE_MIN) {
-                hit_limit = 1;
-                rate = MIXTURE_RATE_MIN;
-            } else if(rate > MIXTURE_RATE_MAX) {
-                hit_limit = 1;
-                rate = MIXTURE_RATE_MAX;
-            }
-            m->rates[mp->nCat - 1] = rate;
-            sum += m->freqs[mp->nCat - 1] * m->rates[mp->nCat - 1];
-            // ... and normalize if needed
-            sum2 = 0.0;
-            for(i = 0; i < mp->nCat; i++) {
-                //printf("    %i  %8.6f  %8.6f    %8.6f\n", i, m->freqs[i], m->rates[i], m->freqs[i] * m->rates[i]);
-                sum2 += m->freqs[i] * m->rates[i];
-            }
-            //printf("                       sum2 = %8.6f\n", sum2);
-            //exit(1);
-            diff = fabs(sum - sum2);
-            if(diff > 1.0e-8) {
-                printf("sum = %19.17f, sum2 = %19.17f\n", sum, sum2);
-                exit(1);
-            }
-
-            if(sum != 1.0) {
-                for(i = 0; i < mp->nCat; i++) {
-                    m->rates[i] /= sum;
-                }
-            }
-#endif
-			
-
-
-#if 1
-            // check mixture freq * rates
-            sum = 0.0;
-            for(i = 0; i < mp->nCat; i++) {
-                sum += m->freqs[i] * m->rates[i];
-            }
-            if(sum > 1.000000001 || sum < 0.999999999) {
-                printf("mixture freq*rates sum does not equal 1.0   Bad!\n");
-                printf("sum = %19.17f\n", sum);
-                exit(1);
-            }
-#endif
-
-
-        }
     }
 
 
@@ -918,14 +722,6 @@ void p4_allBrentPowellOptimize(p4_tree *aTree)
         parameters = NULL;
     }
 
-#if 0
-    printf("\nMixture freqs and rates:\n");
-    for(i = 0; i < aTree->model->parts[0]->nCat; i++) {
-        printf("   %2i   %6.4f   %6.4f\n", i, 
-               aTree->model->parts[0]->mixture->freqs[i], 
-               aTree->model->parts[0]->mixture->rates[i]);
-    }
-#endif
 }
 
 
