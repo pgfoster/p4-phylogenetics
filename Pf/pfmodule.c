@@ -1159,19 +1159,6 @@ pf_getBigQ(PyObject *self, PyObject *args)
 
 
 static PyObject *
-pf_steelCRCInvariants(PyObject *self, PyObject *args)
-{
-    part *thePart;
-	
-    if(!PyArg_ParseTuple(args, "l", &thePart)) {
-        printf("Error pf_steelCRCInvariants: couldn't parse tuple\n");
-        return NULL;
-    }
-    return Py_BuildValue("d", steelCRCInvariants(thePart));
-}
-
-
-static PyObject *
 pf_recodeNLike(PyObject *self, PyObject *args)
 {
     part *thePart;
@@ -2682,9 +2669,7 @@ static PyMethodDef pfMethods[] = {
     {"matrixLog", pf_matrixLog, METH_VARARGS},
     {"getBigQ", pf_getBigQ, METH_VARARGS},
 
-    {"steelCRCInvariants", pf_steelCRCInvariants, METH_VARARGS},
     {"recodeNLike", pf_recodeNLike, METH_VARARGS},
-
 
     {"p4_newTree", pf_p4_newTree, METH_VARARGS},
     {"p4_freeTree", pf_p4_freeTree, METH_VARARGS},

@@ -13,7 +13,6 @@ PyObject *partCompositionP(part *thePart);
 int partSequenceSitesCount(part *thePart, int sequenceNum);
 void calcEmpiricalRMatrixViaMatrixLog(part *thePart);
 
-double steelCRCInvariants(part *thePart);
 double qEval(part *thePart, int i, int j, int k, int l);
 void recodeNLike(part *thePart);
 double partMeanNCharsPerSite(part *thePart);
