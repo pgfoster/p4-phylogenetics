@@ -2361,8 +2361,11 @@ class Chain(object):
                 if newVal.min() > var.RATE_MIN and newVal.max() < var.RATE_MAX:
                     break
                 safety += 1
+                #print "rMatDir: safety=%2i  mt.val = %s, mt.val.sum = %s, tuning=%.2f newVal=%s, newValSum = %s" % (
+                #    safety, mt.val, mt.val.sum(), theProposal.tuning, newVal, newVal.sum())
                 if safety > 100:
                     gm.append("Unable to draw a good proposal within var.RATE_MIN and var.RATE_MAX")
+                    gm.append("You possibly want to increase the tuning, currently %f" % theProposal.tuning)
                     raise P4Error, gm
 
 

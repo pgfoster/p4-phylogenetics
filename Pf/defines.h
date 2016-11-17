@@ -48,8 +48,8 @@
 #define GAMMA_SHAPE_MAX 300.0
 #define PIVEC_MIN 1.0e-18 // changed from zero jan04, due to a problem with exp(bigQ), see setPrams()
 #define PIVEC_MAX 0.999
-#define RATE_MIN 1.0e-8
-#define RATE_MAX 1.0e8
+#define RATE_MIN 1.0e-14  // changed from 1e-8 nov 2016
+#define RATE_MAX 0.9999999  // changed from 1.0e8  nov 2016
 #define RELRATE_MIN 1.0e-8
 #define RELRATE_MAX 1.0e8
 #define BRLEN_MIN 1.0e-8  // changed apr02 from 1e-18

@@ -276,9 +276,17 @@ class Var(object):
                              ]  # no '-', '?'
         """A list of symbols used in text tree drawings, showing model disposition on the tree."""
 
-        self.PIVEC_MIN = 1e-18  # see Pf/defines.h
-        self.RATE_MIN = 1.0e-8  # ie for rMatrices
-        self.RATE_MAX = 1.0e8
+        # This next variable (var.rMatrixNormalizeTo1 is a property)
+        # determines whether the elements of a GTR-like rMatrix are
+        # normalized to sum to 1, or else whether the bottom corner
+        # rate (G->T in DNA GTR) is set to 1 and the other rate
+        # elements are relative to it.
+        self._rMatrixNormalizeTo1 = numpy.array([1], numpy.int32)
+
+        # see Pf/defines.h for c-language defines, which should be the same.
+        self.PIVEC_MIN = 1e-18
+        self.RATE_MIN = 1.0e-14    # ie for rMatrices, changed from 1.0e-8 nov 2016, because self._rMatrixNormalizeTo1 is set
+        self.RATE_MAX = 0.9999999  # changed from 1.0e8 nov 2016, also because self._rMatrixNormalizeTo1 is set
         self.GAMMA_SHAPE_MIN = 0.000001
         self.GAMMA_SHAPE_MAX = 300.0
         self.PINVAR_MIN = 0.0
@@ -296,13 +304,6 @@ class Var(object):
         self.EQUATES_BASE = -64
 
         self.doMcmcSp = True  # speedier like calcs in mcmc
-
-        # This next variable (var.rMatrixNormalizeTo1 is a property)
-        # determines whether the elements of a GTR-like rMatrix are
-        # normalized to sum to 1, or else whether the bottom corner
-        # rate (G->T in DNA GTR) is set to 1 and the other rate
-        # elements are relative to it.
-        self._rMatrixNormalizeTo1 = numpy.array([1], numpy.int32)
 
         self.mcmcMaxCompAndRMatrixTuning = 0.9
 
