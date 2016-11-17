@@ -540,7 +540,7 @@ class Trees(object):
         # Check if consel is installed
         progs = ['makermt', 'consel', 'catpv']
         for progName in progs:
-            if func.which(progName):
+            if func.which2(progName):
                 pass
             else:
                 gm.append("The programs")

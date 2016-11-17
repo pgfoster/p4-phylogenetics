@@ -2585,7 +2585,7 @@ if True:
         if self.dataType != "protein":
             gm.append("The data are not protein.")
             raise P4Error(gm)
-        if not p4_which("ais"):
+        if not func.which2("ais"):
             gm.append("ais is not in your path")
             raise P4Error(gm)
         if not n_bins > 1 or not n_bins < 20:
