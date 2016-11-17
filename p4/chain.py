@@ -2365,6 +2365,7 @@ class Chain(object):
                 #    safety, mt.val, mt.val.sum(), theProposal.tuning, newVal, newVal.sum())
                 if safety > 100:
                     gm.append("Unable to draw a good proposal within var.RATE_MIN and var.RATE_MAX")
+                    gm.append("Proposal %s, part %i, rateMatrixNum %i" % (theProposal.name, theProposal.pNum, theProposal.mtNum))
                     gm.append("You possibly want to increase the tuning, currently %f" % theProposal.tuning)
                     raise P4Error, gm
 
