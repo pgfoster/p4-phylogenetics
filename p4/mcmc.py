@@ -3461,7 +3461,7 @@ class Mcmc(object):
             cPickle.dump(self.tunings, f, 1)
             f.close()
 
-    def writeProposalProbs(self):
+    def writeProposalProbs(self, makeDict=False):
         """(Another) Pretty-print the proposal probabilities.
 
         See also Mcmc.writeProposalAcceptances().
@@ -3496,40 +3496,65 @@ class Mcmc(object):
             raise P4Error(
                 "bad sum of attained proposal probs. %s" % sum(probAttained))
 
-        spacer = ' ' * 4
-        print "\nProposal probabilities (%)"
-        # print "There are %i proposals" % len(self.proposals)
-        print "For %i gens, from gens %i to %i, inclusive." % (
-            (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
-        print "%2s %11s %11s  %11s %10s %18s %5s %5s" % ('', 'nProposals', 'proposed(%)',
-                                                         'accepted(%)', 'tuning', 'proposal', 'part', 'num')
-        for i in range(len(self.proposals)):
-            print "%2i" % i,
-            p = self.proposals[i]
-            print "   %7i " % self.proposals[i].nProposals[0],
-            print "   %5.1f    " % probAttained[i],
-            if nAttained[i]:
-                print "   %5.1f   " % (100.0 * float(nAccepted[i]) / float(nAttained[i])),
-            else:
-                print "       -   ",
-
-            if p.tuning == None:
-                print "       -    ",
-            elif p.tuning < 2.0:
-                print "   %7.3f  " % p.tuning,
-            else:
-                print "   %7.1f  " % p.tuning,
-
-            print " %15s" % p.name,
-            if p.pNum != -1:
-                print " %3i " % p.pNum,
-            else:
-                print "   - ",
-            if p.mtNum != -1:
-                print " %3i " % p.mtNum,
-            else:
-                print "   - ",
-            print
+        if not makeDict:
+            spacer = ' ' * 4
+            print "\nProposal probabilities (%)"
+            # print "There are %i proposals" % len(self.proposals)
+            print "For %i gens, from gens %i to %i, inclusive." % (
+                (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
+            print "%2s %11s %11s  %11s %10s %18s %5s %5s" % ('', 'nProposals', 'proposed(%)',
+                                                             'accepted(%)', 'tuning', 'proposal', 'part', 'num')
+            for i in range(len(self.proposals)):
+                print "%2i" % i,
+                p = self.proposals[i]
+                print "   %7i " % self.proposals[i].nProposals[0],
+                print "   %5.1f    " % probAttained[i],
+                if nAttained[i]:
+                    print "   %5.1f   " % (100.0 * float(nAccepted[i]) / float(nAttained[i])),
+                else:
+                    print "       -   ",
+                if p.tuning == None:
+                    print "       -    ",
+                elif p.tuning < 2.0:
+                    print "   %7.3f  " % p.tuning,
+                else:
+                    print "   %7.1f  " % p.tuning,
+                print " %15s" % p.name,
+                if p.pNum != -1:
+                    print " %3i " % p.pNum,
+                else:
+                    print "   - ",
+                if p.mtNum != -1:
+                    print " %3i " % p.mtNum,
+                else:
+                    print "   - ",
+                print
+        else:
+            rd = {}
+            for i in range(len(self.proposals)):
+                p = self.proposals[i]
+                rd[p.name] = []
+                rd[p.name].append(self.proposals[i].nProposals[0])
+                rd[p.name].append(probAttained[i])
+                if nAttained[i]:
+                    rd[p.name].append((100.0 * float(nAccepted[i]) / float(nAttained[i])))
+                else:
+                    rd[p.name].append(None)
+                if p.tuning == None:
+                    rd[p.name].append(None)
+                elif p.tuning < 2.0:
+                    rd[p.name].append(p.tuning)
+                else:
+                    rd[p.name].append(p.tuning)
+                if p.pNum != -1:
+                    rd[p.name].append(p.pNum)
+                else:
+                    rd[p.name].append(None)
+                if p.mtNum != -1:
+                    rd[p.name].append(p.mtNum)
+                else:
+                    rd[p.name].append(None)
+            return rd
 
     def writeProposalIntendedProbs(self):
         """Tabulate the intended proposal probabilities.
