@@ -2973,7 +2973,7 @@ def effectiveSampleSize(data, mean):
     return ESS2[0]
 
 
-def summarizeMcmcPrams(skip=0, run=-1, theDir='.'):
+def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
     """Find the mean, variance, and ess of mcmc parameters.
 
     Ess is effective sample size, as in Tracer by Drummond and Rambaut.
@@ -3001,6 +3001,9 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.'):
         pramsProfile = loc['pramsProfile']
     except IOError:
         print "The file 'mcmc_pramsProfile.py' cannot be found."
+        if makeDict:
+            print "Cannot make dictionary without mcmc_pramsProfile.py"
+            return None
 
     numsList = None
     if run == -1:
@@ -3012,7 +3015,8 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.'):
         try:
             theFName = os.path.join(theDir, "mcmc_prams_%i" % runNum)
             flob = file(theFName)
-            print "Reading prams from file %s" % theFName
+            if not makeDict:
+                print "Reading prams from file %s" % theFName
         except IOError:
             break
         theLines = flob.readlines()
@@ -3061,55 +3065,93 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.'):
                             gm.append("Can't make sense of '%s'" % theOne)
                             raise P4Error(gm)
                     linesRead += 1
-        print "  skipped %i lines" % skipsDone
-        print "  read %i lines" % linesRead
+        if not makeDict:
+            print "  skipped %i lines" % skipsDone
+            print "  read %i lines" % linesRead
         totalLinesRead += linesRead
         if run != -1:
             break
-
-    print "Read %i pram lines in total." % totalLinesRead
+    if not makeDict:
+        print "Read %i pram lines in total." % totalLinesRead
 
     # print numsList
     spacer1 = ' ' * 20
+    pramsdict = {}
     if pramsProfile:
-        print "%s   %16s         mean      variance       ess  " % (spacer1, ' ')
-        print "%s   %16s       --------    --------    --------" % (spacer1, ' ')
+        if not makeDict:
+            print "%s   %16s         mean      variance       ess  " % (spacer1, ' ')
+            print "%s   %16s       --------    --------    --------" % (spacer1, ' ')
         pramCounter = 0
         for partNum in range(len(pramsProfile)):
             if len(pramsProfile) > 1:
-                print "Data partition %i" % partNum
+                if not makeDict:
+                    print "Data partition %i" % partNum
             if len(pramsProfile[partNum]):
+                pramsdict["part%i" % partNum] = []
                 # print pramsProfile[partNum]
                 for pramNum in range(len(pramsProfile[partNum])):
                     pString = pramsProfile[partNum][pramNum][0]
                     pramCounts = pramsProfile[partNum][pramNum][1]
                     for p in range(pramCounts):
-                        print "%s%3i %12s[%2i]   " % (spacer1, pramCounter, pString, p),
+                        if not makeDict:
+                            print "%s%3i %12s[%2i]   " % (spacer1, pramCounter, pString, p),
                         d = numpy.array(numsList[pramCounter], numpy.float)
                         m, v = gsl_meanVariance(d)
                         ess = effectiveSampleSize(d, m)
+                        stats = []
+                        stats.append("%s[%i]" % (pString, p))
                         if m == 0.0:
-                            print "  0.0      ",
+                            if not makeDict:
+                                print "  0.0      ",
+                            else:
+                                stats.append("0.0")
                         elif m < 0.00001:
-                            print "%10.3g " % m,
+                            if not makeDict:
+                                print "%10.3g " % m,
+                            else:
+                                stats.append("%.3g" % m)
                         elif m < 1.0:
-                            print "%10.6f " % m,
+                            if not makeDict:
+                                print "%10.6f " % m,
+                            else:
+                                stats.append("%.6f" % m)
                         else:
-                            print "%10.4f " % m,
+                            if not makeDict:
+                                print "%10.4f " % m,
+                            else:
+                                stats.append("%.4f" % m)
                         if v == 0.0:
-                            print "  0.0      ",
+                            if not makeDict:
+                                print "  0.0      ",
+                            else:
+                                stats.append("0.0")
                         elif v < 0.000001:
-                            print "%10.3g " % v,
+                            if not makeDict:
+                                print "%10.3g " % v,
+                            else:
+                                stats.append("%.3g" % v)
                         elif v < 1.0:
-                            print "%10.6f " % v,
+                            if not makeDict:
+                                print "%10.6f " % v,
+                            else:
+                                stats.append("%.6f " % v)
                         else:
-                            print "%10.4f " % v,
-                        print "%10.1f " % ess,
-                        print
+                            if not makeDict:
+                                print "%10.4f " % v,
+                            else:
+                                stats.append("%.6f" % v)
+                        if not makeDict:
+                            print "%10.1f " % ess,
+                        else:
+                            stats.append("%.1f" % ess)
+                        if not makeDict:
+                            print
                         pramCounter += 1
+                        pramsdict["part%i" % partNum].append(stats)
 
             else:
-                print "        No parameters in this data partition."
+                if not makeDict:
+                    print "        No parameters in this data partition."
     else:  # no pramsProfile
         print "%9s  mean      variance       ess  " % ' '
         print "%9s--------    --------    --------" % ' '
@@ -3138,6 +3180,9 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.'):
 
             print "%10.1f " % ess,
             print
+
+    if makeDict:
+        return pramsdict
 
 
 def newtonRaftery94_eqn16(logLikes, delta=0.1, verbose=False):
