@@ -83,7 +83,7 @@ from geneticcode import GeneticCode
 
 if 1:
     verboseStartupFiles = False  # Turn on for debugging...
-    if 0:  # If you want it, turn it on.
+    if 1:  # If you want it, turn it on.
         try:
             execfile(os.environ['P4_STARTUP'])
             if verboseStartupFiles:

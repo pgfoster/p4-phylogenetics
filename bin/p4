@@ -37,7 +37,8 @@ argvAfterDoubleDash = []
 # back to being an empty string, the way it usually is when you run interactive
 # python.
 
-sys.path[0] = ''  
+#This is needed to pull in the correct libraries:
+sys.path = [os.path.dirname(sys.path[0])] + sys.path
 
 if len(sys.argv) > 1:  # Is there stuff on the command line?
     for f in sys.argv[1:]:
@@ -118,7 +119,7 @@ os.environ['PYTHONINSPECT'] = '1'
 # Set the prompt (default is '>>> ').  I suspect that doing this might
 # screw up using the python interpreter in python-mode in emacs, but
 # you'll want to confirm that.
-sys.ps1 = 'p4> '
+sys.ps1 = 'p4-gitc> '
 
 # When the "from p4 import *" was done above, it read in any *.py
 # files in ~/.p4.  Now we want to execfile one more file, which of
