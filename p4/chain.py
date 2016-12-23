@@ -15,7 +15,7 @@ import sys
 
 class Chain(object):
 
-    from chain_topol import proposeRoot3, proposeBrLen, proposeAllBrLens, proposeTreeScale, proposeLocal, proposeETBR_Blaise, proposeESPR_Blaise, proposeETBR, proposeESPR, proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
+    from chain_topol import proposeRoot3, proposeBrLen, proposeAllBrLens, proposeLocal, proposeETBR_Blaise, proposeESPR_Blaise, proposeETBR, proposeESPR, proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
 
 
     def __init__(self, aMcmc):
@@ -530,35 +530,35 @@ class Chain(object):
             #    n.flag = 0
             #self.propTree.root.flag = 0
 
-        elif theProposal.name == 'treeScale':
-            self.proposeTreeScale(theProposal)
-            self.propTree.setCStuff()
-            for n in self.propTree.iterNodesNoRoot():  
-                # all branch lengths have changed, 
-                # so no need to check whether n.br.lenChanged
-                pf.p4_calculateBigPDecks(n.cNode)
-            for pNum in range(self.propTree.model.nParts):
-                for n in self.propTree.iterPostOrder():
-                    if not n.isLeaf:
-                        # Normally we would check whether n.flag is set
-                        # but here they all need to recalc cond likes
-                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
-                            n.cNode, pNum)
-                pf.p4_partLogLike(
-                    self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
-            #for n in self.propTree.iterInternalsNoRoot():
-            #    n.flag = 0
-            #self.propTree.root.flag = 0
+        # elif theProposal.name == 'treeScale':
+        #     self.proposeTreeScale(theProposal)
+        #     self.propTree.setCStuff()
+        #     for n in self.propTree.iterNodesNoRoot():  
+        #         # all branch lengths have changed, 
+        #         # so no need to check whether n.br.lenChanged
+        #         pf.p4_calculateBigPDecks(n.cNode)
+        #     for pNum in range(self.propTree.model.nParts):
+        #         for n in self.propTree.iterPostOrder():
+        #             if not n.isLeaf:
+        #                 # Normally we would check whether n.flag is set
+        #                 # but here they all need to recalc cond likes
+        #                 pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+        #                     n.cNode, pNum)
+        #         pf.p4_partLogLike(
+        #             self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
+        #     #for n in self.propTree.iterInternalsNoRoot():
+        #     #    n.flag = 0
+        #     #self.propTree.root.flag = 0
 
-            if 0:
-                logLike1 = sum(self.propTree.partLikes)
-                pf.p4_setPrams(self.propTree.cTree, -1)
-                logLike2 = pf.p4_treeLogLike(self.propTree.cTree, 0)
-                if math.fabs(logLike1 - logLike2) > 0.001:
-                    print "propose treeScale bad likes calc. %f %f" % (logLike1, logLike2)
-                else:
-                    print "propose treeScale likes ok --  %f" % logLike1
-                sys.exit()
+        #     if 0:
+        #         logLike1 = sum(self.propTree.partLikes)
+        #         pf.p4_setPrams(self.propTree.cTree, -1)
+        #         logLike2 = pf.p4_treeLogLike(self.propTree.cTree, 0)
+        #         if math.fabs(logLike1 - logLike2) > 0.001:
+        #             print "propose treeScale bad likes calc. %f %f" % (logLike1, logLike2)
+        #         else:
+        #             print "propose treeScale likes ok --  %f" % logLike1
+        #         sys.exit()
 
         elif theProposal.name == 'eTBR':
             self.proposeETBR_Blaise(theProposal)
@@ -1685,17 +1685,13 @@ class Chain(object):
         #    mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
         mtval = numpy.array(mt.val)
         myProposer = scipy.stats.dirichlet(theProposal.tuning * mtval)
+        newVal = myProposer.rvs(size=1)[0]
+        while  newVal.min() < var.PIVEC_MIN:
+            for i in range(dim):
+                if newVal[i] < var.PIVEC_MIN:
+                    newVal[i] += (1.0 + random.random()) * var.PIVEC_MIN
+            newVal = newVal / newVal.sum()
 
-        safety = 0
-        while 1:
-            newVal = myProposer.rvs(size=1)[0]
-            if newVal.min() > var.PIVEC_MIN:
-                break
-            safety += 1
-            if safety > 100:
-                gm.append("Unable to draw a good proposal more than var.PIVEC_MIN")
-                raise P4Error, gm
-        
         # # Old way
         # newValList = newVal.tolist()
         # rangeDim = range(dim)
@@ -2356,20 +2352,15 @@ class Chain(object):
             myProposer = scipy.stats.dirichlet(theProposal.tuning * mt.val)
 
             safety = 0
-            while 1:
-                newVal = myProposer.rvs(size=1)[0]
-                if newVal.min() > var.RATE_MIN and newVal.max() < var.RATE_MAX:
-                    break
-                safety += 1
-                #print "rMatDir: safety=%2i  mt.val = %s, mt.val.sum = %s, tuning=%.2f newVal=%s, newValSum = %s" % (
-                #    safety, mt.val, mt.val.sum(), theProposal.tuning, newVal, newVal.sum())
-                if safety > 100:
-                    gm.append("Unable to draw a good proposal within var.RATE_MIN and var.RATE_MAX")
-                    gm.append("Proposal %s, part %i, rateMatrixNum %i" % (theProposal.name, theProposal.pNum, theProposal.mtNum))
-                    gm.append("You possibly want to increase the tuning, currently %f" % theProposal.tuning)
-                    raise P4Error, gm
-
-
+            newVal = myProposer.rvs(size=1)[0]
+            while newVal.min() < var.RATE_MIN or newVal.max() > var.RATE_MAX:
+                for i in range(len(newVal)):
+                    if newVal[i] < var.RATE_MIN:
+                        newVal[i] += (1.0 + random.random()) * var.RATE_MIN
+                    if newVal[i] > var.RATE_MAX:
+                        newVal[i] = var.RATE_MAX - ((1.0 + random.random()) * var.RATE_MIN)
+                    newVal = newVal / newVal.sum()
+                    
             # Calculate the proposal ratio
             # We can re-use myProposer to get the log pdf
             forwardLnPdf = myProposer.logpdf(newVal)
