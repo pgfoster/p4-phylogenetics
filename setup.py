@@ -41,15 +41,10 @@ except ImportError:
 my_include_dirs = []
 my_lib_dirs = []
 
-# I am told that this is needed for centos 7
-# my_include_dirs = ['/usr/include/gsl']
-# my_lib_dirs = ['/usr/lib64']
-
 likelyDirs = [ "/usr",
                "/usr/local",
                "/sw",
                "/opt/local",
-               "/usr/lib64",
                os.path.expanduser('~')
                ]
 
@@ -74,18 +69,19 @@ for ipth in my_include_dirs:
 
 if not found_libgsl or not found_gsl_headers:
     for lD in likelyDirs:
-        lpth = os.path.join(lD, 'lib')
-        if os.path.exists(lpth):
-            fList = glob.glob(os.path.join(lpth, "libgsl*"))
-            #print fList
-            if fList:
-                found_libgsl = True
-                ipth = os.path.join(lD, 'include')   # We assume the header is near the lib, but check it next line
-                if os.path.exists(os.path.join(ipth, 'gsl')):
-                    found_gsl_headers = True
-                    my_include_dirs.append(ipth)
-                    my_lib_dirs.append(lpth)
-                    break
+        for libdir in ['lib', 'lib64']:
+            lpth = os.path.join(lD, libdir)
+            if os.path.exists(lpth):
+                fList = glob.glob(os.path.join(lpth, "libgsl*"))
+                #print fList
+                if fList:
+                    found_libgsl = True
+                    ipth = os.path.join(lD, 'include')   # We assume the header is near the lib, but check it next line
+                    if os.path.exists(os.path.join(ipth, 'gsl')):
+                        found_gsl_headers = True
+                        my_include_dirs.append(ipth)
+                        my_lib_dirs.append(lpth)
+                        break
 
 if not found_libgsl or not found_gsl_headers:
     print "The setup.py script could not find the libgsl or gsl headers."

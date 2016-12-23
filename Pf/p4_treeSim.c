@@ -774,8 +774,9 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
 
     // The random number is not from zero to one, it is from zero to sLike.
     // That way we do not need to change the ancStPicker
-    theRanDouble = ((double)random() * sLike) / ((double)((long)RAND_MAX));
-    //printf("Got theRanDouble %f\n", theRanDouble);
+    theRanDouble = ((double)random()) / ((double)((long)RAND_MAX));
+    theRanDouble *= sLike;
+    // printf("Got theRanDouble %.10f\n", theRanDouble);
                 
     // Now pick an ancestral state --- cat, chSt, invar, and invarChar.
     gotIt = 0;
@@ -784,7 +785,7 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
         for(chStNum = 0; chStNum < dp->dim; chStNum++) {
             if(theRanDouble < mp->ancStPicker[k]) {
                 gotIt = 1;
-                // printf("xGot anc state: patNum %i, catNum %i, chStNum %i\n", patNum, catNum, chStNum);
+                //printf("xGot anc state: patNum %i, catNum %i, chStNum %i\n", patNum, catNum, chStNum);
             }
             k++;
             if(gotIt) break;
@@ -793,20 +794,21 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
     }
     isInvar = 0;
     if(!gotIt) {
-        if(mp->pInvar->val[0]) { // do pInvar
+        if(mp->pInvar->free) { // do pInvar
             for(chStNum = 0; chStNum < dp->dim; chStNum++) {
                 if(dp->globalInvarSitesArray[chStNum][patNum]) {
                     if(theRanDouble < mp->ancStPicker[k]) {
                         isInvar = 1;
-                        // printf("yGot anc state: patNum %i, pInvar, chStNum %i\n", patNum, chStNum);
+                        //printf("yGot anc state: patNum %i, pInvar, chStNum %i\n", patNum, chStNum);
                         gotIt = 1;
                     }
-                if(gotIt) break;
-                k++;
                 }
+                k++;
+                if(gotIt) break;
             }
         }
     }
+    
     if(!gotIt) {
         printf("Something is wrong with the ancestral state picker. gotIt is zero.\n");
         exit(1);

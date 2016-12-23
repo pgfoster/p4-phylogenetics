@@ -21,7 +21,7 @@ fudgeFactor = {}
 fudgeFactor['local'] = 1.0
 fudgeFactor['brLen'] = 1.0
 fudgeFactor['eTBR'] = 1.0
-fudgeFactor['treeScale'] = 1.0
+#fudgeFactor['treeScale'] = 1.0
 fudgeFactor['allBrLens'] = 1.0
 fudgeFactor['polytomy'] = 1.0
 fudgeFactor['rjComp'] = 2.0
@@ -105,8 +105,8 @@ class McmcTunings(object):
         object.__setattr__(self, 'doPolytomyResolutionClassPrior', False)
         object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
         object.__setattr__(self, 'brLenPriorType', 'exponential')
-        object.__setattr__(self, 'treeScale', 2.0 * math.log(1.1))
-        object.__setattr__(self, 'allBrLens', 2.0 * math.log(1.1))
+        #object.__setattr__(self, 'treeScale', 2.0 * math.log(1.1))
+        object.__setattr__(self, 'allBrLens', 2.0 * math.log(1.02))
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
@@ -135,7 +135,7 @@ class McmcTunings(object):
         lst.append("%s%15s: %5.3f" % (spacer, 'etbrPExt', self.etbrPExt))
         lst.append("%s%15s: %5.3f" % (spacer, 'etbrLambda', self.etbrLambda))
         lst.append("%s%15s: %.3f" % (spacer, 'relRate', self.relRate))
-        lst.append("%s%15s: %.3f" % (spacer, 'treeScale', self.treeScale))
+        #lst.append("%s%15s: %.3f" % (spacer, 'treeScale', self.treeScale))
         lst.append("%s%15s: %.3f" % (spacer, 'allBrLens', self.allBrLens))
 
         #lst.append("%s%30s: %s" % (spacer, 'chainTemp', self.chainTemp))
@@ -278,7 +278,7 @@ class McmcTuningsUsage(object):
         #object.__setattr__(self, 'polytomy', None)
         object.__setattr__(self, 'relRate', None)
         # root3 has no tuning
-        object.__setattr__(self, 'treeScale', None)
+        #object.__setattr__(self, 'treeScale', None)
 
     def __setattr__(self, item, val):
         gm = ["\nMcmcTuningsUsage.__setattr__()"]
@@ -323,11 +323,11 @@ class McmcTuningsUsage(object):
         else:
             lst.append("%s%15s: None" % (spacer, 'relRate'))
 
-        if self.treeScale:
-            nTunings += 1
-            lst.append("%s%15s: 1" % (spacer, 'treeScale'))
-        else:
-            lst.append("%s%15s: None" % (spacer, 'treeScale'))
+        # if self.treeScale:
+        #     nTunings += 1
+        #     lst.append("%s%15s: 1" % (spacer, 'treeScale'))
+        # else:
+        #     lst.append("%s%15s: None" % (spacer, 'treeScale'))
         lst.append("")
 
         theSig = "%s%15s"
@@ -418,7 +418,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'brLen', 0.0)
         object.__setattr__(self, 'allBrLens', 0.0)
         object.__setattr__(self, 'eTBR', 1.0)
-        object.__setattr__(self, 'treeScale', 0.0)
+        #object.__setattr__(self, 'treeScale', 0.0)
         object.__setattr__(self, 'polytomy', 0.0)
         object.__setattr__(self, 'root3', 0.0)
         object.__setattr__(self, 'compLocation', 0.0)
@@ -1184,14 +1184,14 @@ class Mcmc(object):
             self.proposals.append(p)
             object.__setattr__(self.tuningsUsage, 'local', p)
 
-        # treeScale
-        if self.prob.treeScale:
-            p = Proposal(self)
-            p.name = 'treeScale'
-            p.weight = self.prob.treeScale * \
-                (len(self.tree.nodes) - 1) * fudgeFactor['treeScale']
-            self.proposals.append(p)
-            object.__setattr__(self.tuningsUsage, 'treeScale', p)
+        # # treeScale
+        # if self.prob.treeScale:
+        #     p = Proposal(self)
+        #     p.name = 'treeScale'
+        #     p.weight = self.prob.treeScale * \
+        #         (len(self.tree.nodes) - 1) * fudgeFactor['treeScale']
+        #     self.proposals.append(p)
+        #     object.__setattr__(self.tuningsUsage, 'treeScale', p)
 
         # polytomy
         if self.prob.polytomy:
@@ -2933,30 +2933,30 @@ class Mcmc(object):
                     if verbose:
                         print sig2 % "ok"
 
-            if self.tuningsUsage.treeScale:
-                p = self.tuningsUsage.treeScale
-                accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
-                if verbose:
-                    print theSig % ("treeScale", accepted),
-                if accepted < safeLower: 
-                    if verbose:
-                        print sig2 % "too small",
-                    oldTuning = self.tunings.treeScale
-                    self.tunings.treeScale /= 2.0
-                    if verbose:
-                        print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.treeScale)
-                    needsToBeTuned = True
-                elif accepted > safeUpper:
-                    if verbose:
-                        print sig2 % "too big",
-                    oldTuning = self.tunings.treeScale
-                    self.tunings.treeScale *= 2.0
-                    if verbose:
-                        print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.treeScale)
-                    needsToBeTuned = True
-                else:
-                    if verbose:
-                        print sig2 % "ok"
+            # if self.tuningsUsage.treeScale:
+            #     p = self.tuningsUsage.treeScale
+            #     accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+            #     if verbose:
+            #         print theSig % ("treeScale", accepted),
+            #     if accepted < safeLower: 
+            #         if verbose:
+            #             print sig2 % "too small",
+            #         oldTuning = self.tunings.treeScale
+            #         self.tunings.treeScale /= 2.0
+            #         if verbose:
+            #             print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.treeScale)
+            #         needsToBeTuned = True
+            #     elif accepted > safeUpper:
+            #         if verbose:
+            #             print sig2 % "too big",
+            #         oldTuning = self.tunings.treeScale
+            #         self.tunings.treeScale *= 2.0
+            #         if verbose:
+            #             print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.treeScale)
+            #         needsToBeTuned = True
+            #     else:
+            #         if verbose:
+            #             print sig2 % "ok"
 
 
 
