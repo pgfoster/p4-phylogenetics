@@ -45,9 +45,9 @@ if True:
                     newBrLen = var.BRLEN_MAX * var.BRLEN_MAX / newBrLen
             theNode.br.len = newBrLen
             self.logProposalRatio = math.log(newBrLen / oldBrLen)
+
         else:  # Sliding window.
-            newBrLen = oldBrLen + \
-                (theProposal.tuning * (random.random() - 0.5))
+            newBrLen = oldBrLen + (theProposal.tuning * (random.random() - 0.5))
             #newBrLen = oldBrLen + (2.0 * (random.random() - 0.5))
 
             # Linear reflect if needed
@@ -79,49 +79,94 @@ if True:
     def proposeAllBrLens(self, theProposal):
         gm = ['Chain.proposeAllBrLens']
         pTree = self.propTree
-        nBranches = 0
-        oldBrLens = [n.br.len for n in pTree.iterNodesNoRoot()]
-
         self.logPriorRatio = 0.0
         self.logProposalRatio = 0.0
-        for n in pTree.iterNodesNoRoot():
-            oldBrLen = n.br.len
-            newBrLen = oldBrLen *  math.exp(theProposal.tuning * (random.random() - 0.5))
-            # no need to bother with this next line, because all branches change
-            #n.br.lenChanged = True
-            if self.mcmc.tunings.brLenPriorType == 'exponential':
-                self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
-                                      (oldBrLen - newBrLen)
-            else:
-                pass # log prior remains zero for uniform prior
-            self.logProposalRatio += math.log(newBrLen / oldBrLen)
+
+        if 0:    # multiplier proposal, does not work
+            nBranches = 0
+            oldBrLens = []
+            newBrLens = []
+            for n in pTree.iterNodesNoRoot():
+                oldBrLen = n.br.len
+                oldBrLens.append(oldBrLen)
+                newBrLen = oldBrLen *  math.exp(theProposal.tuning * (random.random() - 0.5))
+
+                # Logarithmic reflect if needed
+                while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
+                    if newBrLen < var.BRLEN_MIN:
+                        newBrLen = var.BRLEN_MIN * var.BRLEN_MIN / newBrLen
+                    elif newBrLen > var.BRLEN_MAX:
+                        newBrLen = var.BRLEN_MAX * var.BRLEN_MAX / newBrLen
+
+                newBrLens.append(newBrLen)
+                nBranches += 1
+                n.br.len = newBrLen
+                if self.mcmc.tunings.brLenPriorType == 'exponential':
+                    self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
+                                          (oldBrLen - newBrLen)
+                else:
+                    pass # log prior remains zero for uniform prior
+            # This hasting ratio appears to be wrong.
+            self.logProposalRatio = nBranches * math.log(sum(newBrLens)/sum(oldBrLens))
+
+        else:  # sliding window
+            for n in pTree.iterNodesNoRoot():
+                oldBrLen = n.br.len
+
+                # sliding window
+                newBrLen = oldBrLen + (theProposal.tuning * (random.random() - 0.5))
+
+                # Linear reflect if needed
+                while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
+                    if newBrLen < var.BRLEN_MIN:
+                        newBrLen = (var.BRLEN_MIN - newBrLen) + var.BRLEN_MIN
+                    elif newBrLen > var.BRLEN_MAX:
+                        newBrLen = var.BRLEN_MAX - (newBrLen - var.BRLEN_MAX)
+
+                n.br.len = newBrLen
+                if self.mcmc.tunings.brLenPriorType == 'exponential':
+                    self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
+                                          (oldBrLen - newBrLen)
+                else:
+                    pass # log prior remains zero for uniform prior
 
 
-    def proposeTreeScale(self, theProposal):
-        gm = ['Chain.proposeTreeScale']
-        pTree = self.propTree
-        nBranches = 0
-        oldTreeLen = 0.0
-        for n in pTree.iterNodesNoRoot():
-            nBranches += 1
-            oldTreeLen += n.br.len
-        newTreeLen = oldTreeLen *  math.exp(theProposal.tuning * (random.random() - 0.5))
-        forwardScaler = newTreeLen/oldTreeLen
-        reverseScaler = oldTreeLen/newTreeLen
+    # def proposeTreeScale(self, theProposal):
+    #     gm = ['Chain.proposeTreeScale']
+    #     pTree = self.propTree
+    #     nBranches = 0
+    #     oldTreeLen = 0.0
+    #     for n in pTree.iterNodesNoRoot():
+    #         nBranches += 1
+    #         oldTreeLen += n.br.len
+    #     # newTreeLen = oldTreeLen *  math.exp(theProposal.tuning * (random.random() - 0.5))
+    #     newTreeLen = oldTreeLen + (theProposal.tuning * (random.random() - 0.5))
+    #     forwardScaler = newTreeLen/oldTreeLen
+    #     #reverseScaler = oldTreeLen/newTreeLen
 
-        self.logPriorRatio = 0.0
-        for n in pTree.iterNodesNoRoot():
-            oldBrLen = n.br.len
-            n.br.len *= forwardScaler
-            # no need to bother with this next line, because all branches change
-            #n.br.lenChanged = True
-            if self.mcmc.tunings.brLenPriorType == 'exponential':
-                self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
-                                      (oldBrLen - n.br.len)
-            else:
-                pass # remains zero
+    #     self.logPriorRatio = 0.0
+    #     for n in pTree.iterNodesNoRoot():
+    #         oldBrLen = n.br.len
+    #         newBrLen = oldBrLen * forwardScaler
 
-        self.logProposalRatio = nBranches * (math.log(newTreeLen) - math.log(oldTreeLen))
+    #         # Linear reflect if needed
+    #         while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
+    #             if newBrLen < var.BRLEN_MIN:
+    #                 newBrLen = (var.BRLEN_MIN - newBrLen) + var.BRLEN_MIN
+    #             elif newBrLen > var.BRLEN_MAX:
+    #                 newBrLen = var.BRLEN_MAX - (newBrLen - var.BRLEN_MAX)
+
+    #         n.br.len = newBrLen
+
+    #         # no need to bother with this next line, because all branches change
+    #         #n.br.lenChanged = True
+    #         if self.mcmc.tunings.brLenPriorType == 'exponential':
+    #             self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
+    #                                   (oldBrLen - n.br.len)
+    #         else:
+    #             pass # remains zero
+
+    #     self.logProposalRatio = 0.0 # nBranches * (math.log(newTreeLen) - math.log(oldTreeLen))
             
 
     def proposeLocal(self, theProposal):  # from BAMBE and MrBayes.
@@ -225,8 +270,8 @@ if True:
             pTree.draw(width=80, showInternalNodeNames=1, addToBrLen=0.0)
 
         # We want a tree like this:
-        # +------c
-        # +-------|(v)
+        #                +------c
+        #        +-------|(v)
         # +------|(u)    +------d
         # |      |
         # |(a)   +-------b
@@ -308,8 +353,8 @@ if True:
                 width=100, showInternalNodeNames=1, addToBrLen=0.2, model=True)
 
         # At this point, the tree should look like this:
-        # +------c
-        # +-------|(v)
+        #                +------c
+        #        +-------|(v)
         # +------|(u)    +------d
         # |      |
         # |(a)   +-------b
@@ -358,15 +403,15 @@ if True:
 
         if random.random() < 0.5:
             # detach u
-            # +------c
-            # +-------|(v)
+            #                +------c
+            #        +-------|(v)
             # +------|(u)    +------d
             # |      |
             # |(a)   +-------b
             # |
             # +------X
             ##
-            # +----------c
+            #            +----------c
             # +----------|(v)
             # |(a)       +----------d
             # |
@@ -402,17 +447,17 @@ if True:
             # now re-attach at newX
             if newX < newY:
                 # no topology change, set up the same as above
-                # +----------c
+                #            +----------c
                 # +----------|(v)
                 # |(a)       +----------d
                 # |
                 # +----------X
                 ##
-                # newX    newY   newM
-                # +       +      +
+                #        newX    newY   newM
+                #        +       +      +
                 ##
-                # +------c
-                # +-------|(v)
+                #                +------c
+                #        +-------|(v)
                 # +------|(u)    +------d
                 # |      |
                 # |(a)   +-------b
@@ -436,18 +481,18 @@ if True:
             else:
                 # a topology change
                 ##
-                # +----------c
+                #            +----------c
                 # +----------|(v)
                 # |(a)       +----------d
                 # |
                 # +----------X
                 ##
                 ##
-                # newY    newX   newM
-                # +       +      +
+                #        newY    newX   newM
+                #        +       +      +
                 ##
-                # +------c
-                # +-------|(u)
+                #                +------c
+                #        +-------|(u)
                 # +------|(v)    +------b
                 # |      |
                 # |(a)   +-------d
@@ -509,8 +554,8 @@ if True:
 
         else:
             # detach v
-            # +------c
-            # +-------|(v)
+            #                +------c
+            #        +-------|(v)
             # +------|(u)    +------d
             # |      |
             # |(a)   +-------b
@@ -518,7 +563,7 @@ if True:
             # +------X
             ##
             ##
-            # +----------c
+            #            +----------c
             # +----------|(u)
             # |(a)       +----------b
             # |
@@ -556,17 +601,17 @@ if True:
             if newX < newY:
                 # no topology change
                 ##
-                # +----------c
+                #            +----------c
                 # +----------|(u)
                 # |(a)       +----------b
                 # |
                 # +----------X
                 ##
-                # newX    newY   newM
-                # +       +      +
+                #        newX    newY   newM
+                #        +       +      +
                 ##
-                # +------c
-                # +-------|(v)
+                #                +------c
+                #        +-------|(v)
                 # +------|(u)    +------d
                 # |      |
                 # |(a)   +-------b
@@ -589,18 +634,18 @@ if True:
             else:
                 # with a topology change
                 ##
-                # +----------c
+                #            +----------c
                 # +----------|(u)
                 # |(a)       +----------b
                 # |
                 # +----------X
                 ##
                 ##
-                # newY    newX   newM
-                # +       +      +
+                #        newY    newX   newM
+                #        +       +      +
                 ##
-                # +------c
-                # +-------|(u)
+                #                +------c
+                #        +-------|(u)
                 # +------|(v)    +------b
                 # |      |
                 # |(a)   +-------d
@@ -715,8 +760,8 @@ if True:
             # Check whether any constraints have been involved, and if so abort.
             ##
             # It was like this:
-            # +------c
-            # +-------|(v)
+            #                +------c
+            #        +-------|(v)
             # +------|(u)    +------d
             # |      |
             # |(a)   +-------b
@@ -724,8 +769,8 @@ if True:
             # +------X
             ##
             # And now its like this:
-            # +------c
-            # +-------|(u)
+            #                +------c
+            #        +-------|(u)
             # +------|(v)    +------b
             # |      |
             # |(a)   +-------d
@@ -778,8 +823,8 @@ if True:
         # print self.mcmc.tunings.doInternalBrLenPrior
         if hasattr(self.mcmc.tunings, 'doInternalBrLenPrior') and self.mcmc.tunings.doInternalBrLenPrior:
             # originally this
-            # +------c
-            # +-------|(v)
+            #                +------c
+            #        +-------|(v)
             # +------|(u)    +------d
             # |      |
             # |(a)   +-------b
@@ -881,8 +926,7 @@ if True:
             if self.mcmc.tunings.brLenPriorType == 'uniform':
                 self.logPriorRatio = 0.0
             elif self.mcmc.tunings.brLenPriorType == 'exponential':
-                self.logPriorRatio = self.mcmc.tunings.brLenPriorLambda * \
-                    (m - newM)
+                self.logPriorRatio = self.mcmc.tunings.brLenPriorLambda *  (m - newM)
                 if 0:  # Do the same calculation the long way, edge by edge.
                     # print "logPriorRatio = %+.4f" % self.logPriorRatio,
                     foo0 = (self.mcmc.tunings.brLenPriorLambda * m) - \
@@ -891,11 +935,11 @@ if True:
 
                     foo = 0.0
                     if newX < newY:  # no topology change
-                        # newX    newY   newM
-                        # +       +      +
+                        #        newX    newY   newM
+                        #        +       +      +
                         ##
-                        # +------c
-                        # +-------|(v)
+                        #                +------c
+                        #        +-------|(v)
                         # +------|(u)    +------d
                         # |      |
                         # |(a)   +-------b
@@ -910,11 +954,11 @@ if True:
                             (self.mcmc.tunings.brLenPriorLambda *
                              (newM - newY))
                     else:  # with topology change
-                        # newY    newX   newM
-                        # +       +      +
+                        #        newY    newX   newM
+                        #        +       +      +
                         ##
-                        # +------c
-                        # +-------|(u)
+                        #                +------c
+                        #        +-------|(u)
                         # +------|(v)    +------b
                         # |      |
                         # |(a)   +-------d
