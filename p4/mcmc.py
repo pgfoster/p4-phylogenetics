@@ -106,7 +106,7 @@ class McmcTunings(object):
         object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
         object.__setattr__(self, 'brLenPriorType', 'exponential')
         #object.__setattr__(self, 'treeScale', 2.0 * math.log(1.1))
-        object.__setattr__(self, 'allBrLens', 2.0 * math.log(1.1))
+        object.__setattr__(self, 'allBrLens', 2.0 * math.log(1.02))
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
@@ -2933,30 +2933,30 @@ class Mcmc(object):
                     if verbose:
                         print sig2 % "ok"
 
-            if self.tuningsUsage.treeScale:
-                p = self.tuningsUsage.treeScale
-                accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
-                if verbose:
-                    print theSig % ("treeScale", accepted),
-                if accepted < safeLower: 
-                    if verbose:
-                        print sig2 % "too small",
-                    oldTuning = self.tunings.treeScale
-                    self.tunings.treeScale /= 2.0
-                    if verbose:
-                        print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.treeScale)
-                    needsToBeTuned = True
-                elif accepted > safeUpper:
-                    if verbose:
-                        print sig2 % "too big",
-                    oldTuning = self.tunings.treeScale
-                    self.tunings.treeScale *= 2.0
-                    if verbose:
-                        print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.treeScale)
-                    needsToBeTuned = True
-                else:
-                    if verbose:
-                        print sig2 % "ok"
+            # if self.tuningsUsage.treeScale:
+            #     p = self.tuningsUsage.treeScale
+            #     accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+            #     if verbose:
+            #         print theSig % ("treeScale", accepted),
+            #     if accepted < safeLower: 
+            #         if verbose:
+            #             print sig2 % "too small",
+            #         oldTuning = self.tunings.treeScale
+            #         self.tunings.treeScale /= 2.0
+            #         if verbose:
+            #             print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.treeScale)
+            #         needsToBeTuned = True
+            #     elif accepted > safeUpper:
+            #         if verbose:
+            #             print sig2 % "too big",
+            #         oldTuning = self.tunings.treeScale
+            #         self.tunings.treeScale *= 2.0
+            #         if verbose:
+            #             print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.treeScale)
+            #         needsToBeTuned = True
+            #     else:
+            #         if verbose:
+            #             print sig2 % "ok"
 
 
 

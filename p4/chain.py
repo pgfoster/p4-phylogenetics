@@ -1685,17 +1685,13 @@ class Chain(object):
         #    mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
         mtval = numpy.array(mt.val)
         myProposer = scipy.stats.dirichlet(theProposal.tuning * mtval)
+        newVal = myProposer.rvs(size=1)[0]
+        while  newVal.min() < var.PIVEC_MIN:
+            for i in range(dim):
+                if newVal[i] < var.PIVEC_MIN:
+                    newVal[i] += (1.0 + random.random()) * var.PIVEC_MIN
+            newVal = newVal / newVal.sum()
 
-        safety = 0
-        while 1:
-            newVal = myProposer.rvs(size=1)[0]
-            if newVal.min() > var.PIVEC_MIN:
-                break
-            safety += 1
-            if safety > 100:
-                gm.append("Unable to draw a good proposal more than var.PIVEC_MIN")
-                raise P4Error, gm
-        
         # # Old way
         # newValList = newVal.tolist()
         # rangeDim = range(dim)
@@ -2356,20 +2352,15 @@ class Chain(object):
             myProposer = scipy.stats.dirichlet(theProposal.tuning * mt.val)
 
             safety = 0
-            while 1:
-                newVal = myProposer.rvs(size=1)[0]
-                if newVal.min() > var.RATE_MIN and newVal.max() < var.RATE_MAX:
-                    break
-                safety += 1
-                #print "rMatDir: safety=%2i  mt.val = %s, mt.val.sum = %s, tuning=%.2f newVal=%s, newValSum = %s" % (
-                #    safety, mt.val, mt.val.sum(), theProposal.tuning, newVal, newVal.sum())
-                if safety > 100:
-                    gm.append("Unable to draw a good proposal within var.RATE_MIN and var.RATE_MAX")
-                    gm.append("Proposal %s, part %i, rateMatrixNum %i" % (theProposal.name, theProposal.pNum, theProposal.mtNum))
-                    gm.append("You possibly want to increase the tuning, currently %f" % theProposal.tuning)
-                    raise P4Error, gm
-
-
+            newVal = myProposer.rvs(size=1)[0]
+            while newVal.min() < var.RATE_MIN or newVal.max() > var.RATE_MAX:
+                for i in range(len(newVal)):
+                    if newVal[i] < var.RATE_MIN:
+                        newVal[i] += (1.0 + random.random()) * var.RATE_MIN
+                    if newVal[i] > var.RATE_MAX:
+                        newVal[i] = var.RATE_MAX - ((1.0 + random.random()) * var.RATE_MIN)
+                    newVal = newVal / newVal.sum()
+                    
             # Calculate the proposal ratio
             # We can re-use myProposer to get the log pdf
             forwardLnPdf = myProposer.logpdf(newVal)
