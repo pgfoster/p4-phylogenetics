@@ -19,6 +19,7 @@ from part import Part
 import numpy
 import numpy.linalg
 import pf
+from builtins import object       # For Py2/3 compatibility, needed for redefinition of __bool__() below in Py2
 
 cListPat = re.compile('(\d+)-?(.+)?')
 cList2Pat = re.compile('(.+)\\\\(\d+)')
@@ -380,11 +381,16 @@ class Alignment(SequenceList):
             columns.append(column)
         return columns
 
-    # If the self.length len is zero, and I don't have
-    # __nonzero__(), then "assert self" will raise an AssertionError,
-    # basing that response on the result of len(self).  Having
-    # __nonzero__() makes "assert self" work.
-    def __nonzero__(self):
+    # Here I over-ride __bool__().  If the self.length len is zero, and I don't
+    # have __bool__() redefined as below, then "assert self" will raise an
+    # AssertionError, basing that response on the result of len(self).  Having
+    # __bool__() redefined here makes "assert self" work, even with no sequence
+    # length.  Previously, python 2 only, I had to over-ride __nonzero__() for
+    # the same reason --- but that does not work with Python 3.  In order to
+    # make this redefinition of __bool__() work for Python 2, I need to "from
+    # builtins import object" above, which makes it Py2/3 compatible.
+
+    def __bool__(self):
         return True
 
     def __len__(self):

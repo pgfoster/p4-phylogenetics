@@ -8,6 +8,7 @@ import copy
 from var import var
 from p4exceptions import P4Error
 from subprocess import Popen, PIPE
+from builtins import object       # For Py2/3 compatibility, needed for redefinition of __bool__() below in Py2
 
 
 class Sequence(object):
@@ -35,11 +36,8 @@ class Sequence(object):
 
     nChar = property(_getNChar)
 
-    # If the self.sequence len is zero, and I don't have
-    # __nonzero__(), then "assert self" will raise an AssertionError,
-    # basing that response on the result of len(self).  Having
-    # __nonzero__() makes "assert self" work.
-    def __nonzero__(self):
+    # See the comment in alignment.py, for the same redefinition of __bool__().
+    def __bool__(self):
         return True
 
     def __len__(self):
