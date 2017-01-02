@@ -1,10 +1,11 @@
+from __future__ import print_function
 read('../noTRuberNoGapsNoAmbiguities.nex')
 a = var.alignments[0]
 d = Data()
-print 'Using all sites ...'
+print('Using all sites ...')
 d.compoChiSquaredTest(verbose=1)
 a.setNexusSets()
 a.excludeCharSet('constant')
 d = Data()
-print 'After constant sites removal ...'
+print('After constant sites removal ...')
 d.compoChiSquaredTest(verbose=1)

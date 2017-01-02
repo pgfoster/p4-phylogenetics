@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 nTrees = 15
 nSites = 400
@@ -11,11 +12,11 @@ for i in range(nTrees):
     for j in range(nSites):
         aLine = fIn.readline()
         if not aLine:
-            print 'no workee!  Ran out of lines.'
+            print('no workee!  Ran out of lines.')
             sys.exit()
         splitLine = aLine.split()
         if len(splitLine) != 2:
-            print 'no workee!  Bad line %s' % aLine
+            print('no workee!  Bad line %s' % aLine)
             sys.exit()
         fOut.write('\t\t%s\t%s\n' % (splitLine[0], splitLine[1]))
     aLine = fIn.readline()

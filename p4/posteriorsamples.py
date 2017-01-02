@@ -1,11 +1,12 @@
-from p4exceptions import P4Error
-from tree import Tree
-import nexus
-from var import var
+from __future__ import print_function
+from p4.p4exceptions import P4Error
+from p4.tree import Tree
+import p4.nexus
+from p4.var import var
 
 import os
 import string
-import cStringIO
+import io
 import copy
 
 
@@ -141,7 +142,7 @@ class PosteriorSamples(object):
             nPLines = len(self.pLines)
             if self.nSamples and self.nSamples == nPLines:
                 if self.verbose >= 1:
-                    print "Got %i samples." % self.nSamples
+                    print("Got %i samples." % self.nSamples)
             else:
                 gm.append(
                     "Got %i tree samples, but %i parameter samples." % (self.nSamples, nPLines))
@@ -163,7 +164,7 @@ class PosteriorSamples(object):
         if self.directory != '.':
             fName = os.path.join(self.directory, fName)
         try:
-            f = file(fName)
+            f = open(fName)
         except IOError:
             gm.append("Can't find tree file '%s'" % fName)
             raise P4Error(gm)
@@ -186,8 +187,8 @@ class PosteriorSamples(object):
             lNum += 1
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
-        translateFlob = cStringIO.StringIO(' '.join(translateLines))
-        nx = nexus.Nexus()
+        translateFlob = io.BytesIO(' '.join(translateLines))
+        nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
         # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok
@@ -213,7 +214,7 @@ class PosteriorSamples(object):
             if self.directory != '.':
                 fName = os.path.join(self.directory, fName)
             try:
-                f = file(fName)
+                f = open(fName)
             except IOError:
                 gm.append("Can't find prams file '%s'" % fName)
                 raise P4Error(gm)
@@ -247,15 +248,15 @@ class PosteriorSamples(object):
                 self.nPrams = loc['nPrams']
                 self.pramsProfile = loc['pramsProfile']
             except IOError:
-                print "The file '%s' cannot be found." % fName
+                print("The file '%s' cannot be found." % fName)
 
     def _getP4SampleTree(self, sampNum):
         savedDoFastNextTok = var.nexus_doFastNextTok
         var.nexus_doFastNextTok = False
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
-            print tLine
-        f = cStringIO.StringIO(tLine)
+            print(tLine)
+        f = io.BytesIO(tLine)
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)
@@ -270,7 +271,7 @@ class PosteriorSamples(object):
         if self.tree.model.nFreePrams:
             pLine = self.pLines[sampNum]
             if self.verbose >= 3:
-                print pLine
+                print(pLine)
             splitPLine = pLine.split()
 
             pGenNum = int(splitPLine[0])
@@ -280,7 +281,7 @@ class PosteriorSamples(object):
                 raise P4Error(
                     "something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
             if self.verbose >= 2:
-                print "(zero-based) sample %i is gen %i" % (sampNum, tGenNum)
+                print("(zero-based) sample %i is gen %i" % (sampNum, tGenNum))
 
             # t.model.dump()
 
@@ -350,7 +351,7 @@ class PosteriorSamples(object):
         if self.directory != '.':
             fName = os.path.join(self.directory, fName)
         try:
-            f = file(fName)
+            f = open(fName)
         except IOError:
             gm.append("Can't find tree file '%s'" % fName)
             raise P4Error(gm)
@@ -373,8 +374,8 @@ class PosteriorSamples(object):
             lNum += 1
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
-        translateFlob = cStringIO.StringIO(' '.join(translateLines))
-        nx = nexus.Nexus()
+        translateFlob = io.BytesIO(' '.join(translateLines))
+        nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
         # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok
@@ -397,7 +398,7 @@ class PosteriorSamples(object):
         if self.directory != '.':
             fName = os.path.join(self.directory, fName)
         try:
-            f = file(fName)
+            f = open(fName)
         except IOError:
             gm.append("Can't find prams file '%s'" % fName)
             raise P4Error(gm)
@@ -409,7 +410,7 @@ class PosteriorSamples(object):
         aLine = fLines[lNum].strip()
         self.pramsHeader = aLine.split()
         if self.verbose >= 2:
-            print "pramsHeader: %s" % self.pramsHeader
+            print("pramsHeader: %s" % self.pramsHeader)
         assert self.pramsHeader[0] == 'Gen'
 
         # Collect pram lines
@@ -426,15 +427,15 @@ class PosteriorSamples(object):
         # print self.pLines
         self.nPrams = len(self.pramsHeader)
         if self.verbose >= 2:
-            print "pram line length is %i" % self.nPrams
+            print("pram line length is %i" % self.nPrams)
 
     def _getMrBayesSampleTree(self, sampNum):
         savedDoFastNextTok = var.nexus_doFastNextTok
         var.nexus_doFastNextTok = False
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
-            print tLine
-        f = cStringIO.StringIO(tLine)
+            print(tLine)
+        f = io.BytesIO(tLine)
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)  # doModelComments is nParts
@@ -448,7 +449,7 @@ class PosteriorSamples(object):
 
         pLine = self.pLines[sampNum]
         if self.verbose >= 3:
-            print pLine
+            print(pLine)
         splitPLine = pLine.split()
 
         pGenNum = int(splitPLine[0])
@@ -458,15 +459,14 @@ class PosteriorSamples(object):
             raise P4Error(
                 "something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
         if self.verbose >= 2:
-            print "(zero-based) sample %i is gen %i" % (sampNum, tGenNum)
+            print("(zero-based) sample %i is gen %i" % (sampNum, tGenNum))
 
         # t.model.dump()
 
         splIndx = 3          # but could be Gen     LnL     LnPr    TL  ...
         while splIndx < self.nPrams:
             pNum = 0
-            # print "splIndx = %i, pramsHeader = %s" % (splIndx,
-            # self.pramsHeader[splIndx])
+            print("splIndx = %i, pramsHeader = %s" % (splIndx, self.pramsHeader[splIndx]))
             if self.pramsHeader[splIndx].startswith('r(A<->C)'):
                 if self.tree.model.nParts > 1:
                     try:
@@ -541,7 +541,7 @@ class PosteriorSamples(object):
                 t.model.parts[pNum].relRate = float(splitPLine[splIndx])
                 splIndx += 1
             else:
-                print "splIndx=%i.  Got unknown pram %s.  Fix me!" % (splIndx, self.pramsHeader[splIndx])
+                print("splIndx=%i.  Got unknown pram %s.  Fix me!" % (splIndx, self.pramsHeader[splIndx]))
                 splIndx += 1
 
         if splIndx != len(splitPLine):

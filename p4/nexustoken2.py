@@ -1,8 +1,8 @@
-import pf
-from var import var
+import p4.pf as pf
+from p4.var import var
 import numpy
 import string
-from p4exceptions import P4Error
+from p4.p4exceptions import P4Error
 
 """A faster version of nextTok(), using memory allocated (once only)
 using numpy, and using functions written in C.  The slow, pure
@@ -16,6 +16,11 @@ way whenever CStrings are encountered."""
 class NexusToken(object):
 
     def __init__(self, max):
+        gm = ["NexusToken init in nexustoken2.py."]
+        gm.append("This is for doFastNextTok")
+        gm.append("But it is turned off at the moment.  So don't use it.")
+        raise P4Error(gm)
+
         self.max = numpy.array([max], numpy.int32)
         self.tokLen = numpy.array([0], numpy.int32)
         self.tok = numpy.array(['x'] * int(self.max), 'c')

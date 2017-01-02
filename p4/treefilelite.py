@@ -1,12 +1,13 @@
-from p4exceptions import P4Error
+from __future__ import print_function
+from p4.p4exceptions import P4Error
 from tree import Tree
 import nexus
-from var import var
+from p4.var import var
 import sys
 
 import os
 import string
-import cStringIO
+import io
 import copy
 
 
@@ -53,7 +54,7 @@ class TreeFileLite(object):
 
       from p4.treefilelite import TreeFileLite
       tfl = TreeFileLite('myBigFile.nex')
-      f = file('mySmallerFile.nex', 'w')
+      f = open('mySmallerFile.nex', 'w')
       f.write(tfl.header)
       for i in range(24000,25000):
           f.write('tree %s\\n' % tfl.tLines[i])
@@ -77,7 +78,7 @@ class TreeFileLite(object):
         self.nSamples = len(self.tLines)
         if self.nSamples:
             if self.verbose >= 1:
-                print "Got %i samples." % self.nSamples
+                print("Got %i samples." % self.nSamples)
         else:
             gm.append("Got 0 tree samples.")
             raise P4Error(gm)
@@ -87,8 +88,8 @@ class TreeFileLite(object):
         var.nexus_doFastNextTok = False
         tLine = self.tLines[treeNum]
         if self.verbose >= 3:
-            print tLine
-        f = cStringIO.StringIO(tLine)
+            print(tLine)
+        f = io.BytesIO(tLine)
         t = Tree()
         if tLine.startswith("("):
             t.parseNewick(f, translationHash=self.translationHash)
@@ -102,7 +103,7 @@ class TreeFileLite(object):
         gm = ["TreeFileLite._readTreeFile()"]
         # Read in the trees
         try:
-            f = file(self.fName, "U")
+            f = open(self.fName, "U")
         except IOError:
             gm.append("Can't find tree file '%s'" % self.fName)
             raise P4Error(gm)
@@ -178,7 +179,7 @@ class TreeFileLite(object):
                 lNum += 1
                 aLine = fLines[lNum].strip()
             translateLines.append(aLine)
-            translateFlob = cStringIO.StringIO(' '.join(translateLines))
+            translateFlob = io.BytesIO(' '.join(translateLines))
             nx = nexus.Nexus()
             self.translationHash = nx.readTranslateCommand(translateFlob)
             # print self.translationHash

@@ -1,3 +1,4 @@
+from __future__ import print_function
 var.verboseRead = 0
 read('t.nex')
 t = var.trees[0]
@@ -32,7 +33,7 @@ t.setRelRate(partNum=pNum, val=0.1)
 
 t.model.relRatesAreFree = 1
 
-print 'Optimizing...' 
+print('Optimizing...') 
 t.optLogLike(newtAndBrentPowell=0, allBrentPowell=1)
 #t.optLogLike(newtAndBrentPowell=1, allBrentPowell=0)
 t.tPickle('opt')

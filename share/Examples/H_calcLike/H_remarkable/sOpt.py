@@ -1,3 +1,4 @@
+from __future__ import print_function
 var.verboseRead = 0
 var.warnReadNoFile = 0
 read('data.nex')
@@ -21,8 +22,8 @@ t.setPInvar(free=0, val=0.0)
 
 t.optLogLike()
 
-print '\nAfter optimizing, the composition of the model for the non-root nodes is:' 
-print t.model.parts[0].comps[0].val
-print '...and the composition of the root model is:'
-print t.model.parts[0].comps[1].val
+print('\nAfter optimizing, the composition of the model for the non-root nodes is:') 
+print(t.model.parts[0].comps[0].val)
+print('...and the composition of the root model is:')
+print(t.model.parts[0].comps[1].val)
 t.write()

@@ -1,13 +1,14 @@
-import func
-import pf
-from var import var
+from __future__ import print_function
+import p4.func
+import p4.pf as pf
+from p4.var import var
 import math
 import random
 import copy
 import numpy
 import scipy
 import scipy.stats
-from p4exceptions import P4Error
+from p4.p4exceptions import P4Error
 import sys
 
 #localCalls = 0
@@ -15,7 +16,7 @@ import sys
 
 class Chain(object):
 
-    from chain_topol import proposeRoot3, proposeBrLen, proposeAllBrLens, proposeLocal, proposeETBR_Blaise, proposeESPR_Blaise, proposeETBR, proposeESPR, proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
+    from p4.chain_topol import proposeRoot3, proposeBrLen, proposeAllBrLens, proposeLocal, proposeETBR_Blaise, proposeESPR_Blaise, proposeETBR, proposeESPR, proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
 
 
     def __init__(self, aMcmc):
@@ -505,9 +506,9 @@ class Chain(object):
                 pf.p4_setPrams(self.propTree.cTree, -1)
                 logLike2 = pf.p4_treeLogLike(self.propTree.cTree, 0)
                 if math.fabs(logLike1 - logLike2) > 0.001:
-                    print "propose brLen bad likes calc. %f %f" % (logLike1, logLike2)
+                    print("propose brLen bad likes calc. %f %f" % (logLike1, logLike2))
                 else:
-                    print "propose brLen likes ok --  %f" % logLike1
+                    print("propose brLen likes ok --  %f" % logLike1)
                 sys.exit()
 
         elif theProposal.name == 'allBrLens':
@@ -574,13 +575,13 @@ class Chain(object):
 
                 # Debugging litter ...
                 if 0 and self.mcmc.gen == 270:
-                    print
+                    print()
                     self.propTree.draw()
                     #self.propTree.node(16).br.lenChanged = 1
                     #self.propTree.node(17).br.lenChanged = 1
                     for n in self.propTree.iterNodesNoRoot():
                         if n.br.lenChanged:
-                            print "    node %2i br.lenChanged" % n.nodeNum
+                            print("    node %2i br.lenChanged" % n.nodeNum)
                             #n.br.textDrawSymbol = 'C'
                     # self.propTree.draw()
 
@@ -601,7 +602,7 @@ class Chain(object):
                 if 0 and self.mcmc.gen == 270:
                     for n in self.propTree.iterNodes():
                         if n.flag:
-                            print "    node %2i flag" % n.nodeNum
+                            print("    node %2i flag" % n.nodeNum)
                             # if n.br:
                             #    n.br.textDrawSymbol = 'f'
                     # self.propTree.draw()
@@ -743,8 +744,8 @@ class Chain(object):
                     pf.p4_treeLogLike(self.curTree.cTree, 0)
                     y = sum(self.curTree.partLikes)
                     if math.fabs(x - y) > 0.00001:
-                        print "***************************** gen %i, bad curTree here b" % self.mcmc.gen
-                        print x, y
+                        print("***************************** gen %i, bad curTree here b" % self.mcmc.gen)
+                        print(x, y)
                     # else:
                     # print "***************************** no difference to
                     # curTree here b"
@@ -754,8 +755,8 @@ class Chain(object):
                     pf.p4_treeLogLike(self.propTree.cTree, 0)
                     y = sum(self.propTree.partLikes)
                     if math.fabs(x - y) > 0.00001:
-                        print "***************************** gen %i, bad propTree here b" % self.mcmc.gen
-                        print x, y
+                        print("***************************** gen %i, bad propTree here b" % self.mcmc.gen)
+                        print(x, y)
                     # else:
                     # print "***************************** no difference to
                     # propTree here b"
@@ -950,7 +951,7 @@ class Chain(object):
                 gm.append("Trees differ at start of chain.")
                 raise P4Error(gm)
             else:
-                print "trees are the same -- ok"
+                print("trees are the same -- ok")
                 pass
 
         acceptMove = False
@@ -961,11 +962,11 @@ class Chain(object):
                 # self.curTree.logLike, self.curTree.partLikes,
                 # self.propTree.logLike, self.propTree.partLikes)
                 if math.fabs(self.curTree.logLike - self.propTree.logLike) > 0.0001:
-                    print "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Differs before proposal"
+                    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ Differs before proposal")
                 if math.fabs(self.curTree.logLike - sum(self.curTree.partLikes)) > 0.0001:
-                    print "7777777777777777777777777777777777777777777777777777777777 bad Cur Tree"
+                    print("7777777777777777777777777777777777777777777777777777777777 bad Cur Tree")
                 if math.fabs(self.propTree.logLike - sum(self.propTree.partLikes)) > 0.0001:
-                    print "8888888888888888888888888888888888888888888888888888888888 bad Prop Tree"
+                    print("8888888888888888888888888888888888888888888888888888888888 bad Prop Tree")
                 # print self.propTree.partLikes, type(self.propTree.partLikes)
                 assert type(self.propTree.partLikes) == type(
                     self.propTree.preOrder)
@@ -1022,8 +1023,8 @@ class Chain(object):
             while 1:
                 safety += 1
                 if safety > 100:
-                    print "Attempted %i '%s' proposals, and they all failed." % (safety, aProposal.name)
-                    print "Giving up."
+                    print("Attempted %i '%s' proposals, and they all failed." % (safety, aProposal.name))
+                    print("Giving up.")
                     return True  # ie failure
 
                 if var.doMcmcSp:  # the speedy version
@@ -1223,10 +1224,10 @@ class Chain(object):
                 pNum = aProposal.pNum
 
                 if 0 and self.mcmc.gen == 136:
-                    print "k curTree:"
-                    print self.curTree.model.parts[pNum].bQETneedsReset
-                    print "propTree:"
-                    print self.propTree.model.parts[pNum].bQETneedsReset
+                    print("k curTree:")
+                    print(self.curTree.model.parts[pNum].bQETneedsReset)
+                    print("propTree:")
+                    print(self.propTree.model.parts[pNum].bQETneedsReset)
 
                 b.partLikes[pNum] = a.partLikes[pNum]
                 a.copyToTree(b)
@@ -1340,29 +1341,29 @@ class Chain(object):
             self.curTree.model.copyValsTo(self.testTree.model)
             self.testTree.calcLogLike(verbose=False)
             myDiff = self.curTree.logLike - self.testTree.logLike
-            print "diff = %f" % myDiff
+            print("diff = %f" % myDiff)
             if 1 and self.mcmc.gen == 13:
                 # print "Too big!"
-                print "Comparing topology stuff with Tree.verifyIdentityWith() ..."
+                print("Comparing topology stuff with Tree.verifyIdentityWith() ...")
                 # python level only, false for 'doSplitKeys'
                 ret = self.curTree.verifyIdentityWith(self.testTree, False)
                 if ret == var.DIFFERENT:
-                    print "verifyIdentityOfTwoTreesInChain() tree topology stuff differs"
+                    print("verifyIdentityOfTwoTreesInChain() tree topology stuff differs")
                 else:
-                    print "topology stuff seems to be the same"
-                print "Python-level: Verify model prams, with Model.verifyValsWith."
+                    print("topology stuff seems to be the same")
+                print("Python-level: Verify model prams, with Model.verifyValsWith.")
                 ret = self.curTree.model.verifyValsWith(
                     self.testTree.model)  # python level only
                 if ret == var.DIFFERENT:
-                    print "verifyIdentityOfTwoTreesInChain() model stuff differs"
+                    print("verifyIdentityOfTwoTreesInChain() model stuff differs")
                 else:
-                    print "model stuff appears to be the same"
+                    print("model stuff appears to be the same")
 
                 # cStuff.  This does model prams, tree and node stuff.
-                print "about to pf.p4_verifyIdentityOfTwoTrees(self.curTree.cTree, self.testTree.cTree)"
+                print("about to pf.p4_verifyIdentityOfTwoTrees(self.curTree.cTree, self.testTree.cTree)")
                 ret = pf.p4_verifyIdentityOfTwoTrees(
                     self.curTree.cTree, self.testTree.cTree)
-                print "got ret %s" % ret
+                print("got ret %s" % ret)
             diffEpsi = 0.01
             if myDiff > diffEpsi or myDiff < -diffEpsi:
                 raise P4Error("diff too big")
@@ -1378,17 +1379,17 @@ class Chain(object):
             isBad = False
             for n in self.propTree.iterNodesNoRoot():
                 if n.br.lenChanged:
-                    print "p node %2i, br.lenChanged" % n.nodeNum
+                    print("p node %2i, br.lenChanged" % n.nodeNum)
                     isBad = True
                 if n.flag:
-                    print "p node %2i, flag" % n.nodeNum
+                    print("p node %2i, flag" % n.nodeNum)
                     isBad = True
             for n in self.curTree.iterNodesNoRoot():
                 if n.br.lenChanged:
-                    print "c node %2i, br.lenChanged" % n.nodeNum
+                    print("c node %2i, br.lenChanged" % n.nodeNum)
                     isBad = True
                 if n.flag:
-                    print "c node %2i, flag" % n.nodeNum
+                    print("c node %2i, flag" % n.nodeNum)
                     isBad = True
             if isBad:
                 gm.append(
@@ -1437,8 +1438,8 @@ class Chain(object):
                 if 1:
                     self.curTree.draw(model=True)
 
-                    print
-                    print self.curTree.model.parts[pNum].bQETneedsReset
+                    print()
+                    print(self.curTree.model.parts[pNum].bQETneedsReset)
 
                     for pNum in range(self.curTree.model.nParts):
                         for compNum in [0, 1]:
@@ -1677,11 +1678,11 @@ class Chain(object):
         # The tuning is the Dirichlet alpha.
         # print theProposal.tuning
 
-        # This method uses func.dirichlet1, which is for lists not numpy
+        # This method uses p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
         # returned.
         #dirichlet1(inSeq, alpha, theMin, theMax)
-        #newVal = func.dirichlet1(
+        #newVal = p4.func.dirichlet1(
         #    mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
         mtval = numpy.array(mt.val)
         myProposer = scipy.stats.dirichlet(theProposal.tuning * mtval)
@@ -1829,7 +1830,7 @@ class Chain(object):
                       for j in range(dim)]
                 break
             except OverflowError:
-                print "Overflow error in splitComp() (%2i)" % safety
+                print("Overflow error in splitComp() (%2i)" % safety)
                 safety += 1
                 if safety >= 100:
                     theProposal.doAbort = True
@@ -1913,10 +1914,10 @@ class Chain(object):
                 raise P4Error(gm)
 
         if 0:
-            print m0
-            print m1
-            print m2
-            print
+            print(m0)
+            print(m1)
+            print(m2)
+            print()
 
         s1 = sum(m1)
         s2 = sum(m2)
@@ -2214,7 +2215,7 @@ class Chain(object):
             old = [0.0, 0.0]
             old[0] = mtCur.val[0] / (mtCur.val[0] + 1.0)
             old[1] = 1.0 - old[0]
-            new = func.dirichlet1(
+            new = p4.func.dirichlet1(
                 old, theProposal.tuning, var.KAPPA_MIN, var.KAPPA_MAX)
             mtProp.val[0] = new[0] / new[1]
 
@@ -2326,7 +2327,7 @@ class Chain(object):
                 safety += 1
                 if safety > 100:
                     gm.append("Unable to draw a good proposal within var.KAPPA_MIN and var.KAPPA_MAX")
-                    raise P4Error, gm
+                    raise P4Error(gm)
 
 
 
@@ -2472,11 +2473,11 @@ class Chain(object):
                       for j in range(rDim)]
                 break
             except OverflowError:
-                print "Overflow error in splitRMatrix() (%2i)" % safety
+                print("Overflow error in splitRMatrix() (%2i)" % safety)
                 safety += 1
                 if safety >= 100:
                     theProposal.doAbort = True
-                    print "Too many overflows in splitComp.  Aborting!"
+                    print("Too many overflows in splitComp.  Aborting!")
                     return
                 uu = [random.normalvariate(0., 1.) for i in range(rDim)]
 
@@ -2934,7 +2935,7 @@ class Chain(object):
         proposedNum = random.choice(validCompNumbers)
         if 0 and self.mcmc.gen == 399:
             self.propTree.draw()
-            print "proposeCompLocation().  node %i, before=%i, new=%s" % (theNode.nodeNum, currentNum, proposedNum)
+            print("proposeCompLocation().  node %i, before=%i, new=%s" % (theNode.nodeNum, currentNum, proposedNum))
         self.propTree.model.parts[theProposal.pNum].comps[
             currentNum].nNodes -= 1
         self.propTree.model.parts[theProposal.pNum].comps[
@@ -3041,11 +3042,11 @@ class Chain(object):
         # mt.val is a list of floats, not a numpy.ndarray
         # print type(mt.val), type(mt.val[0]), mt.val, mt.num
 
-        # This method uses func.dirichlet1, which is for lists not numpy
+        # This method uses p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
         # returned.
         #dirichlet1(inSeq, alpha, theMin, theMax)
-        newVal = func.dirichlet1(
+        newVal = p4.func.dirichlet1(
             mt.val, mp.cmd1_p, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
 
         # proposal ratio
@@ -3081,11 +3082,11 @@ class Chain(object):
         # mt.val is a list of floats, not a numpy.ndarray
         # print type(mt.val), type(mt.val[0]), mt.val, mt.num
 
-        # This method uses func.dirichlet1, which is for lists not numpy
+        # This method uses p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
         # returned.
         #dirichlet1(inSeq, alpha, theMin, theMax)
-        newVal = func.dirichlet1(
+        newVal = p4.func.dirichlet1(
             curVal, mp.cmd1_q, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
 
         # proposal ratio
@@ -3130,19 +3131,19 @@ class Chain(object):
 
         # mt.val is a list of floats, not a numpy.ndarray
         # print type(mt.val), type(mt.val[0]), mt.val, mt.num
-        # This method uses func.dirichlet1, which is for lists not numpy
+        # This method uses p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
         # returned.
         #dirichlet1(inSeq, alpha, theMin, theMax)
         myU = 0.0
-        pi0_newVal = func.dirichlet1(
+        pi0_newVal = p4.func.dirichlet1(
             mp.cmd1_pi0, mp.cmd1_q, var.PIVEC_MIN, 1 - var.PIVEC_MIN, u=myU)
 
         # Now do proposals for all the comps in mp.comps, now using u
-        # added to the dirichlet prams within func.dirichlet1().  This of
+        # added to the dirichlet prams within p4.func.dirichlet1().  This of
         # course needs to be taken into account when calculating the
         # proposal ratio below.
-        piNewVals = [func.dirichlet1(
+        piNewVals = [p4.func.dirichlet1(
             mt.val, mp.cmd1_p, var.PIVEC_MIN, 1 - var.PIVEC_MIN, u=myU) for mt in mp.comps]
 
         # proposal ratio for pi0

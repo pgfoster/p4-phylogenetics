@@ -1,10 +1,11 @@
+from __future__ import print_function
 import sys
 import os
 import math
-import func
-from var import var
-from tree import Tree
-from p4exceptions import P4Error
+import p4.func
+from p4.var import var
+from p4.tree import Tree
+from p4.p4exceptions import P4Error
 
 
 class Trees(object):
@@ -95,8 +96,8 @@ class Trees(object):
 
         gm = ['Trees.setTaxNames()']
         if 0:
-            print gm[0]
-            print '    theTaxNames=%s' % theTaxNames
+            print(gm[0])
+            print('    theTaxNames=%s' % theTaxNames)
 
         if theTaxNames:
             self.taxNames = theTaxNames
@@ -106,8 +107,8 @@ class Trees(object):
             if len(self.trees):
                 t = self.trees[0]
             if not t:
-                print gm[0]
-                print "    No trees?"
+                print(gm[0])
+                print("    No trees?")
             if t.taxNames:
                 self.taxNames = t.taxNames
             else:
@@ -145,21 +146,21 @@ class Trees(object):
     def dump(self):
         """Print summary info about self."""
 
-        print "Trees dump."
-        print "  There are %i trees." % len(self.trees)
-        print "  nTax is %i" % self.nTax
-        print "  taxNames"
+        print("Trees dump.")
+        print("  There are %i trees." % len(self.trees))
+        print("  nTax is %i" % self.nTax)
+        print("  taxNames")
         if self.nTax < 11:
             for i in range(self.nTax):
-                print "    %s" % self.taxNames[i]
+                print("    %s" % self.taxNames[i])
         else:
             for i in range(10):
-                print "    %s" % self.taxNames[i]
-            print "    ... (and more)"
+                print("    %s" % self.taxNames[i])
+            print("    ... (and more)")
         if self.data:
-            print "  There is a data object attached."
+            print("  There is a data object attached.")
         else:
-            print "  There is no data object attached."
+            print("  There is no data object attached.")
 
     def writeNexus(self, fName=None, append=0, withTranslation=0, writeTaxaBlock=1, likeMcmc=0):
         """Write the trees out in NEXUS format, in a trees block.
@@ -200,11 +201,11 @@ class Trees(object):
                         raise P4Error(gm)
                 else:
                     if 0:
-                        print gm[0]
-                        print "    'append' is requested,"
-                        print "    but '%s' is not a regular file (doesn't exist?)." \
-                              % fName
-                        print "    Writing to a new file instead."
+                        print(gm[0])
+                        print("    'append' is requested,")
+                        print("    but '%s' is not a regular file (doesn't exist?)." \
+                              % fName)
+                        print("    Writing to a new file instead.")
                     try:
                         f = open(fName, 'w')
                         f.write('#NEXUS\n\n')
@@ -226,7 +227,7 @@ class Trees(object):
                 f.write('  dimensions ntax=%s;\n' % self.nTax)
                 f.write('  taxlabels')
                 for tN in self.taxNames:
-                    f.write(' %s' % func.nexusFixNameIfQuotesAreNeeded(tN))
+                    f.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
                 f.write(';\nend;\n\n')
             else:
                 gm.append(
@@ -240,9 +241,9 @@ class Trees(object):
             f.write('    translate\n')
             for i in range(self.nTax - 1):
                 f.write('        %3i %s,\n' % (
-                    i + 1, func.nexusFixNameIfQuotesAreNeeded(self.taxNames[i])))
+                    i + 1, p4.func.nexusFixNameIfQuotesAreNeeded(self.taxNames[i])))
             f.write('        %3i %s\n' % (
-                self.nTax, func.nexusFixNameIfQuotesAreNeeded(self.taxNames[-1])))
+                self.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.taxNames[-1])))
             f.write('    ;\n')
 
         # write the models comment
@@ -275,7 +276,7 @@ class Trees(object):
                         (t.name, t.logLike))
 
             f.write('    tree %s = [&U] ' %
-                    func.nexusFixNameIfQuotesAreNeeded(t.name))
+                    p4.func.nexusFixNameIfQuotesAreNeeded(t.name))
             if t.recipWeight:
                 # if t.recipWeight == 1:
                 #    f.write('[&W 1] ')
@@ -322,7 +323,7 @@ class Trees(object):
         that you are looking for.  It returns a list, not a Trees
         object.  (If no trees are found, it returns an empty list.)"""
 
-        sk = func.getSplitKeyFromTaxNames(self.taxNames, someTaxa)
+        sk = p4.func.getSplitKeyFromTaxNames(self.taxNames, someTaxa)
         foundTrees = []
         for t in self.trees:
             t.makeSplitKeys()
@@ -412,8 +413,8 @@ class Trees(object):
         qd_sig = " %%-%is" % longest
 
         if latex:
-            print "\\begin{center}"
-            print "\\begin{tabular}{lrr} \\toprule"
+            print("\\begin{center}")
+            print("\\begin{tabular}{lrr} \\toprule")
             sig = "%s & %s & %s \\\\" % (name_sig, sd_sig, qd_sig)
         else:
             sig = "%s %s  %s" % (name_sig, sd_sig, qd_sig)
@@ -422,12 +423,12 @@ class Trees(object):
             nm = nn[tNum]
             sd = sdd[tNum]
             qd = qdd[tNum]
-            print sig % (nm, sd, qd)
+            print(sig % (nm, sd, qd))
             results.append([nm, sd, qd])
         if latex:
-            print "\\bottomrule"
-            print "\\end{tabular}"
-            print "\\end{center}"
+            print("\\bottomrule")
+            print("\\end{tabular}")
+            print("\\end{center}")
         return results
 
     def treeProbabilities(self, writeNexus=False):
@@ -470,7 +471,7 @@ class Trees(object):
 
         # Flatten to a list, order by counts
         skl = skd.values()
-        skl = func.sortListOfListsOnListElementNumber(skl, 0)
+        skl = p4.func.sortListOfListsOnListElementNumber(skl, 0)
         skl.reverse()
 
         # Check that we have all the trees
@@ -540,7 +541,7 @@ class Trees(object):
         # Check if consel is installed
         progs = ['makermt', 'consel', 'catpv']
         for progName in progs:
-            if func.which2(progName):
+            if p4.func.which2(progName):
                 pass
             else:
                 gm.append("The programs")
@@ -604,7 +605,7 @@ class Trees(object):
 
         # Write the site likes to a file in xx.sitelh, ie puzzle format
         # print "Writing siteLikes ..."
-        f = file('siteLikes.sitelh', 'w')
+        f = open('siteLikes.sitelh', 'w')
         f.write('%i %i\n' % (len(self.trees), nSiteLikes))
         for i in range(len(self.trees)):
             f.write('t%i\t' % i)
@@ -739,11 +740,11 @@ class Trees(object):
 
         # print winners
 
-        print "\nRELL bootstrap results"
-        print "======================"
+        print("\nRELL bootstrap results")
+        print("======================")
         for i in range(nTrees):
             t = self.trees[i]
-            print "%3i   %20s  %1.3f" % (i, t.name, (float(winners[i]) / float(bootCount)))
+            print("%3i   %20s  %1.3f" % (i, t.name, (float(winners[i]) / float(bootCount))))
 
     def trackSplitsFromTree(self, theTree, windowSize=200, stride=100, fName='trackSplitsOut.py'):
         """See how slits from theTree changes over the trees in self.
@@ -772,10 +773,10 @@ class Trees(object):
             else:
                 n.name = "(%s)" % n.br.splitKey
         theTree.draw()
-        print "The drawing above shows the splitKeys that are being tracked."
+        print("The drawing above shows the splitKeys that are being tracked.")
 
         if fName:
-            f = file(fName, 'w')
+            f = open(fName, 'w')
             textDrawList = theTree.textDrawList()
             for l in textDrawList:
                 f.write("#  %s\n" % l)
@@ -805,13 +806,13 @@ class Trees(object):
         kk = []
         for n in theTree.iterInternalsNoRoot():
             theSplitKey = n.br.splitKey
-            print "=" * 50
-            print "Looking at split %s" % theSplitKey
+            print("=" * 50)
+            print("Looking at split %s" % theSplitKey)
             kk.append(theSplitKey)
             tracks[theSplitKey] = []
             startTNum = 0
             while len(self.trees) - startTNum >= windowSize:
-                print 'trees %4i to %4i: ' % (startTNum, (startTNum + windowSize) - 1),
+                print('trees %4i to %4i: ' % (startTNum, (startTNum + windowSize) - 1), end=' ')
                 theTrees = self.trees[startTNum:(startTNum + windowSize)]
 
                 nTrees = len(theTrees)
@@ -819,7 +820,7 @@ class Trees(object):
                 for t in theTrees:
                     if theSplitKey in t.splitKeys:
                         splitCount += 1
-                print ' nTrees=%3i, splitCount= %3i' % (nTrees, splitCount)
+                print(' nTrees=%3i, splitCount= %3i' % (nTrees, splitCount))
                 tracks[theSplitKey].append(
                     [startTNum + (0.5 * windowSize), (float(splitCount) / nTrees)])
                 startTNum += stride
@@ -846,9 +847,9 @@ class Trees(object):
                 n.name = "(%s)" % n.br.splitKey
         theTree.splitKeys = [n.br.splitKey for n in theTree.iterNodesNoRoot()]
         theTree.draw()
-        print "The drawing above shows the splitKeys that are being tracked."
+        print("The drawing above shows the splitKeys that are being tracked.")
 
-        f = file(fName, 'w')
+        f = open(fName, 'w')
         textDrawList = theTree.textDrawList()
         for l in textDrawList:
             f.write("#  %s\n" % l)
@@ -893,12 +894,12 @@ class Trees(object):
         # trees were rooted on that node, and what the compCounts were.
         startTNum = 0
         while len(self.trees) - startTNum >= windowSize:
-            print "Trees %6i -- %6i" % (startTNum, (startTNum + windowSize))
+            print("Trees %6i -- %6i" % (startTNum, (startTNum + windowSize)))
             tt2 = Trees(
                 self.trees[startTNum:(startTNum + windowSize)], taxNames=self.taxNames)
             tp = TreePartitions(tt2)
             for pNum in range(mi.nParts):
-                print "  Part %i, nComps=%i" % (pNum, mi.parts[pNum].nComps)
+                print("  Part %i, nComps=%i" % (pNum, mi.parts[pNum].nComps))
                 if mi.parts[pNum].nComps > 1:
                     # for s in tp.splits:
                     #    if s.key in theTree.splitKeys:
@@ -907,7 +908,7 @@ class Trees(object):
                     for k in theTree.splitKeys:
                         if tp.splitsHash.has_key(k):
                             s = tp.splitsHash[k]
-                            print "    Split key: %12s, compCounts=%s" % (k, s.modelUsage.parts[pNum].compCounts)
+                            print("    Split key: %12s, compCounts=%s" % (k, s.modelUsage.parts[pNum].compCounts))
             startTNum += stride
 
         f.close()

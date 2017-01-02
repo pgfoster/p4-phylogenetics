@@ -1,7 +1,8 @@
+from __future__ import print_function
 import string
 import os
-from var import var
-from p4exceptions import P4Error
+from p4.var import var
+from p4.p4exceptions import P4Error
 
 """This class is used by Tree.draw(), and Tree.eps().
 This week, there is no 'user-interface' for it, other than those
@@ -87,32 +88,32 @@ class TreePicture(object):
                 try:
                     n.yPos = (n.leftChild.yPos + n.rightmostChild().yPos) / 2.0
                 except:
-                    print "-" * 50
-                    print "TreePicture._setPos()  got an exception."
-                    print "self.postOrder is %s" % self.tree.postOrder
-                    print "n.nodeNum=%i, n.name=%s " % (n.nodeNum, n.name)
+                    print("-" * 50)
+                    print("TreePicture._setPos()  got an exception.")
+                    print("self.postOrder is %s" % self.tree.postOrder)
+                    print("n.nodeNum=%i, n.name=%s " % (n.nodeNum, n.name))
 
                     if not n.leftChild:
-                        print "There is no n.leftChild"
+                        print("There is no n.leftChild")
                     else:
-                        print "n.leftChild.nodeNum ", n.leftChild.nodeNum
-                        print "n.leftChild.isLeaf=%s" % n.leftChild.isLeaf
-                        print "n.leftChild.yPos ", n.leftChild.yPos
-                    print "n.rightmostChild().nodeNum ", n.rightmostChild().nodeNum
-                    print "n.rightmostChild().isLeaf=%s" % n.rightmostChild().isLeaf
-                    print "n.rightmostChild().yPos ", n.rightmostChild().yPos
+                        print("n.leftChild.nodeNum ", n.leftChild.nodeNum)
+                        print("n.leftChild.isLeaf=%s" % n.leftChild.isLeaf)
+                        print("n.leftChild.yPos ", n.leftChild.yPos)
+                    print("n.rightmostChild().nodeNum ", n.rightmostChild().nodeNum)
+                    print("n.rightmostChild().isLeaf=%s" % n.rightmostChild().isLeaf)
+                    print("n.rightmostChild().yPos ", n.rightmostChild().yPos)
                     raise P4Error(gm)
 
         if self.tree.root.isLeaf:
             self.tree.root.yPos = self.tree.root.leftChild.yPos
 
         if 0:
-            print "index   isLeaf        xPos         yPos"
+            print("index   isLeaf        xPos         yPos")
             for n in self.tree.iterNodes():
-                print "%4i" % n.nodeNum,
-                print "%8i" % n.isLeaf,
-                print "%12s" % n.xPos,
-                print "%12s" % n.yPos
+                print("%4i" % n.nodeNum, end=' ')
+                print("%8i" % n.isLeaf, end=' ')
+                print("%12s" % n.xPos, end=' ')
+                print("%12s" % n.yPos)
 
         # Find maxX
         self.maxX = 0.0
@@ -316,17 +317,17 @@ class TreePicture(object):
             if not n.isLeaf:
                 if 0:
                     if n == self.tree.root:
-                        print "root leftChild = %i, rightmostChild = %i" % \
-                              (n.leftChild.nodeNum, n.rightmostChild().nodeNum)
-                        print "line from %f %f" % \
-                              ((n.xPos), (n.leftChild.yPos))
-                        print "       to %f %f" % \
-                              ((n.xPos), (n.rightmostChild().yPos))
+                        print("root leftChild = %i, rightmostChild = %i" % \
+                              (n.leftChild.nodeNum, n.rightmostChild().nodeNum))
+                        print("line from %f %f" % \
+                              ((n.xPos), (n.leftChild.yPos)))
+                        print("       to %f %f" % \
+                              ((n.xPos), (n.rightmostChild().yPos)))
                     else:
-                        print "nodeNum %i, rootNameContribution = %s, xOrigin= %s, n.xPos = %s, self.xScale=%s," % (
-                            n.nodeNum, self.rootNameContribution, self.xOrigin, n.xPos, self.xScale)
-                        print "self.yOrigin=%s, n.leftChild.yPos=%s, self.yScale=%s" % (
-                            self.yOrigin, n.leftChild.yPos, self.yScale)
+                        print("nodeNum %i, rootNameContribution = %s, xOrigin= %s, n.xPos = %s, self.xScale=%s," % (
+                            n.nodeNum, self.rootNameContribution, self.xOrigin, n.xPos, self.xScale))
+                        print("self.yOrigin=%s, n.leftChild.yPos=%s, self.yScale=%s" % (
+                            self.yOrigin, n.leftChild.yPos, self.yScale))
                 if self.svg:
                     stringList.append('<line x1="%.0f" y1="%.0f" x2="%.0f" y2="%.0f"/>\n' % (
                         self.rootNameContribution + self.xOrigin +
@@ -476,8 +477,8 @@ class TreePicture(object):
         self.width = int(round(self.width))
         self.yOrigin = 0.0
         if 0:
-            print "xOrigin = %s, yOrigin = %s" % (self.xOrigin, self.yOrigin)
-            print "xScale = %s, yScale = %s" % (self.xScale, self.yScale)
+            print("xOrigin = %s, yOrigin = %s" % (self.xOrigin, self.yOrigin))
+            print("xScale = %s, yScale = %s" % (self.xScale, self.yScale))
 
         nRows = 0
         for n in self.tree.iterNodes():
@@ -487,13 +488,13 @@ class TreePicture(object):
         nRows += 1
 
         if 0:
-            print "index   isLeaf        xPos         yPos"
+            print("index   isLeaf        xPos         yPos")
             for n in self.tree.iterNodes():
-                print "%4i" % n.nodeNum,
-                print "%8i" % n.isLeaf,
-                print "%12s" % n.xPos,
-                print "%12s" % n.yPos
-            print "%s rows" % nRows
+                print("%4i" % n.nodeNum, end=' ')
+                print("%8i" % n.isLeaf, end=' ')
+                print("%12s" % n.xPos, end=' ')
+                print("%12s" % n.yPos)
+            print("%s rows" % nRows)
 
         # Make a field of blanks on which to draw
         stringList = []

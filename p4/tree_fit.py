@@ -1,25 +1,23 @@
+from __future__ import print_function
 import sys
 import string
 import types
-import cStringIO
 import math
 import copy
 import os
-import func
+import p4.func
 import time
 import glob
-from var import var
-from p4exceptions import P4Error
-from node import Node, NodePart, NodeBranchPart
-import nexustoken
-from distancematrix import DistanceMatrix
+from p4.var import var
+from p4.p4exceptions import P4Error
+from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
+from p4.distancematrix import DistanceMatrix
 
 import numpy
-import pf
-from model import Model
-from data import Data
-from alignment import Part
-from node import NodeBranch, NodePart, NodeBranchPart
+import p4.pf as pf
+from p4.model import Model
+from p4.data import Data
+from p4.alignment import Part
 import random
 
 
@@ -312,11 +310,11 @@ if True:
         #flob = sys.stderr
         #fRaw = sys.stderr
         if doOut:
-            flob = file(fName, 'w')
+            flob = open(fName, 'w')
         else:
             flob = None
         if writeRawStats:
-            fRaw = file(rawFName, 'w')
+            fRaw = open(rawFName, 'w')
         else:
             fRaw = None
 
@@ -514,7 +512,7 @@ if True:
                         fRaw.write('goldman_cox_part%i = %s\n' %
                                    (partNum, goldmanIndividualSimStats[partNum]))
 
-            prob = func.tailAreaProbability(
+            prob = p4.func.tailAreaProbability(
                 originalGoldmanCoxStat, goldmanOverallSimStats, verbose=0)
             if doOut:
                 flob.write('\n              Overall Goldman-Cox test: ')
@@ -528,7 +526,7 @@ if True:
                 if doOut:
                     flob.write('  Tests for individual data partitions:\n')
                 for partNum in range(self.data.nParts):
-                    prob = func.tailAreaProbability(originalGoldmanCoxStatsByPart[partNum],
+                    prob = p4.func.tailAreaProbability(originalGoldmanCoxStatsByPart[partNum],
                                                     goldmanIndividualSimStats[partNum], verbose=0)
                     if doOut:
                         flob.write(
@@ -585,15 +583,15 @@ if True:
             flob.write(longMessage1)  # explanation ...
         for pNum in range(self.data.nParts):
             h = statsHashList[pNum]
-            # Can't use func.xSquared(), because there might be column
+            # Can't use p4.func.xSquared(), because there might be column
             # zeros.
             # print "observedIndividualCounts = %s' %
             # h['observedIndividualCounts"]
             nRows = len(h['observedIndividualCounts'])
             nCols = len(h['observedIndividualCounts'][0])
             # I could have just used nSites, above
-            theSumOfRows = func._sumOfRows(h['observedIndividualCounts'])
-            theSumOfCols = func._sumOfColumns(h['observedIndividualCounts'])
+            theSumOfRows = p4.func._sumOfRows(h['observedIndividualCounts'])
+            theSumOfCols = p4.func._sumOfColumns(h['observedIndividualCounts'])
             # print theSumOfCols
             isOk = 1
             columnZeros = []
@@ -604,7 +602,7 @@ if True:
             for j in range(len(theSumOfCols)):
                 if theSumOfCols[j] <= 0.0:
                     columnZeros.append(j)
-            theExpected = func._expected(theSumOfRows, theSumOfCols)
+            theExpected = p4.func._expected(theSumOfRows, theSumOfCols)
             # print "theExpected = %s" % theExpected
             # print "columnZeros = %s" % columnZeros
             xSq = 0.0
@@ -624,7 +622,7 @@ if True:
                     xSq += xSq_row
             dof = (nCols - len(columnZeros) - 1) * \
                 (nRows - len(skipTaxNums[pNum]) - 1)
-            prob = func.chiSquaredProb(xSq, dof)
+            prob = p4.func.chiSquaredProb(xSq, dof)
             if doOut:
                 flob.write(
                     '        Part %i: Chi-square = %f, (dof=%i) P = %f\n' % (pNum, xSq, dof, prob))
@@ -652,11 +650,11 @@ if True:
                 h['individualSimStats'].append([])
 
             if 0:
-                print "h['individualNSites'] = %s" % h['individualNSites']
-                print "h['observedIndividualCounts'] = %s" % h['observedIndividualCounts']
-                print "h['expectedIndividualCounts'] = %s" % h['expectedIndividualCounts']
-                print "h['overallStat'] = %s" % h['overallStat']
-                print "h['individualStats'] = %s" % h['individualStats']
+                print("h['individualNSites'] = %s" % h['individualNSites'])
+                print("h['observedIndividualCounts'] = %s" % h['observedIndividualCounts'])
+                print("h['expectedIndividualCounts'] = %s" % h['expectedIndividualCounts'])
+                print("h['overallStat'] = %s" % h['overallStat'])
+                print("h['individualStats'] = %s" % h['individualStats'])
                 raise P4Error(gm)
 
         import glob
@@ -727,7 +725,7 @@ if True:
                 flob.write(
                     '\nAssessment of fit from null distribution from %i simulations\n' % nSims)
                 flob.write('%s%30s:  ' % (spacer1, 'Overall'))
-            prob = func.tailAreaProbability(
+            prob = p4.func.tailAreaProbability(
                 h['overallStat'], h['overallSimStats'], verbose=0)
             if doOut:
                 if prob <= 0.05:
@@ -746,7 +744,7 @@ if True:
                     if doOut:
                         flob.write('%13s\n' % 'skipped.')
                 else:
-                    prob = func.tailAreaProbability(h['individualStats'][taxNum],
+                    prob = p4.func.tailAreaProbability(h['individualStats'][taxNum],
                                                     h['individualSimStats'][taxNum], verbose=0)
                     if doOut:
                         if prob <= 0.05:
@@ -969,76 +967,76 @@ if True:
                 headWid = len(tN)
         headWid += 2
         #headSig = '%-' + `headWid` + 's'
-        headSig = '%' + `headWid - 2` + 's  '
+        headSig = '%' + "%i" % (headWid - 2) + 's  '
 
         # Get the all-sequences tail area probs
         partTaps = []
         for pNum in range(self.data.nParts):
             partTaps.append(
-                func.tailAreaProbability(original[pNum][0], full[pNum], verbose=0))
+                p4.func.tailAreaProbability(original[pNum][0], full[pNum], verbose=0))
 
         # Intro
         if verbose:
-            print "Composition homogeneity test using simulations."
-            print "P-values are shown."
+            print("Composition homogeneity test using simulations.")
+            print("P-values are shown.")
             if doChiSquare:
-                print "(P-values from Chi-Square are shown in parens.)"
-            print
+                print("(P-values from Chi-Square are shown in parens.)")
+            print()
 
         # Print the Part Nums and Part Names
         if verbose:
-            print headSig % 'Part Num',
+            print(headSig % 'Part Num', end=' ')
             for pNum in range(self.data.nParts):
-                print string.center('%i' % pNum, partWid),
-            print
-            print headSig % 'Part Name',
+                print(string.center('%i' % pNum, partWid), end=' ')
+            print()
+            print(headSig % 'Part Name', end=' ')
             for pNum in range(self.data.nParts):
-                print string.center('%s' % self.data.parts[pNum].name, partWid),
-            print
-            print headSig % ('-' * (headWid - 2)),
+                print(string.center('%s' % self.data.parts[pNum].name, partWid), end=' ')
+            print()
+            print(headSig % ('-' * (headWid - 2)), end=' ')
             for pNum in range(self.data.nParts):
-                print string.center('%s' % ('-' * (partWid - 2)), partWid),
-            print
+                print(string.center('%s' % ('-' * (partWid - 2)), partWid), end=' ')
+            print()
 
         # Print the all-sequences results
         if verbose:
-            print headSig % 'All Sequences',
+            print(headSig % 'All Sequences', end=' ')
             for pNum in range(self.data.nParts):
-                print string.center('%6.4f' % partTaps[pNum], partWid),
-            print
+                print(string.center('%6.4f' % partTaps[pNum], partWid), end=' ')
+            print()
             if doChiSquare:
-                print headSig % '(Chi-Squared Prob)',
+                print(headSig % '(Chi-Squared Prob)', end=' ')
                 for pNum in range(self.data.nParts):
-                    print string.center('(%6.4f)' % original[pNum][2], partWid),
-                print
+                    print(string.center('(%6.4f)' % original[pNum][2], partWid), end=' ')
+                print()
 
         if doIndividualSequences and verbose:
-            print
+            print()
             # print "Individual sequences"
             # print "--------------------"
 
             for tNum in range(self.data.nTax):
-                print headSig % self.data.taxNames[tNum],
+                print(headSig % self.data.taxNames[tNum], end=' ')
                 for pNum in range(self.data.nParts):
                     if tNum not in skips[pNum]:
-                        ret = func.tailAreaProbability(
+                        ret = p4.func.tailAreaProbability(
                             original[pNum][3][tNum], rows[pNum][tNum], verbose=0)
-                        print string.center('%6.4f' % ret, partWid),
+                        print(string.center('%6.4f' % ret, partWid), end=' ')
                     else:
-                        print string.center('%s' % ('-' * 4), partWid),
-                print
+                        print(string.center('%s' % ('-' * 4), partWid), end=' ')
+                print()
                 if doChiSquare:
-                    print headSig % ' ',
+                    print(headSig % ' ', end=' ')
                     for pNum in range(self.data.nParts):
                         # degrees of freedom
                         dof = self.data.parts[pNum].dim - 1
                         if tNum not in skips[pNum]:
-                            ret = func.chiSquaredProb(
+                            ret = p4.func.chiSquaredProb(
                                 original[pNum][3][tNum], dof)
-                            print string.center('(%6.4f)' % ret, partWid),
+                            print(string.center('(%6.4f)' % ret, partWid), end=' ')
                         else:
-                            print string.center('%s' % ('-' * 4), partWid),
-                    print
+                            print(string.center('%s' % ('-' * 4), partWid), end=' ')
+                    print()
 
         # Replace the saved data
         # Since we are replacing an exisiting data, this triggers
@@ -1062,8 +1060,8 @@ if True:
         l = []
         for pNum in range(self.data.nParts):
             if verbose:
-                print "Part %i" % pNum
-                print "======"
+                print("Part %i" % pNum)
+                print("======")
             obs = []
             nSites = []  # no gaps or ?
             for taxNum in range(self.nTax):
@@ -1075,31 +1073,31 @@ if True:
                 nSites.append(thisNSites)
                 obs.append(comp)
             if verbose:
-                print "\n  Observed"
-                print " " * 10,
+                print("\n  Observed")
+                print(" " * 10, end=' ')
                 for symbNum in range(self.data.parts[pNum].dim):
-                    print "%8s" % self.data.parts[pNum].symbols[symbNum],
-                print
+                    print("%8s" % self.data.parts[pNum].symbols[symbNum], end=' ')
+                print()
                 for taxNum in range(self.nTax):
-                    print "%10s" % self.taxNames[taxNum],
+                    print("%10s" % self.taxNames[taxNum], end=' ')
                     for symbNum in range(self.data.parts[pNum].dim):
-                        print "%8.4f" % obs[taxNum][symbNum],
-                    print "   n=%i" % nSites[taxNum]
+                        print("%8.4f" % obs[taxNum][symbNum], end=' ')
+                    print("   n=%i" % nSites[taxNum])
 
             # pf.p4_expectedCompositionCounts returns a tuple of tuples
             # representing the counts of the nodes in proper alignment order.
             exp = list(pf.p4_expectedCompositionCounts(self.cTree, pNum))
             if verbose:
-                print "\n  Expected"
-                print " " * 10,
+                print("\n  Expected")
+                print(" " * 10, end=' ')
                 for symbNum in range(self.data.parts[pNum].dim):
-                    print "%8s" % self.data.parts[pNum].symbols[symbNum],
-                print
+                    print("%8s" % self.data.parts[pNum].symbols[symbNum], end=' ')
+                print()
                 for taxNum in range(self.nTax):
-                    print "%10s" % self.taxNames[taxNum],
+                    print("%10s" % self.taxNames[taxNum], end=' ')
                     for symbNum in range(self.data.parts[pNum].dim):
-                        print "%8.4f" % exp[taxNum][symbNum],
-                    print "   n=%i" % nSites[taxNum]
+                        print("%8.4f" % exp[taxNum][symbNum], end=' ')
+                    print("   n=%i" % nSites[taxNum])
 
             # do the summation
             theSum = 0.0
@@ -1110,7 +1108,7 @@ if True:
 
             l.append(theSum)
             if verbose:
-                print "The bigXSquaredSubM stat for this part is %.5f" % theSum
+                print("The bigXSquaredSubM stat for this part is %.5f" % theSum)
         return l
 
     def compStatFromCharFreqs(self, verbose=False):
@@ -1132,35 +1130,35 @@ if True:
         l = []
         for pNum in range(self.data.nParts):
             if verbose:
-                print "Part %i" % pNum
-                print "======"
+                print("Part %i" % pNum)
+                print("======")
             obs = []
             for taxNum in range(self.nTax):
                 comp = self.data.parts[pNum].composition([taxNum])
                 obs.append(comp)
             if verbose:
-                print "\n  Observed"
-                print " " * 10,
+                print("\n  Observed")
+                print(" " * 10, end=' ')
                 for symbNum in range(self.data.parts[pNum].dim):
-                    print "%8s" % self.data.parts[pNum].symbols[symbNum],
-                print
+                    print("%8s" % self.data.parts[pNum].symbols[symbNum], end=' ')
+                print()
                 for taxNum in range(self.nTax):
-                    print "%10s" % self.taxNames[taxNum],
+                    print("%10s" % self.taxNames[taxNum], end=' ')
                     for symbNum in range(self.data.parts[pNum].dim):
-                        print "%8.4f" % obs[taxNum][symbNum],
-                    print
+                        print("%8.4f" % obs[taxNum][symbNum], end=' ')
+                    print()
 
             if verbose:
-                print "\n  Expected"
-                print " " * 10,
+                print("\n  Expected")
+                print(" " * 10, end=' ')
                 for symbNum in range(self.data.parts[pNum].dim):
-                    print "%8s" % self.data.parts[pNum].symbols[symbNum],
-                print
+                    print("%8s" % self.data.parts[pNum].symbols[symbNum], end=' ')
+                print()
                 for taxNum in range(self.nTax):
-                    print "%10s" % self.taxNames[taxNum],
+                    print("%10s" % self.taxNames[taxNum], end=' ')
                     for symbNum in range(self.data.parts[pNum].dim):
-                        print "%8.4f" % exp[pNum][taxNum][symbNum],
-                    print
+                        print("%8.4f" % exp[pNum][taxNum][symbNum], end=' ')
+                    print()
 
             # do the summation
             theSum = 0.0
@@ -1171,7 +1169,7 @@ if True:
 
             l.append(theSum)
             if verbose:
-                print "The c_m stat for this part is %.5f" % theSum
+                print("The c_m stat for this part is %.5f" % theSum)
         return l
 
 

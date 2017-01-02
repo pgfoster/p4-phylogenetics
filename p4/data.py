@@ -1,11 +1,12 @@
-from alignment import Alignment
+from __future__ import print_function
+from p4.alignment import Alignment
 import sys
 import time
 import os
-import pf
-import func
-from var import var
-from p4exceptions import P4Error
+import p4.pf as pf
+import p4.func
+from p4.var import var
+from p4.p4exceptions import P4Error
 
 
 class Data:
@@ -86,36 +87,36 @@ class Data:
     def dump(self):
         """Print rubbish about self."""
 
-        print "Data dump"
+        print("Data dump")
         if self.nParts == 1:
             if var.doDataPart:
-                print "    There is 1 dataPart"
+                print("    There is 1 dataPart")
             else:
-                print "    There is 1 part"
+                print("    There is 1 part")
         else:
             if var.doDataPart:
-                print "    There are %i dataParts" % self.nParts
+                print("    There are %i dataParts" % self.nParts)
             else:
-                print "    There are %i parts" % self.nParts
+                print("    There are %i parts" % self.nParts)
 
         for p in self.parts:
-            print "        name=%s, nChar %i, dataType %s, cPart %s" % \
-                  (p.name, p.nChar, p.dataType, p.cPart)
+            print("        name=%s, nChar %i, dataType %s, cPart %s" % \
+                  (p.name, p.nChar, p.dataType, p.cPart))
 
-        print "    There are %i taxa" % self.nTax
+        print("    There are %i taxa" % self.nTax)
 
         if len(self.alignments) == 1:
-            print "    There is 1 alignment"
+            print("    There is 1 alignment")
         else:
-            print "    There are %i alignments" % len(self.alignments)
+            print("    There are %i alignments" % len(self.alignments))
 
         if self.cData:
-            print "    The cData is %s" % self.cData
+            print("    The cData is %s" % self.cData)
         else:
-            print "    There is no cData"
+            print("    There is no cData")
 
         if self.unconstrainedLogLikelihood:
-            print "    The unconstrainedLogLikelihood is %s" % self.unconstrainedLogLikelihood
+            print("    The unconstrainedLogLikelihood is %s" % self.unconstrainedLogLikelihood)
         else:
             pass
 
@@ -312,8 +313,8 @@ class Data:
     def compoSummary(self):
         """A verbose composition summary, one for each data partition."""
 
-        print "\n\nData composition summary"
-        print "========================\n"
+        print("\n\nData composition summary")
+        print("========================\n")
 
         # Make a name format (eg '%12s') that is long enough for the longest
         # name
@@ -325,11 +326,11 @@ class Data:
 
         for i in range(len(self.parts)):
             p = self.parts[i]
-            print "Part %i" % i
-            print "%s" % (' ' * (longestNameLen + 1)),
+            print("Part %i" % i)
+            print("%s" % (' ' * (longestNameLen + 1)), end=' ')
             for j in range(len(p.symbols)):
-                print "%10s" % p.symbols[j],
-            print "%10s" % 'nSites'
+                print("%10s" % p.symbols[j], end=' ')
+            print("%10s" % 'nSites')
             # print ''
             #cumulativeComps = [0.0] * len(p.symbols)
             grandTotalNSites = 0
@@ -338,26 +339,26 @@ class Data:
                 # print "tax %s, part.composition() returns %s" % (k, c)
                 nSites = pf.partSequenceSitesCount(p.cPart, k)
                 grandTotalNSites = grandTotalNSites + nSites
-                print nameFormat % self.taxNames[k],
+                print(nameFormat % self.taxNames[k], end=' ')
 
                 # Usually sum(c) will be 1.0, unless the sequence is
                 # empty.  We don't want to test "if sum(c) == 0.0:" or
                 # "if sum(c):" cuz of small numbers.
                 if sum(c) > 0.99:
                     for j in range(len(p.symbols)):
-                        print "%10.4f" % c[j],
+                        print("%10.4f" % c[j], end=' ')
                         #cumulativeComps[j] = cumulativeComps[j] + (c[j] * nSites)
                 else:  # Empty sequence, all zeros.  Write dashes.
                     for j in range(len(p.symbols)):
-                        print "%10s" % '-',
-                print "%10s" % nSites
+                        print("%10s" % '-', end=' ')
+                print("%10s" % nSites)
             c = p.composition()
-            print nameFormat % 'mean',
+            print(nameFormat % 'mean', end=' ')
             for j in range(len(p.symbols)):
-                print "%10.4f" % c[j],
+                print("%10.4f" % c[j], end=' ')
             # print "%10s" % grandTotalNSites
-            print "%10.4f" % (float(grandTotalNSites) / self.nTax)
-            print "\n"
+            print("%10.4f" % (float(grandTotalNSites) / self.nTax))
+            print("\n")
 
     def compoChiSquaredTest(self, verbose=1, skipColumnZeros=0, useConstantSites=1, skipTaxNums=None, getRows=0):
         """A chi square composition test for each data partition.
@@ -546,12 +547,12 @@ class Data:
 
             # Here we calculate the X^2 stat.  But we want to check
             # for columns summing to zero.  So we can't use
-            # func.xSquared()
+            # p4.func.xSquared()
             nRows = len(comps)
             nCols = len(comps[0])
             # I could have just kept nSites, above
-            theSumOfRows = func._sumOfRows(comps)
-            theSumOfCols = func._sumOfColumns(comps)
+            theSumOfRows = p4.func._sumOfRows(comps)
+            theSumOfCols = p4.func._sumOfColumns(comps)
             # print theSumOfCols
             isOk = 1
             columnZeros = []
@@ -565,13 +566,13 @@ class Data:
                         columnZeros.append(j)
                     else:
                         if verbose:
-                            print gm[0]
-                            print "    Zero in a column sum."
-                            print "    And skipColumnZeros is not set, so I am refusing to do it at all."
+                            print(gm[0])
+                            print("    Zero in a column sum.")
+                            print("    And skipColumnZeros is not set, so I am refusing to do it at all.")
                         isOk = 0
                         nColumnZeros += 1
 
-            theExpected = func._expected(theSumOfRows, theSumOfCols)
+            theExpected = p4.func._expected(theSumOfRows, theSumOfCols)
             # print "theExpected = ", theExpected
             # print "columnZeros = ", columnZeros
             if isOk:
@@ -593,8 +594,8 @@ class Data:
                             if j in columnZeros:
                                 if skipColumnZeros:
                                     if verbose and not alreadyGivenZeroWarning:
-                                        print gm[0]
-                                        print "    Skipping (zero-based) column number(s) %s, which sum to zero." % columnZeros
+                                        print(gm[0])
+                                        print("    Skipping (zero-based) column number(s) %s, which sum to zero." % columnZeros)
                                         alreadyGivenZeroWarning = 1
                                 else:
                                     gm.append("Programming error.")
@@ -611,17 +612,17 @@ class Data:
                 dof = (p.dim - len(columnZeros) - 1) * (len(comps) - 1)
                 prob = pf.chiSquaredProb(xSq, dof)
                 if verbose:
-                    print "Part %i: Chi-square = %f, (dof=%i) P = %f" % (partNum, xSq, dof, prob)
+                    print("Part %i: Chi-square = %f, (dof=%i) P = %f" % (partNum, xSq, dof, prob))
                     if getRows:
                         # print "        rows = %s" % xSq_rows
-                        print "%20s  %7s  %s" % ('taxName', 'xSq_row', 'P (like puzzle)')
+                        print("%20s  %7s  %s" % ('taxName', 'xSq_row', 'P (like puzzle)'))
                         for tNum in range(self.nTax):
                             if not skipTaxNums or tNum not in skipTaxNums[partNum]:
                                 thisProb = pf.chiSquaredProb(
                                     xSq_rows[tNum], self.parts[partNum].dim - 1)
-                                print "%20s  %7.5f  %7.5f" % (self.taxNames[tNum], xSq_rows[tNum], thisProb)
+                                print("%20s  %7.5f  %7.5f" % (self.taxNames[tNum], xSq_rows[tNum], thisProb))
                             else:
-                                print "%20s    ---      ---" % self.taxNames[tNum]
+                                print("%20s    ---      ---" % self.taxNames[tNum])
                 if getRows:
                     results.append([xSq, dof, prob, xSq_rows])
                 else:
@@ -630,7 +631,7 @@ class Data:
                 # Maybe a bad idea.  Maybe it should just die, above.
                 results.append(None)
         if nColumnZeros and verbose:
-            print "There were %i column zeros." % nColumnZeros
+            print("There were %i column zeros." % nColumnZeros)
         return results
 
     def simpleBigXSquared(self):
@@ -710,9 +711,9 @@ class Data:
         d._setCStuff()
 
         if 0:
-            print "\nSELF\n===="
+            print("\nSELF\n====")
             self.dump()
-            print "\n\nNEW DATA\n========"
+            print("\n\nNEW DATA\n========")
             d.dump()
             raise P4Error
 
@@ -729,9 +730,9 @@ class Data:
                     newSeed = int(seed)
                     pf.gsl_rng_set(var.gsl_rng, newSeed)
                 except ValueError:
-                    print gm[0]
-                    print "    The seed should be convertable to an integer"
-                    print "    Using the process id instead."
+                    print(gm[0])
+                    print("    The seed should be convertable to an integer")
+                    print("    Using the process id instead.")
                     pf.gsl_rng_set(var.gsl_rng,  os.getpid())
             else:
                 pf.gsl_rng_set(var.gsl_rng,  os.getpid())

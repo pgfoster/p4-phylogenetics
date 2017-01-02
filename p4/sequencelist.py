@@ -1,12 +1,13 @@
+from __future__ import print_function
 import sys
 import re
 import string
 import os
-import cStringIO
-import func
+import io
+import p4.func
 import copy
-from var import var
-from p4exceptions import P4Error
+from p4.var import var
+from p4.p4exceptions import P4Error
 from subprocess import Popen, PIPE
 from builtins import object       # For Py2/3 compatibility, needed for redefinition of __bool__() below in Py2
 
@@ -48,18 +49,18 @@ class Sequence(object):
 
     def dump(self):
         """Print rubbish about self."""
-        print '%15s: %s' % ('name', self.name)
+        print('%15s: %s' % ('name', self.name))
         if self.comment:
-            print '%15s: %s' % ('comment', self.comment)
+            print('%15s: %s' % ('comment', self.comment))
         # if self.dataType == 'dna':
            # if self.transl_table:
            #    print "%15s: %s' % ('transl_table", self.transl_table)
         if self.sequence:
-            print '%15s: %s' % ('sequence', self.sequence[:25]),
+            print('%15s: %s' % ('sequence', self.sequence[:25]), end=' ')
             if len(self.sequence) > 25:
-                print "..."
+                print("...")
             else:
-                print ''
+                print('')
 
     def dupe(self):
         """Return a duplicate of self."""
@@ -163,7 +164,7 @@ class Sequence(object):
             f = fName
             isFlob = True
         else:
-            f = file(fName, 'w')
+            f = open(fName, 'w')
         self.writeFastaToOpenFile(f, width=width, doComment=doComment, writeExtraNewline=writeExtraNewline)
         if not isFlob:
             f.close()
@@ -232,11 +233,11 @@ class Sequence(object):
             if theCodon == '---':
                 protSeq[j] = '-'
             elif theCodon.count('-'):
-                print "    seq %s, position %4i, dnaSeq %4i, codon '%s' is incomplete" % (self.name, j, (j * 3), theCodon)
+                print("    seq %s, position %4i, dnaSeq %4i, codon '%s' is incomplete" % (self.name, j, (j * 3), theCodon))
             elif theCodon == 'nnn':
                 if nnn_is_gap:
-                    print "    seq %s, position %4i, dnaSeq %4i, codon '%s' translating to a gap ('-')" % (
-                        self.name, j, (j * 3), theCodon)
+                    print("    seq %s, position %4i, dnaSeq %4i, codon '%s' translating to a gap ('-')" % (
+                        self.name, j, (j * 3), theCodon))
                     protSeq[j] = '-'
                 else:
                     protSeq[j] = 'x'
@@ -405,7 +406,7 @@ class SequenceList(object):
                 raise P4Error(gm)
             mySeq.sequence = string.translate(mySeq.sequence, toLowerTransTable,
                                               string.digits + string.whitespace + '\0')
-            dType = func.isDnaRnaOrProtein(mySeq.sequence)
+            dType = p4.func.isDnaRnaOrProtein(mySeq.sequence)
             if dType == 1:
                 # print "Its dna"
                 mySeq.dataType = 'dna'
@@ -430,11 +431,11 @@ class SequenceList(object):
                     mySeq.comment = mySeq.headLineList[1]
         if 0:
             for mySeq in self.sequences:
-                print '%20s  %-30s' % ('name', mySeq.name)
-                print '%20s  %-30s' % ('comment', mySeq.comment)
-                print '%20s  %-30s' % ('sequence', mySeq.sequence)
-                print '%20s  %-30s' % ('dataType', mySeq.dataType)
-                print ''
+                print('%20s  %-30s' % ('name', mySeq.name))
+                print('%20s  %-30s' % ('comment', mySeq.comment))
+                print('%20s  %-30s' % ('sequence', mySeq.sequence))
+                print('%20s  %-30s' % ('dataType', mySeq.dataType))
+                print('')
 
         # check for invalid chars
         if len(self.sequences) > 0:
@@ -444,13 +445,13 @@ class SequenceList(object):
                     j = 0
                     while j < len(s.sequence):
                         if s.sequence[j] not in var.validDnaChars:
-                            print "bad character '%s' in (zero-based) dna sequence %s " % \
-                                (s.sequence[j], self.sequences.index(s))
-                            print "          sequence name: %s" % s.name
-                            print "          at (zero-based) position %s" % j
+                            print("bad character '%s' in (zero-based) dna sequence %s " % \
+                                (s.sequence[j], self.sequences.index(s)))
+                            print("          sequence name: %s" % s.name)
+                            print("          at (zero-based) position %s" % j)
                             bads = bads + 1
                             if bads > 10:
-                                print "...and possibly others"
+                                print("...and possibly others")
                                 break
                         j = j + 1
                     if bads > 10:
@@ -463,13 +464,13 @@ class SequenceList(object):
                     j = 0
                     while j < len(s.sequence):
                         if s.sequence[j] not in var.validProteinChars:
-                            print "bad character '%s' in (zero-based) protein sequence %s " % \
-                                (s.sequence[j], self.sequences.index(s))
-                            print "          sequence name: %s" % s.name
-                            print "          at (zero-based) position %s" % j
+                            print("bad character '%s' in (zero-based) protein sequence %s " % \
+                                (s.sequence[j], self.sequences.index(s)))
+                            print("          sequence name: %s" % s.name)
+                            print("          at (zero-based) position %s" % j)
                             bads = bads + 1
                             if bads > 10:
-                                print "...and possibly others"
+                                print("...and possibly others")
                                 break
                         j = j + 1
                     if bads > 10:
@@ -599,11 +600,11 @@ class SequenceList(object):
                                                string.digits + string.whitespace + '\0')
         if 0:
             for seqObj in self.sequences:
-                print '%20s  %-30s' % ('name', seqObj.name)
-                print '%20s  %-30s' % ('comment', seqObj.comment)
-                print '%20s  %-30s' % ('sequence', seqObj.sequence)
-                print '%20s  %-30s' % ('dataType', seqObj.dataType)
-                print ''
+                print('%20s  %-30s' % ('name', seqObj.name))
+                print('%20s  %-30s' % ('comment', seqObj.comment))
+                print('%20s  %-30s' % ('sequence', seqObj.sequence))
+                print('%20s  %-30s' % ('dataType', seqObj.dataType))
+                print('')
 
         # check for invalid chars
         if len(self.sequences) > 0:
@@ -613,13 +614,13 @@ class SequenceList(object):
                     j = 0
                     while j < len(s.sequence):
                         if s.sequence[j] not in var.validDnaChars:
-                            print "bad character '%s' in (zero-based) dna sequence %s " % \
-                                (s.sequence[j], self.sequences.index(s))
-                            print "          sequence name: %s" % s.name
-                            print "          at (zero-based) position %s" % j
+                            print("bad character '%s' in (zero-based) dna sequence %s " % \
+                                (s.sequence[j], self.sequences.index(s)))
+                            print("          sequence name: %s" % s.name)
+                            print("          at (zero-based) position %s" % j)
                             bads = bads + 1
                             if bads > 10:
-                                print "...and possibly others"
+                                print("...and possibly others")
                                 break
                         j = j + 1
                     if bads > 10:
@@ -632,13 +633,13 @@ class SequenceList(object):
                     j = 0
                     while j < len(s.sequence):
                         if s.sequence[j] not in var.validProteinChars:
-                            print "bad character '%s' in (zero-based) protein sequence %s " % \
-                                (s.sequence[j], self.sequences.index(s))
-                            print "          sequence name: %s" % s.name
-                            print "          at (zero-based) position %s" % j
+                            print("bad character '%s' in (zero-based) protein sequence %s " % \
+                                (s.sequence[j], self.sequences.index(s)))
+                            print("          sequence name: %s" % s.name)
+                            print("          at (zero-based) position %s" % j)
                             bads = bads + 1
                             if bads > 10:
-                                print "...and possibly others"
+                                print("...and possibly others")
                                 break
                         j = j + 1
                     if bads > 10:
@@ -722,29 +723,29 @@ class SequenceList(object):
                     try:
                         f = open(fName, 'a')
                     except IOError:
-                        print complaintHead
-                        print "    Can't open %s for appending." % fName
+                        print(complaintHead)
+                        print("    Can't open %s for appending." % fName)
                         sys.exit()
                 else:
                     if 0:
-                        print complaintHead
-                        print "    'append' is requested,"
-                        print "    but '%s' is not a regular file (maybe it doesn't exist?)." \
-                              % fName
-                        print "    Writing to a new file instead."
+                        print(complaintHead)
+                        print("    'append' is requested,")
+                        print("    but '%s' is not a regular file (maybe it doesn't exist?)." \
+                              % fName)
+                        print("    Writing to a new file instead.")
                     try:
                         f = open(fName, 'w')
                     except IOError:
-                        print complaintHead
-                        print "    Can't open %s for writing." % fName
+                        print(complaintHead)
+                        print("    Can't open %s for writing." % fName)
                         sys.exit()
 
             else:
                 try:
                     f = open(fName, 'w')
                 except IOError:
-                    print complaintHead
-                    print "    Can't open %s for writing." % fName
+                    print(complaintHead)
+                    print("    Can't open %s for writing." % fName)
                     sys.exit()
 
         if seqNum == None:
@@ -775,12 +776,12 @@ class SequenceList(object):
             try:
                 theInt = int(seqNum)
                 if theInt < 0 or theInt >= len(self.sequences):
-                    print complaintHead
-                    print "    seqNum %i is out of range." % seqNum
+                    print(complaintHead)
+                    print("    seqNum %i is out of range." % seqNum)
                     sys.exit()
             except ValueError:
-                print complaintHead
-                print "    seqNum should be an integer."
+                print(complaintHead)
+                print("    seqNum should be an integer.")
                 sys.exit()
             s = self.sequences[theInt]
             f.write('>%s' % s.name)
@@ -825,7 +826,7 @@ class SequenceList(object):
         nDupes = 0
         for k, v in snDict.iteritems():
             if v > 1:
-                print "Got %2i copies of sequence name %s" % (v, k)
+                print("Got %2i copies of sequence name %s" % (v, k))
                 nDupes += 1
         if nDupes:
             gm = ["SequenceList.checkNamesForDupes()"]
@@ -838,26 +839,26 @@ class SequenceList(object):
 
     def dump(self):
         if isinstance(self, SequenceList):
-            print "\nSequenceList dump:"
+            print("\nSequenceList dump:")
             if self.fName:
-                print "  File name is %s" % self.fName
+                print("  File name is %s" % self.fName)
         if len(self.sequences) == 1:
-            print "  There is 1 sequence"
+            print("  There is 1 sequence")
         else:
-            print "  There are %s sequences" % len(self.sequences)
+            print("  There are %s sequences" % len(self.sequences))
 
         nSeqsToDo = len(self.sequences)
         if nSeqsToDo > 12:
             nSeqsToDo = 10
         for i in range(nSeqsToDo):
             if isinstance(self, SequenceList):
-                print "  %3i %5s %s" % (i, len(self.sequences[i].sequence), self.sequences[i].name)
+                print("  %3i %5s %s" % (i, len(self.sequences[i].sequence), self.sequences[i].name))
             else:  # Alignment, don't print sequence lengths
-                print "  %3i   %s" % (i, self.sequences[i].name)
+                print("  %3i   %s" % (i, self.sequences[i].name))
             # self.sequences[i].dump()
         if len(self.sequences) > nSeqsToDo:
-            print "  ... and %i others..." % (len(self.sequences) - nSeqsToDo)
-        print ''
+            print("  ... and %i others..." % (len(self.sequences) - nSeqsToDo))
+        print('')
 
     def renameForPhylip(self, dictFName='p4_renameForPhylip_dict.py'):
         """Rename with strict phylip-friendly short boring names.
@@ -880,7 +881,7 @@ class SequenceList(object):
             newName = 's%i' % i
             d[newName] = s.name
             s.name = newName
-        f = file(dictFName, 'w')
+        f = open(dictFName, 'w')
         f.write("p4_renameForPhylip_originalNames = %s\np4_renameForPhylip_dict = %s\n" % (
             originalNames, d))
         f.close()
@@ -919,15 +920,15 @@ class SequenceList(object):
         the same as the order in self.
 
         """
-        flob = cStringIO.StringIO()
+        flob = io.BytesIO()
         self.writeFasta(fName=flob)
         p = Popen(["muscle"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         ret = p.communicate(input=flob.getvalue())
         flob.close()
         try:
-            a = func.readAndPop(ret[0])
+            a = p4.func.readAndPop(ret[0])
         except P4Error:
-            print ret
+            print(ret)
             raise P4Error("Something didn't work ...")
 
         a.makeSequenceForNameDict()
@@ -948,17 +949,16 @@ class SequenceList(object):
         the same as the order in self.
 
         """
-        flob = cStringIO.StringIO()
+        flob = io.BytesIO()
         self.writeFasta(fName=flob)
-        p = Popen(
-            ["clustalo", "-i", "-"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
+        p = Popen(["clustalo", "-i", "-"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         ret = p.communicate(input=flob.getvalue())
         #ret = p.communicate()
         if ret[1]:
-            print ret
+            print(ret)
             raise P4Error("clustalo()  Something wrong here ...")
         flob.close()
-        a = func.readAndPop(ret[0])
+        a = p4.func.readAndPop(ret[0])
         a.makeSequenceForNameDict()
         newSequenceList = []
         for sSelf in self.sequences:

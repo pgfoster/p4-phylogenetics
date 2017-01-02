@@ -1,3 +1,5 @@
+from __future__ import print_function
+from past.builtins import raw_input
 import sys,traceback
 import os
 from p4.var import var
@@ -10,7 +12,7 @@ def invoke_editor(extractedTraceback):
     for teItemNum in range(len(te)):  # te is a traceback.extract_tb() result
         theTeItem = te[teItemNum]
         p4.func.writeInColour("%2i" % teItemNum, colour='red')
-        print "  line %4i,  %s" %  (theTeItem[1], theTeItem[0])
+        print("  line %4i,  %s" %  (theTeItem[1], theTeItem[0]))
     p4.func.setTerminalColour("blue")
     ret = raw_input('Tell me a number (or nothing to do nothing): ')
     p4.func.unsetTerminalColour()
@@ -34,10 +36,10 @@ def invoke_editor(extractedTraceback):
                 theCommand = "%s +%i %s" % (var.excepthookEditor, theLineNum, theFileName)
                 os.system(theCommand)
             except:
-                print "...could not make an int from theLineNum '%s'" % theLineNum
+                print("...could not make an int from theLineNum '%s'" % theLineNum)
                 pass
         else:
-            print "-> '%s' is not a regular file" % theFileName
+            print("-> '%s' is not a regular file" % theFileName)
     #sys.exit()
        
 
@@ -82,7 +84,7 @@ def myExceptHook(exctype, excvalue, tb):
     try:
         te = traceback.extract_tb(tb)
     except:
-        print "tb is %s" % tb
+        print("tb is %s" % tb)
         te = traceback.extract_tb(tb)
 
     # This next line does a regular traceback.

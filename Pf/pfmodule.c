@@ -23,7 +23,7 @@
 #include "p4_treeCopyVerify.h"
 #include "logDet.h"
 
-#include "nexusToken.h"
+// #include "nexusToken.h"
 
 
 
@@ -2213,6 +2213,10 @@ pf_p4_copyModelPrams(PyObject *self, PyObject *args)
 // ==== nexusToken
 // -----------------------------------
 
+// Off this week, for python3 compatibility.
+// Also, the speedup is not that impressive, only about 60 -- 100 %
+
+#if 0
 
 static PyObject *
 pf_newNexusToken(PyObject *self, PyObject *args)
@@ -2328,6 +2332,7 @@ pf_nexusTokenCheckLineLengths(PyObject *self, PyObject *args)
     nt->filePtr = PyFile_AsFile(theFileObject);
     return Py_BuildValue("l", (long int)nexusTokenCheckLineLengths(nt));
 }
+#endif
 
 
 // -----------------------------------
@@ -2730,10 +2735,10 @@ static PyMethodDef pfMethods[] = {
     {"p4_copyBigPDecks", pf_p4_copyBigPDecks, METH_VARARGS},
     {"p4_copyModelPrams", pf_p4_copyModelPrams, METH_VARARGS},
 
-    {"newNexusToken", pf_newNexusToken, METH_VARARGS},
-    {"nextToken", pf_nextToken, METH_VARARGS},
-    {"nexusSkipPastNextSemiColon", pf_nexusSkipPastNextSemiColon, METH_VARARGS},
-    {"nexusTokenCheckLineLengths", pf_nexusTokenCheckLineLengths, METH_VARARGS},
+    //{"newNexusToken", pf_newNexusToken, METH_VARARGS},
+    //{"nextToken", pf_nextToken, METH_VARARGS},
+    //{"nexusSkipPastNextSemiColon", pf_nexusSkipPastNextSemiColon, METH_VARARGS},
+    //{"nexusTokenCheckLineLengths", pf_nexusTokenCheckLineLengths, METH_VARARGS},
 
     {"zeroNumPyInts", pf_zeroNumPyInts, METH_VARARGS},
     {"logDetFillFxy", pf_logDetFillFxy, METH_VARARGS},
@@ -2745,10 +2750,29 @@ static PyMethodDef pfMethods[] = {
     {NULL, NULL}
 };
 
-void
+#if PY_MAJOR_VERSION < 3
+
+PyMODINIT_FUNC
 initpf(void)
 {
     (void) Py_InitModule("pf", pfMethods);
-    import_array();
 }
 
+#else
+
+static struct PyModuleDef pfmodule = {
+   PyModuleDef_HEAD_INIT,
+   "pf",   /* name of module */
+   NULL, /* module documentation, may be NULL */
+   -1,       /* size of per-interpreter state of the module,
+                or -1 if the module keeps state in global variables. */
+   pfMethods
+};
+
+PyMODINIT_FUNC
+PyInit_pf(void)
+{
+    return PyModule_Create(&pfmodule);
+}
+
+#endif

@@ -1,10 +1,11 @@
+from __future__ import print_function
 import os
 import sys
 import math
 import string
-import func
-from p4exceptions import P4Error
-from var import var
+import p4.func
+from p4.p4exceptions import P4Error
+from p4.var import var
 import numpy
 
 
@@ -87,7 +88,7 @@ class Numbers(object):
                 gm.append("Args col and skip must be ints")
                 raise P4Error(gm)
 
-            flob = file(inThing)
+            flob = open(inThing)
             theLines = flob.readlines()
             flob.close()
             # if skip:
@@ -221,12 +222,12 @@ class Numbers(object):
             self.nBins += 1
 
         if 0:
-            print "binSize= %f" % self.binSize
-            print "self.max = %f, self.min = %f, niceMin=%f" % (self.max, self.min, niceMin)
-            print "padMin=%s, theMin=%s, padMax=%s, theMax=%s" % (padMin, theMin, padMax, theMax)
-            print "self.range = %f" % self.range
-            print "theMax - niceMin = %f" % (theMax - niceMin)
-            print "self.nBins = %i" % self.nBins
+            print("binSize= %f" % self.binSize)
+            print("self.max = %f, self.min = %f, niceMin=%f" % (self.max, self.min, niceMin))
+            print("padMin=%s, theMin=%s, padMax=%s, theMax=%s" % (padMin, theMin, padMax, theMax))
+            print("self.range = %f" % self.range)
+            print("theMax - niceMin = %f" % (theMax - niceMin))
+            print("self.nBins = %i" % self.nBins)
             # sys.exit()
 
         # Make the bins
@@ -288,21 +289,21 @@ class Numbers(object):
             gm.append("No bins.")
             raise P4Error(gm)
         if verbose:
-            print "%i data points, min=%s, max=%s, binSize=%s, nBins=%i" % (
-                len(self.data), self.min, self.max, self.binSize, self.nBins)
+            print("%i data points, min=%s, max=%s, binSize=%s, nBins=%i" % (
+                len(self.data), self.min, self.max, self.binSize, self.nBins))
             if padMin != None or padMax != None:
-                print "padMin=%s, padMax=%s" % (padMin, padMax)
-            print "%i points at min, %i points at max" % (self.data.count(self.min), self.data.count(self.max))
+                print("padMin=%s, padMax=%s" % (padMin, padMax))
+            print("%i points at min, %i points at max" % (self.data.count(self.min), self.data.count(self.max)))
             for bin in self.bins:
-                print " %-8s  %i" % (bin[0], bin[1])
+                print(" %-8s  %i" % (bin[0], bin[1]))
 
     def dump(self):
-        print "%i data points, " % len(self.data),
-        print "min=%s, " % self.min,
-        print "max=%s, " % self.max,
-        print "mean=%s, " % self.mean(),
-        print "binSize=%s, " % self.binSize,
-        print "nBins=%s" % self.nBins
+        print("%i data points, " % len(self.data), end=' ')
+        print("min=%s, " % self.min, end=' ')
+        print("max=%s, " % self.max, end=' ')
+        print("mean=%s, " % self.mean(), end=' ')
+        print("binSize=%s, " % self.binSize, end=' ')
+        print("nBins=%s" % self.nBins)
 
     def plot(self, term='x11', output=None):
         """A horrible hack to plot stuff with GnuPlot.
@@ -320,7 +321,7 @@ class Numbers(object):
         """
 
         weirdName = 'tmPFoRGnUPloT'
-        f1 = file(weirdName, 'w')
+        f1 = open(weirdName, 'w')
         for i in self.data:
             f1.write('%s\n' % i)
         f1.close()
@@ -341,12 +342,12 @@ class Numbers(object):
         os.system('rm %s' % instructionsFileName)
 
     def tailAreaProbability(self, theStat, verbose=1):
-        """Access to :func:`func.tailAreaProbability`
+        """Access to :func:`p4.func.tailAreaProbability`
 
         Supply *theStat*, ie the test quantity, and it uses
         ``self.data`` to make the distribution.
         """
-        return func.tailAreaProbability(theStat, self.data, verbose)
+        return p4.func.tailAreaProbability(theStat, self.data, verbose)
 
     # def mplPlot(self):
     #     """Plot with mathplotlib.  Does this work?"""
@@ -370,7 +371,7 @@ class Numbers(object):
             a = numpy.array(self.data, numpy.float)
             m = numpy.zeros([1], numpy.float)
             v = numpy.zeros([1], numpy.float)
-            func.gsl_meanVariance(a, m, v)
+            p4.func.gsl_meanVariance(a, m, v)
             return (m, v)
         else:
             return None
@@ -381,7 +382,7 @@ class Numbers(object):
 
         if 0:
             numpy.exp(ar, ar)
-            print ar
+            print(ar)
             m = sum(ar) / len(ar)
             return math.log(m)
 
@@ -392,7 +393,7 @@ class Numbers(object):
             y = x
             y -= scaler
             if y < -100.0:
-                print "Numbers.arithmeticMeanOfLogs()  Ignoring outlier  %f" % x
+                print("Numbers.arithmeticMeanOfLogs()  Ignoring outlier  %f" % x)
                 continue
             else:
                 x = numpy.exp(y)
@@ -434,7 +435,7 @@ class Numbers(object):
             y -= scaler
             # print "x=%f, y = %f" % (x, y)
             if y < -100.0:
-                print "Numbers.harmonicMeanOfLogs()  Ignoring outlier %f" % -x
+                print("Numbers.harmonicMeanOfLogs()  Ignoring outlier %f" % -x)
                 continue
             else:
                 x = numpy.exp(y)

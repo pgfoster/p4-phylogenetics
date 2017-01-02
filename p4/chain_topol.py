@@ -1,11 +1,12 @@
-import func
-import pf
-from var import var
+from __future__ import print_function
+import p4.func
+import p4.pf as pf
+from p4.var import var
 import math
 import random
 import copy
 import numpy
-from p4exceptions import P4Error
+from p4.p4exceptions import P4Error
 import sys
 
 if True:
@@ -17,7 +18,7 @@ if True:
             self.propTree.reRoot(
                 newRoot, moveInternalName=False, fixRawSplitKeys=self.mcmc.constraints)
         else:
-            print "Chain.proposeRoot3().  No other internal nodes.  Fix me."
+            print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
         # if self.mcmc.constraints:
@@ -192,7 +193,7 @@ if True:
                 n.br.oldNode = n
 
         if dbug:
-            print "=" * 80
+            print("=" * 80)
             # print "proposeLocal() starting with this tree ..."
             #pTree.draw(width=80, addToBrLen=0.0)
             # for n in pTree.iterInternalsNoRoot():
@@ -203,7 +204,7 @@ if True:
                 n.name += '[%s,%s]' % (n.br.rawSplitKey, n.br.splitKey)
             for n in pTree.iterInternalsNoRoot():
                 n.name = '[%s,%s]' % (n.br.rawSplitKey, n.br.splitKey)
-            print "proposeLocal() starting with this tree ..."
+            print("proposeLocal() starting with this tree ...")
             pTree.draw(width=100, addToBrLen=0.2, model=True)
             if self.mcmc.constraints:
                 pTree.checkSplitKeys(useOldName=True)
@@ -253,7 +254,7 @@ if True:
                 if n != candidateC.parent:
                     possibleRoots.append(n)
             if not possibleRoots:
-                print "=" * 50
+                print("=" * 50)
                 pTree.draw()
                 gm.append(
                     "Programming error. Could not find any possibleRoots")
@@ -264,9 +265,9 @@ if True:
                 newRoot, moveInternalName=False, fixRawSplitKeys=self.mcmc.constraints)
 
         if 0 and dbug:
-            print "candidateC is node %i" % candidateC.nodeNum
+            print("candidateC is node %i" % candidateC.nodeNum)
             if oldRoot:
-                print "I had to reRoot to node %i." % newRoot.nodeNum
+                print("I had to reRoot to node %i." % newRoot.nodeNum)
             pTree.draw(width=80, showInternalNodeNames=1, addToBrLen=0.0)
 
         # We want a tree like this:
@@ -348,7 +349,7 @@ if True:
             else:
                 b.name = 'b'
 
-            print "Label the nodes a,b,c,d,u,v, and arrange into a 'standard form' ..."
+            print("Label the nodes a,b,c,d,u,v, and arrange into a 'standard form' ...")
             pTree.draw(
                 width=100, showInternalNodeNames=1, addToBrLen=0.2, model=True)
 
@@ -390,12 +391,12 @@ if True:
         ##    raise P4Error(gm)
 
         if 0 and dbug:
-            print
-            print "m, the sum of brLens from a up to c, is %f" % m
-            print "x, from a to u, is %f" % x
-            print "y, from a to v, is %f" % y
-            print "newMRatio is %f" % newMRatio
-            print "newM is %f" % newM
+            print()
+            print("m, the sum of brLens from a up to c, is %f" % m)
+            print("x, from a to u, is %f" % x)
+            print("y, from a to v, is %f" % y)
+            print("newMRatio is %f" % newMRatio)
+            print("newM is %f" % newM)
 
         #################################################################
         # Detach either u or v, then re-attach somewhere between a and c.
@@ -427,18 +428,18 @@ if True:
                 safety += 1
                 if safety > 100:
                     if dbug:
-                        print "Unable to place newX sufficiently far away from newY"
+                        print("Unable to place newX sufficiently far away from newY")
                     theProposal.doAbort = True
                     return
 
             if 0 and dbug:
-                print "Choose to detach node u (not v)"
-                print "newY is (%f * %f =) %f" % (y, newMRatio, newY)
-                print "newX, a random spot along newM, is %f" % newX
+                print("Choose to detach node u (not v)")
+                print("newY is (%f * %f =) %f" % (y, newMRatio, newY))
+                print("newX, a random spot along newM, is %f" % newX)
                 if newX < newY:
-                    print "-> Since newX is still less than newY, there will be no topology change."
+                    print("-> Since newX is still less than newY, there will be no topology change.")
                 else:
-                    print "-> Since newX is now more than newY, there will be a topology change."
+                    print("-> Since newX is now more than newY, there will be a topology change.")
 
             a.leftChild = v
             v.parent = a
@@ -474,7 +475,7 @@ if True:
                 v.br.len = newY - newX
                 c.br.len = newM - newY
                 if 0 and dbug:
-                    print "-> detach u, reattach between a and v, so no topology change"
+                    print("-> detach u, reattach between a and v, so no topology change")
                     pTree.draw(
                         width=80, showInternalNodeNames=1, addToBrLen=0.0)
 
@@ -517,7 +518,7 @@ if True:
                 pTree.preAndPostOrderAreValid = 0
                 theProposal.topologyChanged = 1
                 if dbug:
-                    print "-> detach u, re-attach between v and c, so there is a topology change"
+                    print("-> detach u, re-attach between v and c, so there is a topology change")
                     for n in pTree.iterNodes():
                         n.name = n.oldName
                     for n in pTree.iterLeavesNoRoot():
@@ -580,18 +581,18 @@ if True:
                 safety += 1
                 if safety > 100:
                     if dbug:
-                        print "Unable to place newY sufficiently far away from newX"
+                        print("Unable to place newY sufficiently far away from newX")
                     theProposal.doAbort = True
                     return
 
             if 0 and dbug:
-                print "Choose to detach node v (not u)"
-                print "newX is (%f * %f =) %f" % (x, newMRatio, newX)
-                print "newY, a random spot along newM, is %f" % newY
+                print("Choose to detach node v (not u)")
+                print("newX is (%f * %f =) %f" % (x, newMRatio, newX))
+                print("newY, a random spot along newM, is %f" % newY)
                 if newY < newX:
-                    print "-> Since newY is now less than newX, there will be a topology change."
+                    print("-> Since newY is now less than newX, there will be a topology change.")
                 else:
-                    print "-> Since newY is still more than newX, there will not be a topology change."
+                    print("-> Since newY is still more than newX, there will not be a topology change.")
 
             u.leftChild = c
             c.parent = u
@@ -628,7 +629,7 @@ if True:
                 v.br.len = newY - newX
                 c.br.len = newM - newY
                 if 0 and dbug:
-                    print "-> detach v, reattach between u and c, so no topology change"
+                    print("-> detach v, reattach between u and c, so no topology change")
                     pTree.draw(
                         width=80, showInternalNodeNames=1, addToBrLen=0.0)
             else:
@@ -670,8 +671,8 @@ if True:
                 pTree.preAndPostOrderAreValid = 0
                 theProposal.topologyChanged = 1
                 if dbug:
-                    print "-> detach v, re-attach between a and u, so there is a topology change"
-                    print "   (splitKeys are wrong on nodes v and u, in the figure below)"
+                    print("-> detach v, re-attach between a and u, so there is a topology change")
+                    print("   (splitKeys are wrong on nodes v and u, in the figure below)")
                     for n in pTree.iterNodes():
                         n.name = n.oldName
                     for n in pTree.iterLeavesNoRoot():
@@ -714,12 +715,12 @@ if True:
         if 0:
             if c.br.len < var.BRLEN_MIN or v.br.len < var.BRLEN_MIN or u.br.len < var.BRLEN_MIN:
                 # if dbug:
-                print "At least 1 brLen is too short."
+                print("At least 1 brLen is too short.")
                 theProposal.doAbort = True
                 return
             elif c.br.len > var.BRLEN_MAX or v.br.len > var.BRLEN_MAX or u.br.len > var.BRLEN_MAX:
                 # if dbug:
-                print "At least 1 brLen is too long.  Aborting. (No big deal ...)"
+                print("At least 1 brLen is too long.  Aborting. (No big deal ...)")
                 theProposal.doAbort = True
                 return
 
@@ -727,32 +728,32 @@ if True:
             complain = True
             if c.br.len < var.BRLEN_MIN:
                 if complain:
-                    print "c  %i  too short" % self.mcmc.gen
+                    print("c  %i  too short" % self.mcmc.gen)
                 theProposal.doAbort = True
                 return
             if v.br.len < var.BRLEN_MIN:
                 if complain:
-                    print "v  %i  too short" % self.mcmc.gen
+                    print("v  %i  too short" % self.mcmc.gen)
                 theProposal.doAbort = True
                 return
             if u.br.len < var.BRLEN_MIN:
                 if complain:
-                    print "u  %i  too short" % self.mcmc.gen
+                    print("u  %i  too short" % self.mcmc.gen)
                 theProposal.doAbort = True
                 return
             if c.br.len > var.BRLEN_MAX:
                 if complain:
-                    print "c  %i  too long" % self.mcmc.gen
+                    print("c  %i  too long" % self.mcmc.gen)
                 theProposal.doAbort = True
                 return
             if v.br.len > var.BRLEN_MAX:
                 if complain:
-                    print "v  %i  too long" % self.mcmc.gen
+                    print("v  %i  too long" % self.mcmc.gen)
                 theProposal.doAbort = True
                 return
             if u.br.len > var.BRLEN_MAX:
                 if complain:
-                    print "u  %i  too long" % self.mcmc.gen
+                    print("u  %i  too long" % self.mcmc.gen)
                 theProposal.doAbort = True
                 return
 
@@ -916,7 +917,7 @@ if True:
                 logPrRat = math.log(prRat)
 
                 if math.fabs(logPrRat - theSum) > 1.e-10:
-                    print "xxzz differs.  logPrRat=%g, theSum=%g" % (logPrRat, theSum)
+                    print("xxzz differs.  logPrRat=%g, theSum=%g" % (logPrRat, theSum))
                 # else:
                 #    print "s",
 
@@ -974,15 +975,15 @@ if True:
                              (newM - newX))
                     # print "%+.4f" % foo
                     if (math.fabs(self.logPriorRatio - foo0) > 1.e-10):
-                        print "differs-- foo0, %g %g" % (self.logPriorRatio, foo0)
+                        print("differs-- foo0, %g %g" % (self.logPriorRatio, foo0))
                     if (math.fabs(self.logPriorRatio - foo) > 1.e-10):
-                        print "differs-- foo, %g %g" % (self.logPriorRatio, foo)
+                        print("differs-- foo, %g %g" % (self.logPriorRatio, foo))
             else:
                 raise P4Error("This should not happen.")
 
         if oldRoot:
             if dbug:
-                print '-------------------- about to reRoot -----------'
+                print('-------------------- about to reRoot -----------')
                 pTree.draw(
                     width=100, showInternalNodeNames=1, addToBrLen=0.2, model=True)
                 if self.mcmc.constraints:
@@ -994,7 +995,7 @@ if True:
                 oldRoot, moveInternalName=False, fixRawSplitKeys=self.mcmc.constraints)
 
             if dbug:
-                print '--------------after reRoot --------------'
+                print('--------------after reRoot --------------')
                 for n in pTree.iterLeavesNoRoot():
                     n.name += '[%s,%s]' % (n.br.rawSplitKey, n.br.splitKey)
                 for n in pTree.iterInternalsNoRoot():
@@ -1025,9 +1026,9 @@ if True:
 
         if dbug:
             if theProposal.topologyChanged:
-                print "The topology CHANGED"
+                print("The topology CHANGED")
             else:
-                print "Topology -- no change."
+                print("Topology -- no change.")
             # pTree.draw(width=80)
 
             for n in pTree.iterNodes():
@@ -1062,7 +1063,7 @@ if True:
         if 0:
             for n in pTree.iterNodesNoRoot():
                 if n.br.lenChanged:
-                    print "l node %2i br.lenChanged" % n.nodeNum
+                    print("l node %2i br.lenChanged" % n.nodeNum)
         if dbug:
             if self.mcmc.constraints:
                 pTree.checkSplitKeys()
@@ -1074,11 +1075,11 @@ if True:
         if theProposal.topologyChanged:
             for pNum in range(pTree.model.nParts):
                 if 0 and self.mcmc.gen == 14:
-                    print
-                    print pTree.model.parts[pNum].bQETneedsReset
-                    print "a is node %i" % a.nodeNum
-                    print "u is node %i" % u.nodeNum
-                    print "v is node %i" % v.nodeNum
+                    print()
+                    print(pTree.model.parts[pNum].bQETneedsReset)
+                    print("a is node %i" % a.nodeNum)
+                    print("u is node %i" % u.nodeNum)
+                    print("v is node %i" % v.nodeNum)
                 for n in [a, u, v]:
                     if n.br:
                         if pTree.model.parts[pNum].bQETneedsReset[n.parts[pNum].compNum][n.br.parts[pNum].rMatrixNum]:
@@ -1088,8 +1089,8 @@ if True:
                             pf.p4_resetBQET(
                                 pTree.model.cModel, pNum, n.parts[pNum].compNum, n.br.parts[pNum].rMatrixNum)
                 if 0 and self.mcmc.gen == 14:
-                    print
-                    print pTree.model.parts[pNum].bQETneedsReset
+                    print()
+                    print(pTree.model.parts[pNum].bQETneedsReset)
 
         if dbug:
             for n in pTree.iterNodesNoRoot():
@@ -1098,7 +1099,7 @@ if True:
                     assert n.br.lenChanged
                 else:
                     if n.br.lenChanged:
-                        print "Node %2i lenChanged set, but its the same length." % n.nodeNum
+                        print("Node %2i lenChanged set, but its the same length." % n.nodeNum)
                         raise P4Error
 
                 # If the branch has been inverted, we will want to recalculate
@@ -1143,7 +1144,7 @@ if True:
 
         if 0 and self.mcmc.gen == 217:
             dbug = True
-            print "------------- eTBR gen %i -----------------" % self.mcmc.gen
+            print("------------- eTBR gen %i -----------------" % self.mcmc.gen)
             if 0:
                 currentLogLike = self.propTree.logLike
                 self.propTree.calcLogLike(verbose=0)  # with _commonCStuff()
@@ -1162,9 +1163,9 @@ if True:
         etbrPExt = self.mcmc.tunings.etbrPExt
 
         if 0 and dbug:
-            print "=" * 50
+            print("=" * 50)
             pTree.draw()
-            print "starting with the tree above."
+            print("starting with the tree above.")
 
         # Choose a node, not the root.  In crux the choice for the original
         # branch can be any branch at all, including leaf branches.  Here, since
@@ -1193,7 +1194,7 @@ if True:
             y0 = x0.parent
             
         if dbug:
-            print "y0 is node %i" % y0.nodeNum
+            print("y0 is node %i" % y0.nodeNum)
             y0.br.textDrawSymbol = '='
             if y0.name:
                 y0.name += '_y0'
@@ -1315,7 +1316,7 @@ if True:
             if r0 == x1:
                 # We did not extend, at all.
                 if dbug:
-                    print "No extension from x1 was done (because x1=r0), so no rearrangement on the x side."
+                    print("No extension from x1 was done (because x1=r0), so no rearrangement on the x side.")
                 pass
             else:
                 # Do the rearrangement.  
@@ -1328,7 +1329,7 @@ if True:
                     x0.br.textDrawSymbol = 'X'
                     pTree.setPreAndPostOrder()
                     pTree.draw()
-                    print "The drawing above is just before the rearrangement."
+                    print("The drawing above is just before the rearrangement.")
 
                 # Get children of x0 that are not y0
                 ch = [n for n in x0.iterChildren() if n != y0]
@@ -1353,9 +1354,9 @@ if True:
             pTree.setPreAndPostOrder()
             pTree.draw()
             if x0Uncon and r0 != x1:
-                print "The drawing above shows that X extended"
+                print("The drawing above shows that X extended")
             else:
-                print "The drawing above shows that X did not extend."
+                print("The drawing above shows that X did not extend.")
 
         # #########
         # Extend y
@@ -1451,7 +1452,7 @@ if True:
             if s0 == y1:
                 # We did not extend, at all.
                 if dbug:
-                    print "No Y extension was made (because y1=s0), so nothing to do."
+                    print("No Y extension was made (because y1=s0), so nothing to do.")
             else:
                 # Do the rearrangement.  
                 pTree.reRoot(s1, moveInternalName=False)
@@ -1463,7 +1464,7 @@ if True:
                     y0.br.textDrawSymbol = 'Y'
                     pTree.setPreAndPostOrder()
                     pTree.draw()
-                    print "The drawing above is the tree just before rearrangement on the Y side."
+                    print("The drawing above is the tree just before rearrangement on the Y side.")
 
                 # Get children of y0 that are not x0
                 ch = [n for n in y0.iterChildren() if n != x0]
@@ -1489,15 +1490,15 @@ if True:
             pTree.setPreAndPostOrder()
             pTree.draw()
             if y0Uncon and s0 != y1:
-                print "The drawing above shows that Y extended"
+                print("The drawing above shows that Y extended")
             else:
-                print "The drawing above shows that Y did not extend."
+                print("The drawing above shows that Y did not extend.")
 
         if oldRoot != pTree.root:
             pTree.reRoot(oldRoot, moveInternalName=False)
         if dbug:
             pTree.draw()
-            print "The above is back to the original root."
+            print("The above is back to the original root.")
 
         if dbug:
             for n in pTree.nodes:
@@ -1521,29 +1522,29 @@ if True:
             theProposal.topologyChanged = True
 
         if dbug:
-            print "-" * 20
-            print "xRearranged = %s" % xRearranged
-            print "yRearranged = %s" % yRearranged
+            print("-" * 20)
+            print("xRearranged = %s" % xRearranged)
+            print("yRearranged = %s" % yRearranged)
             if eA:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eA:
-                        print "eA is from node", n.nodeNum
+                        print("eA is from node", n.nodeNum)
             else:
-                print "eA is None"
+                print("eA is None")
             if eX:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eX:
-                        print "eX is from node", n.nodeNum
+                        print("eX is from node", n.nodeNum)
             else:
-                print "eX is None"
+                print("eX is None")
             if eY:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eY:
-                        print "eY is from node", n.nodeNum
+                        print("eY is from node", n.nodeNum)
             else:
-                print "eY is None"
-            print "x0Uncon is", x0Uncon
-            print "y0Uncon is", y0Uncon
+                print("eY is None")
+            print("x0Uncon is", x0Uncon)
+            print("y0Uncon is", y0Uncon)
 
         # Are we violating constraints?
         if 1:
@@ -1720,7 +1721,7 @@ if True:
 
         if 0 and self.mcmc.gen == 217:
             dbug = True
-            print "------------- eSPR gen %i -----------------" % self.mcmc.gen
+            print("------------- eSPR gen %i -----------------" % self.mcmc.gen)
             if 0:
                 currentLogLike = self.propTree.logLike
                 self.propTree.calcLogLike(verbose=0)  # with _commonCStuff()
@@ -1739,9 +1740,9 @@ if True:
         etbrPExt = self.mcmc.tunings.etbrPExt
 
         if 0 and dbug:
-            print "=" * 50
+            print("=" * 50)
             pTree.draw()
-            print "starting with the tree above."
+            print("starting with the tree above.")
 
         # Choose a node, not the root.  In crux the choice for the original
         # branch can be any branch at all, including leaf branches.  Here, since
@@ -1776,7 +1777,7 @@ if True:
             #x0 = pTree.node(2)
 
         if dbug:
-            print "y0 is node %i" % y0.nodeNum
+            print("y0 is node %i" % y0.nodeNum)
             y0.br.textDrawSymbol = '='
             if y0.name:
                 y0.name += '_y0'
@@ -1902,7 +1903,7 @@ if True:
             if r0 == x1:
                 # We did not extend, at all.
                 if dbug:
-                    print "No extension from x1 was done (because x1=r0), so no rearrangement on the x side."
+                    print("No extension from x1 was done (because x1=r0), so no rearrangement on the x side.")
                 pass
             else:
                 # Do the rearrangement.  
@@ -1915,7 +1916,7 @@ if True:
                     x0.br.textDrawSymbol = 'X'
                     pTree.setPreAndPostOrder()
                     pTree.draw()
-                    print "The drawing above is just before the rearrangement."
+                    print("The drawing above is just before the rearrangement.")
 
                 # Get children of x0 that are not y0
                 ch = [n for n in x0.iterChildren() if n != y0]
@@ -1940,16 +1941,16 @@ if True:
             pTree.setPreAndPostOrder()
             pTree.draw()
             if x0Uncon and r0 != x1:
-                print "The drawing above shows that X extended"
+                print("The drawing above shows that X extended")
             else:
-                print "The drawing above shows that X did not extend."
+                print("The drawing above shows that X did not extend.")
 
 
         if oldRoot != pTree.root:
             pTree.reRoot(oldRoot, moveInternalName=False)
         if dbug:
             pTree.draw()
-            print "The above is back to the original root."
+            print("The above is back to the original root.")
 
             for n in pTree.nodes:
                 if n.isLeaf:
@@ -1968,21 +1969,21 @@ if True:
             theProposal.topologyChanged = True
 
         if dbug:
-            print "-" * 20
-            print "xRearranged = %s" % xRearranged
+            print("-" * 20)
+            print("xRearranged = %s" % xRearranged)
             if eA:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eA:
-                        print "eA is from node", n.nodeNum
+                        print("eA is from node", n.nodeNum)
             else:
-                print "eA is None"
+                print("eA is None")
             if eX:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eX:
-                        print "eX is from node", n.nodeNum
+                        print("eX is from node", n.nodeNum)
             else:
-                print "eX is None"
-            print "x0Uncon is", x0Uncon
+                print("eX is None")
+            print("x0Uncon is", x0Uncon)
 
         # Are we violating constraints?
         if 1:
@@ -2197,10 +2198,10 @@ if True:
         etbrPExt = self.mcmc.tunings.etbrPExt
 
         if 1 and dbug:
-            print "=" * 80
-            print "=" * 80
+            print("=" * 80)
+            print("=" * 80)
             pTree.draw()
-            print "starting with the tree above."
+            print("starting with the tree above.")
 
         # Choose a node, not the root.  In crux the choice for the original
         # branch can be any branch at all, including leaf branches.  Here, since
@@ -2231,7 +2232,7 @@ if True:
             
 
         if dbug:
-            print "y0 is node %i" % y0.nodeNum
+            print("y0 is node %i" % y0.nodeNum)
             if x0 == y0.parent:
                 y0.br.textDrawSymbol = '='
             else:
@@ -2411,9 +2412,9 @@ if True:
             pTree.setPreAndPostOrder()
             pTree.draw()
             if x0Uncon and r0 != x1:
-                print "The drawing above shows that X extended"
+                print("The drawing above shows that X extended")
             else:
-                print "The drawing above shows that X did not extend."
+                print("The drawing above shows that X did not extend.")
 
         # #########
         # Extend y
@@ -2568,9 +2569,9 @@ if True:
             pTree.setPreAndPostOrder()
             pTree.draw()
             if y0Uncon and s0 != y1:
-                print "The drawing above shows that Y extended"
+                print("The drawing above shows that Y extended")
             else:
-                print "The drawing above shows that Y did not extend."
+                print("The drawing above shows that Y did not extend.")
 
         if dbug:
             for n in pTree.nodes:
@@ -2594,29 +2595,29 @@ if True:
             theProposal.topologyChanged = True
 
         if dbug:
-            print "-" * 20
-            print "xRearranged = %s" % xRearranged
-            print "yRearranged = %s" % yRearranged
+            print("-" * 20)
+            print("xRearranged = %s" % xRearranged)
+            print("yRearranged = %s" % yRearranged)
             if eA:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eA:
-                        print "eA is from node", n.nodeNum
+                        print("eA is from node", n.nodeNum)
             else:
-                print "eA is None"
+                print("eA is None")
             if eX:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eX:
-                        print "eX is from node", n.nodeNum
+                        print("eX is from node", n.nodeNum)
             else:
-                print "eX is None"
+                print("eX is None")
             if eY:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eY:
-                        print "eY is from node", n.nodeNum
+                        print("eY is from node", n.nodeNum)
             else:
-                print "eY is None"
-            print "x0Uncon is", x0Uncon
-            print "y0Uncon is", y0Uncon
+                print("eY is None")
+            print("x0Uncon is", x0Uncon)
+            print("y0Uncon is", y0Uncon)
 
         # n.flag is set if the condLikes need recalculating.  Edges eA,
         # eX, and eY will have their bigPDecks recalculated, and all the
@@ -2678,9 +2679,9 @@ if True:
 
             if 0 and self.mcmc.gen == 434:
                 for n in pTree.iterNodesNoRoot():
-                    print "%2i  %5s  %i" % (n.nodeNum, n.br.lenChanged, n.flag)
+                    print("%2i  %5s  %i" % (n.nodeNum, n.br.lenChanged, n.flag))
                 n = pTree.root
-                print "%2i  %5s  %i" % (n.nodeNum, "-", n.flag)
+                print("%2i  %5s  %i" % (n.nodeNum, "-", n.flag))
                 #for nNum in [11]:
                 #    n = pTree.node(nNum)
                 #    n.br.lenChanged = True
@@ -2882,10 +2883,10 @@ if True:
         etbrPExt = self.mcmc.tunings.etbrPExt
 
         if 1 and dbug:
-            print "=" * 80
-            print "=" * 80
+            print("=" * 80)
+            print("=" * 80)
             pTree.draw()
-            print "starting with the tree above."
+            print("starting with the tree above.")
 
         # Choose a node, not the root.  In crux the choice for the original
         # branch can be any branch at all, including leaf branches.  Here, since
@@ -2917,7 +2918,7 @@ if True:
             x0 = pTree.node(1)
 
         if dbug:
-            print "y0 is node %i" % y0.nodeNum
+            print("y0 is node %i" % y0.nodeNum)
             if x0 == y0.parent:
                 y0.br.textDrawSymbol = '='
             else:
@@ -3100,9 +3101,9 @@ if True:
             pTree.setPreAndPostOrder()
             pTree.draw()
             if x0Uncon and r0 != x1:
-                print "The drawing above shows that X extended"
+                print("The drawing above shows that X extended")
             else:
-                print "The drawing above shows that X did not extend."
+                print("The drawing above shows that X did not extend.")
 
 
         if oldRoot != pTree.root:
@@ -3127,21 +3128,21 @@ if True:
             theProposal.topologyChanged = True
 
         if dbug:
-            print "-" * 20
-            print "xRearranged = %s" % xRearranged
+            print("-" * 20)
+            print("xRearranged = %s" % xRearranged)
             if eA:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eA:
-                        print "eA is from node", n.nodeNum
+                        print("eA is from node", n.nodeNum)
             else:
-                print "eA is None"
+                print("eA is None")
             if eX:
                 for n in pTree.iterNodesNoRoot():
                     if n.br == eX:
-                        print "eX is from node", n.nodeNum
+                        print("eX is from node", n.nodeNum)
             else:
-                print "eX is None"
-            print "x0Uncon is", x0Uncon
+                print("eX is None")
+            print("x0Uncon is", x0Uncon)
 
         # n.flag is set if the condLikes need recalculating.  Edges eA,
         # eX, will have their bigPDecks recalculated, and all the
@@ -3183,9 +3184,9 @@ if True:
 
             if 0 and self.mcmc.gen == 253:
                 for n in pTree.iterNodesNoRoot():
-                    print "%2i  %5s  %i" % (n.nodeNum, n.br.lenChanged, n.flag)
+                    print("%2i  %5s  %i" % (n.nodeNum, n.br.lenChanged, n.flag))
                 n = pTree.root
-                print "%2i  %5s  %i" % (n.nodeNum, "-", n.flag)
+                print("%2i  %5s  %i" % (n.nodeNum, "-", n.flag))
                 #for nNum in [11]:
                 #    n = pTree.node(nNum)
                 #    n.br.lenChanged = True
@@ -3289,11 +3290,11 @@ if True:
         if dbug:
             # print "proposePolytomy() starting with this tree ..."
             #self.propTree.draw(width=80, addToBrLen=0.2)
-            print "j There are %i internal nodes." % self.propTree.nInternalNodes
+            print("j There are %i internal nodes." % self.propTree.nInternalNodes)
             if self.propTree.nInternalNodes == 1:
-                print "-> so its a star tree -> proposeDeleteEdge is not possible."
+                print("-> so its a star tree -> proposeDeleteEdge is not possible.")
             elif self.propTree.nInternalNodes == self.propTree.nTax - 2:
-                print "-> so its a fully-resolved tree, so proposeAddEdge is not possible."
+                print("-> so its a fully-resolved tree, so proposeAddEdge is not possible.")
 
         if self.propTree.nInternalNodes == 1:  # a star tree
             self.proposeAddEdge(theProposal)
@@ -3330,10 +3331,10 @@ if True:
         dbug = False
         pTree = self.propTree
         if 0:
-            print "proposeAddEdge(), starting with this tree ..."
+            print("proposeAddEdge(), starting with this tree ...")
             pTree.draw()
-            print "k There are %i internal nodes." % pTree.nInternalNodes
-            print "root is node %i" % pTree.root.nodeNum
+            print("k There are %i internal nodes." % pTree.nInternalNodes)
+            print("root is node %i" % pTree.root.nodeNum)
         allPolytomies = []
         for n in pTree.iterInternalsNoRoot():
             if n.getNChildren() > 2:
@@ -3369,10 +3370,10 @@ if True:
 
         nPossibleWays = math.pow(2, k - 1) - k - 1
         if dbug:
-            print "These nodes are polytomies: %s" % [n.nodeNum for n in allPolytomies]
-            print "We randomly choose to do node %i" % theChosenPolytomy.nodeNum
-            print "It has %i children, so k=%i, so there are %i possible ways to add a node." % (
-                nChildren, k, nPossibleWays)
+            print("These nodes are polytomies: %s" % [n.nodeNum for n in allPolytomies])
+            print("We randomly choose to do node %i" % theChosenPolytomy.nodeNum)
+            print("It has %i children, so k=%i, so there are %i possible ways to add a node." % (
+                nChildren, k, nPossibleWays))
 
         # We want to choose one of the possible ways to add a node, but we
         # want to choose it randomly.  I'll describe it for the case with
@@ -3380,7 +3381,7 @@ if True:
         # nPossibleWays=25 different ways to add a node.  The complication
         # is that we could make a new group of 2, 3, or 4 nInNewGroup, and it will be
         # different numbers of possible ways in each.  The numbers of each are given by
-        # func.nChoosek(), so there are 10 ways to make a group of 2 from 5
+        # p4.func.nChoosek(), so there are 10 ways to make a group of 2 from 5
         # children, 10 ways to make a group of 3 from 5 children, and 5
         # ways to make a group of 4 from 5 children.  So thats [10, 10,
         # 5], which sums to 25 (nPossibleWays).  So we can make a
@@ -3388,7 +3389,7 @@ if True:
         # group randomly.
         nChooseKs = []
         for i in range(2, nChildren):
-            nChooseKs.append(func.nChooseK(nChildren, i))
+            nChooseKs.append(p4.func.nChooseK(nChildren, i))
         cumSum = [nChooseKs[0]]
         for i in range(len(nChooseKs))[1:]:
             cumSum.append(nChooseKs[i] + cumSum[i - 1])
@@ -3403,13 +3404,13 @@ if True:
         newChildrenNodeNums = random.sample(childrenNodeNums, nInNewGroup)
 
         if dbug:
-            print "The nChooseKs are %s" % nChooseKs
-            print "The cumSum is %s" % cumSum
-            print "Since there are nPossibleWays=%i, we choose a random number from 0-%i" % (
-                nPossibleWays, nPossibleWays - 1)
-            print "->We chose a random number: %i" % ran
-            print "So we choose the group at index %i, which means nInNewGroup=%i" % (i, nInNewGroup)
-            print "So we make a new node with newChildrenNodeNums %s" % newChildrenNodeNums
+            print("The nChooseKs are %s" % nChooseKs)
+            print("The cumSum is %s" % cumSum)
+            print("Since there are nPossibleWays=%i, we choose a random number from 0-%i" % (
+                nPossibleWays, nPossibleWays - 1))
+            print("->We chose a random number: %i" % ran)
+            print("So we choose the group at index %i, which means nInNewGroup=%i" % (i, nInNewGroup))
+            print("So we make a new node with newChildrenNodeNums %s" % newChildrenNodeNums)
             # sys.exit()
 
         # Choose to add a node between theChosenPolytomy and the first in
@@ -3480,7 +3481,7 @@ if True:
                     # "^" is xor, a bit-flipper.
                     newNode.br.splitKey = self.mcmc.constraints.allOnes ^ newNode.br.rawSplitKey
                 else:
-                    allOnes = 2L ** (self.propTree.nTax) - 1
+                    allOnes = 2 ** (self.propTree.nTax) - 1
                     newNode.br.splitKey = allOnes ^ newNode.br.rawSplitKey
             else:
                 newNode.br.splitKey = newNode.br.rawSplitKey
@@ -3540,13 +3541,13 @@ if True:
         hastingsRatio = (gamma_B * n_p * float(nPossibleWays)) / (1.0 + n_e)
 
         if dbug:
-            print "The new node is given a random branch length of %f" % newNode.br.len
-            print "For the Hastings ratio ..."
-            print "gamma_B is %.1f" % gamma_B
-            print "n_e is %.0f" % n_e
-            print "k is (still) %i, and (2^{k-1} - k - 1) = nPossibleWays is still %i" % (k, nPossibleWays)
-            print "n_p = %.0f is the number of polytomies present before the move." % n_p
-            print "So the hastings ratio is %f" % hastingsRatio
+            print("The new node is given a random branch length of %f" % newNode.br.len)
+            print("For the Hastings ratio ...")
+            print("gamma_B is %.1f" % gamma_B)
+            print("n_e is %.0f" % n_e)
+            print("k is (still) %i, and (2^{k-1} - k - 1) = nPossibleWays is still %i" % (k, nPossibleWays))
+            print("n_p = %.0f is the number of polytomies present before the move." % n_p)
+            print("So the hastings ratio is %f" % hastingsRatio)
 
         self.logProposalRatio = math.log(hastingsRatio)
 
@@ -3554,8 +3555,8 @@ if True:
             priorRatio = self.mcmc.tunings.brLenPriorLambda * \
                 math.exp(- self.mcmc.tunings.brLenPriorLambda * newNode.br.len)
             if dbug:
-                print "The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda
-                print "So the prior ratio is %f" % priorRatio
+                print("The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda)
+                print("So the prior ratio is %f" % priorRatio)
 
             self.logPriorRatio = math.log(priorRatio)
 
@@ -3563,7 +3564,7 @@ if True:
             jacobian = 1.0 / (self.mcmc.tunings.brLenPriorLambda *
                               math.exp(- self.mcmc.tunings.brLenPriorLambda * newNode.br.len))
             self.logJacobian = math.log(jacobian)
-            print "logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian)
+            print("logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian))
 
         # Here I pull a fast one, as explained in Lewis et al.  The
         # priorRatio and the Jacobian terms cancel out.  So the logs might
@@ -3576,16 +3577,16 @@ if True:
             # (T_{n,m} * C) .  We have the logs, and the result is the
             # log.
             if 0:
-                print "-" * 30
-                print 'curTree.nInternalNodes', self.curTree.nInternalNodes
-                print 'pTree.nInternalNodes', pTree.nInternalNodes
-                print 'logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes]
+                print("-" * 30)
+                print('curTree.nInternalNodes', self.curTree.nInternalNodes)
+                print('pTree.nInternalNodes', pTree.nInternalNodes)
+                print('logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes])
                 # print
                 # math.exp(theProposal.logBigT[self.curTree.nInternalNodes])
-                print 'C ', self.mcmc.tunings.polytomyPriorLogBigC
-                print 'logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes]
+                print('C ', self.mcmc.tunings.polytomyPriorLogBigC)
+                print('logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes])
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
-                print "-" * 30
+                print("-" * 30)
             self.logPriorRatio = (theProposal.logBigT[self.curTree.nInternalNodes] -
                                   (self.mcmc.tunings.polytomyPriorLogBigC +
                                    theProposal.logBigT[pTree.nInternalNodes]))
@@ -3660,9 +3661,9 @@ if True:
         pTree = self.propTree
         # print "doing proposeDeleteEdge()"
         if 0:
-            print "proposeDeleteEdge(), starting with this tree ..."
+            print("proposeDeleteEdge(), starting with this tree ...")
             pTree.draw()
-            print "m There are %i internal nodes (before deleting the edge)." % pTree.nInternalNodes
+            print("m There are %i internal nodes (before deleting the edge)." % pTree.nInternalNodes)
 
         if not candidateNodes:
             raise P4Error(
@@ -3670,9 +3671,9 @@ if True:
 
         theChosenNode = random.choice(candidateNodes)
         if dbug:
-            print "There are %i candidateNodes." % len(candidateNodes)
-            print "node nums %s" % [n.nodeNum for n in candidateNodes]
-            print "Randomly choose node %s" % theChosenNode.nodeNum
+            print("There are %i candidateNodes." % len(candidateNodes))
+            print("node nums %s" % [n.nodeNum for n in candidateNodes])
+            print("Randomly choose node %s" % theChosenNode.nodeNum)
 
         if pTree.model.isHet:
             for pNum in range(pTree.model.nParts):
@@ -3752,8 +3753,8 @@ if True:
             priorRatio = 1.0 / (self.mcmc.tunings.brLenPriorLambda *
                                 math.exp(- self.mcmc.tunings.brLenPriorLambda * theChosenNode.br.len))
             if dbug:
-                print "The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda
-                print "So the prior ratio is %f" % priorRatio
+                print("The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda)
+                print("So the prior ratio is %f" % priorRatio)
 
             self.logPriorRatio = math.log(priorRatio)
 
@@ -3762,7 +3763,7 @@ if True:
                 math.exp(- self.mcmc.tunings.brLenPriorLambda *
                          theChosenNode.br.len)
             self.logJacobian = math.log(jacobian)
-            print "logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian)
+            print("logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian))
 
         # Here I pull a fast one, as explained in Lewis et al.  The
         # priorRatio and the Jacobian terms cancel out.  So the logs might
@@ -3775,16 +3776,16 @@ if True:
             # We are losing a node.  So the prior ratio is (T_{n,m} * C) /
             # T_{n,m - 1}.  We have the logs, and the result is the log.
             if 0:
-                print "-" * 30
-                print 'curTree.nInternalNodes', self.curTree.nInternalNodes
-                print 'pTree.nInternalNodes', pTree.nInternalNodes
-                print 'logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes]
+                print("-" * 30)
+                print('curTree.nInternalNodes', self.curTree.nInternalNodes)
+                print('pTree.nInternalNodes', pTree.nInternalNodes)
+                print('logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes])
                 # print
                 # math.exp(theProposal.logBigT[self.curTree.nInternalNodes])
-                print 'C ', self.mcmc.tunings.polytomyPriorLogBigC
-                print 'logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes]
+                print('C ', self.mcmc.tunings.polytomyPriorLogBigC)
+                print('logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes])
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
-                print "-" * 30
+                print("-" * 30)
             self.logPriorRatio = ((theProposal.logBigT[self.curTree.nInternalNodes] +
                                    self.mcmc.tunings.polytomyPriorLogBigC) -
                                   theProposal.logBigT[pTree.nInternalNodes])

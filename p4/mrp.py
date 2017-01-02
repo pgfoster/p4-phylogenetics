@@ -1,9 +1,10 @@
+from __future__ import print_function
 # Matrix representation / parsimony.
 
 from tree import Tree
 from alignment import Alignment
-from p4exceptions import P4Error
-import func
+from p4.p4exceptions import P4Error
+import p4.func
 from nexussets import CharSet
 from node import Node
 from treepartitions import TreePartitions
@@ -47,8 +48,8 @@ def mrp(trees, taxNames=None):
         suppliedTaxNamesSet = set(taxNames)
         myTaxNamesSet = set(myTaxNames)
         if suppliedTaxNamesSet != myTaxNamesSet:
-            print suppliedTaxNamesSet
-            print myTaxNamesSet
+            print(suppliedTaxNamesSet)
+            print(myTaxNamesSet)
             symDiff = myTaxNamesSet.symmetric_difference(suppliedTaxNamesSet)
             gm.append(
                 "The taxNames list supplied does not represent the taxa in the input trees.")
@@ -62,7 +63,7 @@ def mrp(trees, taxNames=None):
     txBkDict = {}
     for tNum in range(len(taxNames)):
         tx = taxNames[tNum]
-        bk = 1L << tNum
+        bk = 1 << tNum
         txBkDict[tx] = bk
 
     # Decorate trees with BitKeys, and count the number of splits.
@@ -73,7 +74,7 @@ def mrp(trees, taxNames=None):
             if not n == t.root:
                 if n.isLeaf:
                     # order comes from taxNames, not from the tree
-                    n.br.bitKey = 1L << taxNames.index(n.name)
+                    n.br.bitKey = 1 << taxNames.index(n.name)
                 else:
                     nSplits += 1
                     tNSplits += 1
@@ -84,10 +85,10 @@ def mrp(trees, taxNames=None):
                             y = t.nodes[i].br.bitKey
                             x = x | y
                     except AttributeError:
-                        print "t.preAndPostOrderAreValid = %s" % t.preAndPostOrderAreValid
+                        print("t.preAndPostOrderAreValid = %s" % t.preAndPostOrderAreValid)
                         # t.draw()
-                        print "n is nodeNum %i" % n.nodeNum
-                        print "childrenNums = %s" % childrenNums
+                        print("n is nodeNum %i" % n.nodeNum)
+                        print("childrenNums = %s" % childrenNums)
                         raise AttributeError
                     n.br.bitKey = x
 
@@ -107,7 +108,7 @@ def mrp(trees, taxNames=None):
         gm = ["mrp().  No splits were found in the input trees."]
         gm.append("That does not work.")
         raise P4Error(gm)
-    a = func.newEmptyAlignment(
+    a = p4.func.newEmptyAlignment(
         dataType='standard', symbols='01', taxNames=taxNames, length=nSplits)
     a.setNexusSets()
     for s in a.sequences:

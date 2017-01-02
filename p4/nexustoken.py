@@ -1,9 +1,10 @@
+from __future__ import print_function
 import os
 import string
 import sys
 import types
-from var import var
-from p4exceptions import P4Error
+from p4.var import var
+from p4.p4exceptions import P4Error
 
 
 ############################################################################
@@ -101,9 +102,9 @@ def nextTok(flob):
         c = flob.read(1)
         if 0:
             if c == '\n' or c == '\r':
-                print 'nt %3i  c = line ending' % flob.tell()
+                print('nt %3i  c = line ending' % flob.tell())
             else:
-                print 'nt %3i  c = %s' % (flob.tell(), c)
+                print('nt %3i  c = %s' % (flob.tell(), c))
         if not c:
             return None
         # if 0:
@@ -156,15 +157,15 @@ def _handleComment(flob):
         raise P4Error(gm)
     if 0:
         if c in string.whitespace:
-            print "hc %3i whitespace" % flob.tell()
+            print("hc %3i whitespace" % flob.tell())
         else:
-            print "hc %3i  %s" % (flob.tell(), c)
+            print("hc %3i  %s" % (flob.tell(), c))
     if c == ']':
         return None
     if c == '!' and var.nexus_writeVisibleComments:
         flob.seek(commentStartPos, 0)
         theComment = _getComment(flob)
-        print theComment
+        print(theComment)
         return None
     elif c in ['&']:  # , '\\']:
         if var.nexus_getAllCommandComments:
@@ -203,9 +204,9 @@ def _skipComment(flob):
         c = flob.read(1)
         if 0:
             if c in string.whitespace:
-                print "sc %3i  whitespace" % flob.tell()
+                print("sc %3i  whitespace" % flob.tell())
             else:
-                print "sc %3i  %s" % (flob.tell(), c)
+                print("sc %3i  %s" % (flob.tell(), c))
         # empty string, ie at the end of the flob.  level can be assumed to be
         # more than zero.
         if not c:
@@ -229,9 +230,9 @@ def _getComment(flob):
         c = flob.read(1)
         if 0:
             if c in string.whitespace:
-                print "gc %3i  whitespace" % flob.tell()
+                print("gc %3i  whitespace" % flob.tell())
             else:
-                print "gc %3i  %s" % (flob.tell(), c)
+                print("gc %3i  %s" % (flob.tell(), c))
         if not c:
             gm = ["NexusToken._getComment()"]
             gm.append("Reached the end while still in a comment.")
@@ -266,11 +267,11 @@ def _getWord(flob):
         c = flob.read(1)
         if 0:
             if not c:
-                print "gw %3i  empty (position given is that of the last char)" % flob.tell()
+                print("gw %3i  empty (position given is that of the last char)" % flob.tell())
             if c in string.whitespace:
-                print "gw %3i  whitespace" % flob.tell()
+                print("gw %3i  whitespace" % flob.tell())
             else:
-                print "gw %3i  %s" % (flob.tell(), c)
+                print("gw %3i  %s" % (flob.tell(), c))
         if c == '[':
             endPos = flob.tell() - 1
             theLen = endPos - startPos
@@ -378,11 +379,11 @@ def _getQuotedStuff(flob):
         # print '! c= %s' % c
         if 0:
             if not c:
-                print "gq %3i  empty (position is eof)" % flob.tell()
+                print("gq %3i  empty (position is eof)" % flob.tell())
             elif c in string.whitespace:
-                print "gq %3i  whitespace" % flob.tell()
+                print("gq %3i  whitespace" % flob.tell())
             else:
-                print "gq %3i  %s" % (flob.tell(), c)
+                print("gq %3i  %s" % (flob.tell(), c))
         if c == '\'':
             c2 = flob.read(1)
             if c2:
@@ -443,7 +444,7 @@ def nexusSkipPastBlockEnd(flob):
             if lowTok == 'end' or lowTok == 'endblock':
                 tok2 = nextTok(flob)
                 if not tok2 or tok2 != ';':
-                    print complaintHead
+                    print(complaintHead)
                     gm.append("Expecting a semicolon after %s" % tok)
                     if not tok2:
                         gm.append("Got nothing.")

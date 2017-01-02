@@ -1,25 +1,26 @@
-from sequencelist import SequenceList, Sequence
-from nexussets import NexusSets
-from p4exceptions import P4Error
+from __future__ import print_function
+
+from p4.sequencelist import SequenceList, Sequence
+from p4.nexussets import NexusSets
+from p4.p4exceptions import P4Error
 import string
 import copy
 import os
 import math
 import string
-import func
+import p4.func
 import re
 import sys
 import array
 import types
-from nexussets import CharSet
+from p4.nexussets import CharSet
 import subprocess
-from distancematrix import DistanceMatrix
-from var import var
-from part import Part
+from p4.distancematrix import DistanceMatrix
+from p4.var import var
+from p4.part import Part
 import numpy
 import numpy.linalg
-import pf
-from alignment import ExcludeDelete
+from p4.alignment import ExcludeDelete
 
 if True:
     def simpleConstantMask(self, ignoreGapQ=True, invert=False):
@@ -56,12 +57,12 @@ if True:
         mask = array.array('c', self.length * '0')
         for seqPos in range(self.length):
             theSlice = self.sequenceSlice(seqPos)
-            # print "%2i: %s" % (seqPos, theSlice)
+            # print("%2i: %s" % (seqPos, theSlice))
 
             # Is it all gaps and missing?  If so, its constant.
             nGapMiss = theSlice.count('-') + theSlice.count('?')
             if nGapMiss == len(theSlice):
-                # print "    All miss-gap, ==> constant"
+                # print("    All miss-gap, ==> constant")
                 gm = ["Alignment.simpleConstantMask()"]
                 gm.append("All-gap site, position %i." % seqPos)
                 gm.append("Get rid of it.")
@@ -100,7 +101,7 @@ if True:
                 elif mask[seqPos] == '1':
                     mask[seqPos] = '0'
 
-        # print "mask = %s" %  mask.tostring()
+        # print("mask = %s" %  mask.tostring())
         return mask.tostring()
 
     def constantMask(self, invert=None):
@@ -140,18 +141,18 @@ if True:
         mask = array.array('c', self.length * '0')
         for seqPos in range(self.length):
             theSlice = self.sequenceSlice(seqPos)
-            # print "%2i: %s" % (seqPos, theSlice)
+            # print("%2i: %s" % (seqPos, theSlice))
 
             # Is it all gaps and missing?  If so, its constant.
             nGapMiss = theSlice.count('-') + theSlice.count('?')
             if nGapMiss == len(theSlice):
-                # print "    All miss-gap, ==> constant"
+                # print("    All miss-gap, ==> constant")
                 mask[seqPos] = '1'
 
             # if there is only 1 char that is not a gap or missing, then it is
             # constant
             elif nGapMiss == len(theSlice) - 1:
-                # print "    Only 1 non-miss-gap, ==> constant"
+                # print("    Only 1 non-miss-gap, ==> constant")
                 mask[seqPos] = '1'
 
             else:  # There are at least two non-gap chars
@@ -173,21 +174,21 @@ if True:
 
                 # If all the non-gap chars are symbols, then its easy.
                 if not nEquateChars:
-                    # print "    All (non-miss-gap) chars are symbols"
+                    # print("    All (non-miss-gap) chars are symbols")
                     firstSymbol = symbolsSlice[0]
                     symbolsAreAllTheSame = 1
                     for i in range(1, nSymbolChars):
                         if symbolsSlice[i] != firstSymbol:
-                            # print "        ...different symbols ==> not
+                            # print("        ...different symbols ==> not)
                             # constant"
                             symbolsAreAllTheSame = 0
                             break
                     if symbolsAreAllTheSame:
-                        # print "        ... symbols all the same ==> constant"
+                        # print("        ... symbols all the same ==> constant")
                         mask[seqPos] = '1'
 
                 else:  # We have equates
-                    # print "    Some (non-miss-gap) chars are equates."
+                    # print("    Some (non-miss-gap) chars are equates.")
 
                     if nSymbolChars:
                         # If there are different symbols, then it can't be
@@ -197,18 +198,18 @@ if True:
                         if nSymbolChars > 1:
                             for i in range(1, nSymbolChars):
                                 if symbolsSlice[i] != firstSymbol:
-                                    # print "        ...different symbols ==>
+                                    # print("        ...different symbols ==>)
                                     # not constant"
                                     symbolsAreAllTheSame = 0
                                     break
                         if symbolsAreAllTheSame:
-                            # print "        ...symbols are all the same"
+                            # print("        ...symbols are all the same")
                             # But we cannot conclude that it is a constant
                             # site until we check the equates.  Which we
                             # now do.
                             symbolIndex = self.symbols.index(firstSymbol)
-                            # print "firstSymbol=%s, symbolIndex = %s" % (firstSymbol, symbolIndex)
-                            # print self.equates
+                            # print("firstSymbol=%s, symbolIndex = %s" % (firstSymbol, symbolIndex))
+                            # print(self.equates)
 
                             # Here we make an array, eqArray, that
                             # contains coded info about what equates
@@ -219,17 +220,17 @@ if True:
                             for eqNum in range(nEquateChars):
                                 eq = equatesSlice[eqNum]
                                 val = list(self.equates[eq])
-                                # print "eq: %s  %s" % (eq, val)
+                                # print("eq: %s  %s" % (eq, val))
                                 oneLine = [0] * self.dim
                                 for symbNum in range(self.dim):
                                     if self.symbols[symbNum] in val:
                                         oneLine[symbNum] = 1
                                 eqArray.append(oneLine)
-                            # print eqArray
+                            # print(eqArray)
 
                             allEquatesContainSymbol = 1  # to start
                             for i in range(nEquateChars):
-                                # print eqArray[i][symbolIndex]
+                                # print(eqArray[i][symbolIndex])
                                 if not eqArray[i][symbolIndex]:
                                     allEquatesContainSymbol = 0
                                     break
@@ -239,12 +240,12 @@ if True:
                                 mask[seqPos] = '1'
 
                     else:
-                        # print "        No symbols-- its all equates."
+                        # print("        No symbols-- its all equates.")
                         firstEquate = equatesSlice[0]
                         equatesAreAllTheSame = 1
                         for i in range(1, nEquateChars):
                             if equatesSlice[i] != firstEquate:
-                                # print "        ...different equates"
+                                # print("        ...different equates")
                                 equatesAreAllTheSame = 0
                                 break
                         if equatesAreAllTheSame:
@@ -259,13 +260,13 @@ if True:
                             for eqNum in range(nEquateChars):
                                 eq = equatesSlice[eqNum]
                                 val = list(self.equates[eq])
-                                # print "eq: %s  %s" % (eq, val)
+                                # print("eq: %s  %s" % (eq, val))
                                 oneLine = [0] * self.dim
                                 for symbNum in range(self.dim):
                                     if self.symbols[symbNum] in val:
                                         oneLine[symbNum] = 1
                                 eqArray.append(oneLine)
-                            # print eqArray
+                            # print(eqArray)
 
                             # Now we go thru the eqArray column by column,
                             # and ask whether any column is all ones.
@@ -291,7 +292,7 @@ if True:
                 elif mask[seqPos] == '1':
                     mask[seqPos] = '0'
 
-        # print "mask = %s" %  mask.tostring()
+        # print("mask = %s" %  mask.tostring())
         return mask.tostring()
 
     def gappedMask(self, invert=None):
@@ -457,7 +458,7 @@ if True:
                             # informative.
                             mask[sPos] = '1'
                             # if 1 in counts: # a singleton, plus 1 ambig, stays at zero
-                            #    #print "site %i, got singleton + 1 ambig -- not topologically informative" % sPos
+                            #    #print("site %i, got singleton + 1 ambig -- not topologically informative" % sPos)
                             #    mask[sPos] = '1'
                             # else:
                             #    mask[sPos] = '1'
@@ -848,7 +849,7 @@ if True:
                 aligSeq = alig.sequences[0].dupe()
                 aligSeq.name = sName
                 aligSeq.sequence = '-' * alig.nChar
-            # print aligSeq.sequence
+            # print(aligSeq.sequence)
             selfSeq.sequence += aligSeq.sequence
             newSequences.append(selfSeq)
         self.sequences = newSequences
@@ -925,7 +926,7 @@ if True:
                 for j in theSlice:
                     if j not in 'acgt':
                         if dbug:
-                            print j
+                            print(j)
                         useIt = 0
                         if not dbug:
                             break
@@ -936,7 +937,7 @@ if True:
                 for j in theSlice:
                     if j not in 'acdefghiklmnpqrstvwy':
                         if dbug:
-                            print j
+                            print(j)
                         useIt = 0
                         if not dbug:
                             break
@@ -947,7 +948,7 @@ if True:
                 for j in theSlice:
                     if j not in self.symbols:
                         if dbug:
-                            print j
+                            print(j)
                         useIt = 0
                         if not dbug:
                             break
@@ -966,7 +967,7 @@ if True:
         ambigs = self.equates.keys()
         ambigs.append('-')
         ambigs = string.join(ambigs, '')
-        # print "got ambigs = '%s'" % ambigs
+        # print("got ambigs = '%s'" % ambigs)
 
         for s in self.sequences:
             for c in s.sequence:
@@ -1033,7 +1034,7 @@ if True:
         compList = []
         for i in range(len(self.sequences)):
             compList.append(self.composition([i]))
-        # print compList
+        # print(compList)
         for i in range(len(self.sequences)):
             for j in range(len(self.sequences))[i:]:
                 s = 0.0
@@ -1143,12 +1144,12 @@ if True:
 
         if verbose:
             format = '%45s %i'
-            print "\nCovarion stats"
-            print format % ('each group has sames, with the same char', c1)
-            print format % ('each group has sames, but a different char', c2)
-            print format % ('sames in A, differents in B', c3)
-            print format % ('differents in A, sames in B', c4)
-            print format % ('differents in both groups', c5)
+            print("\nCovarion stats")
+            print(format % ('each group has sames, with the same char', c1))
+            print(format % ('each group has sames, but a different char', c2))
+            print(format % ('sames in A, differents in B', c3))
+            print(format % ('differents in A, sames in B', c4))
+            print(format % ('differents in both groups', c5))
 
         return (c1, c2, c3, c4, c5)
 
@@ -1200,7 +1201,7 @@ if True:
                             nDiffs += 1
                 if divideByNPositionsCompared:
                     if not nPositions:
-                        print "No shared positions between (zero-based) seqs %i and %i.  Setting to 1.0" % (i, j)
+                        print("No shared positions between (zero-based) seqs %i and %i.  Setting to 1.0" % (i, j))
                         fDiffs = 1.0
                     else:
                         fDiffs = float(nDiffs) / float(nPositions)
@@ -1277,7 +1278,7 @@ if True:
                     s.sequence[i] = '-'
                 else:
                     # Maybe this should raise a P4Error?
-                    print "skipping character '%s'" % c
+                    print("skipping character '%s'" % c)
             s.sequence = string.join(s.sequence, '')
         self.dataType = 'standard'
         self.equates = {}
@@ -1345,7 +1346,7 @@ if True:
                         s.sequence[i] = '-'
                     else:
                         # Maybe this should raise a P4Error?
-                        print "skipping character '%s'" % c
+                        print("skipping character '%s'" % c)
             s.sequence = ''.join(s.sequence)
         self.dataType = 'standard'
         self.equates = {}
@@ -1474,7 +1475,7 @@ if True:
         for i in range(len(self.sequences)):
             s1 = self.sequences[i]
             s2 = theProteinAlignment.sequences[i]
-            print "Checking %s ..." % s1.name
+            print("Checking %s ..." % s1.name)
             crimes = 0
             for j in range(pLen):
                 theCodon = s1.sequence[(3 * j) + 0] + \
@@ -1482,10 +1483,10 @@ if True:
                     s1.sequence[(3 * j) + 2]
                 if theCodon == '---':
                     if s2.sequence[j] != '-':
-                        print "    position %4i, codon '---' is '%s', should be '-'" % (j, s2.sequence[j])
+                        print("    position %4i, codon '---' is '%s', should be '-'" % (j, s2.sequence[j]))
                         crimes += 1
                 elif theCodon.count('-'):
-                    print "    position %4i, codon '%s' is incomplete" % (j, theCodon)
+                    print("    position %4i, codon '%s' is incomplete" % (j, theCodon))
                     crimes += 1
                 # elif gc.code.has_key(theCodon):
                 #     if gc.code[theCodon] != s2.sequence[j]:
@@ -1493,26 +1494,26 @@ if True:
                 #             j, theCodon, s2.sequence[j], gc.code[theCodon])
                 #         crimes += 1
                 # else:
-                #     print "    position %4i, codon '%s' is not a known codon" % (j, theCodon)
+                #     print("    position %4i, codon '%s' is not a known codon" % (j, theCodon))
                 #     crimes += 1
                 else:
                     tr = gc.translate(theCodon)
                     if tr != s2.sequence[j]:
-                        print "    position %4i, codon '%s' is '%s', should be '%s'" % (
-                            j, theCodon, s2.sequence[j], gc.code[theCodon])
+                        print("    position %4i, codon '%s' is '%s', should be '%s'" % (
+                            j, theCodon, s2.sequence[j], gc.code[theCodon]))
                         crimes += 1
 
                     # If arg checkStarts is turned on -- Is the first
                     # codon a start?  -- if not, it is not a crime
                     if checkStarts and j == 0:
                         if theCodon in gc.startList:
-                            print "    Seq %i (%s). The first codon, '%s', is a start codon" % (i, s1.name, theCodon)
+                            print("    Seq %i (%s). The first codon, '%s', is a start codon" % (i, s1.name, theCodon))
                         else:
-                            print "    Seq %i (%s). The first codon, '%s', is not a start codon" % (i, s1.name, theCodon)
+                            print("    Seq %i (%s). The first codon, '%s', is not a start codon" % (i, s1.name, theCodon))
                 if crimes > 6:
                     break
             if crimes > 6:
-                print "    ... and possibly others, skipped."
+                print("    ... and possibly others, skipped.")
 
     def translate(self, transl_table=1, checkStarts=False, nnn_is_gap=False):
         """Returns a protein alignment from self, a DNA alignment.
@@ -1586,32 +1587,32 @@ if True:
             protSeq = a.sequences[i].sequence
             for j in range(a.length):
                 theCodon = dnaSeq[(j * 3):(j * 3) + 3]
-                # print theCodon
+                # print(theCodon)
                 if theCodon == '---':
                     protSeq[j] = '-'
                 elif theCodon.count('-'):
-                    print "    seq %i, position %4i, dnaSeq %4i, codon '%s' is incomplete" % (i, j, (j * 3), theCodon)
+                    print("    seq %i, position %4i, dnaSeq %4i, codon '%s' is incomplete" % (i, j, (j * 3), theCodon))
                 elif theCodon == 'nnn':
                     if nnn_is_gap:
-                        print "    seq %i, position %4i, dnaSeq %4i, codon '%s' translating to a gap ('-')" % (i, j, (j * 3), theCodon)
+                        print("    seq %i, position %4i, dnaSeq %4i, codon '%s' translating to a gap ('-')" % (i, j, (j * 3), theCodon))
                         protSeq[j] = '-'
                     else:
                         protSeq[j] = 'x'
                 else:
                     protSeq[j] = gc.translate(theCodon)
-                    # print "    seq %i position %4i, dnaSeq %4i, codon '%s' is not a known codon -- using x" % (i, j, (j*3), theCodon)
+                    # print("    seq %i position %4i, dnaSeq %4i, codon '%s' is not a known codon -- using x" % (i, j, (j*3), theCodon))
                     #protSeq[j] = 'x'
                     if checkStarts and j == 0:
                         if theCodon in gc.startList:
-                            print "    Seq %i (%s). The first codon, '%s', is a start codon" % (
-                                i, self.sequences[i].name, theCodon)
+                            print("    Seq %i (%s). The first codon, '%s', is a start codon" % (
+                                i, self.sequences[i].name, theCodon))
                         else:
-                            print "    Seq %i (%s). The first codon, '%s', is not a start codon" % (
-                                i, self.sequences[i].name, theCodon)
+                            print("    Seq %i (%s). The first codon, '%s', is not a start codon" % (
+                                i, self.sequences[i].name, theCodon))
 
         for s in a.sequences:
             s.sequence = string.join(s.sequence, '')
-            # print s.sequence
+            # print(s.sequence)
         return a
 
     def excludeCharSet(self, theCharSetName):
@@ -1651,7 +1652,7 @@ if True:
         # prepare the mask
         if not theCS.mask:
             theCS.setMask(self.nexusSets, self)
-        # print "The mask is: %s" % theCS.mask
+        # print("The mask is: %s" % theCS.mask)
 
         if not self.excludeDelete:
             self.excludeDelete = ExcludeDelete(self)
@@ -1662,8 +1663,8 @@ if True:
             self.excludeDelete._resetSequences()
             # self.excludeDelete.dump()
         else:
-            print gm[0]
-            print "    %s has already been excluded." % theCharSetName
+            print(gm[0])
+            print("    %s has already been excluded." % theCharSetName)
         self.parts = []
 
     def dupe(self):
@@ -1760,9 +1761,9 @@ if True:
                 if protSeq.sequence[j] != '-':
                     s.sequence[j] = dnaSeq.sequence[dnaPos:dnaPos + 3]
                     dnaPos = dnaPos + 3
-                # print ", codon %s" %  s.sequence[j]
+                # print(", codon %s" %  s.sequence[j])
             s.sequence = string.join(s.sequence, '')
-            # print s.sequence
+            # print(s.sequence)
             a.sequences.append(s)
 
         a.checkLengthsAndTypes()
@@ -1926,7 +1927,7 @@ if True:
         cmdLine = cmd % (pathToGBlocks, fastaFileName,
                          b1 and "-b1=%i " % b1 or "", b2 and "-b2=%i" % b2 or "", b3, b4, b5)
         if verbose:
-            print cmdLine
+            print(cmdLine)
         if not verbose:
             cmdLine = cmdLine + " >/dev/null"
         os.system(cmdLine)
@@ -1947,13 +1948,13 @@ if True:
             raise P4Error(gm)
 
         if verbose:
-            print fh.read()
+            print(fh.read())
         fh.close()
 
         theAllGapsMask = self.getAllGapsMask()
 
         # Get the gblocks mask
-        f = file(outputMaskFileName)
+        f = open(outputMaskFileName)
         fLines = f.readlines()
         f.close()
         # Find the line number of the last line starting with ">"
@@ -1977,7 +1978,7 @@ if True:
                 break
             mStrings.append(aLine.strip())
         mString = ''.join(mStrings)
-        # print mString
+        # print(mString)
 
         # The mask from gblocks is based on an alignment that has had its
         # all-gap columns removed.  We can use theAllGapsMask from self to
@@ -1991,9 +1992,9 @@ if True:
                 c2 = None
                 while c2 not in ['.', '#']:
                     c2 = mString[mStringPos]
-                    # print "xxx got c2='%s'" % c2
+                    # print("xxx got c2='%s'" % c2)
                     mStringPos += 1
-                # print "    got c2='%s'" % c2
+                # print("    got c2='%s'" % c2)
                 if c2 == '.':
                     myMask.append('0')
                 elif c2 == '#':
@@ -2004,7 +2005,7 @@ if True:
                     raise P4Error(gm)
 
         myMask = ''.join(myMask)
-        # print myMask
+        # print(myMask)
         # print "mask length is %i" % len(myMask)
 
         if len(myMask) != self.length:
@@ -2123,8 +2124,8 @@ if True:
             kk.sort()
             theMin = kk[0]
             theMax = kk[-1]
-            print "\nnChars count"
-            print "------ -----"
+            print("\nnChars count")
+            print("------ -----")
             # for k in kk:
             #    print "%2i  %3i" % (k, distro[k])
             # print
@@ -2132,9 +2133,9 @@ if True:
                 # Tom Williams 7 Feb 2011 bug report and fix (Thanks!). Was 'if
                 # distro[k]:' -- no workee if k is not a key.
                 if k in distro:
-                    print "%4i   %4i" % (k, distro[k])
+                    print("%4i   %4i" % (k, distro[k]))
                 else:
-                    print "%4i   %4i" % (k, 0)
+                    print("%4i   %4i" % (k, 0))
         return float(hits) / nPos
 
     def getAllGapsMask(self, andMissing=True):
@@ -2320,14 +2321,14 @@ if True:
         try:
             VtoTheMinus1 = numpy.linalg.solve(V, numpy.identity(dim - 1))
         except numpy.linalg.LinAlgError:
-            print
-            print V
-            print 'Trying to invert the V matrix, printed out above.'
-            print 'txNumA = %i, txNumB = %i' % (txNumA, txNumB)
-            print 'bigF ='
-            print bigF
-            print 'sumOfColumns = ', sumOfColumns
-            print 'sumOfRows = ', sumOfRows
+            print()
+            print(V)
+            print('Trying to invert the V matrix, printed out above.')
+            print('txNumA = %i, txNumB = %i' % (txNumA, txNumB))
+            print('bigF =')
+            print(bigF)
+            print('sumOfColumns = ', sumOfColumns)
+            print('sumOfRows = ', sumOfRows)
             VtoTheMinus1 = numpy.linalg.solve(V, numpy.identity(dim - 1))
         # print VtoTheMinus1
         QS = numpy.dot(numpy.dot(d, VtoTheMinus1), d)
@@ -2336,10 +2337,10 @@ if True:
         # We are finished calculating the 3 stats.
         if doProbs:
             # The dof should be an int.
-            PB = func.chiSquaredProb(QB, dof2)
-            PS = func.chiSquaredProb(QS, dim - 1)
+            PB = p4.func.chiSquaredProb(QB, dof2)
+            PS = p4.func.chiSquaredProb(QS, dim - 1)
             dof_R = (dim - 1) * (dim - 2) / 2
-            PR = func.chiSquaredProb(QR, dof_R)
+            PR = p4.func.chiSquaredProb(QR, dof_R)
             return (QB, QS, QR, PB, PS, PR)
         else:
             return (QB, QS, QR)
@@ -2476,7 +2477,7 @@ if True:
         Ts = numpy.dot(numpy.dot(firstBit, secondBit), firstBit) * self.nChar
         # print Ts
         df = (self.dim - 1) * (self.nTax - 1)
-        pval = func.chiSquaredProb(Ts, df)
+        pval = p4.func.chiSquaredProb(Ts, df)
         return Ts, df, pval
 
     def getMinmaxChiSqGroups(self, percent_cutoff=0.05, min_bins=2, max_bins=20,
@@ -2510,7 +2511,7 @@ if True:
             gm.append('Sequence names will be truncated.  Fix it.')
             gm.append("You may want to use the 'renameForPhylip()' method.")
             raise P4Error(gm)
-        if not func.which2("minmax-chisq"):
+        if not p4.func.which2("minmax-chisq"):
             gm.append("minmax-chisq is not in your path")
             raise P4Error(gm)
         the_data = []
@@ -2532,10 +2533,10 @@ if True:
         # They could be all <= 0.05 or all >= 0.05 because of the binning range
         pvalues = [float(bin[0].split()[1]) for bin in results]
         if not pvalues[0] >= percent_cutoff:
-            print "No p-value <= %s" % percent_cutoff
+            print("No p-value <= %s" % percent_cutoff)
             return None
         if not any(pv for pv in pvalues if pv >= percent_cutoff):
-            print "No p-value >= %s" % percent_cutoff
+            print("No p-value >= %s" % percent_cutoff)
             return None
         for i, bin_result in enumerate(results):
             nbins, pvalue = bin_result[0].split()
@@ -2551,9 +2552,9 @@ if True:
             sbin = str(bin)
             groups[sbin] = groups.get(sbin, "") + amino
         if verbose:
-            print "\nminmax-chisq output:\n%s" % stdout
-            print "\nMaximum number of bins that maintains homogeneity: %s" % nbins
-            print "\nGroups: %s" % ", ".join(groups.values())
+            print("\nminmax-chisq output:\n%s" % stdout)
+            print("\nMaximum number of bins that maintains homogeneity: %s" % nbins)
+            print("\nGroups: %s" % ", ".join(groups.values()))
 
         return groups.values()
 
@@ -2585,7 +2586,7 @@ if True:
         if self.dataType != "protein":
             gm.append("The data are not protein.")
             raise P4Error(gm)
-        if not func.which2("ais"):
+        if not p4.func.which2("ais"):
             gm.append("ais is not in your path")
             raise P4Error(gm)
         if not n_bins > 1 or not n_bins < 20:
@@ -2594,7 +2595,7 @@ if True:
         # Init the model
         tree.calcLogLike(verbose=0)
         # Write the aa freqs
-        f = file('equi', 'w')
+        f = open('equi', 'w')
         f.write('20\n')
         for i in range(20):
             f.write("%f\n" % tree.model.parts[0].comps[0].val[i])
@@ -2603,7 +2604,7 @@ if True:
         bigQ = tree.model.getBigQ()
 
         # Write the bigQ
-        f = file('q', 'w')
+        f = open('q', 'w')
         f.write('20\n')
         for i in range(20):
             for j in range(20):
@@ -2621,7 +2622,7 @@ if True:
         sorter = sorter[::-1]   # reverse
         # print sorter
 
-        f = file('evec', 'w')
+        f = open('evec', 'w')
         f.write('20\n')
         f.write('20\n')
         for colNum in sorter:
@@ -2643,7 +2644,7 @@ if True:
                 continue
             else:
                 if verbose:
-                    print stdout
+                    print(stdout)
                 fh = open("%isets.txt" % n_bins, "r")
                 lines = fh.readlines()
                 fh.close()
@@ -2661,7 +2662,7 @@ if True:
                         if os.path.exists(f):
                             os.remove(f)
                 return sets
-        print "Unable to run ais after 10 attempts. Giving up."
+        print("Unable to run ais after 10 attempts. Giving up.")
 
     def mrpSlice(self, pos, zeroBasedNumbering=True):
         """Pretty-print a mrp site, with no '?' positions.
@@ -2670,14 +2671,14 @@ if True:
         """
         if zeroBasedNumbering:
             ss = self.sequenceSlice(pos)
-            print "mrp matrix position (zero-based) %i" % pos
+            print("mrp matrix position (zero-based) %i" % pos)
         else:
             pos2 = pos - 1
             ss = self.sequenceSlice(pos2)
-            print "mrp matrix position (1-based) %i" % pos2
+            print("mrp matrix position (1-based) %i" % pos2)
         for txNum in range(self.nTax):
             if ss[txNum] == '?':
                 pass
             else:
-                print "  %25s %s" % (self.taxNames[txNum], ss[txNum])
+                print("  %25s %s" % (self.taxNames[txNum], ss[txNum]))
 

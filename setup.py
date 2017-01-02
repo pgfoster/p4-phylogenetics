@@ -9,6 +9,13 @@ from distutils.command.install_data import install_data
 from distutils.command.install_lib import install_lib
 from distutils.command.install_scripts import install_scripts
 import sys,os,shutil
+try:
+    from past.builtins import execfile
+except ModuleNotFoundError:
+    raise ModuleNotFoundError("You will want to install the future module, probably via 'pip install future'")
+except ImportError:
+    raise ImportError("You will want to install the future module, probably via 'pip install future'")
+    
 loc = {}
 execfile("p4/version.py", {}, loc)
 versionString = loc['versionString']
@@ -16,17 +23,17 @@ versionString = loc['versionString']
 try:
     import numpy
 except ImportError:
-    print "P4 needs numpy"
+    print("P4 needs numpy")
     sys.exit()
 try:
     import scipy
 except ImportError:
-    print "P4 needs scipy"
+    print("P4 needs scipy")
     sys.exit()
 try:
     import readline
 except ImportError:
-    print "P4 wants a Python built with 'readline', and your Python does not appear to have it."
+    print("P4 wants a Python built with 'readline', and your Python does not appear to have it.")
     sys.exit()
 
 ############################################################
@@ -57,15 +64,15 @@ found_gsl_headers = False
 for lpth in my_lib_dirs:
     if os.path.exists(lpth):
         fList = glob.glob(os.path.join(lpth, "libgsl*"))
-        #print fList
+        #print(fList)
         if fList:
             found_libgsl = True
 for ipth in my_include_dirs:
     if os.path.exists(os.path.join(ipth, 'gsl')):
         found_gsl_headers = True
         break
-#print "found_libgsl = %s" % found_libgsl
-#print "found_gsl_headers = %s" % found_gsl_headers
+#print("found_libgsl = %s" % found_libgsl)
+#print("found_gsl_headers = %s" % found_gsl_headers)
 
 if not found_libgsl or not found_gsl_headers:
     for lD in likelyDirs:
@@ -73,7 +80,7 @@ if not found_libgsl or not found_gsl_headers:
             lpth = os.path.join(lD, libdir)
             if os.path.exists(lpth):
                 fList = glob.glob(os.path.join(lpth, "libgsl*"))
-                #print fList
+                #print(fList)
                 if fList:
                     found_libgsl = True
                     ipth = os.path.join(lD, 'include')   # We assume the header is near the lib, but check it next line
@@ -84,8 +91,8 @@ if not found_libgsl or not found_gsl_headers:
                         break
 
 if not found_libgsl or not found_gsl_headers:
-    print "The setup.py script could not find the libgsl or gsl headers."
-    print "So that is not going to work."
+    print("The setup.py script could not find the libgsl or gsl headers.")
+    print("So that is not going to work.")
     sys.exit()
 
 hasNumpyHeaders = True
@@ -98,8 +105,8 @@ if os.path.exists(ipth):
     if ipth not in my_include_dirs:
         my_include_dirs.append(ipth)
 else:
-    print "The setup.py script was not able to find the numpy headers."
-    print "So that is not going to work."
+    print("The setup.py script was not able to find the numpy headers.")
+    print("So that is not going to work.")
     sys.exit()
 
 pfSources = []
@@ -107,13 +114,15 @@ sourceDir = 'Pf'
 allFiles = os.listdir(os.path.join(os.curdir, sourceDir))
 for f in allFiles:
     if f.endswith('.c'):
+        if f.endswith('nexusToken.c'):  # hack, this week
+            continue
         pfSources.append(f)
 for i in range(len(pfSources)):
     pfSources[i] = os.path.join(sourceDir, pfSources[i])
 	
 instFileName = "installation.py"
 if os.path.exists(instFileName):
-    print "The file '%s' exists, but it should not. Remove or re-name it." % instFileName
+    print("The file '%s' exists, but it should not. Remove or re-name it." % instFileName)
     sys.exit()
 
 # For use in shutil.copytree(), below
@@ -123,10 +132,10 @@ if os.path.exists(instFileName):
 class P4_install_data(install_data):
     def run(self):
         # This is only called when installing, I think.
-        print 'P4_install_data.run() here, sitting in for install_data.run()'
+        print('P4_install_data.run() here, sitting in for install_data.run()')
         # data_files is a list of one string, defined below in setup(), ['share/doc/p4-0.xx']
-        print 'data_files = %s' % self.data_files   
-        print 'install_dir = %s' % self.install_dir # eg /usr
+        print('data_files = %s' % self.data_files)   
+        print('install_dir = %s' % self.install_dir) # eg /usr
         fList = self.copy_tree('share', os.path.join(self.install_dir, self.data_files[0]))
         # If we need to ignore some files, we can use this below instead of self.copy_tree ...
         # shutil.copytree('share', 
@@ -151,13 +160,13 @@ class P4_install_data(install_data):
             compile(os.path.join(p4_lib_dir, instFileName))
             os.system("rm -f %s" % instFileName)
         except IOError:
-            print "The file '%s' cannot be found." % instFileName
+            print("The file '%s' cannot be found." % instFileName)
 
 
 class P4_install_lib(install_lib):
     def run(self):
-        print "P4_install_lib()"
-        print "self.install_dir = %s" % self.install_dir
+        print("P4_install_lib()")
+        print("self.install_dir = %s" % self.install_dir)
         instFile = file(instFileName, 'w')
         instFile.write("p4LibDir = '%s'\n" % os.path.join(self.install_dir, 'p4'))
         instFile.close()
@@ -166,8 +175,8 @@ class P4_install_lib(install_lib):
 
 class P4_install_scripts(install_scripts):
     def run(self):
-        print "P4_install_scripts()"
-        print "self.install_dir = %s" % self.install_dir
+        print("P4_install_scripts()")
+        print("self.install_dir = %s" % self.install_dir)
         instFile = file(instFileName, 'a')
         instFile.write("p4ScriptPath = '%s'\n" % os.path.join(self.install_dir, 'p4'))
         instFile.close()

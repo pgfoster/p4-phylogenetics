@@ -1,7 +1,8 @@
-from p4exceptions import P4Error
-import pf
-import func
-from var import var
+from __future__ import print_function
+from p4.p4exceptions import P4Error
+import p4.pf as pf
+import p4.func
+from p4.var import var
 
 
 class Part:
@@ -30,11 +31,11 @@ class Part:
         #self.invarArray = None
 
     def dump(self):
-        print "        Part dump:"
-        print "            alignment = %s" % self.alignment
-        print "            nChar = %s" % self.nChar
-        print "            cPart = %s" % self.cPart
-        print "            name = %s" % self.name
+        print("        Part dump:")
+        print("            alignment = %s" % self.alignment)
+        print("            nChar = %s" % self.nChar)
+        print("            cPart = %s" % self.cPart)
+        print("            name = %s" % self.name)
         if self.cPart:
             pf.dumpPart(self.cPart)
 

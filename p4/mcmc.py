@@ -1,6 +1,7 @@
-import pf
-import func
-from var import var
+from __future__ import print_function
+import p4.pf as pf
+import p4.func
+from p4.var import var
 import math
 import random
 import string
@@ -8,12 +9,12 @@ import sys
 import time
 import copy
 import os
-import cPickle
+import pickle
 import types
-from chain import Chain
-from p4exceptions import P4Error
-from treepartitions import TreePartitions
-from constraints import Constraints
+from p4.chain import Chain
+from p4.p4exceptions import P4Error
+from p4.treepartitions import TreePartitions
+from p4.constraints import Constraints
 import datetime
 
 # for proposal probs
@@ -118,7 +119,7 @@ class McmcTunings(object):
             # print "    Setting tuning '%s' to %s" % (item, val)
             object.__setattr__(self, item, val)
         else:
-            print self.dump()
+            print(self.dump())
             gm = ["\nMcmcTunings.__setattr__()"]
             gm.append("Can't set tuning '%s'-- no such tuning." % item)
             raise P4Error(gm)
@@ -230,7 +231,7 @@ class McmcTunings(object):
         return string.join(lst, '\n')
 
     def dump(self, advice=True):
-        print self.reprString(advice)
+        print(self.reprString(advice))
 
     def __repr__(self):
         return self.reprString()
@@ -377,7 +378,7 @@ class McmcTuningsUsage(object):
         return string.join(lst, '\n')
 
     def dump(self):
-        print self.reprString()
+        print(self.reprString())
 
     def __repr__(self):
         return self.reprString()
@@ -462,7 +463,7 @@ class McmcProposalProbs(dict):
         return string.join(stuff, '\n')
 
     def dump(self):
-        print self.reprString()
+        print(self.reprString())
 
     def __repr__(self):
         return self.reprString()
@@ -489,10 +490,10 @@ class Proposal(object):
         self.nAborts = [0] * self.nChains
 
     def dump(self):
-        print "proposal name=%-10s pNum=%2i, mtNum=%2i, weight=%5.1f, tuning=%7.2f" % (
-            '%s,' % self.name, self.pNum, self.mtNum, self.weight, self.tuning)
-        print "    nProposals   by temperature:  %s" % self.nProposals
-        print "    nAcceptances by temperature:  %s" % self.nAcceptances
+        print("proposal name=%-10s pNum=%2i, mtNum=%2i, weight=%5.1f, tuning=%7.2f" % (
+            '%s,' % self.name, self.pNum, self.mtNum, self.weight, self.tuning))
+        print("    nProposals   by temperature:  %s" % self.nProposals)
+        print("    nAcceptances by temperature:  %s" % self.nAcceptances)
 
     # Some tunings are part-specific, and so are associated with the proposals.
     def _getTuning(self):
@@ -723,7 +724,7 @@ class Mcmc(object):
                 if sk not in mySplitKeys:
                     # self.tree.draw()
                     gm.append('Constraint %s' %
-                              func.getSplitStringFromKey(sk, self.tree.nTax))
+                              p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                     gm.append('is not in the starting tree.')
                     gm.append(
                         'Maybe you want to make a randomTree with constraints?')
@@ -850,7 +851,7 @@ class Mcmc(object):
 
         if 0:
             # print complaintHead
-            print "    logLike of the input tree is %s" % aTree.logLike
+            print("    logLike of the input tree is %s" % aTree.logLike)
 
         if not aTree.taxNames:
             gm.append(
@@ -860,9 +861,9 @@ class Mcmc(object):
 
         if tuningsFileName:
             if verbose:
-                print "Reading tunings from file '%s' ..." % tuningsFileName
-            tf = file(tuningsFileName, 'r')
-            self.tunings = cPickle.load(tf)
+                print("Reading tunings from file '%s' ..." % tuningsFileName)
+            tf = open(tuningsFileName, 'rb')
+            self.tunings = pickle.load(tf)
             tf.close()
         else:
             self.tunings = McmcTunings(self.tree.model.nParts)
@@ -943,18 +944,18 @@ class Mcmc(object):
         if self.tree.model.nParts > 1 and self.tree.model.relRatesAreFree:
             self.prob.relRate = 1.0
             if self.verbose:
-                print "\nInitiating across-data heterogeneous model..."
-                print "\n%23s" % "Additional proposals:"
-                print "     relative partition rate = on"
-                print "\n  %s" % "[You can turn it off by setting"
-                print "  %s" % "yourMcmc.prob.relRate=0.0]"
+                print("\nInitiating across-data heterogeneous model...")
+                print("\n%23s" % "Additional proposals:")
+                print("     relative partition rate = on")
+                print("\n  %s" % "[You can turn it off by setting")
+                print("  %s" % "yourMcmc.prob.relRate=0.0]")
         else:
             self.prob.relRate = 0.0
 
         if self.tree.model.isHet:
             props_on = []
             if verbose:
-                print "\nInitiating across-tree heterogeneous model..."
+                print("\nInitiating across-tree heterogeneous model...")
 
             self.tree.setModelThingsNNodes()
 
@@ -984,11 +985,11 @@ class Mcmc(object):
 
             if verbose:
                 props_on.append("root location")
-                print "\n%23s" % "Additional proposals:"
+                print("\n%23s" % "Additional proposals:")
                 for prop in props_on:
-                    print "%25s = on" % prop
-                print "\n  %s" % "[You can of course turn them"
-                print "  %s" % "off again before Mcmc.run()]\n"
+                    print("%25s = on" % prop)
+                print("\n  %s" % "[You can of course turn them")
+                print("  %s" % "off again before Mcmc.run()]\n")
         else:
             self.prob.root3 = 0.0
             self.prob.compLocation = 0.0
@@ -1004,8 +1005,8 @@ class Mcmc(object):
         # print rjCompPartNums
         if rjCompPartNums:
             if verbose:
-                print "\nInitiating rjComp..."
-                print "Turning on proposal for rjComp."
+                print("\nInitiating rjComp...")
+                print("Turning on proposal for rjComp.")
 
             for pNum in rjCompPartNums:
                 mp = self.tree.model.parts[pNum]
@@ -1032,7 +1033,7 @@ class Mcmc(object):
                         comp.rj_isInPool = True   # False by default
 
                 if verbose:
-                    print "Part %i: nComps %i, pool size (rjComp_k) %i" % (pNum, mp.nComps, mp.rjComp_k)
+                    print("Part %i: nComps %i, pool size (rjComp_k) %i" % (pNum, mp.nComps, mp.rjComp_k))
 
                 # This stuff below applies when
                 # rjCompUniformAllocationPrior is not on, meaning it
@@ -1056,8 +1057,8 @@ class Mcmc(object):
         # print rjRMatrixPartNums
         if rjRMatrixPartNums:
             if verbose:
-                print "\nInitiating rjRMatrix..."
-                print "Turning on proposal for rjRMatrix."
+                print("\nInitiating rjRMatrix...")
+                print("Turning on proposal for rjRMatrix.")
 
             for pNum in rjRMatrixPartNums:
                 mp = self.tree.model.parts[pNum]
@@ -1084,7 +1085,7 @@ class Mcmc(object):
                         rMatrix.rj_isInPool = True   # False by default
 
                 if verbose:
-                    print "Part %i: nRMatrices %i, pool size (rjRMatrix_k) %i" % (pNum, mp.nRMatrices, mp.rjRMatrix_k)
+                    print("Part %i: nRMatrices %i, pool size (rjRMatrix_k) %i" % (pNum, mp.nRMatrices, mp.rjRMatrix_k))
 
                 # This stuff below applies when
                 # rjRMatrixUniformAllocationPrior is not on, meaning it
@@ -1112,8 +1113,8 @@ class Mcmc(object):
             pNum for pNum in range(self.tree.model.nParts) if cmd1Parts[pNum]]
         if cmd1PartNums:
             if verbose:
-                print "\nInitiating cmd1 ..."
-                print "Turning on proposals for cmd1"
+                print("\nInitiating cmd1 ...")
+                print("Turning on proposals for cmd1")
             self.prob.cmd1_compDir = 1.0
             self.prob.cmd1_comp0Dir = 1.0
             self.prob.cmd1_allCompDir = 1.0
@@ -1538,40 +1539,40 @@ class Mcmc(object):
         """Pretty-print the proposal acceptances."""
 
         if (self.gen - self.startMinusOne) <= 0:
-            print "\nwriteProposalAcceptances()  There is no info in memory. "
-            print " Maybe it was just emptied after writing to a checkpoint?  "
-            print "If so, read the checkPoint and get the proposalAcceptances from there."
+            print("\nwriteProposalAcceptances()  There is no info in memory. ")
+            print(" Maybe it was just emptied after writing to a checkpoint?  ")
+            print("If so, read the checkPoint and get the proposalAcceptances from there.")
         else:
 
             spacer = ' ' * 8
-            print "\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
-                self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
-            print "%s %15s %5s %5s %10s %13s%8s" % (spacer, 'proposal', 'part', 'num', 'nProposals', 'acceptance(%)', 'tuning')
+            print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
+                self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+            print("%s %15s %5s %5s %10s %13s%8s" % (spacer, 'proposal', 'part', 'num', 'nProposals', 'acceptance(%)', 'tuning'))
             for p in self.proposals:
-                print "%s" % spacer,
-                print "%15s" % p.name,
+                print("%s" % spacer, end=' ')
+                print("%15s" % p.name, end=' ')
                 if p.pNum != -1:
-                    print " %3i " % p.pNum,
+                    print(" %3i " % p.pNum, end=' ')
                 else:
-                    print "   - ",
+                    print("   - ", end=' ')
                 if p.mtNum != -1:
-                    print " %3i " % p.mtNum,
+                    print(" %3i " % p.mtNum, end=' ')
                 else:
-                    print "   - ",
-                print "%10i" % p.nProposals[0],
+                    print("   - ", end=' ')
+                print("%10i" % p.nProposals[0], end=' ')
 
                 if p.nProposals[0]:  # Don't divide by zero
-                    print "       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])),
+                    print("       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])), end=' ')
                 else:
-                    print "           - ",
+                    print("           - ", end=' ')
 
                 if p.tuning == None:
-                    print "      -",
+                    print("      -", end=' ')
                 elif p.tuning < 2.0:
-                    print "  %5.3f" % p.tuning,
+                    print("  %5.3f" % p.tuning, end=' ')
                 else:
-                    print "%7.1f" % p.tuning,
-                print
+                    print("%7.1f" % p.tuning, end=' ')
+                print()
 
             # Tabulate topology changes for 'local', if any were attempted.
             doTopol = 0
@@ -1587,20 +1588,20 @@ class Mcmc(object):
                         break
                 if doTopol:
                     p = self.proposalsHash['local']
-                    print "'Local' proposal-- attempted topology changes"
-                    print "%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer
+                    print("'Local' proposal-- attempted topology changes")
+                    print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
                     for tNum in range(self.nChains):
-                        print "%s" % spacer,
-                        print "%4i " % tNum,
-                        print "%9i" % p.nProposals[tNum],
-                        print "%8i" % p.nAcceptances[tNum],
-                        print "  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])),
-                        print "%20i" % p.nTopologyChangeAttempts[tNum],
-                        print "%13i" % p.nTopologyChanges[tNum],
-                        print "  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum]))
+                        print("%s" % spacer, end=' ')
+                        print("%4i " % tNum, end=' ')
+                        print("%9i" % p.nProposals[tNum], end=' ')
+                        print("%8i" % p.nAcceptances[tNum], end=' ')
+                        print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
+                        print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
+                        print("%13i" % p.nTopologyChanges[tNum], end=' ')
+                        print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
                 else:
-                    print "%sFor the 'local' proposals, there were no attempted" % spacer
-                    print "%stopology changes in any of the chains." % spacer
+                    print("%sFor the 'local' proposals, there were no attempted" % spacer)
+                    print("%stopology changes in any of the chains." % spacer)
 
             # do the same for eTBR
             doTopol = 0
@@ -1616,20 +1617,20 @@ class Mcmc(object):
                         break
                 if doTopol:
                     p = self.proposalsHash['eTBR']
-                    print "'eTBR' proposal-- attempted topology changes"
-                    print "%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer
+                    print("'eTBR' proposal-- attempted topology changes")
+                    print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
                     for tNum in range(self.nChains):
-                        print "%s" % spacer,
-                        print "%4i " % tNum,
-                        print "%9i" % p.nProposals[tNum],
-                        print "%8i" % p.nAcceptances[tNum],
-                        print "  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])),
-                        print "%20i" % p.nTopologyChangeAttempts[tNum],
-                        print "%13i" % p.nTopologyChanges[tNum],
-                        print "  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum]))
+                        print("%s" % spacer, end=' ')
+                        print("%4i " % tNum, end=' ')
+                        print("%9i" % p.nProposals[tNum], end=' ')
+                        print("%8i" % p.nAcceptances[tNum], end=' ')
+                        print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
+                        print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
+                        print("%13i" % p.nTopologyChanges[tNum], end=' ')
+                        print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
                 else:
-                    print "%sFor the 'eTBR' proposals, there were no attempted" % spacer
-                    print "%stopology changes in any of the chains." % spacer
+                    print("%sFor the 'eTBR' proposals, there were no attempted" % spacer)
+                    print("%stopology changes in any of the chains." % spacer)
 
             # Check for aborts.
             p = None
@@ -1640,13 +1641,13 @@ class Mcmc(object):
             if p:
                 if hasattr(p, 'nAborts'):
                     if p.nAborts[0]:
-                        print "The 'local' proposal had %i aborts. (Not counted in nProps above.)" % p.nAborts[0]
-                        print "(Aborts might be due to brLen proposals too big or too small)"
+                        print("The 'local' proposal had %i aborts. (Not counted in nProps above.)" % p.nAborts[0])
+                        print("(Aborts might be due to brLen proposals too big or too small)")
                         if self.constraints:
-                            print "(Or, more likely, due to violated constraints.)"
+                            print("(Or, more likely, due to violated constraints.)")
                     else:
-                        print "The 'local' proposal had no aborts (either due to brLen proposals"
-                        print "too big or too small, or due to violated constraints)."
+                        print("The 'local' proposal had no aborts (either due to brLen proposals")
+                        print("too big or too small, or due to violated constraints).")
             p = None
             try:
                 p = self.proposalsHash['eTBR']
@@ -1655,12 +1656,12 @@ class Mcmc(object):
             if p:
                 if hasattr(p, 'nAborts'):
                     if p.nAborts[0]:
-                        print "The 'eTBR' proposal had %i aborts.  (Not counted in nProps above.)" % p.nAborts[0]
+                        print("The 'eTBR' proposal had %i aborts.  (Not counted in nProps above.)" % p.nAborts[0])
                         assert self.constraints
-                        print "(Aborts due to violated constraints)"
+                        print("(Aborts due to violated constraints)")
                     else:
                         if self.constraints:
-                            print "The 'eTBR' proposal had no aborts (due to violated constraints)."
+                            print("The 'eTBR' proposal had no aborts (due to violated constraints).")
 
             for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
                 p = None
@@ -1670,36 +1671,36 @@ class Mcmc(object):
                     pass
                 if p:
                     if hasattr(p, 'nAborts'):
-                        print "The %15s proposal had %5i aborts." % (p.name, p.nAborts[0])
+                        print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
 
     def writeSwapMatrix(self):
-        print "\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
-            (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
-        print "    Swaps are presented as a square matrix, nChains * nChains."
-        print "    Upper triangle is the number of swaps proposed between two chains."
-        print "    Lower triangle is the percent swaps accepted."
-        print "    The current tunings.chainTemp is %5.3f\n" % self.tunings.chainTemp
-        print " " * 10,
+        print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
+            (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+        print("    Swaps are presented as a square matrix, nChains * nChains.")
+        print("    Upper triangle is the number of swaps proposed between two chains.")
+        print("    Lower triangle is the percent swaps accepted.")
+        print("    The current tunings.chainTemp is %5.3f\n" % self.tunings.chainTemp)
+        print(" " * 10, end=' ')
         for i in range(self.nChains):
-            print "%7i" % i,
-        print
-        print " " * 10,
+            print("%7i" % i, end=' ')
+        print()
+        print(" " * 10, end=' ')
         for i in range(self.nChains):
-            print "   ----",
-        print
+            print("   ----", end=' ')
+        print()
         for i in range(self.nChains):
-            print " " * 7, "%2i" % i,
+            print(" " * 7, "%2i" % i, end=' ')
             for j in range(self.nChains):
                 if i < j:  # upper triangle
-                    print "%7i" % self.swapMatrix[i][j],
+                    print("%7i" % self.swapMatrix[i][j], end=' ')
                 elif i == j:
-                    print "      -",
+                    print("      -", end=' ')
                 else:
                     if self.swapMatrix[j][i] == 0:  # no proposals
-                        print "      -",
+                        print("      -", end=' ')
                     else:
-                        print "  %5.1f" % (100.0 * float(self.swapMatrix[i][j]) / float(self.swapMatrix[j][i])),
-            print
+                        print("  %5.1f" % (100.0 * float(self.swapMatrix[i][j]) / float(self.swapMatrix[j][i])), end=' ')
+            print()
 
     def _makeChainsAndProposals(self):
         """Make chains and proposals."""
@@ -1725,7 +1726,7 @@ class Mcmc(object):
             # nTax-2 inclusive.
             if self.proposalsHash.has_key('polytomy') and self.tunings.doPolytomyResolutionClassPrior:
                 p = self.proposalsHash['polytomy']
-                bigT = func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
+                bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
                     p.logBigT[i] = math.log(bigT[i])
@@ -1737,13 +1738,13 @@ class Mcmc(object):
         gm = ['Mcmc._setOutputTreeFile()']
 
         # Write the preamble for the trees outfile.
-        self.treeFile = file(self.treeFileName, 'w')
+        self.treeFile = open(self.treeFileName, 'w')
         self.treeFile.write('#nexus\n\n')
         self.treeFile.write('begin taxa;\n')
         self.treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
         self.treeFile.write('  taxlabels')
         for tN in self.tree.taxNames:
-            self.treeFile.write(' %s' % func.nexusFixNameIfQuotesAreNeeded(tN))
+            self.treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
         self.treeFile.write(';\nend;\n\n')
 
         self.treeFile.write('begin trees;\n')
@@ -1756,9 +1757,9 @@ class Mcmc(object):
         self.treeFile.write('  translate\n')
         for i in range(self.tree.nTax - 1):
             self.treeFile.write('    %3i %s,\n' % (
-                i + 1, func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[i])))
+                i + 1, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[i])))
         self.treeFile.write('    %3i %s\n' % (
-            self.tree.nTax, func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
+            self.tree.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
         self.treeFile.write('  ;\n')
         # write the models comment
         if self.tree.model.isHet:
@@ -1793,10 +1794,10 @@ class Mcmc(object):
 
         # Hidden experimental hack
         if self.doHeatingHack:
-            print "Heating hack is turned on."
+            print("Heating hack is turned on.")
             assert self.nChains == 1, "MCMCMC does not work with the heating hack"
-            print "Heating hack temperature is %.2f" % self.heatingHackTemperature
-            print "Heating hack affects proposals %s" % self.heatingHackProposalNames
+            print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
+            print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
         if self.checkPointInterval:
             # We want a couple of things:
@@ -1899,7 +1900,7 @@ class Mcmc(object):
         if self.gen > -1:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
-            f2 = file(self.treeFileName, 'a+')
+            f2 = open(self.treeFileName, 'a+')
             pos = -1
             while 1:
                 f2.seek(pos, 2)
@@ -1922,28 +1923,28 @@ class Mcmc(object):
             f2.close()
 
             if verbose:
-                print
-                print "Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen)
-                print "Set to do %i more generations." % nGensToDo
+                print()
+                print("Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen))
+                print("Set to do %i more generations." % nGensToDo)
                 if self.writePrams:
                     if self.chains[0].curTree.model.nFreePrams == 0:
-                        print "There are no free prams in the model, so I am turning writePrams off."
+                        print("There are no free prams in the model, so I am turning writePrams off.")
                         self.writePrams = False
                 sys.stdout.flush()
 
             self.startMinusOne = self.gen
         else:
             if verbose:
-                print "Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum)
-                print "Set to do %i generations." % nGensToDo
+                print("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+                print("Set to do %i generations." % nGensToDo)
 
             if self.writePrams:
                 if self.chains[0].curTree.model.nFreePrams == 0:
                     if verbose:
-                        print "There are no free prams in the model, so I am turning writePrams off."
+                        print("There are no free prams in the model, so I am turning writePrams off.")
                     self.writePrams = False
                 else:
-                    pramsFile = file(self.pramsFileName, 'a')
+                    pramsFile = open(self.pramsFileName, 'a')
                     self.chains[0].curTree.model.writePramsProfile(pramsFile)
                     #pramsFile.write("     genPlus1")
                     pramsFile.write("genPlus1")
@@ -1952,7 +1953,7 @@ class Mcmc(object):
                     pramsFile.close()
 
             if 1 and rjCompPartNums:
-                rjKFile = file(self.rjKFileName, 'w')
+                rjKFile = open(self.rjKFileName, 'w')
                 rjKFile.write(
                     "# k_comp_max, a constant, is the number of comp vectors in a part in total\n")
                 rjKFile.write(
@@ -1970,7 +1971,7 @@ class Mcmc(object):
 
             if 1 and rjRMatrixPartNums:
                 if not rjCompPartNums:
-                    rjKFile = file(self.rjKFileName, 'w')
+                    rjKFile = open(self.rjKFileName, 'w')
                 rjKFile.write(
                     "# k_rMatrix_max, a constant, is the number of rMatrices in a part in total\n")
                 rjKFile.write(
@@ -1998,13 +1999,13 @@ class Mcmc(object):
                 rjKFile.close()
 
         if verbose:
-            print "Sampling every %i." % self.sampleInterval
+            print("Sampling every %i." % self.sampleInterval)
             if self.checkPointInterval:
-                print "CheckPoints written every %i." % self.checkPointInterval
+                print("CheckPoints written every %i." % self.checkPointInterval)
             if nGensToDo <= 20000:
-                print "One dot is 100 generations."
+                print("One dot is 100 generations.")
             else:
-                print "One dot is 1000 generations."
+                print("One dot is 1000 generations.")
             sys.stdout.flush()
 
         self.treePartitions = None
@@ -2027,8 +2028,8 @@ class Mcmc(object):
                 diff_secs = time.time() - realTimeStart
                 total_secs = (float(nGensToDo) / float(100)) * float(diff_secs)
                 deltaTime = datetime.timedelta(seconds=int(round(total_secs)))
-                print "Estimated completion time: %s days, %s" % (
-                    deltaTime.days, time.strftime("%H:%M:%S", time.gmtime(deltaTime.seconds)))
+                print("Estimated completion time: %s days, %s" % (
+                    deltaTime.days, time.strftime("%H:%M:%S", time.gmtime(deltaTime.seconds))))
 
             # Above is a list of proposals where it is possible to abort.
             # When a gen(aProposal) is made, below, aProposal.doAbort
@@ -2101,8 +2102,8 @@ class Mcmc(object):
                     #    aProposal = self.proposalsHash['comp']
 
                     if 0:
-                        print "==== gNum=%i, chNum=%i, aProposal=%s (part %i)" % (
-                            gNum, chNum, aProposal.name, aProposal.pNum),
+                        print("==== gNum=%i, chNum=%i, aProposal=%s (part %i)" % (
+                            gNum, chNum, aProposal.name, aProposal.pNum), end=' ')
                         sys.stdout.flush()
                         # print gNum,
 
@@ -2111,9 +2112,9 @@ class Mcmc(object):
 
                     if 0:
                         if failure:
-                            print "    failure"
+                            print("    failure")
                         else:
-                            print
+                            print()
 
                     nAttempts += 1
                     if nAttempts > 1000:
@@ -2183,11 +2184,11 @@ class Mcmc(object):
             # If it is a writeInterval, write stuff
             if (self.gen + 1) % self.sampleInterval == 0:
                 if 1:
-                    likesFile = file(self.likesFileName, 'a')
+                    likesFile = open(self.likesFileName, 'a')
                     likesFile.write(
                         '%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
                     likesFile.close()
-                    treeFile = file(self.treeFileName, 'a')
+                    treeFile = open(self.treeFileName, 'a')
                     treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
                     self.chains[coldChainNum].curTree.writeNewick(treeFile,
                                                                   withTranslation=1,
@@ -2196,7 +2197,7 @@ class Mcmc(object):
                     treeFile.close()
 
                 if 1 and rjCompPartNums:  # we made rjCompPartNums above
-                    rjKFile = file(self.rjKFileName, 'a')
+                    rjKFile = open(self.rjKFileName, 'a')
                     rjKFile.write("%12i " % (self.gen + 1))
                     for pNum in rjCompPartNums:
                         mp = self.chains[
@@ -2223,7 +2224,7 @@ class Mcmc(object):
 
                 if 1 and rjRMatrixPartNums:  # we made rjRMatrixPartNums above
                     if not rjCompPartNums:
-                        rjKFile = file(self.rjKFileName, 'a')
+                        rjKFile = open(self.rjKFileName, 'a')
                         rjKFile.write("%12i " % (self.gen + 1))
                     for pNum in rjRMatrixPartNums:
                         # print "doing pNum %i" % pNum
@@ -2253,7 +2254,7 @@ class Mcmc(object):
                     rjKFile.close()
 
                 if self.writePrams:
-                    pramsFile = file(self.pramsFileName, 'a')
+                    pramsFile = open(self.pramsFileName, 'a')
                     #pramsFile.write("%12i " % (self.gen + 1))
                     pramsFile.write("%12i" % (self.gen + 1))
                     self.chains[coldChainNum].curTree.model.writePramsLine(
@@ -2271,13 +2272,13 @@ class Mcmc(object):
                     self.hook(self.chains[coldChainNum].curTree)
 
                 if 0 and self.constraints:
-                    print "Mcmc x1c"
-                    print self.chains[0].verifyIdentityOfTwoTreesInChain()
-                    print "b checking curTree .."
+                    print("Mcmc x1c")
+                    print(self.chains[0].verifyIdentityOfTwoTreesInChain())
+                    print("b checking curTree ..")
                     self.chains[0].curTree.checkSplitKeys()
-                    print "b checking propTree ..."
+                    print("b checking propTree ...")
                     self.chains[0].propTree.checkSplitKeys()
-                    print "Mcmc xxx"
+                    print("Mcmc xxx")
 
                 # Add curTree to treePartitions
                 if self.treePartitions:
@@ -2292,11 +2293,11 @@ class Mcmc(object):
 
                 # Checking and debugging constraints
                 if 0 and self.constraints:
-                    print "Mcmc x1d"
-                    print self.chains[coldChainNum].verifyIdentityOfTwoTreesInChain()
-                    print "c checking curTree ..."
+                    print("Mcmc x1d")
+                    print(self.chains[coldChainNum].verifyIdentityOfTwoTreesInChain())
+                    print("c checking curTree ...")
                     self.chains[coldChainNum].curTree.checkSplitKeys()
-                    print "c checking propTree ..."
+                    print("c checking propTree ...")
                     self.chains[coldChainNum].propTree.checkSplitKeys()
                     # print "c checking that all constraints are present"
                     #theSplits = [n.br.splitKey for n in self.chains[0].curTree.iterNodesNoRoot()]
@@ -2304,7 +2305,7 @@ class Mcmc(object):
                     #    if sk not in theSplits:
                     #        gm.append("split %i is not present in the curTree." % sk)
                     #        raise P4Error(gm)
-                    print "Mcmc zzz"
+                    print("Mcmc zzz")
 
                 # Check that the curTree has all the constraints
                 if self.constraints:
@@ -2316,7 +2317,7 @@ class Mcmc(object):
                             gm.append(
                                 "The current tree (the last tree sampled) does not contain constraint")
                             gm.append(
-                                "%s" % func.getSplitStringFromKey(sk, self.tree.nTax))
+                                "%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
 
                 # If it is a checkPointInterval, pickle
@@ -2356,7 +2357,7 @@ class Mcmc(object):
                             else:
                                 timeString = time.strftime(
                                     "%H:%M:%S", time.gmtime(deltaTime.seconds))
-                            print "%10i - %s" % (self.gen, timeString)
+                            print("%10i - %s" % (self.gen, timeString))
 
                         else:
                             sys.stdout.write(".")
@@ -2375,7 +2376,7 @@ class Mcmc(object):
                             else:
                                 timeString = time.strftime(
                                     "%H:%M:%S", time.gmtime(deltaTime.seconds))
-                            print "%10i - %s" % (self.gen, timeString)
+                            print("%10i - %s" % (self.gen, timeString))
                         else:
                             sys.stdout.write(".")
                             sys.stdout.flush()
@@ -2384,11 +2385,11 @@ class Mcmc(object):
                         sys.stdout.flush()
 
         # Gens finished.  Clean up.
-        print
+        print()
         if verbose:
-            print "Finished %s generations." % nGensToDo
+            print("Finished %s generations." % nGensToDo)
 
-        treeFile = file(self.treeFileName, 'a')
+        treeFile = open(self.treeFileName, 'a')
         treeFile.write('end;\n\n')
         treeFile.close()
 
@@ -2406,7 +2407,7 @@ class Mcmc(object):
         return deltaTime
 
     def _writeSimFileHeader(self, curTree):
-        simFile = file(self.simFileName, 'a')
+        simFile = open(self.simFileName, 'a')
 
         simFile.write(" genPlus1")
         # If self.simulate contains a 1, do unconstrained log like
@@ -2435,7 +2436,7 @@ class Mcmc(object):
         curTree.copyToTree(self.simTree)
         curTree.model.copyValsTo(self.simTree.model)
         self.simTree.simulate()
-        simFile = file(self.simFileName, 'a')
+        simFile = open(self.simFileName, 'a')
         simFile.write(" %11i" % (self.gen + 1))
         # If self.simulate contains a 1, do unconstrained log like
         if 1 & self.simulate:
@@ -2481,7 +2482,7 @@ class Mcmc(object):
         if 0:
             for chNum in range(self.nChains):
                 ch = self.chains[chNum]
-                print "chain %i ==================" % chNum
+                print("chain %i ==================" % chNum)
                 ch.curTree.summarizeModelThingsNNodes()
 
         # Make a copy of self, but with no cStuff.
@@ -2529,8 +2530,8 @@ class Mcmc(object):
 
         # Pickle it.
         fName = "mcmc_checkPoint_%i.%i" % (self.runNum, self.gen + 1)
-        f = file(fName, 'w')
-        cPickle.dump(theCopy, f, 1)
+        f = open(fName, 'wb')
+        pickle.dump(theCopy, f, pickle.HIGHEST_PROTOCOL)
         f.close()
 
     def autoTune(self, gensPerProposal=500, verbose=True, giveUpAfter=10, writeTunings=True):
@@ -2600,9 +2601,9 @@ class Mcmc(object):
             m.tunings.dump()  # see the default tunings for comparison
 
             # apply the saved runNum 0 tunings to this run
-            import cPickle
-            f = file('mcmc_tunings_0.pickle', 'r')
-            theTunings = cPickle.load(f)
+            import pickle
+            f = open('mcmc_tunings_0.pickle', 'rb')
+            theTunings = pickle.load(f)
             f.close()
             m.tunings = theTunings
             m.tunings.dump()  # see the autoTune()'d tunings
@@ -2658,21 +2659,21 @@ class Mcmc(object):
         #coldChainNum = 0
         nGensToDo = gensPerProposal * len(self.proposals)
         if verbose:
-            print "Starting the MCMC autoTune()"
-            print "There are %i proposals." % len(self.proposals)
-            print "Set to do %i samples." % nGensToDo
-            print "One dot is 100 generations."
+            print("Starting the MCMC autoTune()")
+            print("There are %i proposals." % len(self.proposals))
+            print("Set to do %i samples." % nGensToDo)
+            print("One dot is 100 generations.")
 
         if 0:
             for pr in self.proposals:
-                print "pNum = %2i  mtNum = %2i   %s" % (pr.pNum, pr.mtNum, pr.name)  
-            print
-            print self.tuningsUsage
+                print("pNum = %2i  mtNum = %2i   %s" % (pr.pNum, pr.mtNum, pr.name))  
+            print()
+            print(self.tuningsUsage)
 
         for ch in self.chains:
             ch.verifyIdentityOfTwoTreesInChain()
 
-        print "Before autoTune() ...",
+        print("Before autoTune() ...", end=' ')
         self.tunings.dump(advice=False)
         # return
         needsToBeTuned = True  # To start.
@@ -2680,7 +2681,7 @@ class Mcmc(object):
 
         while needsToBeTuned:
             if verbose:
-                print "================ autoTune() round %i ================" % roundCounter
+                print("================ autoTune() round %i ================" % roundCounter)
 
             # self.chains[0].curTree.model.dump()
             needsToBeTuned = False
@@ -2765,13 +2766,13 @@ class Mcmc(object):
 
                 # Checking and debugging constraints
                 if 0 and self.constraints:
-                    print "Mcmc x1d"
-                    print self.chains[0].verifyIdentityOfTwoTreesInChain()
-                    print "c checking curTree ..."
+                    print("Mcmc x1d")
+                    print(self.chains[0].verifyIdentityOfTwoTreesInChain())
+                    print("c checking curTree ...")
                     self.chains[0].curTree.checkSplitKeys()
-                    print "c checking propTree ..."
+                    print("c checking propTree ...")
                     self.chains[0].propTree.checkSplitKeys()
-                    print "c checking that all constraints are present"
+                    print("c checking that all constraints are present")
                     theSplits = [
                         n.br.splitKey for n in self.chains[0].curTree.iterNodesNoRoot()]
                     for sk in self.constraints.constraints:
@@ -2779,7 +2780,7 @@ class Mcmc(object):
                             gm.append(
                                 "split %i is not present in the curTree." % sk)
                             raise P4Error(gm)
-                    print "Mcmc zzz"
+                    print("Mcmc zzz")
 
                 # Reassuring pips ...
                 # if self.gen and self.gen % 1000 == 0:
@@ -2790,7 +2791,7 @@ class Mcmc(object):
                     sys.stdout.flush()
 
             if verbose:
-                print
+                print()
 
             atLeast = 100
             for i in range(len(self.proposals)):
@@ -2808,7 +2809,7 @@ class Mcmc(object):
                 for p in self.proposals:
                     accepted = float(
                         p.nAcceptances[0]) / float(p.nProposals[0])
-                    print "%25s  %5.3f" % (p.name, accepted)
+                    print("%25s  %5.3f" % (p.name, accepted))
 
             # Here is where we go over each tuning and ask whether the
             # proposal acceptance is within limits.  There might be
@@ -2823,7 +2824,7 @@ class Mcmc(object):
             brLenLower = 0.05
 
             if verbose:
-                print "Acceptances for the tunings:"
+                print("Acceptances for the tunings:")
 
             theSig = "%25s  %5.3f"
             sig2 = " %-10s"
@@ -2833,105 +2834,105 @@ class Mcmc(object):
                 p = self.tuningsUsage.brLen
                 accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
                 if verbose:
-                    print theSig % ("brLen", accepted),
+                    print(theSig % ("brLen", accepted), end=' ')
                 if accepted < brLenLower:
                     if verbose:
-                        print sig2 % "too small",
+                        print(sig2 % "too small", end=' ')
                     oldTuning = self.tunings.brLen
                     self.tunings.brLen /= 2.0
                     if verbose:
-                        print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.brLen)
+                        print("tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.brLen))
                     needsToBeTuned = True
                 elif accepted > safeUpper:
                     if verbose:
-                        print sig2 % "too big",
+                        print(sig2 % "too big", end=' ')
                     oldTuning = self.tunings.brLen
                     self.tunings.brLen *= 2.0
                     if verbose:
-                        print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.brLen)
+                        print("tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.brLen))
                     needsToBeTuned = True
                 else:
                     if verbose:
-                        print sig2 % "ok"
+                        print(sig2 % "ok")
 
             if self.tuningsUsage.allBrLens:
                 p = self.tuningsUsage.allBrLens
                 accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
                 if verbose:
-                    print theSig % ("allBrLens", accepted),
+                    print(theSig % ("allBrLens", accepted), end=' ')
                 if accepted < brLenLower:                     # good?
                     if verbose:
-                        print sig2 % "too small",
+                        print(sig2 % "too small", end=' ')
                     oldTuning = self.tunings.allBrLens
                     self.tunings.allBrLens /= 2.0
                     if verbose:
-                        print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.allBrLens)
+                        print("tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.allBrLens))
                     needsToBeTuned = True
                 elif accepted > safeUpper:
                     if verbose:
-                        print sig2 % "too big",
+                        print(sig2 % "too big", end=' ')
                     oldTuning = self.tunings.allBrLens
                     self.tunings.allBrLens *= 2.0
                     if verbose:
-                        print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.allBrLens)
+                        print("tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.allBrLens))
                     needsToBeTuned = True
                 else:
                     if verbose:
-                        print sig2 % "ok"
+                        print(sig2 % "ok")
 
             if self.tuningsUsage.local:
                 p = self.tuningsUsage.local
                 accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
                 if verbose:
-                    print theSig % ("local", accepted),
+                    print(theSig % ("local", accepted), end=' ')
                 if accepted < brLenLower:
                     if verbose:
-                        print sig2 % "too small",
+                        print(sig2 % "too small", end=' ')
                     oldTuning = self.tunings.local
                     self.tunings.local /= 2.0
                     #self.tuningsUsage.local.tuning = self.tunings.local
                     if verbose:
-                        print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.local)
+                        print("tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.local))
                     needsToBeTuned = True
                 elif accepted > safeUpper:
                     if verbose:
-                        print sig2 % "too big",
+                        print(sig2 % "too big", end=' ')
                     oldTuning = self.tunings.local
                     self.tunings.local *= 2.0
                     #self.tuningsUsage.local.tuning = self.tunings.local
                     if verbose:
-                        print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.local)
+                        print("tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.local))
                     needsToBeTuned = True
                 else:
                     if verbose:
-                        print sig2 % "ok"
+                        print(sig2 % "ok")
 
             if self.tuningsUsage.relRate:
                 p = self.tuningsUsage.relRate
                 accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
                 if verbose:
-                    print theSig % ("relRate", accepted),
+                    print(theSig % ("relRate", accepted), end=' ')
                 if accepted < safeLower:
                     if verbose:
-                        print sig2 % "too small",
+                        print(sig2 % "too small", end=' ')
                     oldTuning = self.tunings.relRate
                     self.tunings.relRate /= 2.0
                     #self.tuningsUsage.relRate.tuning = self.tunings.relRate
                     if verbose:
-                        print "tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.relRate)
+                        print("tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.relRate))
                     needsToBeTuned = True
                 elif accepted > safeUpper:
                     if verbose:
-                        print sig2 % "too big",
+                        print(sig2 % "too big", end=' ')
                     oldTuning = self.tunings.relRate
                     self.tunings.relRate *= 2.0
                     #self.tuningsUsage.relRate.tuning = self.tunings.relRate
                     if verbose:
-                        print "tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.relRate)
+                        print("tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.relRate))
                     needsToBeTuned = True
                 else:
                     if verbose:
-                        print sig2 % "ok"
+                        print(sig2 % "ok")
 
             # if self.tuningsUsage.treeScale:
             #     p = self.tuningsUsage.treeScale
@@ -2962,7 +2963,7 @@ class Mcmc(object):
 
             for pNum in range(self.tuningsUsage.nParts):
                 if verbose:
-                    print "%15s %i" % ("part", pNum)
+                    print("%15s %i" % ("part", pNum))
 
                 # comp
                 if self.tuningsUsage.parts[pNum].comp:
@@ -2973,7 +2974,7 @@ class Mcmc(object):
                         accepted = float(
                             p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
-                            print theSig % ("comp", accepted),
+                            print(theSig % ("comp", accepted), end=' ')
                         # if accepted < 0.01:
                         #    if verbose:
                         #        print sig2 % "very small"
@@ -2981,25 +2982,25 @@ class Mcmc(object):
                         #    isTooSmall += 1
                         if accepted < safeLower:
                             if verbose:
-                                print sig2 % "too small"
+                                print(sig2 % "too small")
                             isTooSmall += 1
                         elif accepted > safeUpper:
                             if verbose:
-                                print sig2 % "too big"
+                                print(sig2 % "too big")
                             isTooBig += 1
                         else:
                             if verbose:
-                                print sig2 % "ok"
+                                print(sig2 % "ok")
                     if isTooBig and isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Combination of too big and too small.")
-                            print sig3 % (' ', "-> leaving it alone.")
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
                     elif isTooBig:
                         alreadyAtMax = False
                         if math.fabs(self.tunings.parts[pNum].comp - var.mcmcMaxCompAndRMatrixTuning) < 0.0000001:
                             alreadyAtMax = True
                         if verbose:
-                            print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].comp)
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].comp))
                         if not alreadyAtMax:
                             myNewVal = self.tunings.parts[pNum].comp * 1.5
                             newlyAtMax = False
@@ -3013,16 +3014,16 @@ class Mcmc(object):
                             # for mt in self.tuningsUsage.parts[pNum].comp:
                             #    mt.tuning = self.tunings.parts[pNum].comp
                             if verbose:
-                                print sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].comp)
+                                print(sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].comp))
                                 if newlyAtMax:
-                                    print sig3 % (' ', "(now at the maximum)")
+                                    print(sig3 % (' ', "(now at the maximum)"))
                             needsToBeTuned = True
                         else:
                             if verbose:
-                                print sig3 % (' ', "already at max %.3f" % self.tunings.parts[pNum].comp)
+                                print(sig3 % (' ', "already at max %.3f" % self.tunings.parts[pNum].comp))
                     elif isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].comp)
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].comp))
                         # if accepted is very small, decrease the tuning by a lot
                         # if isVerySmall:
                         #    self.tunings.parts[pNum].comp /= 3.
@@ -3032,7 +3033,7 @@ class Mcmc(object):
                         # for mt in self.tuningsUsage.parts[pNum].comp:
                         #    mt.tuning = self.tunings.parts[pNum].comp
                         if verbose:
-                            print sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].comp)
+                            print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].comp))
                         needsToBeTuned = True
 
                 # compDir
@@ -3043,7 +3044,7 @@ class Mcmc(object):
                     for p in self.tuningsUsage.parts[pNum].compDir:
                         accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
-                            print theSig % ("compDir", accepted),
+                            print(theSig % ("compDir", accepted), end=' ')
                         # if accepted < 0.01:
                         #    if verbose:
                         #        print sig2 % "very small"
@@ -3051,32 +3052,32 @@ class Mcmc(object):
                         #    isTooSmall += 1
                         if accepted < safeLower:
                             if verbose:
-                                print sig2 % "too small"
+                                print(sig2 % "too small")
                             isTooSmall += 1
                         elif accepted > safeUpper:
                             if verbose:
-                                print sig2 % "too big"
+                                print(sig2 % "too big")
                             isTooBig += 1
                         else:
                             if verbose:
-                                print sig2 % "ok"
+                                print(sig2 % "ok")
                     if isTooBig and isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Combination of too big and too small.")
-                            print sig3 % (' ', "-> leaving it alone.")
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
                     elif isTooBig:
                         if verbose:
-                            print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].compDir)
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].compDir))
                         self.tunings.parts[pNum].compDir /= 1.5
                         if verbose:
-                            print sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].compDir)
+                            print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].compDir))
                         needsToBeTuned = True
                     elif isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].compDir)
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].compDir))
                         self.tunings.parts[pNum].compDir *= 1.5
                         if verbose:
-                            print sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].compDir)
+                            print(sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].compDir))
                         needsToBeTuned = True
 
                 # rMatrix
@@ -3088,7 +3089,7 @@ class Mcmc(object):
                         accepted = float(
                             p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
-                            print theSig % ("rMatrix", accepted),
+                            print(theSig % ("rMatrix", accepted), end=' ')
                         # if accepted < 0.01:
                         #    if verbose:
                         #        print sig2 % "very small"
@@ -3096,35 +3097,35 @@ class Mcmc(object):
                         #    isVerySmall += 1
                         if accepted < safeLower:
                             if verbose:
-                                print sig2 % "too small"
+                                print(sig2 % "too small")
                             isTooSmall += 1
                         elif accepted > safeUpper:
                             if verbose:
-                                print sig2 % "too big"
+                                print(sig2 % "too big")
                             isTooBig += 1
                         else:
                             if verbose:
-                                print sig2 % "ok"
+                                print(sig2 % "ok")
                     if isTooBig and isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Combination of too big and too small.")
-                            print sig3 % (' ', "-> leaving it alone.")
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
                     else:
                         if self.tree.model.parts[pNum].rMatrices[0].spec == '2p':
                             if isTooBig:
                                 if verbose:
-                                    print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP)
+                                    print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP))
                                 self.tunings.parts[pNum].twoP /= 2.0
                                 if verbose:
-                                    print sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].twoP)
+                                    print(sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].twoP))
                                 needsToBeTuned = True
 
                             elif isTooSmall:
                                 if verbose:
-                                    print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP)
+                                    print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP))
                                 self.tunings.parts[pNum].twoP *= 2.0
                                 if verbose:
-                                    print sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].twoP)
+                                    print(sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].twoP))
                                 needsToBeTuned = True
 
                         else:
@@ -3133,7 +3134,7 @@ class Mcmc(object):
                                 if math.fabs(self.tunings.parts[pNum].rMatrix - var.mcmcMaxCompAndRMatrixTuning) < 0.0000001:
                                     alreadyAtMax = True
                                 if verbose:
-                                    print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrix)
+                                    print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrix))
                                 if not alreadyAtMax:
                                     myNewVal = self.tunings.parts[
                                         pNum].rMatrix * 1.5
@@ -3149,17 +3150,17 @@ class Mcmc(object):
                                     # for mt in self.tuningsUsage.parts[pNum].rMatrix:
                                     #    mt.tuning = self.tunings.parts[pNum].rMatrix
                                     if verbose:
-                                        print sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].rMatrix)
+                                        print(sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].rMatrix))
                                         if newlyAtMax:
-                                            print sig3 % (' ', "(now at the maximum)")
+                                            print(sig3 % (' ', "(now at the maximum)"))
                                     needsToBeTuned = True
                                 else:
                                     if verbose:
-                                        print sig3 % (' ', "already at max %.3f" % self.tunings.parts[pNum].rMatrix)
+                                        print(sig3 % (' ', "already at max %.3f" % self.tunings.parts[pNum].rMatrix))
 
                             elif isTooSmall:
                                 if verbose:
-                                    print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrix)
+                                    print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrix))
                                 # if accepted is very small, decrease the tuning by a lot
                                 # if isVerySmall:
                                 #    self.tunings.parts[pNum].rMatrix /= 3.0
@@ -3169,7 +3170,7 @@ class Mcmc(object):
                                 # for mt in self.tuningsUsage.parts[pNum].rMatrix:
                                 #    mt.tuning = self.tunings.parts[pNum].rMatrix
                                 if verbose:
-                                    print sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].rMatrix)
+                                    print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].rMatrix))
                                 needsToBeTuned = True
 
                 # rMatrixDir
@@ -3181,7 +3182,7 @@ class Mcmc(object):
                         accepted = float(
                             p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
-                            print theSig % ("rMatrixDir", accepted),
+                            print(theSig % ("rMatrixDir", accepted), end=' ')
                         # if accepted < 0.01:
                         #    if verbose:
                         #        print sig2 % "very small"
@@ -3189,52 +3190,52 @@ class Mcmc(object):
                         #    isVerySmall += 1
                         if accepted < safeLower:
                             if verbose:
-                                print sig2 % "too small"
+                                print(sig2 % "too small")
                             isTooSmall += 1
                         elif accepted > safeUpper:
                             if verbose:
-                                print sig2 % "too big"
+                                print(sig2 % "too big")
                             isTooBig += 1
                         else:
                             if verbose:
-                                print sig2 % "ok"
+                                print(sig2 % "ok")
                     if isTooBig and isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Combination of too big and too small.")
-                            print sig3 % (' ', "-> leaving it alone.")
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
                     else:
                         if self.tree.model.parts[pNum].rMatrices[0].spec == '2p':
                             if isTooBig:
                                 if verbose:
-                                    print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP)
+                                    print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP))
                                 self.tunings.parts[pNum].twoP /= 2.0
                                 if verbose:
-                                    print sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].twoP)
+                                    print(sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].twoP))
                                 needsToBeTuned = True
 
                             elif isTooSmall:
                                 if verbose:
-                                    print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP)
+                                    print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].twoP))
                                 self.tunings.parts[pNum].twoP *= 2.0
                                 if verbose:
-                                    print sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].twoP)
+                                    print(sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].twoP))
                                 needsToBeTuned = True
 
                         else:
                             if isTooBig:
                                 if verbose:
-                                    print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrixDir)
+                                    print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrixDir))
                                 self.tunings.parts[pNum].rMatrixDir = self.tunings.parts[pNum].rMatrixDir / 1.5
                                 if verbose:
-                                    print sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].rMatrixDir)
+                                    print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].rMatrixDir))
                                 needsToBeTuned = True
 
                             elif isTooSmall:
                                 if verbose:
-                                    print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrixDir)
+                                    print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].rMatrixDir))
                                 self.tunings.parts[pNum].rMatrixDir *= 1.5
                                 if verbose:
-                                    print sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].rMatrixDir)
+                                    print(sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].rMatrixDir))
                                 needsToBeTuned = True
 
                 # gdasrv
@@ -3245,42 +3246,42 @@ class Mcmc(object):
                         accepted = float(
                             p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
-                            print theSig % ("gdasrv", accepted),
+                            print(theSig % ("gdasrv", accepted), end=' ')
                         if accepted < safeLower:
                             if verbose:
-                                print sig2 % "too small"
+                                print(sig2 % "too small")
                             isTooSmall += 1
                         elif accepted > safeUpper:
                             if verbose:
-                                print sig2 % "too big"
+                                print(sig2 % "too big")
                             isTooBig += 1
                         else:
                             if verbose:
-                                print sig2 % "ok"
+                                print(sig2 % "ok")
                     if isTooBig and isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Combination of too big and too small.")
-                            print sig3 % (' ', "-> leaving it alone.")
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
                     elif isTooBig:
                         if verbose:
-                            print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].gdasrv)
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].gdasrv))
                         self.tunings.parts[pNum].gdasrv *= 2.0
                         # Transfer the new tuning to the proposals
                         # for mt in self.tuningsUsage.parts[pNum].gdasrv:
                         #    mt.tuning = self.tunings.parts[pNum].gdasrv
                         if verbose:
-                            print sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].gdasrv)
+                            print(sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].gdasrv))
                         needsToBeTuned = True
 
                     elif isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].gdasrv)
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].gdasrv))
                         self.tunings.parts[pNum].gdasrv /= 2.0
                         # Transfer the new tuning to the proposals
                         # for mt in self.tuningsUsage.parts[pNum].gdasrv:
                         #    mt.tuning = self.tunings.parts[pNum].gdasrv
                         if verbose:
-                            print sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].gdasrv)
+                            print(sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].gdasrv))
                         needsToBeTuned = True
 
                 # pInvar
@@ -3291,40 +3292,40 @@ class Mcmc(object):
                     accepted = float(
                         p.nAcceptances[0]) / float(p.nProposals[0])
                     if verbose:
-                        print theSig % ("pInvar", accepted),
+                        print(theSig % ("pInvar", accepted), end=' ')
                     if accepted < safeLower:
                         if verbose:
-                            print sig2 % "too small"
+                            print(sig2 % "too small")
                         isTooSmall += 1
                     elif accepted > safeUpper:
                         if verbose:
-                            print sig2 % "too big"
+                            print(sig2 % "too big")
                         isTooBig += 1
                     else:
                         if verbose:
-                            print sig2 % "ok"
+                            print(sig2 % "ok")
                     if isTooBig and isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Combination of too big and too small.")
-                            print sig3 % (' ', "-> leaving it alone.")
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
                     elif isTooBig:
                         if verbose:
-                            print sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].pInvar)
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].pInvar))
                         self.tunings.parts[pNum].pInvar *= 2.0
                         # Transfer the new tuning to the proposals
                         #self.tuningsUsage.parts[pNum].pInvar.tuning = self.tunings.parts[pNum].pInvar
                         if verbose:
-                            print sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].pInvar)
+                            print(sig3 % (' ', "-> double it to %.3f" % self.tunings.parts[pNum].pInvar))
                         needsToBeTuned = True
 
                     elif isTooSmall:
                         if verbose:
-                            print sig3 % (' ', "Current tuning is %.1f" % self.tunings.parts[pNum].pInvar)
+                            print(sig3 % (' ', "Current tuning is %.1f" % self.tunings.parts[pNum].pInvar))
                         self.tunings.parts[pNum].pInvar /= 2.0
                         # Transfer the new tuning to the proposals
                         #self.tuningsUsage.parts[pNum].pInvar.tuning = self.tunings.parts[pNum].pInvar
                         if verbose:
-                            print sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].pInvar)
+                            print(sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].pInvar))
                         needsToBeTuned = True
 
             if 0 and self.nChains > 1:
@@ -3359,17 +3360,17 @@ class Mcmc(object):
                         self.swapMatrix[j][i]) / float(self.swapMatrix[i][j])
                     diagonal.append(accepted)
                 # print diagonal
-                meanDiagonal = func.mean(diagonal)
+                meanDiagonal = p4.func.mean(diagonal)
                 isOK = True
                 if meanDiagonal > 0.7:  # chainTemp is too low
                     isOK = False
                     if verbose:
                         self.writeSwapMatrix()
-                        print "    Current chainTemp is %5.3f; too low" % self.tunings.chainTemp
+                        print("    Current chainTemp is %5.3f; too low" % self.tunings.chainTemp)
                     self.tunings.chainTemp *= 1.3333
                     if verbose:
-                        print "    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal
-                        print "      -> raising the chainTemp by one third, to %5.3f" % self.tunings.chainTemp
+                        print("    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal)
+                        print("      -> raising the chainTemp by one third, to %5.3f" % self.tunings.chainTemp)
                     needsToBeTuned = True
                 elif meanDiagonal < 0.5:  # maybe too high
                     accepted = float(
@@ -3380,25 +3381,25 @@ class Mcmc(object):
                         isOK = False
                         if verbose:
                             self.writeSwapMatrix()
-                            print "    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp
-                            print "    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal
+                            print("    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp)
+                            print("    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal)
                         if meanDiagonal > 0.25:
                             self.tunings.chainTemp /= 1.3333
                             if verbose:
-                                print "      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp
+                                print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp)
                         elif meanDiagonal > 0.1:
                             self.tunings.chainTemp /= 2.0
                             if verbose:
-                                print "      -> lowering the chainTemp by half, to %5.3f" % self.tunings.chainTemp
+                                print("      -> lowering the chainTemp by half, to %5.3f" % self.tunings.chainTemp)
                         else:
                             self.tunings.chainTemp /= 3.0
                             if verbose:
-                                print "      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp
+                                print("      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp)
 
                         needsToBeTuned = True
                 if isOK:
                     if verbose:
-                        print "    Chain temp appears to be ok."
+                        print("    Chain temp appears to be ok.")
 
             roundCounter += 1
             # if roundCounter >= 1:
@@ -3432,7 +3433,7 @@ class Mcmc(object):
             # print "End of round %i, needsToBeTuned = %s" % (roundCounter - 1, needsToBeTuned)
             # break
 
-        print "\nAfter autoTune() ...",
+        print("\nAfter autoTune() ...", end=' ')
         self.tunings.dump(advice=False)
         self.gen = -1
         self.startMinusOne = -1
@@ -3456,9 +3457,9 @@ class Mcmc(object):
         #self.chains = []
 
         if writeTunings:
-            print "Writing tunings to pickle file '%s'" % tuningsFileName
-            f = file(tuningsFileName, 'w')
-            cPickle.dump(self.tunings, f, 1)
+            print("Writing tunings to pickle file '%s'" % tuningsFileName)
+            f = open(tuningsFileName, 'wb')
+            pickle.dump(self.tunings, f, pickle.HIGHEST_PROTOCOL)
             f.close()
 
     def writeProposalProbs(self, makeDict=False):
@@ -3469,7 +3470,7 @@ class Mcmc(object):
 
         nProposals = len(self.proposals)
         if not nProposals:
-            print "Mcmc.writeProposalProbs().  No proposals (yet?)."
+            print("Mcmc.writeProposalProbs().  No proposals (yet?).")
             return
         #intended = self.propWeights[:]
         # for i in range(len(intended)):
@@ -3484,8 +3485,8 @@ class Mcmc(object):
             nAccepted[i] = self.proposals[i].nAcceptances[0]
         sumAttained = float(sum(nAttained))  # should be zero or nGen
         if not sumAttained:
-            print "Mcmc.writeProposalProbs().  No proposals have been made."
-            print "Possibly, due to it being a checkPoint interval, nProposals have all been set to zero."
+            print("Mcmc.writeProposalProbs().  No proposals have been made.")
+            print("Possibly, due to it being a checkPoint interval, nProposals have all been set to zero.")
             return
         # assert int(sumAttained) == self.gen + 1, "sumAttained is %i, should be gen+1, %i." % (
         #    int(sumAttained), self.gen + 1)
@@ -3498,37 +3499,37 @@ class Mcmc(object):
 
         if not makeDict:
             spacer = ' ' * 4
-            print "\nProposal probabilities (%)"
+            print("\nProposal probabilities (%)")
             # print "There are %i proposals" % len(self.proposals)
-            print "For %i gens, from gens %i to %i, inclusive." % (
-                (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
-            print "%2s %11s %11s  %11s %10s %18s %5s %5s" % ('', 'nProposals', 'proposed(%)',
-                                                             'accepted(%)', 'tuning', 'proposal', 'part', 'num')
+            print("For %i gens, from gens %i to %i, inclusive." % (
+                (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+            print("%2s %11s %11s  %11s %10s %18s %5s %5s" % ('', 'nProposals', 'proposed(%)',
+                                                             'accepted(%)', 'tuning', 'proposal', 'part', 'num'))
             for i in range(len(self.proposals)):
-                print "%2i" % i,
+                print("%2i" % i, end=' ')
                 p = self.proposals[i]
-                print "   %7i " % self.proposals[i].nProposals[0],
-                print "   %5.1f    " % probAttained[i],
+                print("   %7i " % self.proposals[i].nProposals[0], end=' ')
+                print("   %5.1f    " % probAttained[i], end=' ')
                 if nAttained[i]:
-                    print "   %5.1f   " % (100.0 * float(nAccepted[i]) / float(nAttained[i])),
+                    print("   %5.1f   " % (100.0 * float(nAccepted[i]) / float(nAttained[i])), end=' ')
                 else:
-                    print "       -   ",
+                    print("       -   ", end=' ')
                 if p.tuning == None:
-                    print "       -    ",
+                    print("       -    ", end=' ')
                 elif p.tuning < 2.0:
-                    print "   %7.3f  " % p.tuning,
+                    print("   %7.3f  " % p.tuning, end=' ')
                 else:
-                    print "   %7.1f  " % p.tuning,
-                print " %15s" % p.name,
+                    print("   %7.1f  " % p.tuning, end=' ')
+                print(" %15s" % p.name, end=' ')
                 if p.pNum != -1:
-                    print " %3i " % p.pNum,
+                    print(" %3i " % p.pNum, end=' ')
                 else:
-                    print "   - ",
+                    print("   - ", end=' ')
                 if p.mtNum != -1:
-                    print " %3i " % p.mtNum,
+                    print(" %3i " % p.mtNum, end=' ')
                 else:
-                    print "   - ",
-                print
+                    print("   - ", end=' ')
+                print()
         else:
             rd = {}
             for i in range(len(self.proposals)):
@@ -3562,7 +3563,7 @@ class Mcmc(object):
 
         nProposals = len(self.proposals)
         if not nProposals:
-            print "Mcmc.writeProposalIntendedProbs().  No proposals (yet?)."
+            print("Mcmc.writeProposalIntendedProbs().  No proposals (yet?).")
             return
         intended = self.propWeights[:]
         for i in range(len(intended)):
@@ -3572,21 +3573,21 @@ class Mcmc(object):
                 "bad sum of intended proposal probs. %s" % sum(intended))
 
         spacer = ' ' * 4
-        print "\nIntended proposal probabilities (%)"
+        print("\nIntended proposal probabilities (%)")
         # print "There are %i proposals" % len(self.proposals)
-        print "%2s %11s %18s %5s %5s" % ('', 'intended(%)', 'proposal', 'part', 'num')
+        print("%2s %11s %18s %5s %5s" % ('', 'intended(%)', 'proposal', 'part', 'num'))
         for i in range(len(self.proposals)):
-            print "%2i" % i,
+            print("%2i" % i, end=' ')
             p = self.proposals[i]
-            print "   %6.2f    " % (100. * intended[i]),
+            print("   %6.2f    " % (100. * intended[i]), end=' ')
 
-            print " %15s" % p.name,
+            print(" %15s" % p.name, end=' ')
             if p.pNum != -1:
-                print " %3i " % p.pNum,
+                print(" %3i " % p.pNum, end=' ')
             else:
-                print "   - ",
+                print("   - ", end=' ')
             if p.mtNum != -1:
-                print " %3i " % p.mtNum,
+                print(" %3i " % p.mtNum, end=' ')
             else:
-                print "   - ",
-            print
+                print("   - ", end=' ')
+            print()

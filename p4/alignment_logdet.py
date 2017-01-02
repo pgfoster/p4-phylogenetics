@@ -1,24 +1,25 @@
-from sequencelist import SequenceList, Sequence
-from nexussets import NexusSets
-from p4exceptions import P4Error
+from __future__ import print_function
+from p4.sequencelist import SequenceList, Sequence
+from p4.nexussets import NexusSets
+from p4.p4exceptions import P4Error
 import string
 import copy
 import os
 import math
 import string
-import func
+import p4.func
 import re
 import sys
 import array
 import types
-from nexussets import CharSet
+from p4.nexussets import CharSet
 import subprocess
-from distancematrix import DistanceMatrix
-from var import var
-from part import Part
+from p4.distancematrix import DistanceMatrix
+from p4.var import var
+from p4.part import Part
 import numpy
 import numpy.linalg
-import pf
+import p4.pf as pf
 
 if True:
     def logDet(self, correction='TK02', doPInvarOfConstants=True, pInvar=None, pInvarOfConstants=None, missingCharacterStrategy='fudge', minCompCount=1, nonPositiveDetStrategy='invert'):
@@ -366,10 +367,10 @@ if True:
             else:
                 constComps = None
             if 0:
-                print "constants =", constants
-                print "nConstants = %i" % nConstants
-                print "constCounts = %s" % constCounts
-                print "constComps = %s" % constComps
+                print("constants =", constants)
+                print("nConstants = %i" % nConstants)
+                print("constCounts = %s" % constCounts)
+                print("constComps = %s" % constComps)
             # not used further
             del(constants)
 
@@ -413,8 +414,8 @@ if True:
                 if numpy.sum(ignores):
                     hasIgnores = True
                 if 0:
-                    print "hasIgnores=%s" % hasIgnores
-                    print 'ignores= %s' % ignores
+                    print("hasIgnores=%s" % hasIgnores)
+                    print('ignores= %s' % ignores)
                 totalNoIgnores = 0
                 if hasIgnores:
                     for i in range(self.dim):
@@ -432,12 +433,12 @@ if True:
                             "There are too many sites that will be ignored because of low frequency characters.")
                         raise P4Error(gm)
                 if 0 and hasIgnores:
-                    print "missingCharacterStrategy is set to 'reduce'"
-                    print "The following char(s) will be ignored:"
+                    print("missingCharacterStrategy is set to 'reduce'")
+                    print("The following char(s) will be ignored:")
                     for i in range(self.dim):
                         if ignores[i]:
-                            print " %s" % self.symbols[i],
-                    print "\n"
+                            print(" %s" % self.symbols[i], end=' ')
+                    print("\n")
 
         nUnambig = numpy.zeros((1), numpy.int32)
         nAmbig = numpy.zeros((1), numpy.int32)
@@ -535,12 +536,12 @@ if True:
                                     nAmbig[0] += 1
 
                         if 0:
-                            print "nUnambig=%s, refUnambigCountMatrix=" % nUnambig
-                            print refUnambigCountMatrix
-                            print "nAmbig=%s, refAmbigCountMatrix=" % nAmbig
-                            print refAmbigCountMatrix
-                            print "nChar=%s, nAmbig=%s, nDoubleGap=%s, nUnambig=%s" % (
-                                self.nChar, nAmbig, nDoubleGap, nUnambig)
+                            print("nUnambig=%s, refUnambigCountMatrix=" % nUnambig)
+                            print(refUnambigCountMatrix)
+                            print("nAmbig=%s, refAmbigCountMatrix=" % nAmbig)
+                            print(refAmbigCountMatrix)
+                            print("nChar=%s, nAmbig=%s, nDoubleGap=%s, nUnambig=%s" % (
+                                self.nChar, nAmbig, nDoubleGap, nUnambig))
                         assert nAmbig[0] + nDoubleGap[0] + \
                             nUnambig[0] == self.nChar
 
@@ -571,10 +572,10 @@ if True:
                                     bigFxy[i, j] = float(
                                         refUnambigCountMatrix[i, j])
                                 except:
-                                    print "xxx i=%i, j=%i" % (i, j)
-                                    print "xxx", refUnambigCountMatrix[i, j]
-                                    print "xxx", float(refUnambigCountMatrix[i, j])
-                                    print "xxx", bigFxy[i, j]
+                                    print("xxx i=%i, j=%i" % (i, j))
+                                    print("xxx", refUnambigCountMatrix[i, j])
+                                    print("xxx", float(refUnambigCountMatrix[i, j]))
+                                    print("xxx", bigFxy[i, j])
                                     raise P4Error(gm)
 
                         if nAmbig[0]:
@@ -833,15 +834,15 @@ if True:
                                                                     bigFxy[
                                                                         i1, j1] += na * normUnambig[i1, j1] / fsum
                                         if 0:
-                                            print "bigFxy= (after partial ambig resolution)"
-                                            print bigFxy
+                                            print("bigFxy= (after partial ambig resolution)")
+                                            print(bigFxy)
 
                         # End of the long section on resolving ambiguities.
                     # End of the long "else" clause to "if fastFillFxy:"
 
                     if 0:
-                        print "bigFxy=  (after ambig resolution)"
-                        print bigFxy
+                        print("bigFxy=  (after ambig resolution)")
+                        print(bigFxy)
 
                     # pInvar stuff
                     # paup-like
@@ -858,8 +859,8 @@ if True:
                             bigFxy[i][i] -= constCounts[i] * pInvarOfConstants
 
                     if 0:
-                        print "bigFxy=  (after pInvarOfConstants removal)"
-                        print bigFxy
+                        print("bigFxy=  (after pInvarOfConstants removal)")
+                        print(bigFxy)
 
                     if missingCharacterStrategy == 'fudge':
                         # Replace zeros on the diagonal of Fxy with either 0.5
@@ -909,8 +910,8 @@ if True:
                     # Normalize Fxy to 1.0
                     theFxy /= float(sumTheFxy)
                     if 0:
-                        print "nSites=%f,  final normalized bigFxy (ie Fxy) = " % sumTheFxy
-                        print theFxy
+                        print("nSites=%f,  final normalized bigFxy (ie Fxy) = " % sumTheFxy)
+                        print(theFxy)
 
                     # Calculate the logDet, from the theFxy and from the bigPi
                     theDet = numpy.linalg.det(theFxy)
@@ -929,12 +930,12 @@ if True:
                         bigPiX = theFxy.sum(axis=0)   # sum of columns
                         bigPiY = theFxy.sum(axis=1)   # sum of rows
                         if 0:
-                            print "theFxy = "
-                            print theFxy, type(theFxy)
-                            print "bigPiX = "
-                            print bigPiX, type(bigPiX)
-                            print "bigPiY ="
-                            print bigPiY, type(bigPiY)
+                            print("theFxy = ")
+                            print(theFxy, type(theFxy))
+                            print("bigPiX = ")
+                            print(bigPiX, type(bigPiX))
+                            print("bigPiY =")
+                            print(bigPiY, type(bigPiY))
                         det_bigPiX = numpy.multiply.reduce(bigPiX)
                         det_bigPiY = numpy.multiply.reduce(bigPiY)
                         # print det_bigPiX, det_bigPiY
@@ -1022,9 +1023,9 @@ if True:
                                     theCorrection = (
                                         reducedDim - 1) / (1.0 - squareSum / 4.0)
                                 if 0:
-                                    print "theDet = %g" % theDet
-                                    print "theLogDet = %f" % theLogDet
-                                    print "theCorrection = %s" % theCorrection
+                                    print("theDet = %g" % theDet)
+                                    print("theLogDet = %f" % theLogDet)
+                                    print("theCorrection = %s" % theCorrection)
 
                                 theLogDet /= theCorrection
                                 theLogDet = -theLogDet

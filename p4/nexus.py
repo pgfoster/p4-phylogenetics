@@ -1,12 +1,13 @@
+from __future__ import print_function
 import string
 import array
-import func
-from var import var
-from alignment import Alignment
+import p4.func
+from p4.var import var
+from p4.alignment import Alignment
 # from nexustoken import * # nextTok() et al
-from nexussets import NexusSets
-from sequencelist import Sequence
-from p4exceptions import P4Error
+from p4.nexussets import NexusSets
+from p4.sequencelist import Sequence
+from p4.p4exceptions import P4Error
 
 # Some definitions from the MadSwofMad Syst Biol Nexus format paper (MSM97).
 #
@@ -132,8 +133,8 @@ class Nexus:
             # This next bit is counter to MSM97, but is commonly seen
             # and not much of a crime, so don't die.  But do complain.
             elif lowTok == '#nexus':
-                print gm[0]
-                print "    Skipping spurious '%s'" % tok
+                print(gm[0])
+                print("    Skipping spurious '%s'" % tok)
             else:
                 gm.append("I was expecting a 'begin', to start a block.")
                 gm.append("Token '%s' is not recognized." % tok)
@@ -180,7 +181,7 @@ class Nexus:
             raise P4Error(gm)
         blockType = string.lower(tok)
         if var.verboseRead:
-            print "    Entering '%s' block..." % tok
+            print("    Entering '%s' block..." % tok)
 
         if blockType in ['data', 'taxa', 'characters']:
             if blockType == 'taxa':
@@ -199,12 +200,12 @@ class Nexus:
             self.nexusData.readBlock(flob, blockType)
             nexusSkipPastNextSemiColon(flob)
             if var.verboseRead:
-                print "    Finished '%s' block." % tok
+                print("    Finished '%s' block." % tok)
         elif blockType == 'trees':
             self.readTreesBlock(flob)
             nexusSkipPastNextSemiColon(flob)
             if var.verboseRead:
-                print "    Finished '%s' block." % tok
+                print("    Finished '%s' block." % tok)
             # print "got trees block"
             if len(self.trees):
                 if self.nexusData and self.nexusData.taxNames:
@@ -242,12 +243,12 @@ class Nexus:
 
             nexusSkipPastNextSemiColon(flob)
             if var.verboseRead:
-                print "    Finished '%s' block." % tok
+                print("    Finished '%s' block." % tok)
 
             # self.nexusSets.dump()
         else:
             if var.nexus_warnSkipUnknownBlock:
-                print "    Skipping unknown Nexus block '%s'" % blockType
+                print("    Skipping unknown Nexus block '%s'" % blockType)
             nexusSkipPastNextSemiColon(flob)
             nexusSkipPastBlockEnd(flob)
 
@@ -266,11 +267,11 @@ class Nexus:
         # all [\...] also...)
 
         if 0:
-            print gm[0]
-            print "    var.nexus_writeVisibleComments = %s" % var.nexus_writeVisibleComments
-            print "    var.nexus_getP4CommandComments = %s" % var.nexus_getP4CommandComments
-            print "    var.nexus_getWeightCommandComments = %s" % var.nexus_getWeightCommandComments
-            print "    var.nexus_getAllCommandComments = %s" % var.nexus_getAllCommandComments
+            print(gm[0])
+            print("    var.nexus_writeVisibleComments = %s" % var.nexus_writeVisibleComments)
+            print("    var.nexus_getP4CommandComments = %s" % var.nexus_getP4CommandComments)
+            print("    var.nexus_getWeightCommandComments = %s" % var.nexus_getWeightCommandComments)
+            print("    var.nexus_getAllCommandComments = %s" % var.nexus_getAllCommandComments)
 
         if var.nexus_doFastNextTok:
             from nexustoken2 import nextTok, nexusSkipPastNextSemiColon, safeNextTok
@@ -373,7 +374,7 @@ class Nexus:
                 raise P4Error(gm)
             else:
                 if var.verboseRead:
-                    print "        skipping unknown trees block command '%s'" % commandName
+                    print("        skipping unknown trees block command '%s'" % commandName)
                 nexusSkipPastNextSemiColon(flob)
             commandName = nextTok(flob)
             if commandName:
@@ -423,13 +424,13 @@ class Nexus:
             from nexustoken import safeNextTok
 
         while 1:
-            keyTok = func.nexusUnquoteName(
+            keyTok = p4.func.nexusUnquoteName(
                 safeNextTok(flob, 'Nexus: readTranslateCommand'))
             # print "x got keyTok '%s'" % keyTok
             if keyTok == None or keyTok == ';':
                 break
             valueTok = safeNextTok(flob, 'Nexus: readTranslateCommand')
-            valueTok = func.nexusUnquoteName(valueTok)
+            valueTok = p4.func.nexusUnquoteName(valueTok)
             # print "  got valueTok '%s'" % valueTok
 
             if valueTok == None or valueTok == ';':
@@ -512,8 +513,8 @@ class NexusData:
                 if self.dataType == 'dna':
                     if self.formatCommandSymbols:
                         if var.nexus_ignoreFormatCommandSymbols == True:
-                            print gm[0]
-                            print "Ignoring extra symbols '%s' from the format command." % self.formatCommandSymbols
+                            print(gm[0])
+                            print("Ignoring extra symbols '%s' from the format command." % self.formatCommandSymbols)
                         else:
                             gm.append(
                                 "Got extra symbols '%s' from the format command." % self.formatCommandSymbols)
@@ -554,8 +555,8 @@ class NexusData:
                 elif self.dataType == 'protein':
                     if self.formatCommandSymbols:
                         if var.nexus_ignoreFormatCommandSymbols == True:
-                            print gm[0]
-                            print "Ignoring extra symbols '%s' from the format command." % self.formatCommandSymbols
+                            print(gm[0])
+                            print("Ignoring extra symbols '%s' from the format command." % self.formatCommandSymbols)
                         else:
                             gm.append(
                                 "Got extra symbols '%s' from the format command." % self.formatCommandSymbols)
@@ -587,8 +588,8 @@ class NexusData:
                 elif self.dataType == 'rna':
                     if self.formatCommandSymbols:
                         if var.nexus_ignoreFormatCommandSymbols == True:
-                            print gm[0]
-                            print "Ignoring extra symbols '%s' from the format command." % self.formatCommandSymbols
+                            print(gm[0])
+                            print("Ignoring extra symbols '%s' from the format command." % self.formatCommandSymbols)
                         else:
                             gm.append(
                                 "Got extra symbols '%s' from the format command." % self.formatCommandSymbols)
@@ -806,7 +807,7 @@ class NexusData:
 
             else:
                 if var.verboseRead:
-                    print "        skipping unknown taxa block command '%s'" % commandName
+                    print("        skipping unknown taxa block command '%s'" % commandName)
                 nexusSkipPastNextSemiColon(flob)
 
             commandName = nextTok(flob)
@@ -885,7 +886,7 @@ class NexusData:
                 raise P4Error(gm)
             else:
                 if var.verboseRead:
-                    print "        skipping unknown %s block command '%s'" % (blockType, commandName)
+                    print("        skipping unknown %s block command '%s'" % (blockType, commandName))
                 nexusSkipPastNextSemiColon(flob)
             commandName = nextTok(flob)
             if commandName:
@@ -943,7 +944,7 @@ class NexusData:
                         if lowTok == 'nucleotide':
                             # assume it is dna
                             assumedToBeDNA = True
-                            print "Got datatype '%s', assuming that it is DNA." % tok
+                            print("Got datatype '%s', assuming that it is DNA." % tok)
                         if assumedToBeDNA or lowTok == 'dna':
                             self.dataType = 'dna'
 
@@ -1107,8 +1108,8 @@ class NexusData:
 
         tok = nextTok(flob)
         while tok and tok != ';':
-            theName = func.nexusUnquoteName(tok)
-            if not func.nexusCheckName(theName):
+            theName = p4.func.nexusUnquoteName(tok)
+            if not p4.func.nexusCheckName(theName):
                 gm.append("Bad nexus name '%s'" % theName)
                 raise P4Error(gm, 'nexus_badName')
             lowName = string.lower(theName)
@@ -1160,7 +1161,7 @@ class NexusData:
                     "%s block dimensions subcommand '%s' not implemented" % (blockType, sub))
                 raise P4Error(gm)
             else:
-                print "skipping unknown %s block dimensions subcommand '%s'" % (blockType, sub)
+                print("skipping unknown %s block dimensions subcommand '%s'" % (blockType, sub))
                 sub = nextTok(flob)
                 if sub:
                     # print "after unknown: got '%s'" % sub
@@ -1241,7 +1242,7 @@ class NexusData:
                     "%s block format subcommand '%s' not implemented" % (blockType, sub))
                 raise P4Error(gm)
             else:
-                print "skipping unknown %s block format subcommand '%s'" % (blockType, sub)
+                print("skipping unknown %s block format subcommand '%s'" % (blockType, sub))
                 #raise P4Error
                 sub = nextTok(flob)
                 if sub:
@@ -1276,7 +1277,7 @@ class NexusData:
                 lowSub = string.lower(sub)
                 continue
             else:
-                print "m2 self.symbols=%s" % self.symbols
+                print("m2 self.symbols=%s" % self.symbols)
                 return
 
     def readInterleaveMatrix(self, flob, blockType):
@@ -1291,11 +1292,11 @@ class NexusData:
             from nexustoken import nextTok
 
         if dbug:
-            print "Nexus: readInterleaveMatrix here, blockType = %s" % blockType
+            print("Nexus: readInterleaveMatrix here, blockType = %s" % blockType)
         for i in range(self.nTax):
             self.sequences.append([])
         var.nexus_getLineEndingsAsTokens = 1
-        tok = func.nexusUnquoteName(nextTok(flob))
+        tok = p4.func.nexusUnquoteName(nextTok(flob))
         # if dbug:
         #    if tok == '\n' or tok == '\r':
         #        print '%10s: %s' % ('firsttok', '\\n')
@@ -1306,13 +1307,13 @@ class NexusData:
         while tok != None and tok != ';':
             if dbug:
                 if tok == '\n' or tok == '\r':
-                    print '%10s: %s' % ('tok', 'line ending')
+                    print('%10s: %s' % ('tok', 'line ending'))
                 else:
-                    print '%10s: %s' % ('tok', tok)
+                    print('%10s: %s' % ('tok', tok))
             if (tok == '\n' or tok == '\r') and len(tokens):
                 sn = counter % self.nTax
                 if dbug:
-                    print "        got one line for sequence number %i" % sn
+                    print("        got one line for sequence number %i" % sn)
                 if blockType == 'data':
                     if len(self.taxNames) < self.nTax:
                         self.taxNames.append(tokens[0])
@@ -1336,14 +1337,14 @@ class NexusData:
                 if len(tokens) == 0:
                     # Its the first token, which would be the tax name.  Check
                     # it.
-                    if not func.nexusCheckName(tok):
+                    if not p4.func.nexusCheckName(tok):
                         gm.append(
                             "Problem with nexus name '%s': it does not appear to be nexus-compliant." % tok)
                         raise P4Error(gm, 'nexus_badName')
                 tokens.append(tok)
                 # if dbug:
                 #    print "       tokensLength is now %i" % len(tokens)
-            tok = func.nexusUnquoteName(nextTok(flob))
+            tok = p4.func.nexusUnquoteName(nextTok(flob))
         for i in range(self.nTax):
             self.sequences[i] = string.join(self.sequences[i], '')
         var.nexus_getLineEndingsAsTokens = 0  # back to normal
@@ -1359,13 +1360,13 @@ class NexusData:
         else:
             from nexustoken import nextTok
 
-        tok = func.nexusUnquoteName(nextTok(flob))
+        tok = p4.func.nexusUnquoteName(nextTok(flob))
         tokens = []
         tokensLen = 0
         counter = 0
         while tok != None and tok != ';':
             # print "readNonInterleaveMatrix().  Got tok %s" % tok
-            if not func.nexusCheckName(tok):
+            if not p4.func.nexusCheckName(tok):
                 gm.append(
                     "Problem with nexus name '%s': it does not appear to be nexus-compliant." % tok)
                 raise P4Error(gm, 'nexus_badName')
@@ -1381,7 +1382,7 @@ class NexusData:
                         raise P4Error(gm)
             # print "got taxname %s" % tok
             # get sequence
-            tok = func.nexusUnquoteName(nextTok(flob))
+            tok = p4.func.nexusUnquoteName(nextTok(flob))
             # print "got token: '%s'" % tok
             while tok != ';':
                 tokensLen += len(tok)
@@ -1391,7 +1392,7 @@ class NexusData:
                     tokens = []
                     tokensLen = 0
                     counter = counter + 1
-                    tok = func.nexusUnquoteName(nextTok(flob))
+                    tok = p4.func.nexusUnquoteName(nextTok(flob))
                     break
                 elif tokensLen > self.nChar:
                     gm.append(
@@ -1399,7 +1400,7 @@ class NexusData:
                     gm.append("%s" % tokens)
                     raise P4Error(gm, 'nexus_badSequenceLength')
                 else:
-                    tok = func.nexusUnquoteName(nextTok(flob))
+                    tok = p4.func.nexusUnquoteName(nextTok(flob))
                     # print "got token: '%s'" % tok
                     if not tok:
                         gm.append("End of file reached while reading data.")
@@ -1480,11 +1481,11 @@ class NexusData:
             # print "self.nexus_gap=%s, self.nexus_missing=%s" %
             # (self.nexus_gap, self.nexus_missing)
             if needToSwitchGaps and var.nexus_warnSwitchGapChar:
-                print "Warning: nexus gap char '%s' will be changed to the more usual '-'" % self.nexus_gap
-                print "(To turn off this warning, set var.nexus_warnSwitchGapChar = False.)"
+                print("Warning: nexus gap char '%s' will be changed to the more usual '-'" % self.nexus_gap)
+                print("(To turn off this warning, set var.nexus_warnSwitchGapChar = False.)")
             if needToSwitchMissing and var.nexus_warnSwitchMissingChar:
-                print "Warning: nexus missing char '%s' will be changed to the more usual '?'" % self.nexus_missing
-                print "(To turn off this warning, set var.nexus_warnSwitchMissingChar = False.)"
+                print("Warning: nexus missing char '%s' will be changed to the more usual '?'" % self.nexus_missing)
+                print("(To turn off this warning, set var.nexus_warnSwitchMissingChar = False.)")
 
             if needToSwitchGaps and needToSwitchMissing:
                 temp = '\t'
@@ -1531,7 +1532,7 @@ class NexusData:
 
             return a
         else:
-            print "\nNexusData.alignment()"
-            print "    an alignment has been requested but the nexus "
-            print "    file has no sequences.  Returning None."
+            print("\nNexusData.alignment()")
+            print("    an alignment has been requested but the nexus ")
+            print("    file has no sequences.  Returning None.")
             return None

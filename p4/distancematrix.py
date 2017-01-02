@@ -1,8 +1,9 @@
+from __future__ import print_function
 import sys
 import os
-import func
-from var import var
-from p4exceptions import P4Error
+import p4.func
+from p4.var import var
+from p4.p4exceptions import P4Error
 from subprocess import Popen, PIPE
 
 
@@ -52,11 +53,11 @@ class DistanceMatrix:
                         gm.append("Can't open %s for appending." % fName)
                         raise P4Error(gm)
                 else:
-                    print gm[0]
+                    print(gm[0])
                     assert not os.path.lexists()
-                    print "    'append' is requested,"
-                    print "    but '%s' is not a regular file (maybe it doesn't exist?)." % fName
-                    print "    Writing to a new file instead."
+                    print("    'append' is requested,")
+                    print("    but '%s' is not a regular file (maybe it doesn't exist?)." % fName)
+                    print("    Writing to a new file instead.")
                     try:
                         f = open(fName, 'w')
                         f.write('#NEXUS\n\n')
@@ -93,7 +94,7 @@ class DistanceMatrix:
             f.write('  taxlabels')
             for i in range(self.dim):
                 f.write(' %s' %
-                        func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
+                        p4.func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
             f.write(';\n')
             f.write('end;\n\n')
 
@@ -136,7 +137,7 @@ class DistanceMatrix:
             if self.names:
                 f.write('  ')
                 f.write(nameFormat %
-                        func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
+                        p4.func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
             for j in range(self.dim):
                 #f.write('%10.6f' % self.matrix[i][j])
                 f.write(numberFormat % self.matrix[i][j])
@@ -163,11 +164,11 @@ class DistanceMatrix:
                         gm.append("Can't open %s for appending." % fName)
                         raise P4Error(gm)
                 else:
-                    print gm[0]
+                    print(gm[0])
                     assert not os.path.lexists()
-                    print "    'append' is requested,"
-                    print "    but '%s' is not a regular file (maybe it doesn't exist?)." % fName
-                    print "    Writing to a new file instead."
+                    print("    'append' is requested,")
+                    print("    but '%s' is not a regular file (maybe it doesn't exist?)." % fName)
+                    print("    Writing to a new file instead.")
                     try:
                         f = open(fName, 'w')
                     except IOError:
@@ -216,7 +217,7 @@ class DistanceMatrix:
             if self.names:
                 f.write('  ')
                 f.write(nameFormat %
-                        func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
+                        p4.func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
             for j in range(self.dim):
                 #f.write('%10.6f' % self.matrix[i][j])
                 f.write(numberFormat % self.matrix[i][j])
@@ -317,12 +318,12 @@ class DistanceMatrix:
         #    theDir = pathPrefix
         # else:
         #    theDir = None
-        flob_dm, dmFName_fq = func.uniqueFile('tmp.dm')
+        flob_dm, dmFName_fq = p4.func.uniqueFile('tmp.dm')
         # tempfile.mkstemp(suffix='tree', dir=theDir)
-        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree')
+        flob_tf, treeFName_fq = p4.func.uniqueFile('tmp.tree')
         flob_tf.close()
         # tempfile.mkstemp(suffix='cmds', dir=theDir)
-        flob_pf, pFName = func.uniqueFile('tmp.cmds')
+        flob_pf, pFName = p4.func.uniqueFile('tmp.cmds')
 
         # Throw the dir and dirname away.
         dirname, dmFName = os.path.split(dmFName_fq)
@@ -354,7 +355,7 @@ class DistanceMatrix:
 
         # This is the result.  The tree, if it exists, is read in by p4.
         oldLen = len(var.trees)
-        func.read(treeFName)
+        p4.func.read(treeFName)
         newLen = len(var.trees)
         if newLen == oldLen + 1:
             pass
@@ -389,9 +390,9 @@ class DistanceMatrix:
 
         gm = ["DistanceMatrix.bionj()"]
 
-        flob_dm, dmFName_fq = func.uniqueFile('tmp.dm')
+        flob_dm, dmFName_fq = p4.func.uniqueFile('tmp.dm')
         # tempfile.mkstemp(suffix='tree', dir=theDir)
-        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree')
+        flob_tf, treeFName_fq = p4.func.uniqueFile('tmp.tree')
         flob_tf.close()
 
         # Throw the dir and dirname away.
@@ -406,7 +407,7 @@ class DistanceMatrix:
 
         # This is the result.  The tree, if it exists, is read in by p4.
         oldLen = len(var.trees)
-        func.read(treeFName)
+        p4.func.read(treeFName)
         newLen = len(var.trees)
         if newLen == oldLen + 1:
             pass
@@ -440,9 +441,9 @@ class DistanceMatrix:
 
         gm = ["DistanceMatrix.fastme()"]
 
-        flob_dm, dmFName_fq = func.uniqueFile('tmp.dm')
+        flob_dm, dmFName_fq = p4.func.uniqueFile('tmp.dm')
         # tempfile.mkstemp(suffix='tree', dir=theDir)
-        flob_tf, treeFName_fq = func.uniqueFile('tmp.tree')
+        flob_tf, treeFName_fq = p4.func.uniqueFile('tmp.tree')
         flob_tf.close()
 
         # Throw the dir and dirname away.
@@ -457,7 +458,7 @@ class DistanceMatrix:
 
         # This is the result.  The tree, if it exists, is read in by p4.
         oldLen = len(var.trees)
-        func.read(treeFName)
+        p4.func.read(treeFName)
         newLen = len(var.trees)
         if newLen == oldLen + 1:
             pass

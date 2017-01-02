@@ -1,5 +1,6 @@
-import func
-from p4exceptions import P4Error
+from __future__ import print_function
+import p4.func
+from p4.p4exceptions import P4Error
 
 
 class Constraints(object):
@@ -23,11 +24,11 @@ class Constraints(object):
       read('(A, B, (E, D), C);')
       constTree = var.trees.pop()
       c = Constraints(tNames, constTree)
-      t = func.randomTree(taxNames=tName, constraints=c)
+      t = p4.func.randomTree(taxNames=tName, constraints=c)
 
     The constraint tree should not have a bifurcating root.
 
-    You can pass a Constraints object to func.randomTree() and
+    You can pass a Constraints object to p4.func.randomTree() and
     Mcmc() to enforce constraints.
 
     """
@@ -40,7 +41,7 @@ class Constraints(object):
         self.tree = constraintTree
         self.tree.taxNames = taxNames
         self.tree.reRoot(self.tree.taxNames[0], moveInternalName=False)
-        self.allOnes = 2L ** (self.tree.nTax) - 1
+        self.allOnes = 2 ** (self.tree.nTax) - 1
 
         self.tree.makeSplitKeys()
         self.constraints = []
@@ -52,11 +53,11 @@ class Constraints(object):
         assert self.constraints, "No constraints?"
 
     def dump(self):
-        print 'Constraints.dump()'
-        print 'taxNames:'
+        print('Constraints.dump()')
+        print('taxNames:')
         for i in range(self.tree.nTax):
-            print '    %3i  %s' % (i, self.tree.taxNames[i])
-        print 'constraints:'
+            print('    %3i  %s' % (i, self.tree.taxNames[i]))
+        print('constraints:')
         for i in self.constraints:
-            print func.getSplitStringFromKey(i, self.tree.nTax)
+            print(p4.func.getSplitStringFromKey(i, self.tree.nTax))
         self.tree.draw()
