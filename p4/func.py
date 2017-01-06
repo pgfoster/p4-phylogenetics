@@ -808,9 +808,9 @@ def _tryToReadPhylipFile(fName, flob, firstLine):
 
     # We need to import nextTok.
     if var.nexus_doFastNextTok:
-        from nexustoken2 import nextTok
+        from p4.nexustoken2 import nextTok
     else:
-        from nexustoken import nextTok
+        from p4.nexustoken import nextTok
 
     while 1:
         savedPosition = flob.tell()
@@ -963,7 +963,7 @@ def splash():
     """Print a splash screen for p4."""
     print('')
 
-    from version import versionString, dateString
+    from p4.version import versionString, dateString
     print("p4 v %s, %s" % (versionString, dateString))
     print("""
 usage:
@@ -1851,7 +1851,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
     """
 
     gm = ["maskFromNexusCharacterList()"]
-    from alignment import cListPat, cList2Pat, cListAllPat
+    from p4.alignment import cListPat, cList2Pat, cListAllPat
     #cListPat = re.compile('(\d+)-?(.+)?')
     #cList2Pat = re.compile('(.+)\\\\(\d+)')
     #cListAllPat = re.compile('all\\\\?(\d+)?')
@@ -2372,7 +2372,7 @@ to be done as root, or using sudo.""")
     if not weAreInteractive:
         return
     try:
-        import installation
+        import p4.installation
     except ImportError:
         raise P4Error("Unable to import the p4.installation module.")
     print("""

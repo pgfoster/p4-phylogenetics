@@ -748,7 +748,7 @@ if True:
         """
 
         gm = ['Alignment.bluntEndLigate()']
-        from alignment import Alignment
+        from p4.alignment import Alignment
         if not isinstance(alig, Alignment):
             gm.append("Arg must be an Alignment instance")
             raise P4Error(gm)
@@ -810,6 +810,7 @@ if True:
         """
 
         gm = ['Alignment.concatenate()']
+        from p4.alignment import Alignment
         if not isinstance(alig, Alignment):
             gm.append("Arg must be an Alignment instance")
             raise P4Error(gm)
@@ -1291,7 +1292,7 @@ if True:
     def recodeProteinIntoGroups(self, groups, firstLetter=False):
         """Recode protein data into user-specified groups, in place.
 
-        A generalization of :meth:`Alignment.Alignment.recodeDayhoff`
+        A generalization of :meth:`p4.alignment.Alignment.recodeDayhoff`
 
         The arg *groups* should be a list of strings indicating the
         groupings, with all AAs present.  Case does not matter.
@@ -1538,9 +1539,9 @@ if True:
 
             and now 6, 10, 11, 12, 13, 14, 21.
 
-        (These are found in :class:`GeneticCode.GeneticCode`)
+        (These are found in :class:`p4.geneticcode.GeneticCode`)
 
-        See also :meth:`Alignment.Alignment.checkTranslation`.
+        See also :meth:`p4.alignment.Alignment.checkTranslation`.
 
         If the arg *checkStarts* is turned on (by default it is not turned
         on) then this method checks whether the first codon is a start
@@ -1738,7 +1739,7 @@ if True:
                           (protSeq.name, dnaSeq.name))
                 raise P4Error(gm)
 
-        from alignment import Alignment
+        from p4.alignment import Alignment
         a = Alignment()
         a.dataType = 'dna'
         a.symbols = 'acgt'

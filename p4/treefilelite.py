@@ -1,7 +1,7 @@
 from __future__ import print_function
 from p4.p4exceptions import P4Error
-from tree import Tree
-import nexus
+from p4.tree import Tree
+from p4.nexus import Nexus
 from p4.var import var
 import sys
 
@@ -36,7 +36,7 @@ class TreeFileLite(object):
     To decrease bloat, it is not loaded by default when you start up
     p4.  To access it, you need to do::
 
-      from p4.TreeFileLite import TreeFileLite
+      from p4.treefilelite import TreeFileLite
 
     The only method is getTree(), although you can get the tLines if
     you want.
@@ -180,7 +180,7 @@ class TreeFileLite(object):
                 aLine = fLines[lNum].strip()
             translateLines.append(aLine)
             translateFlob = io.BytesIO(' '.join(translateLines))
-            nx = nexus.Nexus()
+            nx = Nexus()
             self.translationHash = nx.readTranslateCommand(translateFlob)
             # print self.translationHash
         var.nexus_doFastNextTok = savedDoFastNextTok

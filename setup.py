@@ -11,9 +11,7 @@ from distutils.command.install_scripts import install_scripts
 import sys,os,shutil
 try:
     from past.builtins import execfile
-except ModuleNotFoundError:
-    raise ModuleNotFoundError("You will want to install the future module, probably via 'pip install future'")
-except ImportError:
+except:
     raise ImportError("You will want to install the future module, probably via 'pip install future'")
     
 loc = {}
