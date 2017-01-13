@@ -1136,7 +1136,7 @@ class STChain(object):
             self.logPriorRatio = 0.0
         elif theProposal.name == 'spaQ_uniform':
             mt = self.propTree.spaQ
-            #originally = mt
+            originally = mt
             # Slider proposal
             mt += (random.random() - 0.5) * theProposal.tuning
 
@@ -1153,7 +1153,13 @@ class STChain(object):
                     isGood = True
             self.propTree.spaQ = mt
             self.logProposalRatio = 0.0
-            self.logPriorRatio = 0.0
+            if self.stMcmc.tunings.spaQPriorType == 'flat':
+                self.logPriorRatio = 0.0
+            elif self.stMcmc.tunings.spaQPriorType == 'exponential':
+                self.logPriorRatio = self.stMcmc.tunings.spaQExpPriorLambda * \
+                    (originally - mt)
+            else:
+                raise P4Error("this should not happen! wxyzz")
             # print "proposing mt from %.3f to %.3f, diff=%g" % (originally,
             # mt, mt-originally)
 
@@ -1292,12 +1298,17 @@ class STMcmcTunings(object):
         object.__setattr__(self, 'spaQ_uniform', 0.1)
         object.__setattr__(self, 'doPolytomyResolutionClassPrior', False)
         object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
+        object.__setattr__(self, 'spaQPriorType', 'flat')
+        object.__setattr__(self, 'spaQExpPriorLambda', 100.0)
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
         if item in self.__dict__.keys():
             # Here is where I should do the sanity checking of the new vals.  Some day.
             # print "    Setting tuning '%s' to %s" % (item, val)
+            if item == 'spaQPriorType':
+                validVals = ['flat', 'exponential']
+                assert val in validVals, "set spaQPriorType to one of %s" % validVals
             object.__setattr__(self, item, val)
         else:
             print(self.dump())
@@ -1313,6 +1324,10 @@ class STMcmcTunings(object):
         lst.append("%s%20s: %s" % (spacer, 'spr', self.spr))
         lst.append("%s%20s: %s" % (spacer, 'SR2008beta_uniform', self.SR2008beta_uniform))
         lst.append("%s%20s: %s" % (spacer, 'spaQ_uniform', self.spaQ_uniform))
+        lst.append("%s%20s: %s" % (spacer, 'doPolytomyResolutionClassPrior', self.doPolytomyResolutionClassPrior))
+        lst.append("%s%20s: %s" % (spacer, 'polytomyPriorLogBigC', self.polytomyPriorLogBigC))
+        lst.append("%s%20s: %s" % (spacer, 'spaQPriorType', self.spaQPriorType))
+        lst.append("%s%20s: %s" % (spacer, 'spaQExpPriorLambda', self.spaQExpPriorLambda))
         return string.join(lst, '\n')
 
     def dump(self):
@@ -1370,9 +1385,9 @@ class STMcmcProposalProbs(dict):
 
     def reprString(self):
         stuff = [
-            "\nUser-settable relative proposal probabilities, from yourMcmc.prob"]
+            "\nUser-settable relative proposal probabilities, from yourStMcmc.prob"]
         stuff.append("  To change it, do eg ")
-        stuff.append("    yourMcmc.prob.comp = 0.0 # turns comp proposals off")
+        stuff.append("    yourSTMcmc.prob.spaQ_uniform = 0.0 # turns spaQ_uniform proposals off")
         stuff.append("  Current settings:")
         theKeys = self.__dict__.keys()
         theKeys.sort()
