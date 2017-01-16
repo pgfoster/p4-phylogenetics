@@ -237,3 +237,7 @@ struct p4_drawAncStStruct {
     int invarChNum;
 };
 
+#if PY_MAJOR_VERSION >= 3
+    #define PyInt_FromLong PyLong_FromLong
+#endif
+

@@ -1,25 +1,23 @@
+from __future__ import print_function
 import sys
 import string
 import types
-import cStringIO
 import math
 import copy
 import os
-import func
+import p4.func
 import time
 import glob
-from var import var
-from p4exceptions import P4Error
-from node import Node, NodePart, NodeBranchPart
-import nexustoken
-from distancematrix import DistanceMatrix
+from p4.var import var
+from p4.p4exceptions import P4Error
+from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
+from p4.distancematrix import DistanceMatrix
 
 import numpy
-import pf
-from model import Model
-from data import Data
-from alignment import Part
-from node import NodeBranch, NodePart, NodeBranchPart
+import p4.pf as pf
+from p4.model import Model
+from p4.data import Data
+from p4.alignment import Part
 import random
 
 
@@ -75,12 +73,12 @@ if True:
         gm = ['Tree.rotateAround()']
         rotateNode = self.node(specifier)
         if rotateNode.isLeaf:
-            print gm[0]
-            print "    The rotateNode is a terminal node.  Not doing anything ..."
+            print(gm[0])
+            print("    The rotateNode is a terminal node.  Not doing anything ...")
             return
         if rotateNode.getNChildren() == 1:
-            print gm[0]
-            print "    The rotateNode has only one child.  Not doing anything..."
+            print(gm[0])
+            print("    The rotateNode has only one child.  Not doing anything...")
             return
 
         # set up to unattach the rightmost child, and reattach at the left
@@ -210,8 +208,8 @@ if True:
             if self.root.name and not self.root.isLeaf:
                 if stompRootName:
                     if stompRootName != 2:
-                        print "Notice.  Tree.reRoot(stompRootName) is set, so the root name '%s' is being zapped..." % self.root.name
-                        print "(Set stompRootName=2 to do this silently ...)"
+                        print("Notice.  Tree.reRoot(stompRootName) is set, so the root name '%s' is being zapped..." % self.root.name)
+                        print("(Set stompRootName=2 to do this silently ...)")
                     self.root.name = None
                 else:
                     gm.append(
@@ -240,9 +238,9 @@ if True:
             path.append(theParent)
             theParent = theParent.parent
         if 0:
-            print "path from the newRoot to the oldRoot:"
+            print("path from the newRoot to the oldRoot:")
             for i in path:
-                print "   %i" % i.nodeNum
+                print("   %i" % i.nodeNum)
 
         while len(path):
             # We reverse the path above.  Its last entry is a child of the old root.
@@ -307,12 +305,12 @@ if True:
 
             # The splitKey is still good, but the rawSplitKey needs updating.
             if fixRawSplitKeys and oldRoot.br.rawSplitKey:
-                oldRoot.br.rawSplitKey = 0L
+                oldRoot.br.rawSplitKey = 0
                 if oldRoot.leftChild:
                     for n in oldRoot.iterChildren():
                         oldRoot.br.rawSplitKey += n.br.rawSplitKey
                 else:
-                    oldRoot.br.rawSplitKey = 1L << self.taxNames.index(
+                    oldRoot.br.rawSplitKey = 1 << self.taxNames.index(
                         oldRoot.name)  # "<<" is left-shift
 
         self.preAndPostOrderAreValid = 0
@@ -513,11 +511,11 @@ if True:
 
         rNode = self.node(specifier)
         if rNode == self.root:
-            print gm[0]
-            print "    The specified node appears to be the root."
-            print "    Removing everything above the root would leave nothing."
-            print "    I assume that you do not want to do that."
-            print "    So I'm not doing that."
+            print(gm[0])
+            print("    The specified node appears to be the root.")
+            print("    Removing everything above the root would leave nothing.")
+            print("    I assume that you do not want to do that.")
+            print("    So I'm not doing that.")
             # self.draw()
             # print "the specifier was %s" % specifier
             # print "the specified node was node number %i" % rNode.nodeNum
@@ -1070,14 +1068,14 @@ if True:
                 oldLeftSib = None
             if 0:
                 if oldLeftSib:
-                    print "oldLeftSib = %i" % oldLeftSib.nodeNum
+                    print("oldLeftSib = %i" % oldLeftSib.nodeNum)
                 else:
-                    print "oldLeftSib = None"
-                print "lChildSib = %i" % lChildSib.nodeNum
+                    print("oldLeftSib = None")
+                print("lChildSib = %i" % lChildSib.nodeNum)
                 if oldLChildSibSib:
-                    print "oldLChildSibSib = %i" % oldLChildSibSib.nodeNum
+                    print("oldLChildSibSib = %i" % oldLChildSibSib.nodeNum)
                 else:
-                    print "oldLChildSibSib = None"
+                    print("oldLChildSibSib = None")
 
             if oldLeftSib:
                 oldLeftSib.sibling = n
@@ -1282,21 +1280,21 @@ if True:
         f.close()
 
         if 0:
-            print "Finished getting split strings, and supports"
-            print "Got %i items in the hash" % len(theHash)
-            print "accumulatedKeyLength = %i" % accumulatedKeyLength
-            print "nKeys = %i" % nKeys
+            print("Finished getting split strings, and supports")
+            print("Got %i items in the hash" % len(theHash))
+            print("accumulatedKeyLength = %i" % accumulatedKeyLength)
+            print("nKeys = %i" % nKeys)
             # self.draw()
 
         # I will need to make splitStrings (in dot-star notation) from
         # splitKeys.  To do that, I can use the
-        # func.getSplitStringFromKey(theKey, nTax) function.
+        # p4.func.getSplitStringFromKey(theKey, nTax) function.
 
         self.makeSplitKeys()
         for n in self.nodes:
             if n != self.root:
                 if not n.isLeaf:
-                    theNodeSplitString = func.getSplitStringFromKey(
+                    theNodeSplitString = p4.func.getSplitStringFromKey(
                         n.br.splitKey, self.nTax)
                     if theHash.has_key(theNodeSplitString):
                         if hasattr(n.br, 'support') and n.br.support is not None:
@@ -1360,7 +1358,7 @@ if True:
                 d[newName] = oldName
                 self.root.name = newName
 
-        f = file(dictFName, 'w')
+        f = open(dictFName, 'w')
         f.write("p4_renameForPhylip_originalNames = %s\np4_renameForPhylip_dict = %s\n" % (
             originalNames, d))
         f.close()
@@ -1586,7 +1584,7 @@ if True:
 
         dupeNode = self.node(dupeNodeSpecifier)
         if dupeNode == self.root and not up:
-            print "The dupeNode is self.root, and you want a subtree below that?!?"
+            print("The dupeNode is self.root, and you want a subtree below that?!?")
             sys.exit()
         from tree import Tree
         st = Tree()
@@ -1654,7 +1652,7 @@ if True:
                         if hasattr(selfNode.br, 'support'):
                             n.br.support = selfNode.br.support
                         else:
-                            print "Warning: dupeSubTree() doSupport is turned on, but node %i has no support." % selfNode.nodeNum
+                            print("Warning: dupeSubTree() doSupport is turned on, but node %i has no support." % selfNode.nodeNum)
                 n.nodeNum = i
                 nodeNumDict[selfNode.nodeNum] = i
                 n.isLeaf = selfNode.isLeaf
@@ -1994,11 +1992,11 @@ if True:
         inSelfNodesButNotInTree = list(selfNodesSet.difference(treeSet))
         if verbose:
             if inSelfNodesButNotInTree:
-                print "These nodes are in self.nodes, but not part of the tree."
+                print("These nodes are in self.nodes, but not part of the tree.")
                 for n in inSelfNodesButNotInTree:
-                    print n.nodeNum
+                    print(n.nodeNum)
             else:
-                print "All nodes in self.nodes are also in the tree."
+                print("All nodes in self.nodes are also in the tree.")
         if inSelfNodesButNotInTree and andRemoveThem:
             for n in inSelfNodesButNotInTree:
                 self.nodes.remove(n)
@@ -2182,7 +2180,7 @@ if True:
 
         # To look at the pruned tree, before grafting ...
         if 0:
-            print "removal of subtree at %i-%i gives .." % (pnNodeParnt.nodeNum, pnNode.nodeNum)
+            print("removal of subtree at %i-%i gives .." % (pnNodeParnt.nodeNum, pnNode.nodeNum))
             self._nTax = 0
             self.preAndPostOrderAreValid = 0
             # This won't work unless preAndPostOrderAreValid set to 0
@@ -2227,7 +2225,7 @@ if True:
 
         # To look at the tree after grafting ...
         if 0:
-            print "grafting the subtree at grNode %i gives ..." % grNode.nodeNum
+            print("grafting the subtree at grNode %i gives ..." % grNode.nodeNum)
             self._nTax = 0
             self.preAndPostOrderAreValid = 0
             # This won't work unless preAndPostOrderAreValid set to 0
@@ -2281,8 +2279,8 @@ if True:
                          pNode is not n2]
         if 0:
             self.draw()
-            print "above=%s, pNode %i, " % (myAbove, pNode.nodeNum), subtreeNodeNums
-            print possibles
+            print("above=%s, pNode %i, " % (myAbove, pNode.nodeNum), subtreeNodeNums)
+            print(possibles)
             sys.exit()
 
         safety = 0
@@ -2304,7 +2302,7 @@ if True:
                 continue
             break
         if safety >= giveUp:
-            print "pNode is %i, above=%s" % (pNode.nodeNum, myAbove)
+            print("pNode is %i, above=%s" % (pNode.nodeNum, myAbove))
             self.draw()
             raise P4Error
         # print "spr()  pruneNum %i, above=%s, graftNum %i" % (pNode.nodeNum,

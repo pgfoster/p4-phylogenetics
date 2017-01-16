@@ -1,24 +1,23 @@
+from __future__ import print_function
 import sys
 import string
 import types
-import cStringIO
 import math
 import copy
 import os
-import func
+import p4.func
 import time
 import glob
-from var import var
-from p4exceptions import P4Error
-from node import Node, NodeBranch, NodePart, NodeBranchPart
-import nexustoken
-from distancematrix import DistanceMatrix
+from p4.var import var
+from p4.p4exceptions import P4Error
+from p4.node import Node, NodeBranch, NodePart, NodeBranchPart
+from p4.distancematrix import DistanceMatrix
 
 import numpy
-import pf
-from model import Model
-from data import Data
-from alignment import Part
+import p4.pf as pf
+from p4.model import Model
+from p4.data import Data
+from p4.alignment import Part
 import random
 
 if True:
@@ -231,7 +230,7 @@ if True:
         # second arg is getSiteLikes
         self.logLike = pf.p4_treeLogLike(self.cTree, 0)
         if verbose:
-            print "Tree.calcLogLike(). %f" % self.logLike
+            print("Tree.calcLogLike(). %f" % self.logLike)
 
     def optLogLike(self, verbose=1, newtAndBrentPowell=1, allBrentPowell=0):
         """Calculate the likelihood of the tree, with optimization.
@@ -277,9 +276,9 @@ if True:
         self.model.restoreFreePrams(prams)
 
         if verbose:
-            print "optLogLike = %f" % self.logLike
+            print("optLogLike = %f" % self.logLike)
             theEndTime = time.clock()
-            print "cpu time %s seconds." % (theEndTime - theStartTime)
+            print("cpu time %s seconds." % (theEndTime - theStartTime))
 
     def optTest(self):
         self._commonCStuff()
@@ -304,7 +303,7 @@ if True:
                 prams = pf.p4_getFreePrams(self.cTree)
                 self.model.restoreFreePrams(prams)
 
-        print "time %s seconds." % (time.clock() - theStartTime)
+        print("time %s seconds." % (time.clock() - theStartTime))
 
     def simulate(self, calculatePatterns=True, resetSequences=True, resetNexusSetsConstantMask=True, refTree=None):
         """Simulate into the attached data.
@@ -316,7 +315,7 @@ if True:
         series of random numbers over and over, unless you tell it
         otherwise.  That means that (unless you tell it otherwise) it will
         generate the same simulated data if you run it twice.  To reset
-        the randomizer, you can use func.reseedCRandomizer(), eg
+        the randomizer, you can use p4.func.reseedCRandomizer(), eg
 
         func.reseedCRandomizer(os.getpid())
 
@@ -482,7 +481,7 @@ if True:
                         self.model.parts[partNum].nGammaCat, numpy.int32)
                     for charNum in range(p.nChar):
                         counts[winningGammaCats[charNum]] += 1
-                    print counts
+                    print(counts)
 
             else:
                 raise P4Error("This should not happen.")

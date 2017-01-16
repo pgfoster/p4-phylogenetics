@@ -1,10 +1,11 @@
+from __future__ import print_function
 import os
-import func
-import cPickle
+import p4.func
+import pickle
 import math
 import numpy
 import glob
-from p4exceptions import P4Error
+from p4.p4exceptions import P4Error
 
 
 class McmcCheckPointReader(object):
@@ -75,38 +76,38 @@ class McmcCheckPointReader(object):
                         if mtime > mostRecent:
                             mostRecent = mtime
                             mostRecentFileName = fName
-                f = file(mostRecentFileName)
-                m = cPickle.load(f)
+                f = open(mostRecentFileName, 'rb')
+                m = pickle.load(f)
                 f.close()
                 self.mm.append(m)
 
             else:
                 # get all the files
                 for fName in fList:
-                    f = file(fName)
-                    m = cPickle.load(f)
+                    f = open(fName, 'rb')
+                    m = pickle.load(f)
                     f.close()
                     self.mm.append(m)
 
-                self.mm = func.sortListOfObjectsOn2Attributes(
+                self.mm = p4.func.sortListOfObjectsOn2Attributes(
                     self.mm, "gen", 'runNum')
         else:
             # get the file by name
-            f = file(fName)
-            m = cPickle.load(f)
+            f = open(fName, 'rb')
+            m = pickle.load(f)
             f.close()
             self.mm.append(m)
         if verbose:
             self.dump()
 
     def dump(self):
-        print "McmcCheckPoints (%i checkPoints read)" % len(self.mm)
-        print "%12s %12s %12s %12s" % (" ", "index", "run", "gen+1")
-        print "%12s %12s %12s %12s" % (" ", "-----", "---", "-----")
+        print("McmcCheckPoints (%i checkPoints read)" % len(self.mm))
+        print("%12s %12s %12s %12s" % (" ", "index", "run", "gen+1"))
+        print("%12s %12s %12s %12s" % (" ", "-----", "---", "-----"))
         for i in range(len(self.mm)):
             m = self.mm[i]
             # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
-            print "%12s %12s %12s %12s" % (" ", i, m.runNum, m.gen + 1)
+            print("%12s %12s %12s %12s" % (" ", i, m.runNum, m.gen + 1))
 
     def compareSplits(self, mNum1, mNum2, verbose=True, minimumProportion=0.1):
         """Should we be only looking at splits within the 95% ci of the topologies?"""
@@ -116,30 +117,30 @@ class McmcCheckPointReader(object):
         tp2 = m2.treePartitions
 
         if verbose:
-            print "\nMcmcCheckPointReader.compareSplits(%i,%i)" % (mNum1, mNum2)
-            print "%12s %12s %12s %12s %12s" % ("mNum", "runNum", "start", "gen+1", "nTrees")
+            print("\nMcmcCheckPointReader.compareSplits(%i,%i)" % (mNum1, mNum2))
+            print("%12s %12s %12s %12s %12s" % ("mNum", "runNum", "start", "gen+1", "nTrees"))
             for i in range(5):
-                print "   ---------",
-            print
+                print("   ---------", end=' ')
+            print()
             for mNum in [mNum1, mNum2]:
-                print " %10i " % mNum,
+                print(" %10i " % mNum, end=' ')
                 m = self.mm[mNum]
-                print " %10i " % m.runNum,
-                print " %10i " % (m.startMinusOne + 1),
-                print " %10i " % (m.gen + 1),
+                print(" %10i " % m.runNum, end=' ')
+                print(" %10i " % (m.startMinusOne + 1), end=' ')
+                print(" %10i " % (m.gen + 1), end=' ')
                 # for i in m.splitCompares:
                 #    print i
-                print " %10i " % m.treePartitions.nTrees
+                print(" %10i " % m.treePartitions.nTrees)
 
         asdos = self.compareSplitsBetweenTwoTreePartitions(
             tp1, tp2, minimumProportion, verbose=verbose)
         asdos2 = self.compareSplitsBetweenTwoTreePartitions(
             tp2, tp1, minimumProportion, verbose=verbose)
         if math.fabs(asdos - asdos2) > 0.000001:
-            print "Reciprocal assdos differs:  %s  %s" % (asdos, asdos2)
+            print("Reciprocal assdos differs:  %s  %s" % (asdos, asdos2))
 
         if asdos == None and verbose:
-            print "No splits > %s" % minimumProportion
+            print("No splits > %s" % minimumProportion)
         return asdos
 
     def compareSplitsBetweenTwoTreePartitions(tp1, tp2, minimumProportion, verbose=False):
@@ -151,15 +152,15 @@ class McmcCheckPointReader(object):
             diffs = []
             for i in ret:
                 # print "            %.3f  %.3f    " % (i[2][0], i[2][1]),
-                stdDev = math.sqrt(func.variance(i[2]))
+                stdDev = math.sqrt(p4.func.variance(i[2]))
                 # print "%.5f" % stdDev
                 sumOfStdDevs += stdDev
                 diffs.append(math.fabs(i[2][0] - i[2][1]))
             quot = sumOfStdDevs / nSplits
             if verbose:
                 # print "  %f " % sumOfStdDevs,
-                print "     nSplits=%i, average of std devs of splits %.4f " % (nSplits, quot)
-                print "     max difference %f, mean difference %f" % (max(diffs), sum(diffs) / nSplits)
+                print("     nSplits=%i, average of std devs of splits %.4f " % (nSplits, quot))
+                print("     max difference %f, mean difference %f" % (max(diffs), sum(diffs) / nSplits))
             return quot
         else:
             return None
@@ -184,22 +185,22 @@ class McmcCheckPointReader(object):
                 vect[vCounter] = ret
                 vCounter += 1
                 if 0:
-                    print " %10i " % mNum1,
-                    print " %10i " % mNum2,
-                    print "%.3f" % ret
+                    print(" %10i " % mNum1, end=' ')
+                    print(" %10i " % mNum2, end=' ')
+                    print("%.3f" % ret)
 
         # Save current numpy printoptions, and restore, below.
         curr = numpy.get_printoptions()
         numpy.set_printoptions(precision=precision, linewidth=linewidth)
-        print results
+        print(results)
         numpy.set_printoptions(
             precision=curr['precision'], linewidth=curr['linewidth'])
 
-        print "For the %i values in one triangle," % nItems
-        print "max =  ", vect.max()
-        print "min =  ", vect.min()
-        print "mean = ", vect.mean()
-        print "var =  ", vect.var()
+        print("For the %i values in one triangle," % nItems)
+        print("max =  ", vect.max())
+        print("min =  ", vect.min())
+        print("mean = ", vect.mean())
+        print("var =  ", vect.var())
 
     def writeProposalAcceptances(self):
         for m in self.mm:

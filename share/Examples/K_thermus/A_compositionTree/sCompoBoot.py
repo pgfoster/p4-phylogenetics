@@ -1,7 +1,8 @@
+from __future__ import print_function
 read('../noTRuberNoGapsNoAmbiguities.nex')
 a=var.alignments[0]
 tList = []
-print "Doing bootstrap ..."
+print("Doing bootstrap ...")
 for i in range(200):
     b = a.bootstrap()
     dm = b.compositionEuclideanDistanceMatrix()

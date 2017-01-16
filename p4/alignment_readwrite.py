@@ -1,24 +1,25 @@
-from sequencelist import SequenceList, Sequence
-from nexussets import NexusSets
-from p4exceptions import P4Error
+from __future__ import print_function
+from p4.sequencelist import SequenceList, Sequence
+from p4.nexussets import NexusSets
+from p4.p4exceptions import P4Error
 import string
 import copy
 import os
 import math
 import string
-import func
+import p4.func
 import re
 import sys
 import array
 import types
-from nexussets import CharSet
+from p4.nexussets import CharSet
 import subprocess
-from distancematrix import DistanceMatrix
-from var import var
-from part import Part
+from p4.distancematrix import DistanceMatrix
+from p4.var import var
+from p4.part import Part
 import numpy
 import numpy.linalg
-import pf
+import p4.pf as pf
 
 cListPat = re.compile('(\d+)-?(.+)?')
 cList2Pat = re.compile('(.+)\\\\(\d+)')
@@ -36,12 +37,12 @@ if True:
         dbug = False
 
         if dbug:
-            print "\nreadOpenPhylipFile here"
+            print("\nreadOpenPhylipFile here")
             if hasattr(flob, 'name'):
-                print "    fileName is %s" % flob.name
-            print "    nTax is", nTax
-            print "    nChar is", nChar
-            print "    var.phylipDataMaxNameLength is", var.phylipDataMaxNameLength
+                print("    fileName is %s" % flob.name)
+            print("    nTax is", nTax)
+            print("    nChar is", nChar)
+            print("    var.phylipDataMaxNameLength is", var.phylipDataMaxNameLength)
 
         # It is difficult to tell whether it is sequential or interleaved.
         # For example, is the following alignment sequential or interleaved?
@@ -200,7 +201,7 @@ if True:
             isSequential = True
 
         if dbug:
-            print "    moduloRemainderIsZero is %s" % moduloRemainderIsZero
+            print("    moduloRemainderIsZero is %s" % moduloRemainderIsZero)
 
         if isSequential == None:
             # Look at the first line of stuff, after the numbers.
@@ -209,8 +210,8 @@ if True:
             firstLine = theLines[0]
             if len(firstLine) <= (var.phylipDataMaxNameLength):
                 if dbug:
-                    print "Got the name %s by virtue of it being a short name on the first data line." % firstLine
-                    print "Setting 'isSequential' to True, based on that."
+                    print("Got the name %s by virtue of it being a short name on the first data line." % firstLine)
+                    print("Setting 'isSequential' to True, based on that.")
                 isSequential = True
             elif not firstLine.count(' '):
                 isSequential = True
@@ -231,15 +232,15 @@ if True:
         while not gotIt:
             if dbug:
                 if hasattr(flob, 'name'):
-                    print "  fileName is %s" % flob.name
-                print "  isSequential is %s" % isSequential
-                print "  whitespaceSeparatesNames is %s" % whitespaceSeparatesNames
-                print "  haveTriedSequential = %s" % haveTriedSequential
-                print "  haveTriedSequential_strict = %s" % haveTriedSequential_strict
-                print "  seqentialResult is %s" % sequentialResult
-                print "  haveTriedInterleaved is %s" % haveTriedInterleaved
-                print "  haveTriedInterleaved_strict is %s" % haveTriedInterleaved_strict
-                print "  interleavedResult is %s" % interleavedResult
+                    print("  fileName is %s" % flob.name)
+                print("  isSequential is %s" % isSequential)
+                print("  whitespaceSeparatesNames is %s" % whitespaceSeparatesNames)
+                print("  haveTriedSequential = %s" % haveTriedSequential)
+                print("  haveTriedSequential_strict = %s" % haveTriedSequential_strict)
+                print("  seqentialResult is %s" % sequentialResult)
+                print("  haveTriedInterleaved is %s" % haveTriedInterleaved)
+                print("  haveTriedInterleaved_strict is %s" % haveTriedInterleaved_strict)
+                print("  interleavedResult is %s" % interleavedResult)
 
             if 0:
                 if len(theLines) >= 5:
@@ -247,7 +248,7 @@ if True:
                 else:
                     theRange = range(len(theLines))
                 for lineNum in theRange:
-                    print theLines[lineNum]
+                    print(theLines[lineNum])
 
             if whitespaceSeparatesNames:
                 if isSequential and not haveTriedSequential:
@@ -342,7 +343,7 @@ if True:
         for s in self.sequences:
             ret = None
             # returns 1,2 or 0, respectively
-            ret = func.isDnaRnaOrProtein(s.sequence)
+            ret = p4.func.isDnaRnaOrProtein(s.sequence)
             if ret == 1:
                 s.dataType = 'dna'
                 s.symbols = 'acgt'
@@ -360,13 +361,13 @@ if True:
                     j = 0
                     while j < nChar:
                         if s.sequence[j] not in var.validDnaChars:
-                            print "Got bad character '%s' in (zero-based) dna sequence %s " % \
-                                (s.sequence[j], self.sequences.index(s))
-                            print "          sequence name: %s" % s.name
-                            print "          at (zero-based) position %s" % j
+                            print("Got bad character '%s' in (zero-based) dna sequence %s " % \
+                                (s.sequence[j], self.sequences.index(s)))
+                            print("          sequence name: %s" % s.name)
+                            print("          at (zero-based) position %s" % j)
                             bads = bads + 1
                             if bads > 10:
-                                print "...and possibly others"
+                                print("...and possibly others")
                                 break
                         j = j + 1
                     if bads > 10:
@@ -379,13 +380,13 @@ if True:
                     j = 0
                     while j < nChar:
                         if s.sequence[j] not in var.validProteinChars:
-                            print "Got bad character '%s' in (zero-based) protein sequence %s " % \
-                                (s.sequence[j], self.sequences.index(s))
-                            print "          sequence name: %s" % s.name
-                            print "          at (zero-based) position %s" % j
+                            print("Got bad character '%s' in (zero-based) protein sequence %s " % \
+                                (s.sequence[j], self.sequences.index(s)))
+                            print("          sequence name: %s" % s.name)
+                            print("          at (zero-based) position %s" % j)
                             bads = bads + 1
                             if bads > 10:
-                                print "...and possibly others"
+                                print("...and possibly others")
                                 break
                         j = j + 1
                     if bads > 10:
@@ -402,8 +403,8 @@ if True:
     def _readPhylipSequential(self, nTax, nChar, theLines):
 
         if var.verboseRead:
-            print "Attempting to read the phylip file assuming"
-            print "  sequential format, and that whitespaceSeparatesNames"
+            print("Attempting to read the phylip file assuming")
+            print("  sequential format, and that whitespaceSeparatesNames")
 
         lineNum = 0
 
@@ -416,7 +417,7 @@ if True:
             theName = splitLine[0]
             if len(splitLine) > 1:
                 for aBit in splitLine[1:]:
-                    bBit = func.stringZapWhitespaceAndDigits(aBit)
+                    bBit = p4.func.stringZapWhitespaceAndDigits(aBit)
                     theSequenceBits.append(bBit)
                     seqLenSoFar += len(bBit)
             while seqLenSoFar < nChar:
@@ -425,17 +426,17 @@ if True:
                     lineNum += 1
                 except IndexError:
                     if var.verboseRead:
-                        print "    Early termination"
+                        print("    Early termination")
                     return False
                 theSequenceBits.append(
-                    func.stringZapWhitespaceAndDigits(aLine))
+                    p4.func.stringZapWhitespaceAndDigits(aLine))
                 seqLenSoFar += len(theSequenceBits[-1])
 
             if seqLenSoFar != nChar:
                 if var.verboseRead:
-                    print "    Did not get exactly nChar."
-                    print "    Expected: ", seqLenSoFar
-                    print "    Got: ", nChar
+                    print("    Did not get exactly nChar.")
+                    print("    Expected: ", seqLenSoFar)
+                    print("    Got: ", nChar)
                 return False
 
             s = Sequence()
@@ -446,7 +447,7 @@ if True:
 
         if len(self.sequences) != nTax:
             if var.verboseRead:
-                print "    Did not get correct nTax."
+                print("    Did not get correct nTax.")
             return False
 
         isBad = False
@@ -456,18 +457,18 @@ if True:
                 break
         if isBad:
             if var.verboseRead:
-                print "    At least one sequence has the wrong nChar."
+                print("    At least one sequence has the wrong nChar.")
             return False
 
         if var.verboseRead:
-            print "    Got a candidate alignment."
+            print("    Got a candidate alignment.")
         return True
 
     def _readPhylipInterleaved(self, nTax, nChar, theLines):
 
         if var.verboseRead:
-            print "Attempting to read the phylip file assuming"
-            print "  interleaved format, and that whitespaceSeparatesNames"
+            print("Attempting to read the phylip file assuming")
+            print("  interleaved format, and that whitespaceSeparatesNames")
 
         lineNum = 0
         for i in range(nTax):
@@ -480,14 +481,14 @@ if True:
             s.seqLenSoFar = 0
             if len(splitLine) > 1:
                 for aBit in splitLine[1:]:
-                    bBit = func.stringZapWhitespaceAndDigits(aBit)
+                    bBit = p4.func.stringZapWhitespaceAndDigits(aBit)
                     s.theSequenceBits.append(bBit)
                     s.seqLenSoFar += len(bBit)
             # print "%15s %s" % (s.name, bBit)
             self.sequences.append(s)
         if len(self.sequences) != nTax:
             if var.verboseRead:
-                print "    Did not get exactly nTax sequences"
+                print("    Did not get exactly nTax sequences")
             return False
 
         # Subsequent cycles don't have names-- just sequence
@@ -500,7 +501,7 @@ if True:
             except IndexError:
                 break
             # print "aLine a: %s" % aLine
-            segment = func.stringZapWhitespaceAndDigits(aLine)
+            segment = p4.func.stringZapWhitespaceAndDigits(aLine)
             if len(segment):
                 self.sequences[seqNum].theSequenceBits.append(segment)
                 self.sequences[seqNum].seqLenSoFar += len(segment)
@@ -513,7 +514,7 @@ if True:
                     if self.sequences[seqNum].seqLenSoFar >= nChar:
                         isDone = True
             else:
-                print '_readPhylipInterleaved() bad line?: %s' % aLine
+                print('_readPhylipInterleaved() bad line?: %s' % aLine)
 
         for s in self.sequences:
             s.sequence = string.join(s.theSequenceBits, '')
@@ -523,7 +524,7 @@ if True:
 
         if len(self.sequences) != nTax:
             if var.verboseRead:
-                print "    Did not get correct nTax."
+                print("    Did not get correct nTax.")
             return False
 
         isBad = False
@@ -535,20 +536,20 @@ if True:
                 break
         if isBad:
             if var.verboseRead:
-                print "    At least one sequence has the wrong nChar."
-                print "    Expected: ", nChar
-                print "    Got: ", len(s.sequence)
+                print("    At least one sequence has the wrong nChar.")
+                print("    Expected: ", nChar)
+                print("    Got: ", len(s.sequence))
             return False
 
         if var.verboseRead:
-            print "    Got a candidate alignment."
+            print("    Got a candidate alignment.")
         return True
 
     def _readPhylipSequentialStrict(self, nTax, nChar, theLines):
 
         if var.verboseRead:
-            print "Attempting to read the phylip file assuming"
-            print "  sequential format, with strict phylip format"
+            print("Attempting to read the phylip file assuming")
+            print("  sequential format, with strict phylip format")
 
         lineNum = 0
 
@@ -558,7 +559,7 @@ if True:
             aLine = theLines[lineNum]
             lineNum += 1
             theName = aLine[:var.phylipDataMaxNameLength].strip()
-            aBit = func.stringZapWhitespaceAndDigits(
+            aBit = p4.func.stringZapWhitespaceAndDigits(
                 aLine[var.phylipDataMaxNameLength:])
             theSequenceBits.append(aBit)
             seqLenSoFar = len(aBit)
@@ -568,15 +569,15 @@ if True:
                     lineNum += 1
                 except IndexError:
                     if var.verboseRead:
-                        print "    Early termination"
+                        print("    Early termination")
                     return False
-                aBit = func.stringZapWhitespaceAndDigits(aLine)
+                aBit = p4.func.stringZapWhitespaceAndDigits(aLine)
                 theSequenceBits.append(aBit)
                 seqLenSoFar += len(aBit)
 
             if seqLenSoFar != nChar:
                 if var.verboseRead:
-                    print "    Did not get exactly nChar."
+                    print("    Did not get exactly nChar.")
                 return False
 
             s = Sequence()
@@ -587,7 +588,7 @@ if True:
 
         if len(self.sequences) != nTax:
             if var.verboseRead:
-                print "    Did not get correct nTax."
+                print("    Did not get correct nTax.")
             return False
 
         isBad = False
@@ -597,17 +598,17 @@ if True:
                 break
         if isBad:
             if var.verboseRead:
-                print "    At least one sequence has the wrong nChar."
+                print("    At least one sequence has the wrong nChar.")
             return False
 
         if var.verboseRead:
-            print "    Got a candidate alignment."
+            print("    Got a candidate alignment.")
         return True
 
     def _readPhylipInterleavedStrict(self, nTax, nChar, theLines):
         if var.verboseRead:
-            print "Attempting to read the phylip file assuming"
-            print "  interleaved format, with strict phylip format"
+            print("Attempting to read the phylip file assuming")
+            print("  interleaved format, with strict phylip format")
 
         lineNum = 0
         for i in range(nTax):
@@ -617,14 +618,14 @@ if True:
 
             s.name = aLine[:var.phylipDataMaxNameLength].strip()
             s.theSequenceBits = []
-            aBit = func.stringZapWhitespaceAndDigits(
+            aBit = p4.func.stringZapWhitespaceAndDigits(
                 aLine[var.phylipDataMaxNameLength:])
             s.theSequenceBits.append(aBit)
             s.seqLenSoFar = len(aBit)
             self.sequences.append(s)
         if len(self.sequences) != nTax:
             if var.verboseRead:
-                print "    Did not get exactly nTax sequences"
+                print("    Did not get exactly nTax sequences")
             return False
 
         # Subsequent cycles don't have names-- just sequence
@@ -637,7 +638,7 @@ if True:
             except IndexError:
                 break
             # print "aLine a: %s" % aLine
-            segment = func.stringZapWhitespaceAndDigits(aLine)
+            segment = p4.func.stringZapWhitespaceAndDigits(aLine)
             if len(segment):
                 self.sequences[seqNum].theSequenceBits.append(segment)
                 self.sequences[seqNum].seqLenSoFar += len(segment)
@@ -648,7 +649,7 @@ if True:
                     if self.sequences[seqNum].seqLenSoFar >= nChar:
                         isDone = True
             else:
-                print '_readPhylipInterleavedStrict() bad line?: %s' % aLine
+                print('_readPhylipInterleavedStrict() bad line?: %s' % aLine)
 
         for s in self.sequences:
             s.sequence = string.join(s.theSequenceBits, '')
@@ -658,7 +659,7 @@ if True:
 
         if len(self.sequences) != nTax:
             if var.verboseRead:
-                print "    Did not get correct nTax."
+                print("    Did not get correct nTax.")
             return False
 
         isBad = False
@@ -668,11 +669,11 @@ if True:
                 break
         if isBad:
             if var.verboseRead:
-                print "    At least one sequence has the wrong nChar."
+                print("    At least one sequence has the wrong nChar.")
             return False
 
         if var.verboseRead:
-            print "    Got a candidate alignment."
+            print("    Got a candidate alignment.")
         return True
 
     def _readOpenClustalwFile(self, flob):
@@ -681,7 +682,7 @@ if True:
 
         dbug = 0
         if dbug:
-            print "\n_readOpenClustalwFile() here"
+            print("\n_readOpenClustalwFile() here")
 
         # readline up to the first line of sequence
         aLine = flob.readline()
@@ -694,7 +695,7 @@ if True:
                 gm.append("No sequence?")
                 raise P4Error(gm)
         if dbug:
-            print "a- got aLine: '%s'" % aLine
+            print("a- got aLine: '%s'" % aLine)
 
         # Do the first cycle:
         while len(aLine) > 1 and aLine[0] not in string.whitespace:
@@ -707,8 +708,8 @@ if True:
             s.temp = []
             s.temp.append(string.lower(string.strip(splitLine[1])))
             if dbug:
-                print "b got name: %s" % s.name
-                print "b got a line of sequence:\n          %s" % s.temp
+                print("b got name: %s" % s.name)
+                print("b got a line of sequence:\n          %s" % s.temp)
             self.sequences.append(s)
             aLine = flob.readline()
             if not aLine:
@@ -721,7 +722,7 @@ if True:
             gm.append("No sequences?")
             raise P4Error(gm)
         if dbug:
-            print "Got %i sequences (after first cycle)" % nSeqs
+            print("Got %i sequences (after first cycle)" % nSeqs)
 
         # Do subsequent cycles
         while 1:
@@ -731,7 +732,7 @@ if True:
                     break
             if aLine:
                 if dbug:
-                    print "begin subsequent cycle with aLine:\n    %s" % aLine
+                    print("begin subsequent cycle with aLine:\n    %s" % aLine)
                 for s in self.sequences:
                     if aLine[0] in string.whitespace or len(aLine) <= 1:
                         gm.append("Bad line:\n    %s" % aLine)
@@ -746,8 +747,8 @@ if True:
                         raise P4Error(gm)
                     s.temp.append(string.lower(string.strip(splitLine[1])))
                     if dbug:
-                        print "got name: %s" % s.name
-                        print "got a line of sequence:\n          %s" % s.temp
+                        print("got name: %s" % s.name)
+                        print("got a line of sequence:\n          %s" % s.temp)
                     aLine = flob.readline()
                     if not aLine:
                         break
@@ -760,8 +761,8 @@ if True:
 
         for s in self.sequences:
             if dbug:
-                print "got name: %s" % s.name
-                print "got sequence:\n          %s" % s.temp
+                print("got name: %s" % s.name)
+                print("got sequence:\n          %s" % s.temp)
             s.temp = string.join(s.temp, '')
             if len(s.temp) != nChar:
                 gm.append(
@@ -771,7 +772,7 @@ if True:
                 raise P4Error(gm)
 
             # returns 1,2 or 0, respectively
-            if func.isDnaRnaOrProtein(s.temp):
+            if p4.func.isDnaRnaOrProtein(s.temp):
                 s.sequence = s.temp
                 s.dataType = 'dna'
                 s.symbols = 'acgt'
@@ -789,13 +790,13 @@ if True:
                     j = 0
                     while j < nChar:
                         if s.sequence[j] not in var.validDnaChars:
-                            print "bad character '%s' in (zero-based) dna sequence %s " % \
-                                (s.sequence[j], self.sequences.index(s))
-                            print "          sequence name: %s" % s.name
-                            print "          at (zero-based) position %s" % j
+                            print("bad character '%s' in (zero-based) dna sequence %s " % \
+                                (s.sequence[j], self.sequences.index(s)))
+                            print("          sequence name: %s" % s.name)
+                            print("          at (zero-based) position %s" % j)
                             bads = bads + 1
                             if bads > 10:
-                                print "...and possibly others"
+                                print("...and possibly others")
                                 break
                         j = j + 1
                     if bads > 10:
@@ -807,13 +808,13 @@ if True:
                     j = 0
                     while j < nChar:
                         if s.sequence[j] not in var.validProteinChars:
-                            print "bad character '%s' in (zero-based) protein sequence %s " % \
-                                (s.sequence[j], self.sequences.index(s))
-                            print "          sequence name: %s" % s.name
-                            print "          at (zero-based) position %s" % j
+                            print("bad character '%s' in (zero-based) protein sequence %s " % \
+                                (s.sequence[j], self.sequences.index(s)))
+                            print("          sequence name: %s" % s.name)
+                            print("          at (zero-based) position %s" % j)
                             bads = bads + 1
                             if bads > 10:
-                                print "...and possibly others"
+                                print("...and possibly others")
                                 break
                         j = j + 1
                     if bads > 10:
@@ -823,11 +824,11 @@ if True:
 
         if dbug:
             for t in self.sequences:
-                print '%20s  %-30s' % ('name', t.name)
-                print '%20s  %-30s' % ('comment', t.comment)
-                print '%20s  %-30s' % ('sequence', t.sequence)
-                print '%20s  %-30s' % ('type', t.dataType)
-                print ''
+                print('%20s  %-30s' % ('name', t.name))
+                print('%20s  %-30s' % ('comment', t.comment))
+                print('%20s  %-30s' % ('sequence', t.sequence))
+                print('%20s  %-30s' % ('type', t.dataType))
+                print('')
 
     def writeNexus(self, fName=None, writeDataBlock=0,  interleave=0, flat=0, append=0, userText=''):
         """Write self in Nexus format.
@@ -860,9 +861,9 @@ if True:
                         gm.append("Can't open %s for appending." % fName)
                         raise P4Error(gm)
                 else:
-                    print "Alignment: writeNexusFile() 'append' is requested,"
-                    print "    but '%s' is not a regular file (maybe it doesn't exist?)." % fName
-                    print "    Writing to a new file instead."
+                    print("Alignment: writeNexusFile() 'append' is requested,")
+                    print("    but '%s' is not a regular file (maybe it doesn't exist?)." % fName)
+                    print("    Writing to a new file instead.")
                     try:
                         f = open(fName, 'w')
                         f.write('#NEXUS\n\n')
@@ -884,7 +885,7 @@ if True:
             f.write('  taxlabels')
             for i in range(len(self.sequences)):
                 f.write(
-                    ' %s' % func.nexusFixNameIfQuotesAreNeeded(self.sequences[i].name))
+                    ' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(self.sequences[i].name))
             f.write(';\n')
             f.write('end;\n\n')
         else:  # ie writeDataBlock=1
@@ -968,11 +969,11 @@ if True:
                     s = self.sequences[i]
                     if len(s.name) > longest:
                         longest = len(
-                            func.nexusFixNameIfQuotesAreNeeded(s.name))
+                            p4.func.nexusFixNameIfQuotesAreNeeded(s.name))
                 # formatString = '    %' + `-longest` + 's '  # boring
                 # left-justified
                 # cool right-justified
-                formatString = '    %' + `longest` + 's '
+                formatString = '    %' + '%i' % longest + 's '
                 # print "format string is '%s'" % formatString
                 if longest > 10:
                     wid = 50
@@ -984,7 +985,7 @@ if True:
                     for i in range(len(self.sequences)):
                         s = self.sequences[i]
                         f.write(formatString %
-                                func.nexusFixNameIfQuotesAreNeeded(s.name))
+                                p4.func.nexusFixNameIfQuotesAreNeeded(s.name))
                         if left >= wid:
                             f.write('%s\n' % s.sequence[pos: pos + wid])
                         elif left > 0:
@@ -1002,11 +1003,11 @@ if True:
                     s = self.sequences[i]
                     if len(s.name) > longest:
                         longest = len(
-                            func.nexusFixNameIfQuotesAreNeeded(s.name))
+                            p4.func.nexusFixNameIfQuotesAreNeeded(s.name))
                 # formatString = '    %' + `-longest` + 's '  # boring
                 # left-justified
                 # cool right-justified
-                formatString = '    %' + `longest` + 's '
+                formatString = '    %' + "%i" % longest + 's '
                 # print "format string is '%s'" % formatString
                 for i in range(len(self.sequences)):
                     s = self.sequences[i]
@@ -1017,7 +1018,7 @@ if True:
                 for i in range(len(self.sequences)):
                     s = self.sequences[i]
                     f.write('    %s\n' %
-                            func.nexusFixNameIfQuotesAreNeeded(s.name))
+                            p4.func.nexusFixNameIfQuotesAreNeeded(s.name))
                     left = len(s.sequence)
                     pos = 0
                     while left >= wid:
@@ -1283,7 +1284,7 @@ if True:
         aLine = flob.readline()
         aLine = string.strip(aLine)
         if dbug:
-            print aLine
+            print(aLine)
         if aLine[0] != '{':
             gm.append("The first character is not '{' --- not a GDE file??")
             gm.append(
@@ -1301,11 +1302,11 @@ if True:
                 # or it might be like: name    "C.acetobA ", ie with a spurious
                 # space.
                 if dbug:
-                    print "got name line: \n%s" % aLine
+                    print("got name line: \n%s" % aLine)
                 splitLine = string.split(aLine, '\"')
                 s.name = string.strip(splitLine[1])
                 # print s.name
-                if not func.nexusCheckName(s.name):
+                if not p4.func.nexusCheckName(s.name):
                     gm.append("Bad name '%s'" % s.name)
                     raise P4Error(gm)
             else:
@@ -1315,7 +1316,7 @@ if True:
             aLine = string.strip(flob.readline())
             if aLine[:4] == 'type':
                 if dbug:
-                    print "get type line: \n%s" % aLine
+                    print("get type line: \n%s" % aLine)
                 splitLine = string.split(aLine)
                 type = splitLine[1][1:-1]
                 # print type
@@ -1339,7 +1340,7 @@ if True:
                 s.dataType = 'text'
 
             if dbug:
-                print "dataType set to: %s" % s.dataType
+                print("dataType set to: %s" % s.dataType)
 
             # Next, we are on the lookout for an 'offset' line, which
             # may or may not be there.  If we come across the first
@@ -1351,12 +1352,12 @@ if True:
                 if aLine[:6] == 'offset':
                     aLine = string.strip(aLine)
                     if dbug:
-                        print "got offset line: \n%s" % aLine
+                        print("got offset line: \n%s" % aLine)
                     splitLine = string.split(aLine)
                     try:
                         offset = int(splitLine[1])
                         if dbug:
-                            print "get offset: %i" % offset
+                            print("get offset: %i" % offset)
                     except ValueError:
                         gm.append("Bad offset in line '%s'" % aLine)
                         raise P4Error(gm)
@@ -1366,7 +1367,7 @@ if True:
 
             # Now aLine has the first line of the sequence
             if dbug:
-                print "\nGot first line of sequence: %s" % aLine
+                print("\nGot first line of sequence: %s" % aLine)
             # Get the rest of the sequence.
             splitLine = string.split(aLine)
             thisSeqList = []

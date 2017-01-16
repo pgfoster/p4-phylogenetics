@@ -1,11 +1,12 @@
-import pf
+from __future__ import print_function
+import p4.pf as pf
 import sys
 import random
 import math
 import types
-import func
-from var import var
-from p4exceptions import P4Error
+import p4.func
+from p4.var import var
+from p4.p4exceptions import P4Error
 import numpy
 
 
@@ -26,7 +27,7 @@ class BigQAndEig(object):  # not used
 
         for i in range(self.dim):
             if self.comp.val[i] < var.PIVEC_MIN:
-                print "bad comp, %f" % self.comp.val[i]
+                print("bad comp, %f" % self.comp.val[i])
         self.setBigR()
         self.setBigQ()
         self.eig()
@@ -157,7 +158,7 @@ class ModelPart(object):
                 theSum = sum(mt.val)
                 theDiff = math.fabs(1.0 - theSum)
                 if theDiff > 1e-15:
-                    print "Model.setCStuff().  1.0 - sum(comp.val) = %g" % theDiff
+                    print("Model.setCStuff().  1.0 - sum(comp.val) = %g" % theDiff)
             for i in range(self.dim):
                 if mt.val[i] < var.PIVEC_MIN:
                     gm = ['ModelPart.setCStuff()']
@@ -315,128 +316,128 @@ class Model(object):
         # def _writeCharFreqToOpenFile(theCharFreq, dim, symbols, openFile, offset=23):
         # def _writeRMatrixTupleToOpenFile(theTuple, dim, openFile, offset=23):
 
-        print "\nModel.dump().  nParts=%s" % self.nParts
+        print("\nModel.dump().  nParts=%s" % self.nParts)
 
         if self.nParts == 0:
-            print "nParts is zero."
+            print("nParts is zero.")
             return
         if self.doRelRates:
             if self.relRatesAreFree:
-                print "Relative rates are set and free."
+                print("Relative rates are set and free.")
             else:
-                print "Relative rates are set but not free."
+                print("Relative rates are set but not free.")
 
         for pNum in range(self.nParts):
             mp = self.parts[pNum]
-            print "\n==== Part %s, dim=%s" % (pNum, mp.dim)
+            print("\n==== Part %s, dim=%s" % (pNum, mp.dim))
 
             if self.doRelRates:
-                print "\n  ---- relRate = %s" % mp.relRate
+                print("\n  ---- relRate = %s" % mp.relRate)
 
-            print "\n  ---- Comp Info"
+            print("\n  ---- Comp Info")
             if mp.nComps == 0:
-                print "    No comps."
+                print("    No comps.")
             else:
-                print
-                print "%4s %6s %9s %6s %4s" % (
-                    '', 'num', 'spec', 'free', 'symb')
+                print()
+                print("%4s %6s %9s %6s %4s" % (
+                    '', 'num', 'spec', 'free', 'symb'))
                 for i in range(mp.nComps):
                     c = mp.comps[i]
-                    print "%4s" % '',
-                    print "%6s" % c.num,
-                    print "%9s" % c.spec,
-                    print "%6s" % c.free,
-                    print "%4s" % c.symbol,
-                    print ''
-                print ''
+                    print("%4s" % '', end=' ')
+                    print("%6s" % c.num, end=' ')
+                    print("%9s" % c.spec, end=' ')
+                    print("%6s" % c.free, end=' ')
+                    print("%4s" % c.symbol, end=' ')
+                    print('')
+                print('')
                 for i in range(mp.nComps):
                     c = mp.comps[i]
-                    print '%6s part %i, num %i' % ('', pNum, i)
+                    print('%6s part %i, num %i' % ('', pNum, i))
                     if c.val:
-                        print " " * 14,
+                        print(" " * 14, end=' ')
                         if mp.symbols:
                             theseSymbols = mp.symbols
                         else:
                             theseSymbols = '?' * mp.dim
-                        func._writeCharFreqToOpenFile(
+                        p4.func._writeCharFreqToOpenFile(
                             c.val, mp.dim, theseSymbols, sys.stdout, offset=15)
-                        print " %s]" % c.spec
+                        print(" %s]" % c.spec)
                     else:
-                        print ' ' * 14, 'No values defined.'
+                        print(' ' * 14, 'No values defined.')
 
             #import sys; sys.exit()
-            print "\n  ---- rMatrix Info"
+            print("\n  ---- rMatrix Info")
             if mp.nRMatrices == 0:
-                print "    No rMatrices."
+                print("    No rMatrices.")
             else:
-                print
-                print "%4s %6s %9s %6s %6s" % (
-                    '', 'num', 'spec', 'free', 'symb')
+                print()
+                print("%4s %6s %9s %6s %6s" % (
+                    '', 'num', 'spec', 'free', 'symb'))
 
                 for i in range(mp.nRMatrices):
                     c = mp.rMatrices[i]
-                    print "%4s" % '',
-                    print "%6s" % c.num,
+                    print("%4s" % '', end=' ')
+                    print("%6s" % c.num, end=' ')
 
                     if c.spec in var.rMatrixSpecs:
                         theSpec = c.spec
                     else:
                         theSpec = 'unknown'
 
-                    print "%9s" % theSpec,
-                    print "%6s" % c.free,
-                    print "%6s" % c.symbol
-                print ''
+                    print("%9s" % theSpec, end=' ')
+                    print("%6s" % c.free, end=' ')
+                    print("%6s" % c.symbol)
+                print('')
                 for i in range(mp.nRMatrices):
                     c = mp.rMatrices[i]
                     if theSpec in var.rMatrixProteinSpecs:
                         pass
                     elif theSpec == '2p':
-                        print "%6s part %i, num %i" % ('', pNum, i)
-                        print " " * 15,
-                        print "kappa = %f" % c.val[0]
+                        print("%6s part %i, num %i" % ('', pNum, i))
+                        print(" " * 15, end=' ')
+                        print("kappa = %f" % c.val[0])
                     else:
-                        print "%6s part %i, num %i" % ('', pNum, i)
-                        print " " * 15,
+                        print("%6s part %i, num %i" % ('', pNum, i))
+                        print(" " * 15, end=' ')
                         if mp.dim > 2:
-                            func._writeRMatrixTupleToOpenFile(
+                            p4.func._writeRMatrixTupleToOpenFile(
                                 c.val, mp.dim, sys.stdout, offset=15)
                         elif mp.dim == 2:
-                            print "dim = 2.  No free values"
+                            print("dim = 2.  No free values")
                         else:
                             raise P4Error(
                                 "dim=%s  How did *that* happen?" % mp.dim)
 
-            print "\n  ---- gdasrv Info.  nGammaCat=%s" % mp.nGammaCat
+            print("\n  ---- gdasrv Info.  nGammaCat=%s" % mp.nGammaCat)
             if mp.nGdasrvs == 0:
-                print "    No gdasrvs."
+                print("    No gdasrvs.")
             else:
-                print
-                print "%4s %6s %6s %6s %8s" % (
-                    '', 'num', 'free', 'symb', 'val')
+                print()
+                print("%4s %6s %6s %6s %8s" % (
+                    '', 'num', 'free', 'symb', 'val'))
                 for i in range(mp.nGdasrvs):
                     c = mp.gdasrvs[i]
-                    print "%4s" % '',
-                    print "%6s" % c.num,
-                    print "%6s" % c.free,
-                    print "%6s" % c.symbol,
+                    print("%4s" % '', end=' ')
+                    print("%6s" % c.num, end=' ')
+                    print("%6s" % c.free, end=' ')
+                    print("%6s" % c.symbol, end=' ')
                     if c.val:
-                        print "    %6.3f" % c.val
+                        print("    %6.3f" % c.val)
                     else:
-                        print "%6s" % 'None'  # This should never happen
+                        print("%6s" % 'None')  # This should never happen
 
-            print "\n  ---- pInvar Info"
+            print("\n  ---- pInvar Info")
             c = mp.pInvar
             if c:
-                print " %6s %6s %8s" % ('', 'free', 'val')
-                print "%6s" % '',  # indent
-                print "%6s" % c.free,
+                print(" %6s %6s %8s" % ('', 'free', 'val'))
+                print("%6s" % '', end=' ')  # indent
+                print("%6s" % c.free, end=' ')
                 if c.val or c.val == 0.0:
-                    print "    %6.3f" % c.val
+                    print("    %6.3f" % c.val)
                 else:
-                    print "%6s" % 'None'  # This should never happen
+                    print("%6s" % 'None')  # This should never happen
             else:
-                print "    No pInvar."
+                print("    No pInvar.")
 
 
 # def allocBigQAndEig(self):
@@ -568,7 +569,7 @@ class Model(object):
         flob.write("# \n")
         flob.write("# %i changeable prams in all.\n" % nPrams)
         flob.write("# \n")
-        f = file("mcmc_pramsProfile.py", 'w')
+        f = open("mcmc_pramsProfile.py", 'w')
         f.write(
             "# This file, 'mcmc_pramsProfile.py', is used by func.summarizeMcmcPrams()\n")
         f.write("pramsProfile = %s\n" % pramsList)
@@ -636,11 +637,11 @@ class Model(object):
     def allocCStuff(self):
         complaintHead = '\nModel.allocCStuff()'
         if 0:
-            print "nParts = %s" % self.nParts
-            print "doRelRates = %s" % self.doRelRates
-            print "relRatesAreFree = %s" % self.relRatesAreFree
-            print "nFreePrams = %i" % self.nFreePrams
-            print "isHet = %s" % self.isHet
+            print("nParts = %s" % self.nParts)
+            print("doRelRates = %s" % self.doRelRates)
+            print("relRatesAreFree = %s" % self.relRatesAreFree)
+            print("nFreePrams = %i" % self.nFreePrams)
+            print("isHet = %s" % self.isHet)
         if self.cModel:
             gm = [complaintHead]
             gm.append(
@@ -653,14 +654,14 @@ class Model(object):
         for pNum in range(self.nParts):
             mp = self.parts[pNum]
             if 0:
-                print self.cModel,
-                print pNum,
-                print mp.dim,
-                print mp.nComps,
-                print mp.nRMatrices,
-                print mp.nGdasrvs,
-                print mp.nGammaCat,
-                print mp.pInvar.free,
+                print(self.cModel, end=' ')
+                print(pNum, end=' ')
+                print(mp.dim, end=' ')
+                print(mp.nComps, end=' ')
+                print(mp.nRMatrices, end=' ')
+                print(mp.nGdasrvs, end=' ')
+                print(mp.nGammaCat, end=' ')
+                print(mp.pInvar.free, end=' ')
 
             nGammaCat = mp.nGammaCat
 
@@ -752,9 +753,9 @@ class Model(object):
 
         complaintHead = '\nModel.restoreFreePrams()'
         if 0:
-            print complaintHead
-            print "nFreePrams = %s" % self.nFreePrams
-            print "prams=%s" % prams
+            print(complaintHead)
+            print("nFreePrams = %s" % self.nFreePrams)
+            print("prams=%s" % prams)
             sys.exit()
         pos = 0
         for pNum in range(self.nParts):
@@ -785,8 +786,8 @@ class Model(object):
                             mt.val[i] /= theSum
                     if 0:
                         theSum = sum(mt.val)
-                        print "restoreFreePrams(). pNum %i, comp %i, sum=%g, 1.0 - sum = %g" % (
-                            pNum, mNum, theSum, (1.0 - theSum))
+                        print("restoreFreePrams(). pNum %i, comp %i, sum=%g, 1.0 - sum = %g" % (
+                            pNum, mNum, theSum, (1.0 - theSum)))
 
             # Do the rMatrices.
             for mNum in range(mp.nRMatrices):
@@ -886,21 +887,21 @@ class Model(object):
                     omt = op.comps[mtNum]
                     for i in range(sp.dim):
                         if math.fabs(smt.val[i] - omt.val[i]) > epsilon1:
-                            print "Model.verifyValsWith()  comp vals differ."
+                            print("Model.verifyValsWith()  comp vals differ.")
                             isBad = 1
                             break
             if self.isHet:
                 for mtNum in range(sp.nComps):
                     if op.comps[mtNum].nNodes != sp.comps[mtNum].nNodes:
-                        print "Model.verifyValsWith()  nNodes differ."
+                        print("Model.verifyValsWith()  nNodes differ.")
                         isBad = 1
                         break
                     elif op.comps[mtNum].rj_isInPool != sp.comps[mtNum].rj_isInPool:
-                        print "Model.verifyValsWith()  rj_isInPool differs."
+                        print("Model.verifyValsWith()  rj_isInPool differs.")
                         isBad = 1
                         break
                     elif math.fabs(op.comps[mtNum].rj_f - sp.comps[mtNum].rj_f) > epsilon1:
-                        print "Model.verifyValsWith()  rj_f vals differ."
+                        print("Model.verifyValsWith()  rj_f vals differ.")
                         isBad = 1
                         break
 
@@ -926,7 +927,7 @@ class Model(object):
                         isBad = 1
                         break
                     elif op.rMatrices[mtNum].rj_isInPool != sp.rMatrices[mtNum].rj_isInPool:
-                        print "Model.verifyValsWith()  rj_isInPool differs."
+                        print("Model.verifyValsWith()  rj_isInPool differs.")
                         isBad = 1
                         break
                     elif math.fabs(op.rMatrices[mtNum].rj_f - sp.rMatrices[mtNum].rj_f) > epsilon1:
@@ -970,12 +971,12 @@ class Model(object):
                     for j in range(sp.nRMatrices):
                         # integers
                         if op.bQETneedsReset[i][j] != sp.bQETneedsReset[i][j]:
-                            print complaintHead
-                            print "Mis-matched bQETneedsReset."
-                            print "self.bQETneedsReset is"
-                            print sp.bQETneedsReset
-                            print "other.bQETneedsReset is"
-                            print op.bQETneedsReset
+                            print(complaintHead)
+                            print("Mis-matched bQETneedsReset.")
+                            print("self.bQETneedsReset is")
+                            print(sp.bQETneedsReset)
+                            print("other.bQETneedsReset is")
+                            print(op.bQETneedsReset)
                             isBad = 1
                             break
             if 1:
@@ -984,20 +985,20 @@ class Model(object):
                 # ret is an array of booleans.
                 ret = op.bQETneedsReset != sp.bQETneedsReset
                 if numpy.any(ret):
-                    print complaintHead
-                    print "Mis-matched bQETneedsReset.  Part %i" % pNum
-                    print "self.bQETneedsReset is"
-                    print sp.bQETneedsReset
-                    print "other.bQETneedsReset is"
-                    print op.bQETneedsReset
-                    print "positions differing:"
-                    print ret
+                    print(complaintHead)
+                    print("Mis-matched bQETneedsReset.  Part %i" % pNum)
+                    print("self.bQETneedsReset is")
+                    print(sp.bQETneedsReset)
+                    print("other.bQETneedsReset is")
+                    print(op.bQETneedsReset)
+                    print("positions differing:")
+                    print(ret)
                     isBad = 1
                     break
 
         if isBad:
-            print complaintHead
-            print "    Mis-matched model prams."
+            print(complaintHead)
+            print("    Mis-matched model prams.")
             return var.DIFFERENT
         return var.SAME
 

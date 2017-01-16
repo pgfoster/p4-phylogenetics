@@ -1,7 +1,8 @@
-"""
+u"""
 Module for recoding matrices.
 date: 25/08/2016
 """
+from __future__ import print_function
 import sys
 import os
 import types
@@ -926,13 +927,13 @@ def treeFinderMAPAnalysis(alignment, groups,
         child = subprocess.Popen("tf tf_control.tl", stderr=direct, shell=True)
 
         if verbose:
-            print "Running TreeFinder, this could take some time...",
+            print("Running TreeFinder, this could take some time...", end=' ')
             sys.stdout.flush()
 
         child.communicate()
 
         if verbose:
-            print "done."
+            print("done.")
             sys.stdout.flush()
 
         #This doesnt seem to work, why?
@@ -1011,13 +1012,13 @@ def treeFinderMAPAnalysis(alignment, groups,
             os.remove("tf_reconstruction.output")
 
         if verbose:
-            print "\n"
+            print("\n")
             result_tree.draw()
-            print "\nLikelihood: %.4f\n" % rd["Likelihood"]
+            print("\nLikelihood: %.4f\n" % rd["Likelihood"])
 
         return result_tree, rd
 
     else:
-        print tls % od
+        print(tls % od)
         return (None, None)
 

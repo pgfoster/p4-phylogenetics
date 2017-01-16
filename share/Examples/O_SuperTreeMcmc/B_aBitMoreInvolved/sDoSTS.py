@@ -1,3 +1,4 @@
+from __future__ import print_function
 read('inTrees.phy')
 inTrees = var.trees
 var.trees = []
@@ -9,7 +10,7 @@ var.trees[2].name = 'mrpStrict'
 
 
 from p4.SuperTreeSupport import SuperTreeSupport
-print "%20s  %6s  %6s  %6s  %6s  %6s" % (' ', 'S', 'P', 'Q', 'R', 'V')
+print("%20s  %6s  %6s  %6s  %6s  %6s" % (' ', 'S', 'P', 'Q', 'R', 'V'))
 for st in var.trees:
     
     sts = SuperTreeSupport(st, inTrees)
@@ -23,5 +24,5 @@ for st in var.trees:
     sts.verbose=0
     
     sts.superTreeSupport()
-    print "%20s  %6.2f  %6.2f  %6.2f  %6.2f  %6.2f" % (st.name, sts.S, sts.P, sts.Q, sts.R, sts.V)
+    print("%20s  %6.2f  %6.2f  %6.2f  %6.2f  %6.2f" % (st.name, sts.S, sts.P, sts.Q, sts.R, sts.V))
     

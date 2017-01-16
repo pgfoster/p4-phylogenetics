@@ -29,41 +29,43 @@ from the command line.  To see if it is installed and works, try
 Documentation is at <http://p4.nhm.ac.uk>
 
 """
+from __future__ import print_function
+from past.builtins import execfile
 
 import sys
 import os
 import glob
 
-from var import var
-import func
-from func import read  # Make this one top-level, as it is used so often
+from .var import var
+from . import func
+from .func import read  # Make this one top-level, as it is used so often
 
-from alignment import Alignment
+from .alignment import Alignment
 import numpy
-from data import Data
-from model import Model
-from mcmc import Mcmc
-from mcmccheckpointreader import McmcCheckPointReader
-from chain import Chain
-from stmcmc import STMcmc, STMcmcCheckPointReader
-from distancematrix import DistanceMatrix
-from sequencelist import Sequence, SequenceList
-from tree import Tree
-from node import Node, NodeBranch
-#from nexus import Nexus
-from treepartitions import TreePartitions
-from trees import Trees
-from pnumbers import Numbers
-from p4exceptions import P4Error
-from quartet import QuartetSet, Quartet
-from reducedstrictconsensus import Reduced, Intersection
-from triplets import Aho
-from leafsupport import LeafSupport
-from constraints import Constraints
-from quartetjoining import QuartetJoining
-from posteriorsamples import PosteriorSamples
-from var import Var  # To provide access to the property docstrings.
-from geneticcode import GeneticCode
+from .data import Data
+from .model import Model
+from .mcmc import Mcmc
+from .mcmccheckpointreader import McmcCheckPointReader
+from .chain import Chain
+from .stmcmc import STMcmc, STMcmcCheckPointReader
+from .distancematrix import DistanceMatrix
+from .sequencelist import Sequence, SequenceList
+from .tree import Tree
+from .node import Node, NodeBranch
+#from .nexus import Nexus
+from .treepartitions import TreePartitions
+from .trees import Trees
+from .pnumbers import Numbers
+from .p4exceptions import P4Error
+from .quartet import QuartetSet, Quartet
+from .reducedstrictconsensus import Reduced, Intersection
+from .triplets import Aho
+from .leafsupport import LeafSupport
+from .constraints import Constraints
+from .quartetjoining import QuartetJoining
+from .posteriorsamples import PosteriorSamples
+from .var import Var  # To provide access to the property docstrings.
+from .geneticcode import GeneticCode
 
 
 # Read in user-defined p4 stuff on startup.  These might be var
@@ -87,14 +89,14 @@ if 1:
         try:
             execfile(os.environ['P4_STARTUP'])
             if verboseStartupFiles:
-                print '\n\n ***** ...have read p4 config file from $P4_STARTUP *****'
+                print('\n\n ***** ...have read p4 config file from $P4_STARTUP *****')
         except KeyError:
             pass
         except IOError:
             pass
 
     sdd = os.environ.get('P4_STARTUP_DIRS')
-    # print "got startup dirs", sdd
+    # print("got startup dirs", sdd)
     if sdd:
         sdd = sdd.split(':')
     else:
@@ -111,7 +113,7 @@ if 1:
             if pyFileNames:
                 for fName in pyFileNames:
                     if verboseStartupFiles:
-                        print '...reading %s' % fName
+                        print('...reading %s' % fName)
                     execfile(fName)
     del(fName)
     del(pathPat)
@@ -121,5 +123,5 @@ if 1:
     del(sdd)
 
 if var.excepthookEditor:
-    import interactive.excepthook
+    from .interactive import excepthook
 

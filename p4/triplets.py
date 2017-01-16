@@ -1,6 +1,7 @@
+from __future__ import print_function
 import string
-from tree import Tree
-from node import Node
+from p4.tree import Tree
+from p4.node import Node
 
 
 class Aho(object):
@@ -109,18 +110,18 @@ class TripletStripper(object):
         self.index = 0
 
     def printSet(self):
-        print 'Added: %s' % (self.added)
-        print 'Set.len: %s' % (len(self.set))
-        print 'Set'
+        print('Added: %s' % (self.added))
+        print('Set.len: %s' % (len(self.set)))
+        print('Set')
         for t in self.set:
-            print t
-        print 'Translation table'
+            print(t)
+        print('Translation table')
         for i, j in self.taxa2id.items():
-            print 'Item: %s, Value: %s' % (i, j)
+            print('Item: %s, Value: %s' % (i, j))
         if self.translatedSet:
-            print 'Translated set'
+            print('Translated set')
             for t in self.translatedSet:
-                print t
+                print(t)
 
     def getTripletSet(self):
         return self.set

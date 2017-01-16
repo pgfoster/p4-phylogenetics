@@ -1,3 +1,4 @@
+from __future__ import print_function
 var.verboseRead = 0
 var.warnReadNoFile = 0
 
@@ -16,7 +17,7 @@ else:
 tt = Trees(taxNames=taxNames)
 treesWithSplit = tt.getTreesWithSplit(theSplitTax)
 
-print 'These trees have the split containing %s' % theSplitTax
+print('These trees have the split containing %s' % theSplitTax)
 for t in treesWithSplit:
     t.draw()
 

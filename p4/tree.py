@@ -1,25 +1,25 @@
+from __future__ import print_function
 import sys
 import string
 import types
-import cStringIO
+import io
 import math
 import copy
 import os
-import func
+import p4.func
 import time
 import glob
-from var import var
-from p4exceptions import P4Error
-from node import Node, NodePart, NodeBranchPart
-import nexustoken
-from distancematrix import DistanceMatrix
+from p4.var import var
+from p4.p4exceptions import P4Error
+from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
+import p4.nexustoken
+from p4.distancematrix import DistanceMatrix
 
 import numpy
-import pf
-from model import Model
-from data import Data
-from alignment import Part
-from node import NodeBranch, NodePart, NodeBranchPart
+import p4.pf as pf
+from p4.model import Model
+from p4.data import Data
+from p4.alignment import Part
 import random
 
 class Tree(object):
@@ -226,11 +226,11 @@ class Tree(object):
 
     """
 
-    from tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
-    from tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, getSiteLikes, getSiteRates
-    from tree_model import data, model, _setData, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setRjComp, setRjRMatrix, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
-    from tree_write import patristicDistanceMatrix, tPickle, writeNexus, write, writePhylip, writeNewick, _getMcmcCommandComment, draw, textDrawList, eps
-    from tree_fit import simsForModelFitTests, modelFitTests, compoTestUsingSimulations, bigXSquaredSubM, compStatFromCharFreqs, getEuclideanDistanceFromSelfDataToExpectedComposition
+    from p4.tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
+    from p4.tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, getSiteLikes, getSiteRates
+    from p4.tree_model import data, model, _setData, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setRjComp, setRjRMatrix, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
+    from p4.tree_write import patristicDistanceMatrix, tPickle, writeNexus, write, writePhylip, writeNewick, _getMcmcCommandComment, draw, textDrawList, eps
+    from p4.tree_fit import simsForModelFitTests, modelFitTests, compoTestUsingSimulations, bigXSquaredSubM, compStatFromCharFreqs, getEuclideanDistanceFromSelfDataToExpectedComposition
 
     def __init__(self):
         self.fName = None   # The name of the file it came from
@@ -400,23 +400,23 @@ class Tree(object):
 
         gm = ['Tree.parseNexus()']  # re-defined below
         if 0:
-            print 'Tree.parseNexus() translationHash = %s' % translationHash
-            print '    doModelComments = %s (nParts)' % doModelComments
-            print '    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok
+            print('Tree.parseNexus() translationHash = %s' % translationHash)
+            print('    doModelComments = %s (nParts)' % doModelComments)
+            print('    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok)
 
         if var.nexus_doFastNextTok:
             from nexustoken2 import nextTok, safeNextTok
         else:
-            from nexustoken import nextTok, safeNextTok
+            from p4.nexustoken import nextTok, safeNextTok
 
         tok = safeNextTok(flob, 'Tree.parseNexus()')
         # print 'parseNexus() tok = %s' % tok
-        tok = func.nexusUnquoteName(tok)
+        tok = p4.func.nexusUnquoteName(tok)
         if tok == '*':
-            print gm[0]
-            print "    Ignoring '*' in tree description"
+            print(gm[0])
+            print("    Ignoring '*' in tree description")
             tok = safeNextTok(flob, 'Tree.parseNexus()')
-        if not func.nexusCheckName(tok):
+        if not p4.func.nexusCheckName(tok):
             gm.append("Bad tree name: '%s'" % tok)
             raise P4Error(gm)
         self.name = tok
@@ -461,13 +461,13 @@ class Tree(object):
 
     def getWeightCommandComment(self, tok):
         if 0:
-            print 'var.nexus_getWeightCommandComments = %s' % var.nexus_getWeightCommandComments
-            print 'var.nexus_getAllCommandComments = %s' % var.nexus_getAllCommandComments
-            print "Got comment '%s', checking if it is a 'weight' comment." % tok
+            print('var.nexus_getWeightCommandComments = %s' % var.nexus_getWeightCommandComments)
+            print('var.nexus_getAllCommandComments = %s' % var.nexus_getAllCommandComments)
+            print("Got comment '%s', checking if it is a 'weight' comment." % tok)
         gm = ["Tree.getWeightCommandComment()"]
-        # python, not c, so I can use StringIO
-        from nexustoken import nextTok, safeNextTok
-        cFlob = cStringIO.StringIO(tok)
+        # python, not c, so I can use BytesIO
+        from p4.nexustoken import nextTok, safeNextTok
+        cFlob = io.BytesIO(tok)
         cFlob.seek(1)  # The [
         cTok = nextTok(cFlob)
         if not cTok:
@@ -564,7 +564,7 @@ class Tree(object):
         if var.nexus_doFastNextTok:
             from nexustoken2 import nextTok, safeNextTok
         else:
-            from nexustoken import nextTok, safeNextTok
+            from p4.nexustoken import nextTok, safeNextTok
 
         tok = nextTok(flob)
         if not tok:
@@ -574,7 +574,7 @@ class Tree(object):
             isQuotedTok = True
         # Should generally be the opening paren, except if its a single-node
         # tree.
-        tok = func.nexusUnquoteName(tok)
+        tok = p4.func.nexusUnquoteName(tok)
         while tok != ';':
             # print "top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0])
 
@@ -710,9 +710,9 @@ class Tree(object):
                         else:
                             try:
                                 tok = int(tok)
-                                if translationHash and translationHash.has_key(`tok`):
-                                    tok = translationHash[`tok`]
-                                elif translationHash and not translationHash.has_key(`tok`):
+                                if translationHash and translationHash.has_key(repr(tok)):
+                                    tok = translationHash[repr(tok)]
+                                elif translationHash and not translationHash.has_key(repr(tok)):
                                     gm.append(
                                         "There is a 'translation' for this tree, but the")
                                     gm.append(
@@ -749,8 +749,8 @@ class Tree(object):
                                         'the present case no definition was made.  Deal with it.')
                                     raise P4Error(gm)
                             except ValueError:
-                                if translationHash and translationHash.has_key(`tok`):
-                                    tok = translationHash[`tok`]
+                                if translationHash and translationHash.has_key(repr(tok)):
+                                    tok = translationHash[repr(tok)]
                                 # else:  # starts with a digit, but it is not an int.
                                 #    gm.append('Problem token %s' % tok)
                                 #    raise P4Error(gm)
@@ -763,7 +763,7 @@ class Tree(object):
                             newNode.br.parts.append(NodeBranchPart())
 
                     newNode.isLeaf = 1
-                    if func.nexusCheckName(tok):
+                    if p4.func.nexusCheckName(tok):
                         newNode.name = tok
                         # print 'got newNode.name = %s' % tok
                     else:
@@ -916,9 +916,9 @@ class Tree(object):
                     # eg [& c0.1 r0.0]
                     n = stack[-1]
                     # print 'got comment %s, node %i' % (tok, n.nodeNum)
-                    cFlob = cStringIO.StringIO(tok)
+                    cFlob = io.BytesIO(tok)
                     cFlob.seek(2)
-                    tok2 = nexustoken.safeNextTok(cFlob)
+                    tok2 = p4.nexustoken.safeNextTok(cFlob)
                     while 1:
                         if tok2 == ']':
                             break
@@ -940,7 +940,7 @@ class Tree(object):
                         else:
                             gm.append('Bad command comment %s' % tok)
                             raise P4Error(gm)
-                        tok2 = nexustoken.safeNextTok(cFlob)
+                        tok2 = p4.nexustoken.safeNextTok(cFlob)
                 elif 0:
                     # Ugly hack for RAxML trees with bootstrap
                     # supports in square brackets after the br len, on
@@ -1053,7 +1053,7 @@ class Tree(object):
                 isQuotedTok = True
             else:
                 isQuotedTok = False
-            tok = func.nexusUnquoteName(sTok)
+            tok = p4.func.nexusUnquoteName(sTok)
             # print 'got tok for next round = %s' % tok
             # This is the end of the "while tok != ';':" loop
 
@@ -1126,10 +1126,10 @@ class Tree(object):
                 if not item.name:
                     if item == self.root:
                         if var.warnAboutTerminalRootWithNoName:
-                            print 'Tree._initFinish()'
-                            print '    Non-fatal warning: the root is terminal, but has no name.'
-                            print '    This may be what you wanted.  Or not?'
-                            print '    (To get rid of this warning, turn off var.warnAboutTerminalRootWithNoName)'
+                            print('Tree._initFinish()')
+                            print('    Non-fatal warning: the root is terminal, but has no name.')
+                            print('    This may be what you wanted.  Or not?')
+                            print('    (To get rid of this warning, turn off var.warnAboutTerminalRootWithNoName)')
                     else:
                         gm.append('Got a terminal node with no name.')
                         raise P4Error(gm)
@@ -1144,7 +1144,7 @@ class Tree(object):
 
     def checkDupedTaxonNames(self):
 
-        # Called by func._tryToReadNexusFile() and func._tryToReadPhylipFile()
+        # Called by p4.func._tryToReadNexusFile() and p4.func._tryToReadPhylipFile()
         # Check for duped names
         if self.name:
             gm = ["Tree.checkDupedTaxonNames()   tree '%s'" % self.name]
@@ -1186,10 +1186,10 @@ class Tree(object):
                     for loName in loNames:
                         if loNames.count(loName) > 1 and loName not in complainedAlready:
                             if self.name:
-                                print "        Tree %s. Duped tax name (lowercased) '%s'" % (
-                                    self.name, loName)
+                                print("        Tree %s. Duped tax name (lowercased) '%s'" % (
+                                    self.name, loName))
                             else:
-                                print "        Duped tax name (lowercased) '%s'" % loName
+                                print("        Duped tax name (lowercased) '%s'" % loName)
                             complainedAlready.append(loName)
 
             elif var.doRepairDupedTaxonNames:
@@ -1204,10 +1204,10 @@ class Tree(object):
                                     newName = '%s_%i' % (n.name, repairCounter)
                                     if var.doRepairDupedTaxonNames == 1:
                                         if self.name:
-                                            print "        Tree %s. Changing '%s' to '%s'" % (
-                                                self.name, n.name, newName)
+                                            print("        Tree %s. Changing '%s' to '%s'" % (
+                                                self.name, n.name, newName))
                                         else:
-                                            print "        Changing '%s' to '%s'" % (n.name, newName)
+                                            print("        Changing '%s' to '%s'" % (n.name, newName))
                                     n.name = newName
                                     repairedNames.append(loName)
                                     repairCounter += 1
@@ -1260,94 +1260,94 @@ class Tree(object):
 
     def _doTreeInfo(self):
         if self.name:
-            print "Tree '%s' dump" % self.name
+            print("Tree '%s' dump" % self.name)
         else:
-            print 'Tree dump.  No name.'
+            print('Tree dump.  No name.')
         if self.fName:
-            print "    From file '%s'" % self.fName
+            print("    From file '%s'" % self.fName)
         else:
-            print "    From an unknown file, or no file."
+            print("    From an unknown file, or no file.")
         if self.root:
-            print '    Node %i is root' % self.root.nodeNum
+            print('    Node %i is root' % self.root.nodeNum)
         else:
-            print '    There is no root'
+            print('    There is no root')
         if self.recipWeight:
-            print '    The tree recipWeight is %s' % self.recipWeight
+            print('    The tree recipWeight is %s' % self.recipWeight)
         else:
-            print '    There is no recipWeight'
-        print '    There are %i nodes' % len(self.nodes)
+            print('    There is no recipWeight')
+        print('    There are %i nodes' % len(self.nodes))
         terminals = 0
         for i in self.nodes:
             if i.isLeaf:
                 terminals += 1
-        print '        of which %i are terminal nodes' % terminals
+        print('        of which %i are terminal nodes' % terminals)
         if self.data:
-            print '    There is a data object, with %i parts.' % self.data.nParts
+            print('    There is a data object, with %i parts.' % self.data.nParts)
         else:
-            print '    There is no data object.'
+            print('    There is no data object.')
 
         if self.data:
-            print '    The data came from file(s):'
+            print('    The data came from file(s):')
             for a in self.data.alignments:
                 if a.fName:
-                    print '        %s' % a.fName
+                    print('        %s' % a.fName)
 
         if self.model:
-            print '    There is a model object, with %i parts.' % self.model.nParts
+            print('    There is a model object, with %i parts.' % self.model.nParts)
             if self.model.cModel:
-                print '    model.cModel is %i' % self.model.cModel
+                print('    model.cModel is %i' % self.model.cModel)
             else:
-                print '    There is no cModel.'
+                print('    There is no cModel.')
         else:
-            print '    There is no model object.'
+            print('    There is no model object.')
 
         if self.taxNames:
-            print '    There is a taxNames list.'
+            print('    There is a taxNames list.')
         else:
-            print '    There is no taxNames list.'
+            print('    There is no taxNames list.')
         if self.cTree:
-            print '    cTree is %i' % self.cTree
+            print('    cTree is %i' % self.cTree)
         else:
-            print '    There is no cTree.'
+            print('    There is no cTree.')
 
     def _doNodeInfo(self):
         """Basic rubbish about nodes."""
 
-        print '\n-------- nodes -----------------------------------------'
-        print '%7s %6s %6s %6s %6s %7s %6s  %4s' % ('nodeNum', 'isLeaf', 'parent', 'leftCh',
-                                                    'siblng', 'br.len', 'seqNum', 'name')
+        print('\n-------- nodes -----------------------------------------')
+        print('%7s %6s %6s %6s %6s %7s %6s  %4s' % ('nodeNum', 'isLeaf', 'parent', 'leftCh',
+                                                    'siblng', 'br.len', 'seqNum', 'name'))
         for n in self.nodes:
-            print '%7s %6s' % (n.nodeNum, n.isLeaf),
+            print('%7s %6s' % (n.nodeNum, n.isLeaf), end=' ')
             if n.parent:
-                print '%6s' % n.parent.nodeNum,
+                print('%6s' % n.parent.nodeNum, end=' ')
             else:
-                print '%6s' % 'None',
+                print('%6s' % 'None', end=' ')
 
             if n.leftChild:
-                print '%6s' % n.leftChild.nodeNum,
+                print('%6s' % n.leftChild.nodeNum, end=' ')
             else:
-                print '%6s' % 'None',
+                print('%6s' % 'None', end=' ')
 
             if n.sibling:
-                print '%6s' % n.sibling.nodeNum,
+                print('%6s' % n.sibling.nodeNum, end=' ')
             else:
-                print '%6s' % 'None',
+                print('%6s' % 'None', end=' ')
 
             if n.br and (n.br.len or n.br.len == 0.0):
-                print '%7.3f' % n.br.len,
+                print('%7.3f' % n.br.len, end=' ')
             else:
-                print '%7s' % 'None',
+                print('%7s' % 'None', end=' ')
 
             if n.seqNum or n.seqNum == 0:
-                print '%6s' % n.seqNum,
+                print('%6s' % n.seqNum, end=' ')
             else:
-                print '%6s' % 'None',
+                print('%6s' % 'None', end=' ')
 
             if n.name:
-                print '  %s' % n.name
+                print('  %s' % n.name)
             else:
-                print '  %s' % 'None'
-        print '--------------------------------------------------------\n'
+                print('  %s' % 'None')
+        print('--------------------------------------------------------\n')
 
         doMore = 0
         for n in self.iterNodesNoRoot():
@@ -1362,31 +1362,31 @@ class Tree(object):
                 break
 
         if doMore:
-            print '\n-------- more node stuff -------------------------------'
-            print '%7s   %10s %10s %10s   %4s' % ('nodeNum', 'br.name', 'br.uName', 'br.support', 'name')
+            print('\n-------- more node stuff -------------------------------')
+            print('%7s   %10s %10s %10s   %4s' % ('nodeNum', 'br.name', 'br.uName', 'br.support', 'name'))
             for n in self.nodes:
-                print '%7s' % n.nodeNum,
+                print('%7s' % n.nodeNum, end=' ')
 
                 if n.br and hasattr(n.br, 'name') and n.br.name:
-                    print '%10s' % n.br.name,
+                    print('%10s' % n.br.name, end=' ')
                 else:
-                    print '%10s' % '-',
+                    print('%10s' % '-', end=' ')
 
                 if n.br and hasattr(n.br, 'uName') and n.br.uName:
-                    print '%10s' % n.br.uName,
+                    print('%10s' % n.br.uName, end=' ')
                 else:
-                    print '%10s' % '-',
+                    print('%10s' % '-', end=' ')
 
                 if n.br and hasattr(n.br, 'support') and n.br.support:
-                    print '%10.4f' % n.br.support,
+                    print('%10.4f' % n.br.support, end=' ')
                 else:
-                    print '%10s' % '-',
+                    print('%10s' % '-', end=' ')
 
                 if n.name:
-                    print '    %s' % n.name
+                    print('    %s' % n.name)
                 else:
-                    print '    %s' % 'None'
-            print '--------------------------------------------------------\n'
+                    print('    %s' % 'None')
+            print('--------------------------------------------------------\n')
 
         doMore = 0
         for n in self.nodes:
@@ -1402,85 +1402,85 @@ class Tree(object):
                     break
 
         if doMore:
-            print '\n-------- even more node stuff --------------------------'
-            print '%7s   %10s %14s %10s   %4s' % ('nodeNum', 'br.color', 'br.biRootCount', 'rootCount', 'name')
+            print('\n-------- even more node stuff --------------------------')
+            print('%7s   %10s %14s %10s   %4s' % ('nodeNum', 'br.color', 'br.biRootCount', 'rootCount', 'name'))
             for n in self.nodes:
-                print '%7s' % n.nodeNum,
+                print('%7s' % n.nodeNum, end=' ')
 
                 if n.br and hasattr(n.br, 'color') and n.br.color:
-                    print '%10s' % n.br.color,
+                    print('%10s' % n.br.color, end=' ')
                 else:
-                    print '%10s' % '-',
+                    print('%10s' % '-', end=' ')
 
                 if n.br and hasattr(n.br, 'biRootCount') and n.br.biRootCount:
-                    print '%14s' % n.br.biRootCount,
+                    print('%14s' % n.br.biRootCount, end=' ')
                 else:
-                    print '%14s' % '-',
+                    print('%14s' % '-', end=' ')
 
                 if hasattr(n, 'rootCount') and n.rootCount:
-                    print '%10s' % n.rootCount,
+                    print('%10s' % n.rootCount, end=' ')
                 else:
-                    print '%10s' % '-',
+                    print('%10s' % '-', end=' ')
 
                 if n.name:
-                    print '    %s' % n.name
+                    print('    %s' % n.name)
                 else:
-                    print '    %s' % 'None'
-            print '--------------------------------------------------------\n'
+                    print('    %s' % 'None')
+            print('--------------------------------------------------------\n')
 
     def _doNodeModelInfo(self):
         if not self.model:
-            print '\n****** Node Model Info.  No model.'
+            print('\n****** Node Model Info.  No model.')
             if not self.data:
-                print '(no data attached, either)'
+                print('(no data attached, either)')
         else:
-            print '\n****** Node Model Info.  nParts=%s' % self.model.nParts
+            print('\n****** Node Model Info.  nParts=%s' % self.model.nParts)
             if not self.data:
-                print 'no data'
+                print('no data')
             if not self.model.nParts:
                 return
 
-            print '\nComps in the nodes:'
-            print ' %13s' % 'nodeNum',
+            print('\nComps in the nodes:')
+            print(' %13s' % 'nodeNum', end=' ')
             for i in range(self.model.nParts):
-                print ' %8s' % 'part%i' % i,
-            print ''
+                print(' %8s' % 'part%i' % i, end=' ')
+            print('')
             for n in self.nodes:
-                print ' %13i' % n.nodeNum,
+                print(' %13i' % n.nodeNum, end=' ')
                 for i in range(self.model.nParts):
-                    print '%8i' % n.parts[i].compNum,
-                print ''
+                    print('%8i' % n.parts[i].compNum, end=' ')
+                print('')
 
-            print '\nrMatrices in the nodes:'
-            print ' %13s' % 'nodeNum',
+            print('\nrMatrices in the nodes:')
+            print(' %13s' % 'nodeNum', end=' ')
             for i in range(self.model.nParts):
-                print ' %8s' % 'part%i' % i,
-            print ''
+                print(' %8s' % 'part%i' % i, end=' ')
+            print('')
             for n in self.iterNodesNoRoot():
-                print ' %13i' % n.nodeNum,
+                print(' %13i' % n.nodeNum, end=' ')
                 for i in range(self.model.nParts):
-                    print '%8i' % n.br.parts[i].rMatrixNum,
-                print ''
+                    print('%8i' % n.br.parts[i].rMatrixNum, end=' ')
+                print('')
 
-            print '\ngdasrvs in the nodes:'
-            print ' %13s' % '',
+            print('\ngdasrvs in the nodes:')
+            print(' %13s' % '', end=' ')
             for i in range(self.model.nParts):
-                print ' %8s' % 'part%i' % i,
-            print ''
-            print ' %13s' % 'nGammaCats ->',
+                print(' %8s' % 'part%i' % i, end=' ')
+            print('')
+            print(' %13s' % 'nGammaCats ->', end=' ')
             for i in range(self.model.nParts):
-                print '%8i' % self.model.parts[i].nGammaCat,
-            print '\n'
+                print('%8i' % self.model.parts[i].nGammaCat, end=' ')
+            print('\n')
 
-            print ' %13s' % 'nodeNum',
+            print(' %13s' % 'nodeNum', end=' ')
             for i in range(self.model.nParts):
-                print ' %8s' % 'part%i' % i,
-            print ''
+                print(' %8s' % 'part%i' % i, end=' ')
+            print('')
             for n in self.iterNodesNoRoot():
-                print ' %13i' % n.nodeNum,
+                print(' %13i' % n.nodeNum, end=' ')
                 for i in range(self.model.nParts):
-                    print '%8i' % n.br.parts[i].gdasrvNum,
-                print ''
+                    print('%8i' % n.br.parts[i].gdasrvNum, end=' ')
+                print('')
 
     ###########################
     #
@@ -1974,7 +1974,7 @@ class Tree(object):
 
         # self.draw()
 
-#        allOnes = 2L**(self.nTax) - 1
+#        allOnes = 2**(self.nTax) - 1
         # print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
 
 #        for n in self.iterInternalsPostOrder():
@@ -2077,7 +2077,7 @@ class Tree(object):
         if makeNodeForSplitKeyDict:
             self.nodeForSplitKeyDict = {}
 
-        allOnes = 2L ** (self.nTax) - 1
+        allOnes = 2 ** (self.nTax) - 1
         # print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
 
         for n in self.iterPostOrder():
@@ -2085,15 +2085,14 @@ class Tree(object):
                 # print 'doing node %s' % n.nodeNum
 
                 if not n.leftChild:
-                    # A long int, eg 1L, has no upper limit on its value
                     try:
-                        n.br.rawSplitKey = 1L << self.taxNames.index(
+                        n.br.rawSplitKey = 1 << self.taxNames.index(
                             n.name)  # "<<" is left-shift
                     except ValueError:
                         gm.append('node.name %s' % n.name)
                         gm.append('is not in taxNames %s' % self.taxNames)
                         raise P4Error(gm)
-                    # n.br.rawSplitKey = 1L << self.taxNames.index(n.name)  #
+                    # n.br.rawSplitKey = 1 << self.taxNames.index(n.name)  #
                     # "<<" is left-shift
 
                     if n.br.rawSplitKey == 1:
@@ -2140,7 +2139,7 @@ class Tree(object):
                     gm.append('Duped rawSplitKey %i.' % k)
                     for n in self.nodes:
                         if n != self.root:
-                            print '%7s     %4s       %4s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
+                            print('%7s     %4s       %4s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey))
                     raise P4Error(gm)
 
             # Any duped splitKeys?  There will be if the tree is bi-Rooted.
@@ -2152,16 +2151,16 @@ class Tree(object):
                     if theKeys.count(k) > 1:
                         gm.append('Duped splitKey %i.' % k)
                         for n in self.iterNodesNoRoot():
-                            print '%7s     %4s       %4s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
+                            print('%7s     %4s       %4s' % (n.nodeNum, n.br.rawSplitKey, n.br.splitKey))
                         raise P4Error(gm)
 
         if 0:
-            print gm[0]
-            print self.taxNames
-            print 'nodeNum  rawSplitKey  splitKey'
+            print(gm[0])
+            print(self.taxNames)
+            print('nodeNum  rawSplitKey  splitKey')
             for n in self.iterNodesNoRoot():
-                print '%7s     %4s       %4s        %s' % (
-                    n.nodeNum, n.br.rawSplitKey, n.br.splitKey, func.getSplitStringFromKey(n.br.splitKey, self.nTax))
+                print('%7s     %4s       %4s        %s' % (
+                    n.nodeNum, n.br.rawSplitKey, n.br.splitKey, p4.func.getSplitStringFromKey(n.br.splitKey, self.nTax)))
 
     def recalculateSplitKeysOfNodeFromChildren(self, aNode, allOnes):
         children = [n for n in aNode.iterChildren()]
@@ -2179,7 +2178,7 @@ class Tree(object):
     def checkSplitKeys(self, useOldName=False, glitch=True, verbose=True):
         gm = ['Tree.checkSplitKeys()']
 
-        allOnes = 2L ** (self.nTax) - 1
+        allOnes = 2 ** (self.nTax) - 1
         # print 'nTax = %i, allOnes = %i' % (self.nTax, allOnes)
 
         isBad = False
@@ -2188,13 +2187,13 @@ class Tree(object):
                 # print 'doing node %s' % n.nodeNum
 
                 if not n.leftChild:
-                    # A long int, eg 1L, has no upper limit on its value
+                    # A long int, eg 1, has no upper limit on its value
                     try:
                         if useOldName:
-                            rawSplitKey = 1L << self.taxNames.index(
+                            rawSplitKey = 1 << self.taxNames.index(
                                 n.oldName)  # "<<" is left-shift
                         else:
-                            rawSplitKey = 1L << self.taxNames.index(
+                            rawSplitKey = 1 << self.taxNames.index(
                                 n.name)  # "<<" is left-shift
                     except ValueError:
                         if useOldName:
@@ -2203,7 +2202,7 @@ class Tree(object):
                             gm.append('node.name %s' % n.name)
                         gm.append('is not in taxNames %s' % self.taxNames)
                         raise P4Error(gm)
-                    # n.br.rawSplitKey = 1L << self.taxNames.index(n.name)  #
+                    # n.br.rawSplitKey = 1 << self.taxNames.index(n.name)  #
                     # "<<" is left-shift
 
                     if rawSplitKey == 1:
@@ -2238,15 +2237,15 @@ class Tree(object):
                     # print 'intern node %s, rawSplitKey %s, splitKey %s' %
                     # (n.nodeNum, n.br.rawSplitKey, n.br.splitKey)
                 if n.br.rawSplitKey != rawSplitKey:
-                    print "checkSplitKeys node %2i rawSplitKey: existing %s, calculated %s" % (n.nodeNum, n.br.rawSplitKey, rawSplitKey)
+                    print("checkSplitKeys node %2i rawSplitKey: existing %s, calculated %s" % (n.nodeNum, n.br.rawSplitKey, rawSplitKey))
                     isBad = True
                 if n.br.splitKey != splitKey:
-                    print "checkSplitKeys node %2i splitKey: existing %s, calculated %s" % (n.nodeNum, n.br.splitKey, splitKey)
+                    print("checkSplitKeys node %2i splitKey: existing %s, calculated %s" % (n.nodeNum, n.br.splitKey, splitKey))
                     isBad = True
         if glitch and isBad:
             raise P4Error(gm)
         if verbose and not isBad:
-            print "checkSplitKeys().  ok"
+            print("checkSplitKeys().  ok")
 
     def taxSetIsASplit(self, taxSetName):
         """Asks whether a nexus taxset is a split in the tree.
@@ -2282,14 +2281,14 @@ class Tree(object):
         if needsDoing:
             self.makeSplitKeys()
 
-        rawSplitKey = 0L
+        rawSplitKey = 0
         for i in range(len(theTS.mask)):
             # print i, theTS.mask[i]
             if theTS.mask[i] == '1':
-                rawSplitKey += (1L << i)
+                rawSplitKey += (1 << i)
         # Ie "Does rawSplitKey contain a 1?" or "Is rawSplitKey odd?"
         if 1 & rawSplitKey:
-            allOnes = 2L ** (self.nTax) - 1
+            allOnes = 2 ** (self.nTax) - 1
             splitKey = allOnes ^ rawSplitKey  # "^" is xor, a bit-flipper.
         else:
             splitKey = rawSplitKey
@@ -2326,6 +2325,8 @@ class Tree(object):
             gm = ['Tree.checkTaxNames()   tree %s' % self.name]
         else:
             gm = ['Tree.checkTaxNames()']
+        if self.fName:
+            gm.append("From file '%s' " % self.fName)
 
         if not self.taxNames:
             gm.append('No taxNames.')
@@ -2367,17 +2368,17 @@ class Tree(object):
         s = taxSet.difference(selfTaxNamesSet)
         if len(s):
             isBad = 1
-            print gm[0]
-            print 'TaxName mismatch between the tree and self.taxNames.'
-            print 'These taxa are found in the tree but not in self.taxNames:'
-            print s
+            print(gm[0])
+            print('TaxName mismatch between the tree and self.taxNames.')
+            print('These taxa are found in the tree but not in self.taxNames:')
+            print(s)
         s = selfTaxNamesSet.difference(taxSet)
         if len(s):
             isBad = 1
-            print gm[0]
-            print 'TaxName mismatch between the tree and self.taxNames.'
-            print 'These taxa are found in the self.taxNames but not in the tree:'
-            print s
+            print(gm[0])
+            print('TaxName mismatch between the tree and self.taxNames.')
+            print('These taxa are found in the self.taxNames but not in the tree:')
+            print(s)
 
         if isBad:
             raise P4Error(gm, 'tree_taxNamesMisMatch')
@@ -2469,8 +2470,8 @@ class Tree(object):
         complaintHead = '\nTree.verifyIdentityWith()'  # keep
 
         if len(self.nodes) != len(otherTree.nodes):
-            print complaintHead
-            print '    Different number of nodes.'
+            print(complaintHead)
+            print('    Different number of nodes.')
             return var.DIFFERENT
 
         # check node relations (parent, child, sib)
@@ -2513,15 +2514,15 @@ class Tree(object):
                     isBad = 1
 
             if isBad:
-                print complaintHead
-                print '    Node %i, relations differ.' % nNum
+                print(complaintHead)
+                print('    Node %i, relations differ.' % nNum)
                 self.write()
                 otherTree.write()
                 return var.DIFFERENT
 
         if self.root.nodeNum != otherTree.root.nodeNum:
-            print complaintHead
-            print '    Roots differ.'
+            print(complaintHead)
+            print('    Roots differ.')
             return var.DIFFERENT
 
         # brLens, lenChanged, and node.flag. and splitKeys
@@ -2529,25 +2530,25 @@ class Tree(object):
             if self.nodes[nNum] != self.root:
                 # if self.nodes[nNum].br.len != otherTree.nodes[nNum].br.len:
                 if math.fabs(self.nodes[nNum].br.len - otherTree.nodes[nNum].br.len) > 1.e-8:
-                    print complaintHead
-                    print '    BrLens differ.'
+                    print(complaintHead)
+                    print('    BrLens differ.')
                     return var.DIFFERENT
                 if self.nodes[nNum].br.lenChanged != otherTree.nodes[nNum].br.lenChanged:
-                    print complaintHead
-                    print '    br.lenChanged differs.'
+                    print(complaintHead)
+                    print('    br.lenChanged differs.')
                     return var.DIFFERENT
                 if self.nodes[nNum].flag != otherTree.nodes[nNum].flag:
-                    print complaintHead
-                    print '    flag differs, nodeNum %i.  %s vs %s' % (nNum, self.nodes[nNum].flag, otherTree.nodes[nNum].flag)
+                    print(complaintHead)
+                    print('    flag differs, nodeNum %i.  %s vs %s' % (nNum, self.nodes[nNum].flag, otherTree.nodes[nNum].flag))
                     return var.DIFFERENT
                 if doSplitKeys:
                     if self.nodes[nNum].br.splitKey != otherTree.nodes[nNum].br.splitKey:
-                        print complaintHead
-                        print '    SplitKeys differ.'
+                        print(complaintHead)
+                        print('    SplitKeys differ.')
                         return var.DIFFERENT
                     if self.nodes[nNum].br.rawSplitKey != otherTree.nodes[nNum].br.rawSplitKey:
-                        print complaintHead
-                        print '    rawSplitKeys differ.'
+                        print(complaintHead)
+                        print('    rawSplitKeys differ.')
                         return var.DIFFERENT
 
         # model usage numbers
@@ -2565,8 +2566,8 @@ class Tree(object):
                         isBad = 1
 
                 if isBad:
-                    print complaintHead
-                    print '    Node %i, model usage info does not match.' % nNum
+                    print(complaintHead)
+                    print('    Node %i, model usage info does not match.' % nNum)
                     return var.DIFFERENT
 
         # pre- and postOrder
@@ -2579,22 +2580,22 @@ class Tree(object):
                 isBad = 1
                 break
         if isBad:
-            print complaintHead
-            print '    Pre- or postOrder do not match.'
+            print(complaintHead)
+            print('    Pre- or postOrder do not match.')
             return var.DIFFERENT
 
         if self._nInternalNodes != otherTree._nInternalNodes:
-            print complaintHead
-            print '    _nInternalNodes differ.'
+            print(complaintHead)
+            print('    _nInternalNodes differ.')
             return var.DIFFERENT
 
         # partLikes
         for pNum in range(self.model.nParts):
             # if otherTree.partLikes[pNum] != self.partLikes[pNum]:
             if math.fabs(otherTree.partLikes[pNum] - self.partLikes[pNum]) > 1.e-8:
-                print complaintHead
-                print "    partLikes differ.  (%.5f, (%g) %.5f (%g)" % (
-                    otherTree.partLikes[pNum], otherTree.partLikes[pNum], self.partLikes[pNum], self.partLikes[pNum])
+                print(complaintHead)
+                print("    partLikes differ.  (%.5f, (%g) %.5f (%g)" % (
+                    otherTree.partLikes[pNum], otherTree.partLikes[pNum], self.partLikes[pNum], self.partLikes[pNum]))
                 return var.DIFFERENT
 
         if 0:  # some more
@@ -2602,20 +2603,20 @@ class Tree(object):
                 selfNode = self.nodes[nNum]
                 otherNode = otherTree.nodes[nNum]
                 if selfNode.nodeNum != otherNode.nodeNum:
-                    print complaintHead
-                    print '    nodeNum differs'
+                    print(complaintHead)
+                    print('    nodeNum differs')
                     return var.DIFFERENT
                 if selfNode.seqNum != otherNode.seqNum:
-                    print complaintHead
-                    print '    seqNum differs'
+                    print(complaintHead)
+                    print('    seqNum differs')
                     return var.DIFFERENT
                 if selfNode.name != otherNode.name:
-                    print complaintHead
-                    print '    name differs'
+                    print(complaintHead)
+                    print('    name differs')
                     return var.DIFFERENT
                 if selfNode.isLeaf != otherNode.isLeaf:
-                    print complaintHead
-                    print '    isLeaf differs'
+                    print(complaintHead)
+                    print('    isLeaf differs')
                     return var.DIFFERENT
 
         return var.SAME
@@ -2628,23 +2629,23 @@ class Tree(object):
         if self.root and self.root.leftChild and self.root.leftChild.sibling and self.root.leftChild.sibling.sibling:
             if self.root.leftChild.sibling.sibling.sibling:
                 if verbose:
-                    print "isFullyBifurcating() returning False, due to root with 4 or more children."
+                    print("isFullyBifurcating() returning False, due to root with 4 or more children.")
                 return False
         elif self.root and self.root.isLeaf:
             pass
         else:
             if verbose:
-                print "isFullyBifurcating() returning False, due to (non-leaf) root not having 3 children."
+                print("isFullyBifurcating() returning False, due to (non-leaf) root not having 3 children.")
             return False
         for n in self.iterInternalsNoRoot():
             if n.leftChild and n.leftChild.sibling:
                 if n.leftChild.sibling.sibling:
                     if verbose:
-                        print "isFullyBifurcating() returning False, due to node %i having 3 or more children." % n.nodeNum
+                        print("isFullyBifurcating() returning False, due to node %i having 3 or more children." % n.nodeNum)
                     return False
             else:
                 if verbose:
-                    print "isFullyBifurcating() returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum
+                    print("isFullyBifurcating() returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum)
                 return False
         return True
 
@@ -2712,7 +2713,7 @@ class Tree(object):
                     else:
                         return hub.leftChild
         else:
-            print "*=" * 25
+            print("*=" * 25)
             self.draw()
             gm = ["Tree.nextNode() spoke=%i, hub=%i" %
                   (spoke.nodeNum, hub.nodeNum)]
@@ -2926,7 +2927,7 @@ class Tree(object):
 
         sd = self.topologyDistance(treeB)
         if sd == 0:
-            print "The trees are the same. No tv."
+            print("The trees are the same. No tv.")
             return
         # for sk in self.splitKeyHash.iterkeys():
         #    if not treeB.splitKeyHash.has_key(sk):

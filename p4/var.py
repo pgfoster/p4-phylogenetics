@@ -1,9 +1,8 @@
-# -*- coding: latin-1 -*-
 import sys
 import os
 import numpy
 import types
-from p4exceptions import P4Error
+from p4.p4exceptions import P4Error
 
 # A           Ala            Alanine
 # R           Arg            Arginine
@@ -251,8 +250,11 @@ class Var(object):
         self._nexus_getAllCommandComments = numpy.array(
             [0], numpy.int32)            # all [&...]
         self._nexus_getLineEndingsAsTokens = numpy.array([0], numpy.int32)
+
         # nextTok in C, from NexusToken2.  Does not work for CStrings.
-        self.nexus_doFastNextTok = True
+        # This week it is turned off, for python3 compatibility.
+        # The speedup is only up to about 2x, so I'm not sure it is worth the bother.
+        self.nexus_doFastNextTok = False
 
         self.rMatrixProteinSpecs = ['cpREV', 'd78', 'jtt', 'mtREV24', 'mtmam',
                                     'wag', 'rtRev', 'tmjtt94', 'tmlg99', 'lg',
@@ -271,7 +273,7 @@ class Var(object):
                              'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
                              'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
                              '1', '2', '3', '4', '5', '6', '7', '8', '9', '<',
-                             '!', '>', '£', '^', '[', ']', ':', '(', ')', '~',
+                             '!', '>', '^', '[', ']', ':', '(', ')', '~',
                              '"', '|'
                              ]  # no '-', '?'
         """A list of symbols used in text tree drawings, showing model disposition on the tree."""
@@ -451,7 +453,7 @@ class Var(object):
         return self._excepthookEditor
 
     def _set_excepthookEditor(self, newVal):
-        assert type(newVal) == types.NoneType or type(newVal) == types.StringType 
+        assert newVal == None or isinstance(newVal,str)
         self._excepthookEditor = newVal
 
     excepthookEditor = property(_get_excepthookEditor,

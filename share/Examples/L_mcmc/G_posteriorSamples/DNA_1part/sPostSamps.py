@@ -1,3 +1,4 @@
+from __future__ import print_function
 read("d.nex")
 d = Data()
 t = func.randomTree(taxNames=d.taxNames)
@@ -19,7 +20,7 @@ for sampNum in range(0,10):
     t2.data = d
     t2.simulate()
     ret = t2.data.simpleBigXSquared()
-    print ret[0]
+    print(ret[0])
     
 ps = PosteriorSamples(t, runNum=1, program='mrbayes', mbBaseName='mbout32', verbose=3)
 
@@ -29,4 +30,4 @@ for sampNum in range(0,10):
     t2.data = d
     t2.simulate()
     ret = t2.data.simpleBigXSquared()
-    print ret[0]
+    print(ret[0])

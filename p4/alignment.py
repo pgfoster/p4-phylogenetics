@@ -1,24 +1,25 @@
-from sequencelist import SequenceList, Sequence
-from nexussets import NexusSets
-from p4exceptions import P4Error
+from __future__ import print_function
+
+from p4.sequencelist import SequenceList, Sequence
+from p4.nexussets import NexusSets
+from p4.p4exceptions import P4Error
 import string
 import copy
 import os
 import math
 import string
-import func
 import re
 import sys
 import array
 import types
-from nexussets import CharSet
+from p4.nexussets import CharSet
 import subprocess
-from distancematrix import DistanceMatrix
-from var import var
-from part import Part
+from p4.distancematrix import DistanceMatrix
+from p4.var import var
+from p4.part import Part
 import numpy
 import numpy.linalg
-import pf
+from builtins import object       # For Py2/3 compatibility, needed for redefinition of __bool__() below in Py2
 
 cListPat = re.compile('(\d+)-?(.+)?')
 cList2Pat = re.compile('(.+)\\\\(\d+)')
@@ -82,9 +83,9 @@ class ExcludeDelete(object):
         a=alignment()
         a.excludeCharSet('e4_5_6')
         a.excludeCharSet('e2_8')
-        print a.excludeDelete.mask      # [1, 0, 1, 0, 0, 0, 1, 0, 1]
-        print a.sequences[0].sequence   # agga
-        print a.excludeDelete.sequences[0].sequence   # acgtacgta
+        print(a.excludeDelete.mask)      # [1, 0, 1, 0, 0, 0, 1, 0, 1]
+        print(a.sequences[0].sequence)   # agga
+        print(a.excludeDelete.sequences[0].sequence)   # acgtacgta
 
     The Alignment interface stuff is only partly written.  We have::
 
@@ -104,21 +105,21 @@ class ExcludeDelete(object):
         self.excludedCharSets = []
 
     def dump(self):
-        print "\n  ExcludeDelete dump."
-        print "        length = %i" % self.length
-        print "        mask = ",
+        print("\n  ExcludeDelete dump.")
+        print("        length = %i" % self.length)
+        print("        mask = ", end=' ')
         upper = 30
         if self.length < upper:
             upper = self.length
         for i in range(upper):
-            print "%1i" % self.mask[i],
+            print("%1i" % self.mask[i], end=' ')
         if upper == self.length:
-            print ''
+            print('')
         else:
-            print " ..."
-        print "        %i excludedCharSets:" % len(self.excludedCharSets)
+            print(" ...")
+        print("        %i excludedCharSets:" % len(self.excludedCharSets))
         for cs in self.excludedCharSets:
-            print "            %s" % cs.name
+            print("            %s" % cs.name)
 
     def _resetMask(self):
         self.mask = [1] * self.length
@@ -295,10 +296,10 @@ class Alignment(SequenceList):
 
     """
 
-    from alignment_manip import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,getMaskForAutapomorphies,getMaskForCharDiversity,getCharDiversityDistribution,orMasks,andMasks,sequenceSlice,bluntEndLigate, concatenate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups, mrpSlice
-    from alignment_readwrite import readOpenPhylipFile, _readPhylipSequential, _readPhylipInterleaved, _readPhylipSequentialStrict, _readPhylipInterleavedStrict, _readOpenClustalwFile,writeNexus,writePhylip,writeMolphy,_readOpenGdeFile
-    from alignment_part import _initParts,initDataParts,resetSequencesFromParts,resetPartsContentFromSequences
-    from alignment_logdet import logDet, _logDetSetReduceIgnores
+    from p4.alignment_manip import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,getMaskForAutapomorphies,getMaskForCharDiversity,getCharDiversityDistribution,orMasks,andMasks,sequenceSlice,bluntEndLigate, concatenate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups, mrpSlice
+    from p4.alignment_readwrite import readOpenPhylipFile, _readPhylipSequential, _readPhylipInterleaved, _readPhylipSequentialStrict, _readPhylipInterleavedStrict, _readOpenClustalwFile,writeNexus,writePhylip,writeMolphy,_readOpenGdeFile
+    from p4.alignment_part import _initParts,initDataParts,resetSequencesFromParts,resetPartsContentFromSequences
+    from p4.alignment_logdet import logDet, _logDetSetReduceIgnores
 
 
     def __init__(self):
@@ -380,11 +381,16 @@ class Alignment(SequenceList):
             columns.append(column)
         return columns
 
-    # If the self.length len is zero, and I don't have
-    # __nonzero__(), then "assert self" will raise an AssertionError,
-    # basing that response on the result of len(self).  Having
-    # __nonzero__() makes "assert self" work.
-    def __nonzero__(self):
+    # Here I over-ride __bool__().  If the self.length len is zero, and I don't
+    # have __bool__() redefined as below, then "assert self" will raise an
+    # AssertionError, basing that response on the result of len(self).  Having
+    # __bool__() redefined here makes "assert self" work, even with no sequence
+    # length.  Previously, python 2 only, I had to over-ride __nonzero__() for
+    # the same reason --- but that does not work with Python 3.  In order to
+    # make this redefinition of __bool__() work for Python 2, I need to "from
+    # builtins import object" above, which makes it Py2/3 compatible.
+
+    def __bool__(self):
         return True
 
     def __len__(self):
@@ -422,8 +428,8 @@ class Alignment(SequenceList):
             self.length = len(self.sequences[0].sequence)
             self.dataType = self.sequences[0].dataType
         elif len(self.sequences) == 0:
-            print gm[0]
-            print "    The alignment has no sequences!"
+            print(gm[0])
+            print("    The alignment has no sequences!")
         if self.dataType == 'dna':
             self.symbols = 'acgt'
             self.dim = 4
@@ -490,7 +496,7 @@ class Alignment(SequenceList):
         hasEquates = 0
 
         if dbug:
-            print "Alignment.composition() sequenceNumberList = %s" % sequenceNumberList
+            print("Alignment.composition() sequenceNumberList = %s" % sequenceNumberList)
         if sequenceNumberList:
             if type(sequenceNumberList) != type([1, 2]):
                 gm.append("The sequenceNumberList should be a list, ok?")
@@ -539,8 +545,8 @@ class Alignment(SequenceList):
                         hasEquates = 1
 
             if dbug:
-                print "symbolFreq = ", symbolFreq
-                print "equateFreq = ", equateFreq
+                print("symbolFreq = ", symbolFreq)
+                print("equateFreq = ", equateFreq)
 
             initComp = 1.0 / self.dim
             comp = {}
@@ -576,12 +582,12 @@ class Alignment(SequenceList):
                     comp[symb] = symbSum[symb] / factor
                     diff = diff + math.fabs(comp[symb] - oldComp)
                 if 0:
-                    print "diff=%8.5f %3i  " % (diff, i),
+                    print("diff=%8.5f %3i  " % (diff, i), end=' ')
                     for symb in self.symbols:
-                        print "%s: %.6f  " % (symb, comp[symb]),
-                    print ''
+                        print("%s: %.6f  " % (symb, comp[symb]), end=' ')
+                    print('')
                 if diff < epsilon:
-                    # print "did %i iterations" % dummy
+                    # print("did %i iterations" % dummy)
                     break
 
             for j in range(len(self.symbols)):
@@ -623,7 +629,7 @@ class Alignment(SequenceList):
 # Get the mask
 ##        m = theCP.mask(self.nexusSets, self)
 
-# print "The mask is: %s" % m
+# print("The mask is: %s" % m)
 # if not inverse:
 ##            a = self.subsetUsingMask(m, theMaskChar='1')
 # else:
@@ -727,7 +733,7 @@ class Alignment(SequenceList):
         # prepare the mask
         # if not theCS.mask:
         #    theCS.setMask()
-        # print "The mask is: %s" % theCS.mask
+        # print("The mask is: %s" % theCS.mask)
         if len(theCS.mask) != self.length:
             gm.append("The length of the mask is %i, the length of the alignment is %i" % (
                 len(theCS.mask), self.length))
@@ -812,11 +818,11 @@ class Alignment(SequenceList):
         for i in range(len(self.sequences)):
             one = ['a'] * a.length
             newList.append(one)
-        # print "newList = ", newList
+        # print("newList = ", newList)
 
         # fill the array with slices from the sequences
         k = 0
-        # print "self.length = %i, a.length = %i" % (self.length, a.length)
+        # print("self.length = %i, a.length = %i" % (self.length, a.length))
 
         if self.excludeDelete:
             for i in range(len(theMask2)):
@@ -889,7 +895,7 @@ class Alignment(SequenceList):
                 for j in range(len(self.sequences))[i + 1:]:
                     if j not in doneDupeSeqNums:
                         sj = self.sequences[j].sequence
-                        # print "trying", i, j
+                        # print("trying", i, j)
                         isSame = True
                         for k in theRange:
                             if si[k] != sj[k]:
@@ -906,32 +912,32 @@ class Alignment(SequenceList):
                                     p_isSame = False
                                     break
                             if isSame and not p_isSame:
-                                print "(One-based) Sequences %i and %i are the same," % (i + 1, j + 1),
-                                print "but the structures differ."
+                                print("(One-based) Sequences %i and %i are the same," % (i + 1, j + 1), end=' ')
+                                print("but the structures differ.")
                             # else:
-                            #    print 'ok'
+                            #    print('ok')
 
                         if isSame:
                             dupeNumPairs.append([i, j])
                             doneDupeSeqNums.add(i)
                             doneDupeSeqNums.add(j)
-        # print dupeNumPairs
+        # print(dupeNumPairs)
 
         if dupeNumPairs and not removeDupes:
-            print
-            print "=" * 50
+            print()
+            print("=" * 50)
             if self.fName:
-                print " Alignment from file '%s'" % self.fName
-            print " This alignment has duplicate sequences!"
-            print " Sequence numbers below are 1-based."
+                print(" Alignment from file '%s'" % self.fName)
+            print(" This alignment has duplicate sequences!")
+            print(" Sequence numbers below are 1-based.")
             for dp in dupeNumPairs:
                 i = dp[0]
                 j = dp[1]
-                print "    sequence %i (%s) is the same as sequence %i (%s)." % (
-                    i + 1, self.sequences[i].name, j + 1, self.sequences[j].name)
-            print longMessage1
-            print "=" * 50
-            print
+                print("    sequence %i (%s) is the same as sequence %i (%s)." % (
+                    i + 1, self.sequences[i].name, j + 1, self.sequences[j].name))
+            print(longMessage1)
+            print("=" * 50)
+            print()
 
         if dupeNumPairs and removeDupes:
             if makeDict:
@@ -965,7 +971,7 @@ class Alignment(SequenceList):
                             myDict[newIName].append(self.sequences[dp[1]].name)
                         else:
                             break
-                f = file(dictFileName, 'w')
+                f = open(dictFileName, 'w')
                 f.write("p4DupeSeqRenameDict = %s\n" % myDict)
                 f.close()
 
@@ -979,11 +985,11 @@ class Alignment(SequenceList):
                 self.sequences.remove(s)
 
             if self.nexusSets and self.nexusSets.taxSets:
-                print
-                print "-" * 50
-                print "There are tax sets, possibly affected by dupe removal."
-                print "So I am removing them."
-                print "-" * 50
+                print()
+                print("-" * 50)
+                print("There are tax sets, possibly affected by dupe removal.")
+                print("So I am removing them.")
+                print("-" * 50)
                 self.nexusSets.taxSets = []
 
     def checkForBlankSequences(self, removeBlanks=False, includeN=True, listSeqNumsOfBlanks=False):
@@ -1037,7 +1043,7 @@ class Alignment(SequenceList):
             if isBlank:
                 blankSeqs.append(seqObj)
                 seqNums.append(seqNum)
-                # print "=" * 50
+                # print("=" * 50)
                 # seqObj.write()
         if listSeqNumsOfBlanks:
             return seqNums
@@ -1057,11 +1063,11 @@ class Alignment(SequenceList):
                 self.sequences.remove(s)
 
             if self.nexusSets and self.nexusSets.taxSets:
-                print
-                print "-" * 50
-                print "There are tax sets, possibly affected by blank sequence removal."
-                print "So I am removing them."
-                print "-" * 50
+                print()
+                print("-" * 50)
+                print("There are tax sets, possibly affected by blank sequence removal.")
+                print("So I am removing them.")
+                print("-" * 50)
                 self.nexusSets.taxSets = []
             return len(blankSeqs)
         return 0
@@ -1118,63 +1124,63 @@ class Alignment(SequenceList):
     def dump(self):
         """Print rubbish about self."""
 
-        print "\nAlignment dump:"
+        print("\nAlignment dump:")
         if self.fName:
-            print "  File name '%s'" % self.fName
+            print("  File name '%s'" % self.fName)
         if self.length:
-            print "  Length is %s" % self.length
+            print("  Length is %s" % self.length)
         # if hasattr(self, 'nTax'):
-        #    print "    nTax is %i" % self.nTax
+        #    print("    nTax is %i" % self.nTax)
         # if hasattr(self, 'nChar'):
-        #    print "    nChar is %i" % self.nChar
+        #    print("    nChar is %i" % self.nChar)
         if hasattr(self, 'dataType'):
-            print "  dataType is '%s'" % self.dataType
+            print("  dataType is '%s'" % self.dataType)
         if hasattr(self, 'symbols'):
-            print "  symbols are '%s'" % self.symbols
+            print("  symbols are '%s'" % self.symbols)
         if self.equates:
-            print "  equates"
+            print("  equates")
             theKeys = self.equates.keys()
             theKeys.sort()
             for k in theKeys:
-                print "%20s  %-30s" % (k, self.equates[k])
+                print("%20s  %-30s" % (k, self.equates[k]))
         if self.nexusSets:
             if self.nexusSets.charSets:
                 if len(self.nexusSets.charSets) == 1:
-                    print "  There is 1 charSet"
+                    print("  There is 1 charSet")
                 else:
-                    print "  There are %i charSets" % len(self.nexusSets.charSets)
+                    print("  There are %i charSets" % len(self.nexusSets.charSets))
                 for cp in self.nexusSets.charSets:
-                    print "          %s" % cp.name
+                    print("          %s" % cp.name)
             if self.nexusSets.charPartitions:
                 if len(self.nexusSets.charPartitions) == 1:
-                    print "  There is 1 charPartition"
+                    print("  There is 1 charPartition")
                 else:
-                    print "  There are %i charPartitions" % len(self.nexusSets.charPartitions)
+                    print("  There are %i charPartitions" % len(self.nexusSets.charPartitions))
                 for cp in self.nexusSets.charPartitions:
-                    print "          %s" % cp.name
+                    print("          %s" % cp.name)
             if self.nexusSets.charPartition:
-                print "  The current charPartition is %s" % self.nexusSets.charPartition.name
+                print("  The current charPartition is %s" % self.nexusSets.charPartition.name)
             else:
-                print "  There is no current charPartition."
+                print("  There is no current charPartition.")
 
         if self.excludeDelete:
             self.excludeDelete.dump()
         if len(self.parts):
             if len(self.parts) == 1:
-                print "  There is %i part" % len(self.parts)
+                print("  There is %i part" % len(self.parts))
             else:
-                print "  There are %i parts" % len(self.parts)
+                print("  There are %i parts" % len(self.parts))
             for p in self.parts:
-                print "          %s, length %i" % (p.name, p.nChar)
+                print("          %s, length %i" % (p.name, p.nChar))
         # SequenceList.dump(self)
-        print "  There are %i sequences" % len(self.sequences)
+        print("  There are %i sequences" % len(self.sequences))
         upper = len(self.sequences)
         if upper > 5:
             upper = 5
         for i in range(upper):
-            print "  %4i  %s" % (i, self.sequences[i].name)
+            print("  %4i  %s" % (i, self.sequences[i].name))
         if len(self.sequences) > upper:
-            print "       <... and more ...>"
+            print("       <... and more ...>")
 
     def setNexusSets(self):
         """Set self.nexusSets from var.nexusSets.
@@ -1204,7 +1210,7 @@ class Alignment(SequenceList):
                 cs.setMask()
 
         if self.nexusSets.taxSets:
-            # print "%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets))
+            # print("%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets)))
             # Check that no taxSet name is a taxName
             lowSelfTaxNames = [string.lower(txName)
                                for txName in self.taxNames]
@@ -1223,7 +1229,7 @@ class Alignment(SequenceList):
                 if ts.format == 'standard':
                     ts.setNumberTriplets()
                     ts.setMask()
-                    # print ts.mask
+                    # print(ts.mask)
                 elif ts.format == 'vector':
                     assert ts.mask
                     if len(ts.mask) != self.nTax:
@@ -1256,10 +1262,10 @@ class Alignment(SequenceList):
         gm = ["Alignment.setCharPartition('%s')" % charPartitionName]
         if not self.nexusSets:
             if not charPartitionName:
-                print gm[0]
-                print "setNexusSets() has not been done -- self has no nexusSets"
-                print "yet we are doing setCharPartition, with no partition!"
-                print "Its not an error, but are we a little confused?"
+                print(gm[0])
+                print("setNexusSets() has not been done -- self has no nexusSets")
+                print("yet we are doing setCharPartition, with no partition!")
+                print("Its not an error, but are we a little confused?")
                 return
             self.setNexusSets()
         self.nexusSets.charPartition = None
@@ -1278,7 +1284,7 @@ class Alignment(SequenceList):
         self.nexusSets.charPartition.setSubsetMasks()
         self.nexusSets.charPartition.checkForOverlaps()
         if 0:
-            print gm[0]
+            print(gm[0])
             self.nexusSets.charPartition.dump()
             self.dump()
 
@@ -1311,7 +1317,7 @@ class Alignment(SequenceList):
 
         if newDataType == 'standard':
             validChars = newSymbols + '-?' + ''.join(newEquates.keys())
-            # print "standard datatype: got validChars '%s'" % validChars
+            # print("standard datatype: got validChars '%s'" % validChars)
 
         for s in self.sequences:
             if newDataType == 'dna':

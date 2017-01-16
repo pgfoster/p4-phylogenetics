@@ -1,25 +1,23 @@
+from __future__ import print_function
 import sys
 import string
 import types
-import cStringIO
 import math
 import copy
 import os
-import func
+import p4.func
 import time
 import glob
-from var import var
-from p4exceptions import P4Error
-from node import Node, NodePart, NodeBranchPart
-import nexustoken
-from distancematrix import DistanceMatrix
+from p4.var import var
+from p4.p4exceptions import P4Error
+from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
+from p4.distancematrix import DistanceMatrix
 
 import numpy
-import pf
-from model import Model
-from data import Data
-from alignment import Part
-from node import NodeBranch, NodePart, NodeBranchPart
+import p4.pf as pf
+from p4.model import Model
+from p4.data import Data
+from p4.alignment import Part
 import random
 
 if True:
@@ -382,9 +380,9 @@ if True:
             for i in range(len(val)):
                 thisVal = val[i]
                 if thisVal < var.PIVEC_MIN:
-                    print gm[0]
-                    print "    Specifying a comp of zero for a character is not allowed."
-                    print "    Re-setting to %g" % var.PIVEC_MIN
+                    print(gm[0])
+                    print("    Specifying a comp of zero for a character is not allowed.")
+                    print("    Re-setting to %g" % var.PIVEC_MIN)
                     val[i] = var.PIVEC_MIN
                     needsNormalizing = 1
 
@@ -1065,7 +1063,7 @@ if True:
                 raise P4Error(gm)
 
         for pNum in range(self.model.nParts):
-            print "\n%6s %s:" % ("Part", pNum)
+            print("\n%6s %s:" % ("Part", pNum))
             mp = self.model.parts[pNum]
 
             # First do comps
@@ -1075,16 +1073,16 @@ if True:
                 for mtNum in range(mp.nComps):
                     # print "  comp %i nNodes=%i" % (mtNum,
                     # mp.comps[mtNum].nNodes)
-                    print "%16s %i %s = %i" % ("composition", mtNum, "nNodes",
-                                               mp.comps[mtNum].nNodes)
+                    print("%16s %i %s = %i" % ("composition", mtNum, "nNodes",
+                                               mp.comps[mtNum].nNodes))
 
             # Second do rMatrices
             if mp.nRMatrices == 1:
                 pass
             elif mp.nRMatrices > 1:
                 for mtNum in range(mp.nRMatrices):
-                    print "%16s %i %s = %i" % ("rate matrix", mtNum,
-                                               "nNodes", mp.rMatrices[mtNum].nNodes)
+                    print("%16s %i %s = %i" % ("rate matrix", mtNum,
+                                               "nNodes", mp.rMatrices[mtNum].nNodes))
 
             # Third do gdasrvs
             if mp.nGammaCat > 1:
@@ -1092,7 +1090,7 @@ if True:
                     pass
                 elif mp.nGdasrvs > 1:
                     for mtNum in range(mp.nGdasrvs):
-                        print "  gdasrv %i nNodes =%i" % (mtNum, mp.gdasrvs[mtNum].nNodes)
+                        print("  gdasrv %i nNodes =%i" % (mtNum, mp.gdasrvs[mtNum].nNodes))
                 else:
                     gm.append("No gdasrvs in part %i" % pNum)
                     raise P4Error(gm)
@@ -1398,10 +1396,10 @@ if True:
             for p in self.model.parts:
                 p.relRate *= fact
             if 0:
-                print "RelativeRates (adjusted for length)"
+                print("RelativeRates (adjusted for length)")
                 for i in range(self.model.nParts):
                     p = self.model.parts[i]
-                    print "  part %s,  nChar %5s, relRate %s" % (p.num, self.data.parts[i].nChar, p.relRate)
+                    print("  part %s,  nChar %5s, relRate %s" % (p.num, self.data.parts[i].nChar, p.relRate))
             if 1:
                 total = 0.0
                 for i in range(self.model.nParts):

@@ -1,25 +1,24 @@
+from __future__ import print_function
 import sys
 import string
 import types
-import cStringIO
 import math
 import copy
 import os
-import func
+import p4.func
 import time
 import glob
-from var import var
-from p4exceptions import P4Error
-from node import Node, NodePart, NodeBranchPart
-import nexustoken
-from distancematrix import DistanceMatrix
+import pickle
+from p4.var import var
+from p4.p4exceptions import P4Error
+from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
+from p4.distancematrix import DistanceMatrix
 
 import numpy
-import pf
-from model import Model
-from data import Data
-from alignment import Part
-from node import NodeBranch, NodePart, NodeBranchPart
+import p4.pf as pf
+from p4.model import Model
+from p4.data import Data
+from p4.alignment import Part
 import random
 
 if True:
@@ -92,7 +91,6 @@ if True:
 
         """
 
-        import cPickle
         #suffix = '.p4_%s_tPickle' % var.versionString
         suffix = '.p4_tPickle'
 
@@ -109,9 +107,9 @@ if True:
                 fN = self.name
             else:
                 fN = self.name + suffix
-        f = file(fN, 'w')
-        cPickle.dump(self.dupe(), f, 1)  # 1 for binary
-        # cPickle.dump(self, f, 1) # Don't do this -- has pointers that would
+        f = open(fN, 'wb')
+        pickle.dump(self.dupe(), f, pickle.HIGHEST_PROTOCOL)  
+        # pickle.dump(self, f, 1) # Don't do this -- has pointers that would
         # not have been malloc'ed!  And data!
         f.close()
 
@@ -142,11 +140,11 @@ if True:
                         raise P4Error(gm)
                 else:
                     if 0:
-                        print "Tree.writeNexus()"
-                        print "    'append' is requested,"
-                        print "    but '%s' is not a regular file (doesn't exist?)." \
-                              % fName
-                        print "    Writing to a new file instead."
+                        print("Tree.writeNexus()")
+                        print("    'append' is requested,")
+                        print("    but '%s' is not a regular file (doesn't exist?)." \
+                              % fName)
+                        print("    Writing to a new file instead.")
                     try:
                         f = open(fName, 'w')
                         f.write('#NEXUS\n\n')
@@ -167,7 +165,7 @@ if True:
             f.write('  dimensions ntax=%s;\n' % self.nTax)
             f.write('  taxlabels')
             for i in self.taxNames:
-                f.write(' %s' % func.nexusFixNameIfQuotesAreNeeded(i))
+                f.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(i))
             f.write(';\nend;\n\n')
 
         f.write('begin trees;\n')
@@ -178,7 +176,7 @@ if True:
                     (self.name, self.logLike))
 
         f.write('  tree %s = [&U] ' %
-                func.nexusFixNameIfQuotesAreNeeded(self.name))
+                p4.func.nexusFixNameIfQuotesAreNeeded(self.name))
         if self.recipWeight:
             if self.recipWeight == 1:
                 f.write('[&W 1] ')
@@ -258,7 +256,7 @@ if True:
                     sList.append('%s' % translationHash[self.root.name])
                 elif self.root.name:
                     sList.append(
-                        '%s' % func.nexusFixNameIfQuotesAreNeeded(self.root.name))
+                        '%s' % p4.func.nexusFixNameIfQuotesAreNeeded(self.root.name))
                 else:
                     sList.append('()')
             else:
@@ -292,7 +290,7 @@ if True:
                         else:
                             if n1.name:
                                 sList.append(
-                                    '%s' % func.nexusFixNameIfQuotesAreNeeded(n1.name))
+                                    '%s' % p4.func.nexusFixNameIfQuotesAreNeeded(n1.name))
                             else:
                                 if n1 != self.root:
                                     gm.append("Terminal node with no name?")
@@ -301,7 +299,7 @@ if True:
                         sList.append(')')
                         if n1.name:
                             sList.append(
-                                '%s' % func.nexusFixNameIfQuotesAreNeeded(n1.name))
+                                '%s' % p4.func.nexusFixNameIfQuotesAreNeeded(n1.name))
                     if writeBrLens:
                         if n1 != self.root:
                             sList.append(':%g' % n1.br.len)
@@ -317,12 +315,12 @@ if True:
         if toString:
             return "".join(sList)
         elif fName == None:
-            print "".join(sList)
+            print("".join(sList))
         elif type(fName) == type('string'):
             if append:
-                fName2 = file(fName, 'a')
+                fName2 = open(fName, 'a')
             else:
-                fName2 = file(fName, 'w')
+                fName2 = open(fName, 'w')
             fName2.write(string.join(sList, ''))
     #        fName2.write('\n')
             fName2.close()
@@ -374,7 +372,7 @@ if True:
                               addToBrLen=addToBrLen, width=width,
                               autoIncreaseWidth=True,
                               showNodeNums=showNodeNums, partNum=partNum, model=model)
-        print string.join(s, '\n')
+        print(string.join(s, '\n'))
 
     def textDrawList(self, showInternalNodeNames=1, addToBrLen=0.2, width=None, autoIncreaseWidth=True, showNodeNums=1, partNum=0, model=False):
 
@@ -482,9 +480,9 @@ if True:
             if doComps:
                 if 0:
                     if self.model.nParts > 1:
-                        print "Compositions for part %i" % partNum
+                        print("Compositions for part %i" % partNum)
                     else:
-                        print "\nCompositions\n------------"
+                        print("\nCompositions\n------------")
                 p.textDrawModelThing = var.TEXTDRAW_COMP
                 p._setPos(autoIncreaseWidth)
                 s = p.textString(returnAsList=True)
@@ -494,9 +492,9 @@ if True:
             if doRMatrices:
                 if 0:
                     if self.model.nParts > 1:
-                        print "RMatrices for part %i" % partNum
+                        print("RMatrices for part %i" % partNum)
                     else:
-                        print "\nRMatrices\n---------"
+                        print("\nRMatrices\n---------")
                 p.textDrawModelThing = var.TEXTDRAW_RMATRIX
                 p._setPos(autoIncreaseWidth)
                 if s:
@@ -557,7 +555,7 @@ if True:
                 fName = '%i.eps' % os.getpid()
         # if not fName.endswith('.eps'):
         #    fName = '%s.eps' % fName
-        f = file(fName, 'w')
+        f = open(fName, 'w')
         f.write(s)
         f.close()
 

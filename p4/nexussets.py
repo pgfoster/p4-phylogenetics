@@ -1,14 +1,15 @@
+from __future__ import print_function
 import os
 import sys
 import string
 import array
 import types
 import copy
-from var import var
+from p4.var import var
 # Don't bother with NexusToken2, cuz sets blocks are small
-from nexustoken import nexusSkipPastNextSemiColon, safeNextTok
-import func
-from p4exceptions import P4Error
+from p4.nexustoken import nexusSkipPastNextSemiColon, safeNextTok
+import p4.func
+from p4.p4exceptions import P4Error
 
 
 # [Examples from the paup manual,
@@ -240,8 +241,8 @@ class NexusSets(object):
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
         if 0:
-            print gm[0]
-            print '    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok
+            print(gm[0])
+            print('    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok)
         nexusSkipPastNextSemiColon(flob)
         commandName = safeNextTok(flob, gm[0])
         lowCommandName = string.lower(commandName)
@@ -255,11 +256,11 @@ class NexusSets(object):
             elif lowCommandName == 'taxset':
                 self._readTaxSetCommand(flob)
             elif lowCommandName == 'taxpartition':
-                print
-                print gm[0]
+                print()
+                print(gm[0])
                 if len(gm) > 1:
-                    print gm[1]
-                print "    Sorry-- taxpartition is not implemented."
+                    print(gm[1])
+                print("    Sorry-- taxpartition is not implemented.")
                 nexusSkipPastNextSemiColon(flob)
             else:
                 gm.append("Got unrecognized sets block command '%s'" %
@@ -275,11 +276,11 @@ class NexusSets(object):
         gm = ['NexusSets._readCharSetCommand()']
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
-        name = func.nexusUnquoteName(
+        name = p4.func.nexusUnquoteName(
             safeNextTok(flob, 'NexusSets: _readCharSetCommand'))
         # print "readCharSetCommand: got name '%s'" % name
         lowName = string.lower(name)
-        if not func.nexusCheckName(lowName):
+        if not p4.func.nexusCheckName(lowName):
             gm.append("Bad charSet name '%s'" % name)
             raise P4Error(gm)
 
@@ -308,11 +309,11 @@ class NexusSets(object):
         gm = ['NexusSets._readTaxSetCommand()']
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
-        name = func.nexusUnquoteName(
+        name = p4.func.nexusUnquoteName(
             safeNextTok(flob, 'NexusSets: readTaxSetCommand'))
         # print "readTaxSetCommand: got name '%s'" % name
         lowName = string.lower(name)
-        if not func.nexusCheckName(lowName):
+        if not p4.func.nexusCheckName(lowName):
             gm.append("Bad taxSet name '%s'" % name)
             raise P4Error(gm)
 
@@ -335,10 +336,10 @@ class NexusSets(object):
         gm = ['NexusSets._readCharPartitionCommand()']
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
-        name = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+        name = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
         # print "readCharPartitionCommand: got name '%s'" % name
         lowName = string.lower(name)
-        if not func.nexusCheckName(lowName):
+        if not p4.func.nexusCheckName(lowName):
             gm.append("Bad charPartition name '%s'" % name)
 
         if lowName in self.charPartitionLowNames:
@@ -355,26 +356,26 @@ class NexusSets(object):
         self.charPartitionLowNames.append(cp.lowName)
 
     def dump(self):
-        print "        NexusSets dump"
+        print("        NexusSets dump")
         if self.constant:
-            print "            Predefined char set 'constant'"
+            print("            Predefined char set 'constant'")
             self.constant.dump()
         if self.gapped:
-            print "            Predefined char set 'gapped'"
+            print("            Predefined char set 'gapped'")
             self.gapped.dump()
-        print "            There are %i non-predefined char sets" % len(self.charSets)
+        print("            There are %i non-predefined char sets" % len(self.charSets))
         for cs in self.charSets:
             cs.dump()
-        print "            There are %i tax sets" % len(self.taxSets)
+        print("            There are %i tax sets" % len(self.taxSets))
         for ts in self.taxSets:
             ts.dump()
-        print "            There are %i char partitions" % len(self.charPartitions)
+        print("            There are %i char partitions" % len(self.charPartitions))
         for cp in self.charPartitions:
             cp.dump()
         if self.charPartition:
-            print "            self.charPartition.name is %s" % func.nexusFixNameIfQuotesAreNeeded(self.charPartition.name)
+            print("            self.charPartition.name is %s" % p4.func.nexusFixNameIfQuotesAreNeeded(self.charPartition.name))
         else:
-            print "            There is no self.charPartition"
+            print("            There is no self.charPartition")
 
     def write(self):
         """Write self in Nexus format to stdout."""
@@ -384,7 +385,7 @@ class NexusSets(object):
         """Write self in Nexus format to stdout or a file."""
 
         if fName:
-            f = file(fName, 'w')
+            f = open(fName, 'w')
         else:
             f = sys.stdout
         f.write('#nexus\n\n')
@@ -466,23 +467,23 @@ class TaxOrCharSet(object):
     format = property(_getFormat, _setFormat)
 
     def dump(self):
-        print "                   %s %i" % (self.className, self.num)
-        print "                                   name: %s" % self.name
+        print("                   %s %i" % (self.className, self.num))
+        print("                                   name: %s" % self.name)
         if hasattr(self, 'aligNChar'):
-            print "                              aligNChar: %s" % self.aligNChar
-        print "                                 format: %s" % self.format
-        print "                            useTaxNames: %s" % self.useTaxNames
-        print "                               triplets: "
+            print("                              aligNChar: %s" % self.aligNChar)
+        print("                                 format: %s" % self.format)
+        print("                            useTaxNames: %s" % self.useTaxNames)
+        print("                               triplets: ")
         for t in self.triplets:
-            print "                                         %s" % t
+            print("                                         %s" % t)
         if hasattr(self, 'numberTriplets'):
-            print "                         numberTriplets: "
+            print("                         numberTriplets: ")
             for t in self.numberTriplets:
-                print "                                         %s" % t
-        print "                                 tokens: %s" % self.tokens
-        print "                                   mask: %s" % self.mask
+                print("                                         %s" % t)
+        print("                                 tokens: %s" % self.tokens)
+        print("                                   mask: %s" % self.mask)
         if self.mask:
-            print "                          mask 1s-count: %s" % self.mask.count('1')
+            print("                          mask 1s-count: %s" % self.mask.count('1'))
 
     def readTaxOrCharSetDefinition(self, flob):
         gm = ['%s.readTaxSetDefinition()' % self.className]
@@ -495,7 +496,7 @@ class TaxOrCharSet(object):
             pass
         elif lowTok == '(':
             #['standard', 'vector']:
-            tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+            tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
             lowTok = string.lower(tok)
             if lowTok == 'standard':
                 pass
@@ -506,7 +507,7 @@ class TaxOrCharSet(object):
                 gm.append("(I was expecting either 'standard' or")
                 gm.append("'vector' following the parenthesis.)")
                 raise P4Error(gm)
-            tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+            tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
             if tok == ')':
                 pass
             else:
@@ -514,7 +515,7 @@ class TaxOrCharSet(object):
                 gm.append(
                     "(I was expecting an unparentheis after '%s')" % self.format)
                 raise P4Error(gm)
-            tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+            tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
             if tok != '=':
                 gm.append("Unexpected '%s'" % tok)
                 gm.append("I was expecting an '=' after '(%s)'" % self.format)
@@ -524,11 +525,11 @@ class TaxOrCharSet(object):
             raise P4Error(gm)
 
         # Now we are on the other side of the '='
-        tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+        tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
         lowTok = string.lower(tok)
         while lowTok not in [None, ';', 'end', 'endblock']:
             self.tokens.append(tok)
-            tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+            tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
             lowTok = string.lower(tok)
 
         if self.format == 'vector':
@@ -708,8 +709,8 @@ class TaxOrCharSet(object):
                 raise P4Error(gm)
 
         if 0:
-            print gm[0]
-            print "    Got self.triplets %s" % self.triplets
+            print(gm[0])
+            print("    Got self.triplets %s" % self.triplets)
 
     def setMask(self):
         """Set self.mask."""
@@ -724,7 +725,7 @@ class TaxOrCharSet(object):
                 raise P4Error(gm)
         elif self.format == 'standard':
             if 0:
-                print gm[0]
+                print(gm[0])
                 self.dump()
 
             if not len(self.triplets):
@@ -748,8 +749,8 @@ class TaxOrCharSet(object):
 
             for aTriplet in theTriplets:
                 if 0:
-                    print gm[0]
-                    print "        '%s' aTriplet=%s" % (self.name, aTriplet)
+                    print(gm[0])
+                    print("        '%s' aTriplet=%s" % (self.name, aTriplet))
                 first = aTriplet[0]
                 second = aTriplet[1]
                 third = aTriplet[2]
@@ -856,7 +857,7 @@ class TaxOrCharSet(object):
             flob.write('  %s %s =' % (theSetName, self.name))
             if self.useTaxNames:
                 for tN in self.taxNames:
-                    flob.write(" %s" % func.nexusFixNameIfQuotesAreNeeded(tN))
+                    flob.write(" %s" % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
             else:
                 # for i in self.tokens:
                 #    flob.write(' %s' % i)
@@ -864,7 +865,7 @@ class TaxOrCharSet(object):
                 for theTok in self.tokens:
                     if type(theTok) == types.StringType:
                         if theTok not in ['-', '\\']:
-                            tok = func.nexusFixNameIfQuotesAreNeeded(theTok)
+                            tok = p4.func.nexusFixNameIfQuotesAreNeeded(theTok)
                         else:
                             tok = theTok
                     else:
@@ -1113,15 +1114,15 @@ class CharPartitionSubset(object):
         self.triplets = []
 
     def dump(self):
-        print "                              -- CharPartitionSubset"
-        print "                                         name: %s" % func.nexusFixNameIfQuotesAreNeeded(self.name)
-        print "                                     triplets: "
+        print("                              -- CharPartitionSubset")
+        print("                                         name: %s" % p4.func.nexusFixNameIfQuotesAreNeeded(self.name))
+        print("                                     triplets: ")
         for t in self.triplets:
-            print "                                               %s" % t
-        print "                                       tokens: %s" % self.tokens
+            print("                                               %s" % t)
+        print("                                       tokens: %s" % self.tokens)
         # for t in self.tokens:
         #    print "                                               %s" % t
-        print "                                         mask: %s" % self.mask
+        print("                                         mask: %s" % self.mask)
 
     def writeNexusToOpenFile(self, flob):
         flob.write('%s:' % self.name)
@@ -1158,11 +1159,11 @@ class CharPartition(object):
         gm = ['CharPartition._readCharPartitionDefinition()']
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
-        tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+        tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
         lowTok = string.lower(tok)
         while lowTok != '=':
             if lowTok == '(':
-                tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+                tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
                 lowTok = string.lower(tok)
                 while lowTok != ')':
                     if lowTok in ['notokens', 'vector']:
@@ -1179,7 +1180,7 @@ class CharPartition(object):
                         gm.append(
                             "(Only 'tokens' and 'standard' are implemented.)")
                         raise P4Error(gm)
-                    tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+                    tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
                     lowTok = string.lower(tok)
             else:
                 gm.append("Got unexpected token: '%s'" % tok)
@@ -1187,11 +1188,11 @@ class CharPartition(object):
                     "I was expecting either an '=' or something in parentheses.")
                 raise P4Error(gm)
 
-        tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+        tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
         lowTok = string.lower(tok)
         while lowTok not in [None, ';', 'end', 'endblock']:
             self.tokens.append(tok)
-            tok = func.nexusUnquoteName(safeNextTok(flob, gm[0]))
+            tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
             lowTok = string.lower(tok)
 
         # print "_readCharPartitionDefinition: tokens %s" % self.tokens
@@ -1201,7 +1202,7 @@ class CharPartition(object):
         while i < len(self.tokens):
             aSubset = CharPartitionSubset()
             aSubset.name = self.tokens[i]
-            if not func.nexusCheckName(aSubset.name):
+            if not p4.func.nexusCheckName(aSubset.name):
                 gm.append("CharPartition '%s' definition:" % self.name)
                 gm.append("Bad subset name (%s, I think)" % aSubset.name)
                 raise P4Error(gm)
@@ -1434,8 +1435,8 @@ class CharPartition(object):
                     raise P4Error(gm)
 
             if 0:
-                print gm[0]
-                print "Got aSubset (%s) triplets %s" % (aSubset.name, aSubset.triplets)
+                print(gm[0])
+                print("Got aSubset (%s) triplets %s" % (aSubset.name, aSubset.triplets))
                 # sys.exit()
 
             aSubset.mask = array.array('c', self.nexusSets.aligNChar * '0')
@@ -1590,12 +1591,12 @@ class CharPartition(object):
             gm.append("the entire sequence.  Hopefully that is intentional.")
 
     def dump(self):
-        print "                CharPartition:     name: %s" % func.nexusFixNameIfQuotesAreNeeded(self.name)
+        print("                CharPartition:     name: %s" % p4.func.nexusFixNameIfQuotesAreNeeded(self.name))
         # string.join(self.tokens)
-        print "                                 tokens: %s" % self.tokens
+        print("                                 tokens: %s" % self.tokens)
         # for t in self.tokens:
         #    print "                                         %s" % t
-        print "                      number of subsets: %s" % len(self.subsets)
+        print("                      number of subsets: %s" % len(self.subsets))
         for aSubset in self.subsets:
             aSubset.dump()
 

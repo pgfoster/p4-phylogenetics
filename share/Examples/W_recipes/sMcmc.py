@@ -8,8 +8,13 @@ t.newRMatrix(free=1, spec='ones')
 t.setNGammaCat(nGammaCat=4)
 t.newGdasrv(free=1, val=0.5)
 t.setPInvar(free=1, val=0.2)
-m = Mcmc(t, nChains=4, runNum=0, sampleInterval=1000, checkPointInterval=250000)
-m.run(1000000)
-func.summarizeMcmcPrams(skip=500)
+
+nGen = 1000000
+sInterv = int(nGen / 2000)
+cpInterv = int(nGen / 2)
+
+m = Mcmc(t, nChains=4, runNum=0, sampleInterval=sInterv, checkPointInterval=cpInterv)
+m.run(nGen)
+#func.summarizeMcmcPrams(skip=500)
 
 

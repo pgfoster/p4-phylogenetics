@@ -1,24 +1,25 @@
-from sequencelist import SequenceList, Sequence
-from nexussets import NexusSets
-from p4exceptions import P4Error
+from __future__ import print_function
+from p4.sequencelist import SequenceList, Sequence
+from p4.nexussets import NexusSets
+from p4.p4exceptions import P4Error
 import string
 import copy
 import os
 import math
 import string
-import func
+import p4.func
 import re
 import sys
 import array
 import types
-from nexussets import CharSet
+from p4.nexussets import CharSet
 import subprocess
-from distancematrix import DistanceMatrix
-from var import var
-from part import Part
+from p4.distancematrix import DistanceMatrix
+from p4.var import var
+from p4.part import Part
 import numpy
 import numpy.linalg
-import pf
+import p4.pf as pf
 
 if True:
     def _initParts(self):
@@ -64,8 +65,8 @@ if True:
             assert aPart.nChar
 
             if 0:
-                print gm[0]
-                print "    symbols=%s" % self.symbols
+                print(gm[0])
+                print("    symbols=%s" % self.symbols)
 
             aPart.cPart = pf.newPart(len(self.sequences), self.length,
                                      eqSymb, self.symbols)
@@ -77,39 +78,39 @@ if True:
             verbose = 0
             equatesTable = []
             if verbose:
-                print "equates is %s" % self.equates
-                print "eqSymb is %s" % eqSymb  # the keys
-                print "symbols is %s" % self.symbols
+                print("equates is %s" % self.equates)
+                print("eqSymb is %s" % eqSymb)  # the keys
+                print("symbols is %s" % self.symbols)
             for i in range(len(eqSymb)):
                 if verbose:
-                    print "%3s: " % eqSymb[i],
+                    print("%3s: " % eqSymb[i], end=' ')
                 e = self.equates[eqSymb[i]]
                 if verbose:
-                    print "%8s : " % e,
+                    print("%8s : " % e, end=' ')
                 for s in self.symbols:
                     if s in e:
                         if verbose:
-                            print "%1i" % 1,
+                            print("%1i" % 1, end=' ')
                         equatesTable.append('1')
                     else:
                         if verbose:
-                            print "%1i" % 0,
+                            print("%1i" % 0, end=' ')
                         equatesTable.append('0')
                 if verbose:
-                    print ''
+                    print('')
             equatesTable = string.join(equatesTable, '')
             if verbose:
-                print "\n\nequatesTable:"
-                print equatesTable
+                print("\n\nequatesTable:")
+                print(equatesTable)
             pf.pokeEquatesTable(aPart.cPart, equatesTable)
 
             sList = []
             for s in self.sequences:
                 sList.append(s.sequence)
             if 0:
-                print gm[0]
-                print "sList = %s" % sList
-                print "joined = %s" % string.join(sList, '')
+                print(gm[0])
+                print("sList = %s" % sList)
+                print("joined = %s" % string.join(sList, ''))
             pf.pokeSequences(aPart.cPart, string.join(sList, ''))
             # print "about to makePatterns ..."
             pf.makePatterns(aPart.cPart)
@@ -218,7 +219,7 @@ if True:
                 for pNum in range(len(self.parts)):
                     for sNum in range(len(self.sequences)):
                         partSeq = self.parts[pNum].sequenceString(sNum)
-                        print partSeq
+                        print(partSeq)
                         spot = 0
                         m = self.nexusSets.charPartition.subsets[pNum].mask
                         s = self.sequences[sNum]

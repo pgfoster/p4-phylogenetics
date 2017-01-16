@@ -1,9 +1,10 @@
-from p4exceptions import P4Error
-from treepartitions import TreePartitions
-from tree import Tree
-from trees import Trees
-from func import read
-from var import var
+from __future__ import print_function
+from p4.p4exceptions import P4Error
+from p4.treepartitions import TreePartitions
+from p4.tree import Tree
+from p4.trees import Trees
+from p4.func import read
+from p4.var import var
 import sys
 import csv
 import random
@@ -518,9 +519,9 @@ class LeafSupport(object):
         for i in range(len(taxnames)):
             self.taxa2IndexDict[taxnames[i]] = i
             self.index2TaxaDict[i] = taxnames[i]
-            self.bitkeys.append(1L << i)
+            self.bitkeys.append(1 << i)
 
-            self.bitkey2Index[1L << i] = i
+            self.bitkey2Index[1 << i] = i
 
         st = SplitStripper()
         for t in self.inputTrees:
@@ -532,9 +533,9 @@ class LeafSupport(object):
     def printTaxnames(self):
 
         index = 0
-        print 'Index, taxname'
+        print('Index, taxname')
         for name in self.taxnames:
-            print '%s, %s' % (index, name)
+            print('%s, %s' % (index, name))
             index = index + 1
 
     def defineGroup(self, list):
@@ -646,7 +647,7 @@ class LeafSupport(object):
 
             quartetsToUse = int(noOfPossibleQuartets * self.noQuartetsToUse)
 
-            print 'Using %s quartets out of %s possible' % (quartetsToUse, noOfPossibleQuartets)
+            print('Using %s quartets out of %s possible' % (quartetsToUse, noOfPossibleQuartets))
 #            print 'Quartets to use: ', quartetsToUse
 #            print 'Number of taxa:  ',noTaxnames
 
@@ -946,7 +947,7 @@ class LeafSupport(object):
 
         # print 'Leaf stabilites for trees from %s' % (filename)
         # print 'Processing trees'
-        print 'Calculating leaf support'
+        print('Calculating leaf support')
         sys.stdout.flush()
 
         quartet2index = {}
@@ -1023,7 +1024,7 @@ class LeafSupport(object):
                         [tuple, (hits / float(self.sumOfWeights)) * 100])
 
             if len(omnipresentClades) == 0:
-                print 'Sorry, no clades matching the %s proportion found in the input trees' % (self.cladePercentage)
+                print('Sorry, no clades matching the %s proportion found in the input trees' % (self.cladePercentage))
 
             omnipresentClades = sorted(omnipresentClades, self._hitsCmp)
 
@@ -1094,7 +1095,7 @@ class LeafSupport(object):
                                         nMresultList, nMmaxAverage, nMdiffAverage, nMentAverage, nMdiffWarning, nMentWarning, 0.0]])
 #                    results.append([resultList, maxAverage, diffAverage, entAverage, diffWarning, entWarning, group, 0.0])
                 else:
-                    print 'Zero length'
+                    print('Zero length')
         if self.writeCsv:
             writer = csv.writer(open(self.csvFilename, "wb"))
             list = []
@@ -1129,23 +1130,23 @@ class LeafSupport(object):
         for result in results:
             ##            self.printSupportTable(result[0],result[1], result[2], result[3], result[4], result[5])
             if len(result) == 6:
-                print 'All taxa'
+                print('All taxa')
                 self.printSupportTable(
                     result[0], result[1], result[2], result[3], result[4], result[5])
-                print ''
+                print('')
             else:
                 if result[7] > 0.0:
-                    print 'Clade appears in %s percent of the trees ' % (result[7])
+                    print('Clade appears in %s percent of the trees ' % (result[7]))
                 else:
-                    print 'Taxon set'
+                    print('Taxon set')
                 self.printSupportTable(
                     result[0], result[1], result[2], result[3], result[4], result[5])
-                print ''
+                print('')
 
         for result in groupResults:
-            print 'Group membership'
+            print('Group membership')
             self.printGroupSupportTable(result)
-            print ''
+            print('')
 
     def _hitsCmp(self, one, other):
         return int(other[1]) - int(one[1])
@@ -1493,82 +1494,82 @@ class LeafSupport(object):
         for i in range(max + 64):
             line += '-'
         printedAverage = False
-        print line
-        print '| Members'.ljust(max + 2),
-        print '| Maximum'.ljust(12),
-        print '| Rank'.ljust(6),
-        print '| Difference'.ljust(12),
-        print '| Rank'.ljust(6),
-        print '| Entropy'.ljust(12),
-        print '| Rank'.ljust(6),
-        print '|'
-        print line
+        print(line)
+        print('| Members'.ljust(max + 2), end=' ')
+        print('| Maximum'.ljust(12), end=' ')
+        print('| Rank'.ljust(6), end=' ')
+        print('| Difference'.ljust(12), end=' ')
+        print('| Rank'.ljust(6), end=' ')
+        print('| Entropy'.ljust(12), end=' ')
+        print('| Rank'.ljust(6), end=' ')
+        print('|')
+        print(line)
         for result in resultList:
             if maxAverage > result[0] and not printedAverage:
                 printedAverage = True
-                print line
-                print '|',
-                print 'Average'.ljust(max),
-                print '|',
-                print str(maxAverage).ljust(10)[:10],
-                print '|      |',
-                print str(diffAverage).ljust(10)[:10],
-                print '|      |',
-                print str(entAverage).ljust(10)[:10],
-                print '|      |'
-                print line
-            print '|',
-            print str(result[4]).ljust(max),
-            print '|',
-            print str(result[0]).ljust(10)[:10],
-            print '|',
-            print str(result[5]).ljust(4)[:4],
-            print '|',
-            print str(result[1]).ljust(10)[:10],
-            print '|',
-            print str(result[5]).ljust(4)[:4],
-            print '|',
-            print str(result[2]).ljust(10)[:10],
-            print '|',
-            print str(result[5]).ljust(4)[:4],
-            print '|'
-        print line
-        print '| Non members'.ljust(max + 62),
-        print '|'
-        print line
+                print(line)
+                print('|', end=' ')
+                print('Average'.ljust(max), end=' ')
+                print('|', end=' ')
+                print(str(maxAverage).ljust(10)[:10], end=' ')
+                print('|      |', end=' ')
+                print(str(diffAverage).ljust(10)[:10], end=' ')
+                print('|      |', end=' ')
+                print(str(entAverage).ljust(10)[:10], end=' ')
+                print('|      |')
+                print(line)
+            print('|', end=' ')
+            print(str(result[4]).ljust(max), end=' ')
+            print('|', end=' ')
+            print(str(result[0]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[5]).ljust(4)[:4], end=' ')
+            print('|', end=' ')
+            print(str(result[1]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[5]).ljust(4)[:4], end=' ')
+            print('|', end=' ')
+            print(str(result[2]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[5]).ljust(4)[:4], end=' ')
+            print('|')
+        print(line)
+        print('| Non members'.ljust(max + 62), end=' ')
+        print('|')
+        print(line)
 
         printedAverage = False
         for result in nMresultList:
             if nMmaxAverage > result[0] and not printedAverage:
                 printedAverage = True
-                print line
-                print '|',
-                print 'Average'.ljust(max),
-                print '|',
-                print str(nMmaxAverage).ljust(10)[:10],
-                print '|      |',
-                print str(nMdiffAverage).ljust(10)[:10],
-                print '|      |',
-                print str(nMentAverage).ljust(10)[:10],
-                print '|      |'
-                print line
-            print '|',
-            print str(result[4]).ljust(max),
-            print '|',
-            print str(result[0]).ljust(10)[:10],
-            print '|',
-            print str(result[5]).ljust(4)[:4],
-            print '|',
-            print str(result[1]).ljust(10)[:10],
-            print '|',
-            print str(result[5]).ljust(4)[:4],
-            print '|',
-            print str(result[2]).ljust(10)[:10],
-            print '|',
-            print str(result[5]).ljust(4)[:4],
-            print '|'
+                print(line)
+                print('|', end=' ')
+                print('Average'.ljust(max), end=' ')
+                print('|', end=' ')
+                print(str(nMmaxAverage).ljust(10)[:10], end=' ')
+                print('|      |', end=' ')
+                print(str(nMdiffAverage).ljust(10)[:10], end=' ')
+                print('|      |', end=' ')
+                print(str(nMentAverage).ljust(10)[:10], end=' ')
+                print('|      |')
+                print(line)
+            print('|', end=' ')
+            print(str(result[4]).ljust(max), end=' ')
+            print('|', end=' ')
+            print(str(result[0]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[5]).ljust(4)[:4], end=' ')
+            print('|', end=' ')
+            print(str(result[1]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[5]).ljust(4)[:4], end=' ')
+            print('|', end=' ')
+            print(str(result[2]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[5]).ljust(4)[:4], end=' ')
+            print('|')
 
-        print line
+        print(line)
 
     def printSupportTable(self, resultList, maxAverage, diffAverage, entAverage, diffWarning, entWarning):
         max = 0
@@ -1581,51 +1582,51 @@ class LeafSupport(object):
         for i in range(max + 64):
             line += '-'
         printedAverage = False
-        print line
-        print '| Taxa'.ljust(max + 2),
-        print '| Maximum'.ljust(12),
-        print '| Rank'.ljust(6),
-        print '| Difference'.ljust(12),
-        print '| Rank'.ljust(6),
-        print '| Entropy'.ljust(12),
-        print '| Rank'.ljust(6),
-        print '|'
-        print line
+        print(line)
+        print('| Taxa'.ljust(max + 2), end=' ')
+        print('| Maximum'.ljust(12), end=' ')
+        print('| Rank'.ljust(6), end=' ')
+        print('| Difference'.ljust(12), end=' ')
+        print('| Rank'.ljust(6), end=' ')
+        print('| Entropy'.ljust(12), end=' ')
+        print('| Rank'.ljust(6), end=' ')
+        print('|')
+        print(line)
         for result in resultList:
             if maxAverage > result[0] and not printedAverage:
                 printedAverage = True
-                print line
-                print '|',
-                print 'Average'.ljust(max),
-                print '|',
-                print str(maxAverage).ljust(10)[:10],
-                print '|      |',
-                print str(diffAverage).ljust(10)[:10],
-                print '|      |',
-                print str(entAverage).ljust(10)[:10],
-                print '|      |'
-                print line
-            print '|',
-            print str(result[4]).ljust(max),
-            print '|',
-            print str(result[0]).ljust(10)[:10],
-            print '|',
-            print str(result[5]).ljust(4)[:4],
-            print '|',
-            print str(result[1]).ljust(10)[:10],
-            print '|',
-            print str(result[6]).ljust(4)[:4],
-            print '|',
-            print str(result[2]).ljust(10)[:10],
-            print '|',
-            print str(result[7]).ljust(4)[:4],
-            print '|'
-        print line
-        print 'Results sorted by Maximum column'
+                print(line)
+                print('|', end=' ')
+                print('Average'.ljust(max), end=' ')
+                print('|', end=' ')
+                print(str(maxAverage).ljust(10)[:10], end=' ')
+                print('|      |', end=' ')
+                print(str(diffAverage).ljust(10)[:10], end=' ')
+                print('|      |', end=' ')
+                print(str(entAverage).ljust(10)[:10], end=' ')
+                print('|      |')
+                print(line)
+            print('|', end=' ')
+            print(str(result[4]).ljust(max), end=' ')
+            print('|', end=' ')
+            print(str(result[0]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[5]).ljust(4)[:4], end=' ')
+            print('|', end=' ')
+            print(str(result[1]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[6]).ljust(4)[:4], end=' ')
+            print('|', end=' ')
+            print(str(result[2]).ljust(10)[:10], end=' ')
+            print('|', end=' ')
+            print(str(result[7]).ljust(4)[:4], end=' ')
+            print('|')
+        print(line)
+        print('Results sorted by Maximum column')
         if diffWarning:
-            print '* Note that the sorting in the Difference column differs from the Maximum column'
+            print('* Note that the sorting in the Difference column differs from the Maximum column')
         if entWarning:
-            print '** Note that the sorting in the Entropy column differs from the Maximum column'
+            print('** Note that the sorting in the Entropy column differs from the Maximum column')
 
     def getSortedQuartetTuple(self, quartet):
         list = []
@@ -1665,7 +1666,7 @@ class LeafSupport(object):
 #        print ''
 
         if len(quartetTypes.values()) > 4:
-            print 'Found more than four kinds of quartets for 4 taxa, not good'
+            print('Found more than four kinds of quartets for 4 taxa, not good')
 #            print quartetTypes.values()
 #            print quartetTypes.keys()
             return 0.0, 0.0, 0.0
@@ -1845,18 +1846,18 @@ class TreeStripper(object):
         self.index = 0
 
     def printSet(self):
-        print 'Added: %s' % (self.added)
-        print 'Set.len: %s' % (len(self.set))
-        print 'Set'
+        print('Added: %s' % (self.added))
+        print('Set.len: %s' % (len(self.set)))
+        print('Set')
         for t in self.set:
-            print t
-        print 'Translation table'
+            print(t)
+        print('Translation table')
         for i, j in self.taxa2id.items():
-            print 'Item: %s, Value: %s' % (i, j)
+            print('Item: %s, Value: %s' % (i, j))
         if self.translatedSet:
-            print 'Translated set'
+            print('Translated set')
             for t in self.translatedSet:
-                print t
+                print(t)
 
     def getTranslatedSet(self):
         if self.translatedSet == None:
@@ -1945,12 +1946,12 @@ class TreeStripper(object):
         while sibling:
             #            list2.extend(tree.getNodeNumsAbove(sibling, 1))
             if sibling.isLeaf:
-                print '22'
-                print sibling.name
+                print('22')
+                print(sibling.name)
                 siblings.append(sibling.name)
             else:
-                print '33'
-                print tree.getAllLeafNames(sibling)
+                print('33')
+                print(tree.getAllLeafNames(sibling))
                 list2.extend(tree.getAllLeafNames(sibling))
             sibling = sibling.sibling
         return list1, list2, siblings
@@ -2082,7 +2083,7 @@ class TripletStripper(TreeStripper):
         if dict:
             dict[ROOT_NODE_NAME] = -1
         if len(list) < 3:
-            print 'Unresolved list to short'
+            print('Unresolved list to short')
         for i in range(0, len(list) - 2):
             for j in range(i + 1, len(list) - 1):
                 for k in range(j + 1, len(list)):
@@ -2384,7 +2385,7 @@ class QuartetStripper(TreeStripper):
 
     def buildQuartetsFromUnresolvedTaxa(self, unresolved, allTaxa):
         if len(unresolved) < 3:
-            print 'Not a happy camper, less than four taxa in unresolved'
+            print('Not a happy camper, less than four taxa in unresolved')
 
 #        print unresolved
         unique = []
@@ -2448,16 +2449,16 @@ class QuartetStripper(TreeStripper):
 #                print unresolved
                 if len(unresolved) <= 2:
                     names.extend(unresolved)
-                    print 'Names: '
-                    print names
+                    print('Names: ')
+                    print(names)
                     tuples = self.buildQuartetsFromLists(names, dict)
                 else:
-                    print 'Names: '
-                    print names
+                    print('Names: ')
+                    print(names)
                     tuples = self.buildQuartetsFromLists(names, dict)
 #                    print 'Building triplets from unresolved'
-                    print 'Unresolved: '
-                    print unresolved
+                    print('Unresolved: ')
+                    print(unresolved)
                     tuples.extend(
                         self.buildQuartetsFromUnresolved(unresolved, dict))
             else:
@@ -2468,16 +2469,16 @@ class QuartetStripper(TreeStripper):
 #                    print unresolved
                     if len(unresolved) <= 2:
                         names.extend(unresolved)
-                        print 'Names: '
-                        print names
+                        print('Names: ')
+                        print(names)
                         tuples = self.buildQuartetsFromLists(names, dict)
                     else:
-                        print 'Names: '
-                        print names
+                        print('Names: ')
+                        print(names)
                         tuples = self.buildQuartetsFromLists(names, dict)
 #                        print 'Building triplets from unresolved'
-                        print 'Unresolved: '
-                        print unresolved
+                        print('Unresolved: ')
+                        print(unresolved)
                         tuples.extend(
                             self.buildQuartetsFromUnresolved(unresolved, dict))
 #                tuples = self.buildTripletsFromLists(names)
@@ -2497,13 +2498,13 @@ class QuartetStripper(TreeStripper):
                 possibles1 = self._allPossiblePairs(list[i])
                 possibles2 = self._allPossiblePairs(list[j])
                 quartets.extend(self._combineLists(possibles1, possibles2))
-        print quartets
+        print(quartets)
         return quartets
 
     def buildQuartetsFromUnresolved(self, list, dict):
         quartets = []
         if len(list) < 4:
-            print 'Unresolved list to short'
+            print('Unresolved list to short')
         for i in range(0, len(list) - 2):
             for j in range(i + 1, len(list) - 1):
                 for k in range(j + 1, len(list)):
@@ -2516,7 +2517,7 @@ class QuartetStripper(TreeStripper):
                         list.sort()
                         quartets.append(
                             ((list[0], list[1], list[2], list[3]),))
-        print quartets
+        print(quartets)
         return quartets
 
     def combineLists(self, list1, list2, dict):
@@ -2558,7 +2559,7 @@ class QuartetStripper(TreeStripper):
 
     def _allPossiblePairs(self, list):
         if len(list) < 2:
-            print 'No possible pairs, uninformative split'
+            print('No possible pairs, uninformative split')
         if len(list) == 2:
             return [(list[0], list[1])]
         possibles = []
@@ -2657,9 +2658,9 @@ class SplitStripper(TreeStripper):
         rdict = {}
         self.bitkeys = []
         for i in range(len(list)):
-            self.bitkeys.append(1L << i)
-            dict[list[i]] = 1L << i
-            rdict[1L << i] = list[i]
+            self.bitkeys.append(1 << i)
+            dict[list[i]] = 1 << i
+            rdict[1 << i] = list[i]
 
         for n in tree.iterLeavesNoRoot():
             n.br.rc = dict[n.name]
@@ -2693,9 +2694,9 @@ class SplitStripper(TreeStripper):
         rdict = {}
         self.bitkeys = []
         for i in range(len(taxnames)):
-            self.bitkeys.append(1L << i)
-            dict[taxnames[i]] = 1L << i
-            rdict[1L << i] = taxnames[i]
+            self.bitkeys.append(1 << i)
+            dict[taxnames[i]] = 1 << i
+            rdict[1 << i] = taxnames[i]
 
         for n in tree.iterLeavesNoRoot():
             n.br.rc = dict[n.name]
@@ -2718,6 +2719,6 @@ class SplitStripper(TreeStripper):
                 splits.append(tuple1)
 
             for i in splits:
-                print i
+                print(i)
 
             return splits

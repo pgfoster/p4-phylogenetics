@@ -43,9 +43,10 @@ and you get the argspec for the Completer.__init__ method.
 The names (choices) that you get when you hit <tab> twice do not
 usually include those names starting with '_'; this is a feature, not a bug.
 If you want those, you can give it a '_' after the dot to complete.  """
+from __future__ import print_function
 
 import readline,inspect,re
-import __builtin__
+# import __builtin__
 import __main__
 
 __all__ = ["Completer"]
@@ -89,7 +90,7 @@ class Completer:
         """
 
         if namespace and not isinstance(namespace, dict):
-            raise TypeError,'namespace must be a dictionary'
+            raise TypeError('namespace must be a dictionary')
 
         # Don't bind to namespace quite yet, but flag whether the user wants a
         # specific namespace or to use __main__.__dict__. This will allow us
@@ -326,7 +327,7 @@ class Completer:
                 if len(afterDot) > 1:
                     pass
                 else:
-                    print '\n\nInstance of class %s' % theThing.__class__
+                    print('\n\nInstance of class %s' % theThing.__class__)
 
         elif inspect.isroutine(theThing):
             #print 'Its a routine.  toggle=%s' % self.toggle
@@ -341,13 +342,13 @@ class Completer:
                     else:
                         thingModule = 'unknown module'
                 if typeOfTheThing == types.MethodType:
-                    print '\n\n%s method \'%s\', in %s' % (theThing.im_class, thingName, thingModule)
+                    print('\n\n%s method \'%s\', in %s' % (theThing.im_class, thingName, thingModule))
                 elif typeOfTheThing == types.FunctionType:
-                    print '\n\nfunction \'%s\', in %s' % (thingName, thingModule)
+                    print('\n\nfunction \'%s\', in %s' % (thingName, thingModule))
                 elif typeOfTheThing == types.BuiltinFunctionType:
-                    print '\n\nbuiltin function \'%s\', in module %s' % (thingName, thingModule)
+                    print('\n\nbuiltin function \'%s\', in module %s' % (thingName, thingModule))
                 else:
-                    print '\n\nroutine \'%s\', in %s' % (thingName, thingModule)
+                    print('\n\nroutine \'%s\', in %s' % (thingName, thingModule))
                 #try:
                 #    print 'defined in file %s' % inspect.getfile(theThing)
                 #except TypeError:
@@ -362,16 +363,16 @@ class Completer:
                 except TypeError:
                     pass
                 if argspec:
-                    print ''
-                    print theThing.__name__ + argspec
-                    print ''
+                    print('')
+                    print(theThing.__name__ + argspec)
+                    print('')
                 else:
-                    print ''
+                    print('')
                 theDocString = inspect.getdoc(theThing)
                 if theDocString:
-                    print theDocString
+                    print(theDocString)
                 else:
-                    print 'No documentation available'
+                    print('No documentation available')
                 if afterDot and len(afterDot):
                     pass
                 else:
@@ -395,15 +396,15 @@ class Completer:
                 self.toggle = 1
                 if not afterDot or len(afterDot) == 0:
                     if inspect.isclass(theThing):
-                        print '\n\nClass %s, from module %s' % (theThing.__name__, inspect.getmodule(theThing))
+                        print('\n\nClass %s, from module %s' % (theThing.__name__, inspect.getmodule(theThing)))
                     elif inspect.ismodule(theThing):
-                        print '\n\nModule %s' % theThing.__name__
-                    print ''
+                        print('\n\nModule %s' % theThing.__name__)
+                    print('')
                     theDocString = inspect.getdoc(theThing)
                     if theDocString:
-                        print theDocString
+                        print(theDocString)
                     else:
-                        print 'No documentation available'
+                        print('No documentation available')
                     if not len(words):
                         return ['', '']
 
@@ -430,7 +431,7 @@ class Completer:
 readline.set_completer(Completer().complete)
 
 # peter added, so that it would not split words in the input line on a "("
-import string
+#import string
 delims = readline.get_completer_delims()
 #print "delims = %s" % delims
 delimList = list(delims)
@@ -440,17 +441,25 @@ if 1:
     delimList.remove('[')
     delimList.remove(']')
 #print delimList
-readline.set_completer_delims(string.join(delimList, ''))
+#readline.set_completer_delims(string.join(delimList, ''))
+readline.set_completer_delims(''.join(delimList))
 
 # make the tab work for completion
 try:
-    from Var import var
+    from p4.var import var
     #print "var.readlineUsesEditline is %s" % var.readlineUsesEditline
     if var.readlineUsesEditline:
         # For Mac OS 10.5, which uses editline, not readline, and has a different syntax.
         readline.parse_and_bind("bind ^I rl_complete")
     else:
         readline.parse_and_bind("tab: complete")
+
+    # See also https://pewpewthespells.com/blog/osx_readline.html
+    # which has more explanation, eg
+    # if 'libedit' in readline.__doc__:
+    #     readline.parse_and_bind("bind ^I rl_complete")
+    # else:
+    #     readline.parse_and_bind("tab: complete")
         
 except ImportError:
     readline.parse_and_bind("tab: complete")

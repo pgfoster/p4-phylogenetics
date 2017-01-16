@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 class QuartetSet(object):
 
@@ -17,23 +18,23 @@ class QuartetSet(object):
     def addQuartet(self, l1, l2, r1, r2):
         if not l1 in self.taxNames:
             self.taxNames.append(l1)
-            self.bitKeys.append(1L << self.taxNames.index(l1))
+            self.bitKeys.append(1 << self.taxNames.index(l1))
         if not l2 in self.taxNames:
             self.taxNames.append(l2)
-            self.bitKeys.append(1L << self.taxNames.index(l2))
+            self.bitKeys.append(1 << self.taxNames.index(l2))
         if not r1 in self.taxNames:
             self.taxNames.append(r1)
-            self.bitKeys.append(1L << self.taxNames.index(r1))
+            self.bitKeys.append(1 << self.taxNames.index(r1))
         if not r2 in self.taxNames:
             self.taxNames.append(r2)
-            self.bitKeys.append(1L << self.taxNames.index(r2))
+            self.bitKeys.append(1 << self.taxNames.index(r2))
 
 # print 'l1: %s, l2: %s, r1: %s, r2: %s' % (self.taxNames.index(l1),
 # self.taxNames.index(l2), self.taxNames.index(r1),
 # self.taxNames.index(r2))
 
-        quartet = Quartet((1L << self.taxNames.index(l1) | 1L << self.taxNames.index(l2)),
-                          (1L << self.taxNames.index(r1) | 1L << self.taxNames.index(r2)))
+        quartet = Quartet((1 << self.taxNames.index(l1) | 1 << self.taxNames.index(l2)),
+                          (1 << self.taxNames.index(r1) | 1 << self.taxNames.index(r2)))
 
         if quartet.isValidQuartet(self.bitKeys):
             compatible, q = self.checkCompatibility(quartet)
@@ -43,10 +44,10 @@ class QuartetSet(object):
                 self._closure(self.closureSet)
                 return
             else:
-                print 'Quartet incompatible with set'
+                print('Quartet incompatible with set')
                 return
 
-        print 'Not a valid quartet, it was not added to the set'
+        print('Not a valid quartet, it was not added to the set')
 
     def checkCompatibility(self, quartet):
         list = self.quartetSet.list()
@@ -87,17 +88,17 @@ class QuartetSet(object):
         sortedTaxaNames = sorted(self.taxNames)
         sortedBitkeys = []
         for taxaName in sortedTaxaNames:
-            sortedBitkeys.append(1L << sortedTaxaNames.index(taxaName))
+            sortedBitkeys.append(1 << sortedTaxaNames.index(taxaName))
         quartetList = self.quartetSet.list()
         sortedQuartetSet = DualIndexNoDupes()
         for q in quartetList:
             quartetTaxNames = self._getListOfTaxNames(q.left, q.right)
 #            print 'List: %s' % (quartetTaxNames)
-            sortedQuartetSet.addQuartet(Quartet(1L << sortedTaxaNames.index(quartetTaxNames[0]) |
-                                                1L << sortedTaxaNames.index(
+            sortedQuartetSet.addQuartet(Quartet(1 << sortedTaxaNames.index(quartetTaxNames[0]) |
+                                                1 << sortedTaxaNames.index(
                                                     quartetTaxNames[1]),
-                                                1L << sortedTaxaNames.index(quartetTaxNames[2]) |
-                                                1L << sortedTaxaNames.index(quartetTaxNames[3])))
+                                                1 << sortedTaxaNames.index(quartetTaxNames[2]) |
+                                                1 << sortedTaxaNames.index(quartetTaxNames[3])))
         self.taxNames = sortedTaxaNames
         self.bitKeys = sortedBitkeys
         self.quartetSet = sortedQuartetSet
@@ -202,7 +203,7 @@ class QuartetSet(object):
         index = ''
         for n in self.taxNames:
             index += n
-        print index
+        print(index)
         for q in self.quartetSet.list():
             q.printQ(self.bitKeys)
 
@@ -255,7 +256,7 @@ class DualIndexNoDupes(object):
     def printD(self):
         list = self.list()
         for d in list:
-            print '%s' % (d)
+            print('%s' % (d))
 
 
 class QuartetLogic(object):
@@ -451,7 +452,7 @@ class QuartetLogic(object):
 
 class Quartet(object):
 
-    def __init__(self, _left=0L, _right=0L, _parent1=None, _parent2=None):
+    def __init__(self, _left=0, _right=0, _parent1=None, _parent2=None):
         self.parent1 = _parent1
         self.parent2 = _parent2
         if _left < _right:
@@ -491,5 +492,5 @@ class Quartet(object):
                 intersection = intersection + '0'
             else:
                 intersection = intersection + '.'
-        print '%s' % (intersection)
+        print('%s' % (intersection))
 #        print '%s, q.l: %s, q.r: %s' % (intersection, self.left, self.right)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Make the rst file scripts.rst
 from p4.P4Error import P4Error
 
@@ -49,8 +50,8 @@ for fNum in range(len(fList)):
 #.. literalinclude:: pyplots/ellipses.py
 
 start = start[1:]
-print start
-print
+print(start)
+print()
 #print ".. literalinclude:: %s/sCon.py" % pre
 
 for rNum in range(len(recipesList)):
@@ -59,9 +60,9 @@ for rNum in range(len(recipesList)):
     if heading.endswith('.'):
         heading = heading[:-1]
     uLine = '-' * len(heading)
-    print heading
-    print uLine
-    print
-    print ".. literalinclude:: %s" % fList[rNum]
-    print
+    print(heading)
+    print(uLine)
+    print()
+    print(".. literalinclude:: %s" % fList[rNum])
+    print()
     

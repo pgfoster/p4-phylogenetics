@@ -1,9 +1,10 @@
+from __future__ import print_function
 # This is STMcmc, for super tree mcmc.
 # Started 18 March 2011, first commit 22 March 2011.
 
-import pf
-import func
-from var import var
+import p4.pf as pf
+import p4.func
+from p4.var import var
 import math
 import random
 import string
@@ -11,14 +12,14 @@ import sys
 import time
 import copy
 import os
-import cPickle
+import pickle
 import types
 import glob
 import numpy as np
-from p4exceptions import P4Error
-from treepartitions import TreePartitions
-from constraints import Constraints
-from tree import Tree
+from p4.p4exceptions import P4Error
+from p4.treepartitions import TreePartitions
+from p4.constraints import Constraints
+from p4.tree import Tree
 import datetime
 import itertools
 
@@ -91,7 +92,7 @@ def BS2009_Eqn30_ZTApprox(n, beta, cT):
 def popcountA(k, nBits):
     count = 0
     for i in range(nBits):
-        tester = 1L << i
+        tester = 1 << i
         if tester > k:
             return count
         if tester & k:
@@ -102,16 +103,16 @@ def popcountA(k, nBits):
 def bitReduce(bk, txBits, lLen, sLen, allOnes):
     # print "bitReduce: bk %i, txBits %i, lLen %i, sLen %i, allOnes %i" % (bk,
     # txBits, lLen, sLen, allOnes)
-    newBk = 0L
+    newBk = 0
     counter = 0
     pops = 0
     for pos in range(lLen):
-        tester = 1L << pos
+        tester = 1 << pos
         # print "pos %2i, tester: %3i" % (pos, tester)
         if tester & txBits:
             # print "    tester & txBits -- True"
             if tester & bk:
-                adder = 1L << counter
+                adder = 1 << counter
                 # print "        adding:", adder
                 newBk += adder
                 pops += 1
@@ -132,12 +133,12 @@ if 0:  # test bitReduce
     lLen = 5
     sLen = 4
     allOnes = 15
-    print "     sk: %3i  %s" % (sk, func.getSplitStringFromKey(sk, lLen))
-    print "taxBits: %3i  %s" % (txBits, func.getSplitStringFromKey(txBits, lLen))
+    print("     sk: %3i  %s" % (sk, p4.func.getSplitStringFromKey(sk, lLen)))
+    print("taxBits: %3i  %s" % (txBits, p4.func.getSplitStringFromKey(txBits, lLen)))
 
     rsk, popcount = bitReduce(sk, txBits, lLen, sLen, allOnes)
-    print "    rsk: %3i  %s" % (rsk, func.getSplitStringFromKey(rsk, sLen))
-    print "   popcount %i" % popcount
+    print("    rsk: %3i  %s" % (rsk, p4.func.getSplitStringFromKey(rsk, sLen)))
+    print("   popcount %i" % popcount)
     #     sk:   6  .**..
     #     taxBits:  30  .****
     #     rsk:  12  ..**
@@ -146,23 +147,23 @@ if 0:  # test bitReduce
 
 def maskedSymmetricDifference(skk, skSet, taxBits, longLen, shortLen, allOnes):
     if 0:
-        print "-" * 50
-        print "skk (skk_ppy1 from the current supertree)"
+        print("-" * 50)
+        print("skk (skk_ppy1 from the current supertree)")
         for sk in skk:
-            print func.getSplitStringFromKey(sk, longLen)
-        print "skSet (from input tree)"
+            print(p4.func.getSplitStringFromKey(sk, longLen))
+        print("skSet (from input tree)")
         for sk in skSet:
-            print func.getSplitStringFromKey(sk, shortLen)
-        print "taxBits:", taxBits, func.getSplitStringFromKey(taxBits, longLen)
+            print(p4.func.getSplitStringFromKey(sk, shortLen))
+        print("taxBits:", taxBits, p4.func.getSplitStringFromKey(taxBits, longLen))
 
     newSkk = []
     for sk in skk:
         reducedSk, popcount = bitReduce(
             sk, taxBits, longLen, shortLen, allOnes)
         if 0:
-            print "taxBits: %s  " % func.getSplitStringFromKey(taxBits, longLen),
-            print "%4i %s  " % (sk, func.getSplitStringFromKey(sk, longLen)),
-            print "%4i %s  %i" % (reducedSk, func.getSplitStringFromKey(reducedSk, shortLen), popcount)
+            print("taxBits: %s  " % p4.func.getSplitStringFromKey(taxBits, longLen), end=' ')
+            print("%4i %s  " % (sk, p4.func.getSplitStringFromKey(sk, longLen)), end=' ')
+            print("%4i %s  %i" % (reducedSk, p4.func.getSplitStringFromKey(reducedSk, shortLen), popcount))
         if popcount <= 1 or popcount >= (shortLen - 1):
             pass
         else:
@@ -251,9 +252,9 @@ class STChain(object):
             raise P4Error(gm)
 
         if 0:
-            print "STChain init()"
+            print("STChain init()")
             self.curTree.draw()
-            print "logLike is %f" % self.curTree.logLike
+            print("logLike is %f" % self.curTree.logLike)
 
     def getTreeLogLike_qpa_slow(self):
         gm = ["STChain.getTreeLogLike_qpa_slow()"]
@@ -313,8 +314,8 @@ class STChain(object):
             raise P4Error(gm)
         slowCheck = False
         if slowCheck:
-            print "\n", "-" * 30
-            print "Super tree: ",
+            print("\n", "-" * 30)
+            print("Super tree: ", end=' ')
             self.propTree.write()
             slowCheckLogLike = 0.0
             for it in self.stMcmc.trees:
@@ -325,12 +326,12 @@ class STChain(object):
         # self.propTree.draw()
         for it in self.stMcmc.trees:
             if 0:
-                print "-" * 50
+                print("-" * 50)
                 it.draw()
-                print "baTaxBits %s" % it.baTaxBits
-                print "firstTax at %i" % it.firstTax
+                print("baTaxBits %s" % it.baTaxBits)
+                print("firstTax at %i" % it.firstTax)
             if 0:
-                print "  input tree: ",
+                print("  input tree: ", end=' ')
                 it.write()
 
             if slowCheck:
@@ -357,14 +358,14 @@ class STChain(object):
                 n.ss.maskedSplitWithTheFirstTaxOne = n.ss.theSpl & it.baTaxBits
                 n.ss.onesCount = n.ss.maskedSplitWithTheFirstTaxOne.count()
                 if 0:
-                    print "bigT node %i" % n.nodeNum
-                    print "  theSpl is %s" % n.ss.theSpl
-                    print "  maskedSplitWithTheFirstTaxOne %s" % n.ss.maskedSplitWithTheFirstTaxOne
-                    print "  onesCount %i" % n.ss.onesCount
+                    print("bigT node %i" % n.nodeNum)
+                    print("  theSpl is %s" % n.ss.theSpl)
+                    print("  maskedSplitWithTheFirstTaxOne %s" % n.ss.maskedSplitWithTheFirstTaxOne)
+                    print("  onesCount %i" % n.ss.onesCount)
                     if n.ss.onesCount >= 2 and n.ss.onesCount <= upperGood:
-                        print "    -> relevant"
+                        print("    -> relevant")
                     else:
-                        print "    -> not relevant"
+                        print("    -> not relevant")
                 if n.ss.onesCount >= 2 and n.ss.onesCount <= upperGood:
                     relevantStSplits.append(n.ss)
 
@@ -376,10 +377,10 @@ class STChain(object):
             if 0:
                 for ss in relevantStSplits:
                     ss.dump()
-                print "There are %i relevant splits in the st for this it." % len(relevantStSplits)
+                print("There are %i relevant splits in the st for this it." % len(relevantStSplits))
                 for ss in nonRedundantStSplitDict:
                     ss.dump()
-                print "There are %i non-redundant splits in the st for this it." % len(nonRedundantStSplitDict)
+                print("There are %i non-redundant splits in the st for this it." % len(nonRedundantStSplitDict))
 
             # S_st is the number of splits in the reduced supertree
             S_st = len(nonRedundantStSplitDict)
@@ -429,28 +430,28 @@ class STChain(object):
 
             if slowCheck:
                 for inb in it.inbb:
-                    splitString = func.getSplitStringFromKey(
+                    splitString = p4.func.getSplitStringFromKey(
                         inb.splitKey, it.nTax)
-                    print "    %s " % splitString,
+                    print("    %s " % splitString, end=' ')
                     ret = stDupe.nodeForSplitKeyDict.get(inb.splitKey)
                     # Here we need to check that S_st is not zero.  If it is,
                     # then q is undefined.
                     if self.stMcmc.useSplitSupport and inb.support != None and S_st:
                         if ret:
                             thisLogQc = math.log(r + (inb.support * (q - r)))
-                            print "qc %.3f" % thisLogQc
+                            print("qc %.3f" % thisLogQc)
                             slowCheckLogLike += thisLogQc
                         else:
                             thisLogRc = math.log(
                                 r + ((1. - inb.support) * (q - r)))
-                            print "rc %.3f" % thisLogRc
+                            print("rc %.3f" % thisLogRc)
                             slowCheckLogLike += thisLogRc
                     else:
                         if ret:
-                            print "q %.3f" % q
+                            print("q %.3f" % q)
                             slowCheckLogLike += logq
                         else:
-                            print "r %.3f" % r
+                            print("r %.3f" % r)
                             slowCheckLogLike += logr
         if 1:
             if slowCheck:
@@ -622,10 +623,10 @@ class STChain(object):
                 n.br.splitKey for n in self.propTree.iterInternalsNoRoot()]
         for t in self.stMcmc.trees:
             if 0:
-                print "-" * 50
+                print("-" * 50)
                 t.draw()
-                print "baTaxBits %s" % t.baTaxBits
-                print "firstTax at %i" % t.firstTax
+                print("baTaxBits %s" % t.baTaxBits)
+                print("firstTax at %i" % t.firstTax)
             # splitStuff objects with onesCount >= 2 and <= t.nTax = 2
             usables = []
             # No need to consider (masked) splits with less than two
@@ -641,14 +642,14 @@ class STChain(object):
                 n.ss.maskedSplitWithTheFirstTaxOne = n.ss.theSpl & t.baTaxBits
                 n.ss.onesCount = n.ss.maskedSplitWithTheFirstTaxOne.count()
                 if 0:
-                    print "bigT node %i" % n.nodeNum
-                    print "  theSpl is %s" % n.ss.theSpl
-                    print "  maskedSplitWithTheFirstTaxOne %s" % n.ss.maskedSplitWithTheFirstTaxOne
-                    print "  onesCount %i" % n.ss.onesCount
+                    print("bigT node %i" % n.nodeNum)
+                    print("  theSpl is %s" % n.ss.theSpl)
+                    print("  maskedSplitWithTheFirstTaxOne %s" % n.ss.maskedSplitWithTheFirstTaxOne)
+                    print("  onesCount %i" % n.ss.onesCount)
                     if n.ss.onesCount >= 2 and n.ss.onesCount <= upperGood:
-                        print "    -> used"
+                        print("    -> used")
                     else:
-                        print "    -> not used"
+                        print("    -> not used")
                 if n.ss.onesCount >= 2 and n.ss.onesCount <= upperGood:
                     usables.append(n.ss)
             usablesDict = {}
@@ -695,11 +696,11 @@ class STChain(object):
         if dbug:
             # print "proposePolytomy() starting with this tree ..."
             #self.propTree.draw(width=80, addToBrLen=0.2)
-            print "j There are %i internal nodes." % self.propTree.nInternalNodes
+            print("j There are %i internal nodes." % self.propTree.nInternalNodes)
             if self.propTree.nInternalNodes == 1:
-                print "-> so its a star tree -> proposeDeleteEdge is not possible."
+                print("-> so its a star tree -> proposeDeleteEdge is not possible.")
             elif self.propTree.nInternalNodes == self.propTree.nTax - 2:
-                print "-> so its a fully-resolved tree, so proposeAddEdge is not possible."
+                print("-> so its a fully-resolved tree, so proposeAddEdge is not possible.")
 
         if self.propTree.nInternalNodes == 1:  # a star tree
             self.proposeAddEdge(theProposal)
@@ -733,10 +734,10 @@ class STChain(object):
         dbug = False
         pTree = self.propTree
         if 0:
-            print "proposeAddEdge(), starting with this tree ..."
+            print("proposeAddEdge(), starting with this tree ...")
             pTree.draw()
-            print "k There are %i internal nodes." % pTree.nInternalNodes
-            print "root is node %i" % pTree.root.nodeNum
+            print("k There are %i internal nodes." % pTree.nInternalNodes)
+            print("root is node %i" % pTree.root.nodeNum)
         allPolytomies = []
         for n in pTree.iterInternalsNoRoot():
             if n.getNChildren() > 2:
@@ -772,10 +773,10 @@ class STChain(object):
 
         nPossibleWays = math.pow(2, k - 1) - k - 1
         if dbug:
-            print "These nodes are polytomies: %s" % [n.nodeNum for n in allPolytomies]
-            print "We randomly choose to do node %i" % theChosenPolytomy.nodeNum
-            print "It has %i children, so k=%i, so there are %i possible ways to add a node." % (
-                nChildren, k, nPossibleWays)
+            print("These nodes are polytomies: %s" % [n.nodeNum for n in allPolytomies])
+            print("We randomly choose to do node %i" % theChosenPolytomy.nodeNum)
+            print("It has %i children, so k=%i, so there are %i possible ways to add a node." % (
+                nChildren, k, nPossibleWays))
 
         # We want to choose one of the possible ways to add a node, but we
         # want to choose it randomly.  I'll describe it for the case with
@@ -783,7 +784,7 @@ class STChain(object):
         # nPossibleWays=25 different ways to add a node.  The complication
         # is that we could make a new group of 2, 3, or 4 nInNewGroup, and it will be
         # different numbers of possible ways in each.  The numbers of each are given by
-        # func.nChoosek(), so there are 10 ways to make a group of 2 from 5
+        # p4.func.nChoosek(), so there are 10 ways to make a group of 2 from 5
         # children, 10 ways to make a group of 3 from 5 children, and 5
         # ways to make a group of 4 from 5 children.  So thats [10, 10,
         # 5], which sums to 25 (nPossibleWays).  So we can make a
@@ -791,7 +792,7 @@ class STChain(object):
         # group randomly.
         nChooseKs = []
         for i in range(2, nChildren):
-            nChooseKs.append(func.nChooseK(nChildren, i))
+            nChooseKs.append(p4.func.nChooseK(nChildren, i))
         cumSum = [nChooseKs[0]]
         for i in range(len(nChooseKs))[1:]:
             cumSum.append(nChooseKs[i] + cumSum[i - 1])
@@ -806,13 +807,13 @@ class STChain(object):
         newChildrenNodeNums = random.sample(childrenNodeNums, nInNewGroup)
 
         if dbug:
-            print "The nChooseKs are %s" % nChooseKs
-            print "The cumSum is %s" % cumSum
-            print "Since there are nPossibleWays=%i, we choose a random number from 0-%i" % (
-                nPossibleWays, nPossibleWays - 1)
-            print "->We chose a random number: %i" % ran
-            print "So we choose the group at index %i, which means nInNewGroup=%i" % (i, nInNewGroup)
-            print "So we make a new node with newChildrenNodeNums %s" % newChildrenNodeNums
+            print("The nChooseKs are %s" % nChooseKs)
+            print("The cumSum is %s" % cumSum)
+            print("Since there are nPossibleWays=%i, we choose a random number from 0-%i" % (
+                nPossibleWays, nPossibleWays - 1))
+            print("->We chose a random number: %i" % ran)
+            print("So we choose the group at index %i, which means nInNewGroup=%i" % (i, nInNewGroup))
+            print("So we make a new node with newChildrenNodeNums %s" % newChildrenNodeNums)
             # sys.exit()
 
         # Choose to add a node between theChosenPolytomy and the first in
@@ -862,7 +863,7 @@ class STChain(object):
         #         if self.mcmc.constraints:
         #             newNode.br.splitKey = self.mcmc.constraints.allOnes ^ newNode.br.rawSplitKey # "^" is xor, a bit-flipper.
         #         else:
-        #             allOnes = 2L**(self.propTree.nTax) - 1
+        #             allOnes = 2**(self.propTree.nTax) - 1
         #             newNode.br.splitKey = allOnes ^ newNode.br.rawSplitKey
         #     else:
         #         newNode.br.splitKey = newNode.br.rawSplitKey
@@ -896,13 +897,13 @@ class STChain(object):
         hastingsRatio = (gamma_B * n_p * float(nPossibleWays)) / (1.0 + n_e)
 
         if dbug:
-            print "The new node is given a random branch length of %f" % newNode.br.len
-            print "For the Hastings ratio ..."
-            print "gamma_B is %.1f" % gamma_B
-            print "n_e is %.0f" % n_e
-            print "k is (still) %i, and (2^{k-1} - k - 1) = nPossibleWays is still %i" % (k, nPossibleWays)
-            print "n_p = %.0f is the number of polytomies present before the move." % n_p
-            print "So the hastings ratio is %f" % hastingsRatio
+            print("The new node is given a random branch length of %f" % newNode.br.len)
+            print("For the Hastings ratio ...")
+            print("gamma_B is %.1f" % gamma_B)
+            print("n_e is %.0f" % n_e)
+            print("k is (still) %i, and (2^{k-1} - k - 1) = nPossibleWays is still %i" % (k, nPossibleWays))
+            print("n_p = %.0f is the number of polytomies present before the move." % n_p)
+            print("So the hastings ratio is %f" % hastingsRatio)
 
         self.logProposalRatio = math.log(hastingsRatio)
 
@@ -910,8 +911,8 @@ class STChain(object):
             priorRatio = self.mcmc.tunings.brLenPriorLambda * \
                 math.exp(- self.mcmc.tunings.brLenPriorLambda * newNode.br.len)
             if dbug:
-                print "The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda
-                print "So the prior ratio is %f" % priorRatio
+                print("The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda)
+                print("So the prior ratio is %f" % priorRatio)
 
             self.logPriorRatio = math.log(priorRatio)
 
@@ -919,7 +920,7 @@ class STChain(object):
             jacobian = 1.0 / (self.mcmc.tunings.brLenPriorLambda *
                               math.exp(- self.mcmc.tunings.brLenPriorLambda * newNode.br.len))
             self.logJacobian = math.log(jacobian)
-            print "logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian)
+            print("logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian))
 
         # Here I pull a fast one, as explained in Lewis et al.  The
         # priorRatio and the Jacobian terms cancel out.  So the logs might
@@ -932,16 +933,16 @@ class STChain(object):
             # (T_{n,m} * C) .  We have the logs, and the result is the
             # log.
             if 0:
-                print "-" * 30
-                print 'curTree.nInternalNodes', self.curTree.nInternalNodes
-                print 'pTree.nInternalNodes', pTree.nInternalNodes
-                print 'logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes]
+                print("-" * 30)
+                print('curTree.nInternalNodes', self.curTree.nInternalNodes)
+                print('pTree.nInternalNodes', pTree.nInternalNodes)
+                print('logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes])
                 # print
                 # math.exp(theProposal.logBigT[self.curTree.nInternalNodes])
-                print 'C ', self.stMcmc.tunings.polytomyPriorLogBigC
-                print 'logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes]
+                print('C ', self.stMcmc.tunings.polytomyPriorLogBigC)
+                print('logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes])
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
-                print "-" * 30
+                print("-" * 30)
             self.logPriorRatio = (theProposal.logBigT[self.curTree.nInternalNodes] -
                                   (self.stMcmc.tunings.polytomyPriorLogBigC +
                                    theProposal.logBigT[pTree.nInternalNodes]))
@@ -975,9 +976,9 @@ class STChain(object):
         pTree = self.propTree
         # print "doing proposeDeleteEdge()"
         if 0:
-            print "proposeDeleteEdge(), starting with this tree ..."
+            print("proposeDeleteEdge(), starting with this tree ...")
             pTree.draw()
-            print "m There are %i internal nodes (before deleting the edge)." % pTree.nInternalNodes
+            print("m There are %i internal nodes (before deleting the edge)." % pTree.nInternalNodes)
 
         if not candidateNodes:
             raise P4Error(
@@ -985,9 +986,9 @@ class STChain(object):
 
         theChosenNode = random.choice(candidateNodes)
         if dbug:
-            print "There are %i candidateNodes." % len(candidateNodes)
-            print "node nums %s" % [n.nodeNum for n in candidateNodes]
-            print "Randomly choose node %s" % theChosenNode.nodeNum
+            print("There are %i candidateNodes." % len(candidateNodes))
+            print("node nums %s" % [n.nodeNum for n in candidateNodes])
+            print("Randomly choose node %s" % theChosenNode.nodeNum)
 
         theNewParent = theChosenNode.parent
         theRightmostChild = theChosenNode.rightmostChild()
@@ -1047,8 +1048,8 @@ class STChain(object):
             priorRatio = 1.0 / (self.mcmc.tunings.brLenPriorLambda *
                                 math.exp(- self.mcmc.tunings.brLenPriorLambda * theChosenNode.br.len))
             if dbug:
-                print "The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda
-                print "So the prior ratio is %f" % priorRatio
+                print("The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda)
+                print("So the prior ratio is %f" % priorRatio)
 
             self.logPriorRatio = math.log(priorRatio)
 
@@ -1057,7 +1058,7 @@ class STChain(object):
                 math.exp(- self.mcmc.tunings.brLenPriorLambda *
                          theChosenNode.br.len)
             self.logJacobian = math.log(jacobian)
-            print "logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian)
+            print("logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian))
 
         # Here I pull a fast one, as explained in Lewis et al.  The
         # priorRatio and the Jacobian terms cancel out.  So the logs might
@@ -1070,16 +1071,16 @@ class STChain(object):
             # We are losing a node.  So the prior ratio is (T_{n,m} * C) /
             # T_{n,m - 1}.  We have the logs, and the result is the log.
             if 0:
-                print "-" * 30
-                print 'curTree.nInternalNodes', self.curTree.nInternalNodes
-                print 'pTree.nInternalNodes', pTree.nInternalNodes
-                print 'logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes]
+                print("-" * 30)
+                print('curTree.nInternalNodes', self.curTree.nInternalNodes)
+                print('pTree.nInternalNodes', pTree.nInternalNodes)
+                print('logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes])
                 # print
                 # math.exp(theProposal.logBigT[self.curTree.nInternalNodes])
-                print 'C ', self.stMcmc.tunings.polytomyPriorLogBigC
-                print 'logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes]
+                print('C ', self.stMcmc.tunings.polytomyPriorLogBigC)
+                print('logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes])
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
-                print "-" * 30
+                print("-" * 30)
             self.logPriorRatio = ((theProposal.logBigT[self.curTree.nInternalNodes] +
                                    self.stMcmc.tunings.polytomyPriorLogBigC) -
                                   theProposal.logBigT[pTree.nInternalNodes])
@@ -1135,7 +1136,7 @@ class STChain(object):
             self.logPriorRatio = 0.0
         elif theProposal.name == 'spaQ_uniform':
             mt = self.propTree.spaQ
-            #originally = mt
+            originally = mt
             # Slider proposal
             mt += (random.random() - 0.5) * theProposal.tuning
 
@@ -1152,7 +1153,13 @@ class STChain(object):
                     isGood = True
             self.propTree.spaQ = mt
             self.logProposalRatio = 0.0
-            self.logPriorRatio = 0.0
+            if self.stMcmc.tunings.spaQPriorType == 'flat':
+                self.logPriorRatio = 0.0
+            elif self.stMcmc.tunings.spaQPriorType == 'exponential':
+                self.logPriorRatio = self.stMcmc.tunings.spaQExpPriorLambda * \
+                    (originally - mt)
+            else:
+                raise P4Error("this should not happen! wxyzz")
             # print "proposing mt from %.3f to %.3f, diff=%g" % (originally,
             # mt, mt-originally)
 
@@ -1246,7 +1253,7 @@ class STChain(object):
             d1 = self.propTree.topologyDistance(self.curTree, metric='scqdist')
             d2 = self.stMcmc.tree.topologyDistance(
                 self.propTree, metric='scqdist')
-            print " %6.0f    %5i   %5i  %5s" % (pRet, d1, d2, acceptMove)
+            print(" %6.0f    %5i   %5i  %5s" % (pRet, d1, d2, acceptMove))
 
         aProposal.nProposals[self.tempNum] += 1
         if acceptMove:
@@ -1291,15 +1298,20 @@ class STMcmcTunings(object):
         object.__setattr__(self, 'spaQ_uniform', 0.1)
         object.__setattr__(self, 'doPolytomyResolutionClassPrior', False)
         object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
+        object.__setattr__(self, 'spaQPriorType', 'flat')
+        object.__setattr__(self, 'spaQExpPriorLambda', 100.0)
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
         if item in self.__dict__.keys():
             # Here is where I should do the sanity checking of the new vals.  Some day.
             # print "    Setting tuning '%s' to %s" % (item, val)
+            if item == 'spaQPriorType':
+                validVals = ['flat', 'exponential']
+                assert val in validVals, "set spaQPriorType to one of %s" % validVals
             object.__setattr__(self, item, val)
         else:
-            print self.dump()
+            print(self.dump())
             gm = ["\nSTMcmcTunings.__setattr__()"]
             gm.append("Can't set tuning '%s'-- no such tuning." % item)
             raise P4Error(gm)
@@ -1312,10 +1324,14 @@ class STMcmcTunings(object):
         lst.append("%s%20s: %s" % (spacer, 'spr', self.spr))
         lst.append("%s%20s: %s" % (spacer, 'SR2008beta_uniform', self.SR2008beta_uniform))
         lst.append("%s%20s: %s" % (spacer, 'spaQ_uniform', self.spaQ_uniform))
+        lst.append("%s%20s: %s" % (spacer, 'doPolytomyResolutionClassPrior', self.doPolytomyResolutionClassPrior))
+        lst.append("%s%20s: %s" % (spacer, 'polytomyPriorLogBigC', self.polytomyPriorLogBigC))
+        lst.append("%s%20s: %s" % (spacer, 'spaQPriorType', self.spaQPriorType))
+        lst.append("%s%20s: %s" % (spacer, 'spaQExpPriorLambda', self.spaQExpPriorLambda))
         return string.join(lst, '\n')
 
     def dump(self):
-        print self.reprString()
+        print(self.reprString())
 
     def __repr__(self):
         return self.reprString()
@@ -1345,7 +1361,7 @@ class STMcmcProposalProbs(dict):
         object.__setattr__(self, 'nni', 1.0)
         object.__setattr__(self, 'spr', 1.0)
         object.__setattr__(self, 'SR2008beta_uniform', 1.0)
-        object.__setattr__(self, 'spaQ_uniform', 1.0)
+        # object.__setattr__(self, 'spaQ_uniform', 1.0)
         object.__setattr__(self, 'polytomy', 0.0)
 
     def __setattr__(self, item, val):
@@ -1369,9 +1385,9 @@ class STMcmcProposalProbs(dict):
 
     def reprString(self):
         stuff = [
-            "\nUser-settable relative proposal probabilities, from yourMcmc.prob"]
+            "\nUser-settable relative proposal probabilities, from yourStMcmc.prob"]
         stuff.append("  To change it, do eg ")
-        stuff.append("    yourMcmc.prob.comp = 0.0 # turns comp proposals off")
+        stuff.append("    yourSTMcmc.prob.spaQ_uniform = 0.0 # turns spaQ_uniform proposals off")
         stuff.append("  Current settings:")
         theKeys = self.__dict__.keys()
         theKeys.sort()
@@ -1380,7 +1396,7 @@ class STMcmcProposalProbs(dict):
         return string.join(stuff, '\n')
 
     def dump(self):
-        print self.reprString()
+        print(self.reprString())
 
     def __repr__(self):
         return self.reprString()
@@ -1402,10 +1418,10 @@ class STProposal(object):
         self.nAborts = [0] * self.nChains
 
     def dump(self):
-        print "proposal name=%-10s pNum=%2i, mtNum=%2i, weight=%5.1f, tuning=%7.2f" % (
-            '%s,' % self.name, self.pNum, self.mtNum, self.weight, self.tuning)
-        print "    nProposals   by temperature:  %s" % self.nProposals
-        print "    nAcceptances by temperature:  %s" % self.nAcceptances
+        print("proposal name=%-10s pNum=%2i, mtNum=%2i, weight=%5.1f, tuning=%7.2f" % (
+            '%s,' % self.name, self.pNum, self.mtNum, self.weight, self.tuning))
+        print("    nProposals   by temperature:  %s" % self.nProposals)
+        print("    nAcceptances by temperature:  %s" % self.nAcceptances)
 
     def _getTuning(self):
         if self.name in ['nni', 'spr', 'SR2008beta_uniform', 'spaQ_uniform']:
@@ -1437,8 +1453,8 @@ class BigTSplitStuff(object):
         self.bytes = None
 
     def dump(self):
-        print "ss: spl=%s, spl2=%s, masked=%s, onesCount=%s" % (
-            self.spl, self.spl2, self.maskedSplitWithFirstTaxOne, self.onesCount)
+        print("ss: spl=%s, spl2=%s, masked=%s, onesCount=%s" % (
+            self.spl, self.spl2, self.maskedSplitWithFirstTaxOne, self.onesCount))
 
 
 class STMcmc(object):
@@ -1629,13 +1645,6 @@ See :class:`TreePartitions`.
                 raise P4Error(gm)
             self.stRFCalc = stRFCalc
 
-        if modelName in ['SPA', 'QPA']:
-            try:
-                fspaQ = float(spaQ)
-            except ValueError:
-                gm.append("Arg spaQ (%s) should be a float" % spaQ)
-                raise P4Error(gm)
-            self.spaQ = fspaQ
 
         nChains = 1  # mcmcmc is off, temporarily
         try:
@@ -1652,6 +1661,15 @@ See :class:`TreePartitions`.
         self.startMinusOne = -1
         self.constraints = None
         self.simulate = None
+
+        self._spaQ = None
+        if modelName in ['SPA', 'QPA']:
+            try:
+                self._spaQ = float(spaQ)
+            except ValueError:
+                gm.append("Arg spaQ (%s) should be a float" % spaQ)
+                raise P4Error(gm)
+            self.spaQ = self._spaQ
 
         try:
             runNum = int(runNum)
@@ -1828,7 +1846,7 @@ See :class:`TreePartitions`.
                     tN = self.taxNames[tNum]
                     if tN in t.unsorted_taxNames:
                         sorted_taxNames.append(tN)
-                        t.taxBits.append(1L << tNum)
+                        t.taxBits.append(1 << tNum)
                     else:
                         t.taxBits.append(0)
                 t.taxNames = sorted_taxNames
@@ -1847,7 +1865,7 @@ See :class:`TreePartitions`.
                     if n.isLeaf:
                         spot = self.taxNames.index(n.name)
                         #self.tBits[spot] = True
-                        n.stSplitKey = 1L << spot
+                        n.stSplitKey = 1 << spot
                         #self.tBits[spot] = False
                     else:
                         n.stSplitKey = n.leftChild.stSplitKey
@@ -1886,21 +1904,21 @@ See :class:`TreePartitions`.
         if bigT:
             self.tree = bigT
         else:
-            self.tree = func.randomTree(
+            self.tree = p4.func.randomTree(
                 taxNames=self.taxNames, name='stTree', randomBrLens=False)
 
         if self.stRFCalc in ['purePython1', 'fastReducedRF']:
             for t in inTrees:
                 sorted_taxNames = []
-                t.taxBits = 0L
+                t.taxBits = 0
                 for tNum in range(self.nTax):
                     tN = self.taxNames[tNum]
                     if tN in t.unsorted_taxNames:
                         sorted_taxNames.append(tN)
-                        adder = 1L << tNum
+                        adder = 1 << tNum
                         t.taxBits += adder
                 t.taxNames = sorted_taxNames
-                t.allOnes = 2L ** (t.nTax) - 1
+                t.allOnes = 2 ** (t.nTax) - 1
                 t.makeSplitKeys()
                 t.skSet = set([n.br.splitKey for n in t.iterInternalsNoRoot()])
 
@@ -1922,14 +1940,14 @@ See :class:`TreePartitions`.
                     raise P4Error(gm)
 
         if self.modelName in ['QPA']:
-            self.tree.taxBits = [1L << i for i in range(self.tree.nTax)]
+            self.tree.taxBits = [1 << i for i in range(self.tree.nTax)]
             t = self.tree
             for n in t.iterPostOrder():
                 if n == t.root:
                     break
                 if n.isLeaf:
                     spot = self.taxNames.index(n.name)
-                    n.stSplitKey = 1L << spot
+                    n.stSplitKey = 1 << spot
                 else:
                     n.stSplitKey = n.leftChild.stSplitKey
                     p = n.leftChild.sibling
@@ -1996,14 +2014,37 @@ See :class:`TreePartitions`.
         self.heatingHackTemperature = 5.0
         self.heatingHackProposalNames = ['nni', 'spr']
 
-        print "Initializing STMcmc"
-        print "%-16s: %s" % ('modelName', modelName)
+        print("Initializing STMcmc")
+        print("%-16s: %s" % ('modelName', modelName))
         if self.modelName.startswith("SR2008"):
-            print "%-16s: %s" % ('stRFCalc', self.stRFCalc)
+            print("%-16s: %s" % ('stRFCalc', self.stRFCalc))
         if self.modelName in ["SPA", "QPA"]:
-            print "%-16s: %s" % ('useSplitSupport', self.useSplitSupport)
-        print "%-16s: %s" % ('inTrees', len(self.trees))
-        print "%-16s: %s" % ('nTax', self.nTax)
+            print("%-16s: %s" % ('useSplitSupport', self.useSplitSupport))
+        print("%-16s: %s" % ('inTrees', len(self.trees)))
+        print("%-16s: %s" % ('nTax', self.nTax))
+
+    def _del_nothing(self):
+        gm = ["Don't/Can't delete this property."]
+        raise P4Error(gm)
+
+    def _get_spaQ(self):
+        return self._spaQ
+
+    def _set_spaQ(self, newVal):
+        try:
+            newVal = float(newVal)
+        except:
+            gm = ['This property should be set to a float.']
+            raise P4Error(gm)
+        self._spaQ = newVal
+        if self.chains:
+            for ch in self.chains:
+                ch.propTree.spaQ = newVal
+                ch.curTree.spaQ = newVal
+
+    spaQ = property(_get_spaQ, _set_spaQ, _del_nothing)
+
+
 
     def _makeProposals(self):
         """Make proposals for the STMcmc."""
@@ -2035,13 +2076,13 @@ See :class:`TreePartitions`.
                 #object.__setattr__(self.tuningsUsage, 'local', p)
 
         if self.modelName in ['SPA', 'QPA']:
-            if self.prob.spaQ_uniform:
-                p = STProposal(self)
-                p.name = 'spaQ_uniform'
-                # * (len(self.tree.nodes) - 1) * fudgeFactor['nni']
-                p.weight = self.prob.spaQ_uniform
-                self.proposals.append(p)
-                #object.__setattr__(self.tuningsUsage, 'local', p)
+            # if self.prob.spaQ_uniform:
+            #     p = STProposal(self)
+            #     p.name = 'spaQ_uniform'
+            #     # * (len(self.tree.nodes) - 1) * fudgeFactor['nni']
+            #     p.weight = self.prob.spaQ_uniform
+            #     self.proposals.append(p)
+            #     #object.__setattr__(self.tuningsUsage, 'local', p)
             if self.prob.polytomy:
                 p = STProposal(self)
                 p.name = 'polytomy'
@@ -2092,32 +2133,32 @@ See :class:`TreePartitions`.
         """Pretty-print the proposal acceptances."""
 
         if (self.gen - self.startMinusOne) <= 0:
-            print "\nSTMcmc.writeProposalAcceptances()  There is no info in memory. "
-            print " Maybe it was just emptied after writing to a checkpoint?  "
-            print "If so, read the checkPoint and get the proposalAcceptances from there."
+            print("\nSTMcmc.writeProposalAcceptances()  There is no info in memory. ")
+            print(" Maybe it was just emptied after writing to a checkpoint?  ")
+            print("If so, read the checkPoint and get the proposalAcceptances from there.")
         else:
 
             spacer = ' ' * 8
-            print "\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
-                self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
-            print "%s %20s %10s %13s%8s" % (spacer, 'proposal', 'nProposals', 'acceptance(%)', 'tuning')
+            print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
+                self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+            print("%s %20s %10s %13s%8s" % (spacer, 'proposal', 'nProposals', 'acceptance(%)', 'tuning'))
             for p in self.proposals:
-                print "%s" % spacer,
-                print "%20s" % p.name,
-                print "%10i" % p.nProposals[0],
+                print("%s" % spacer, end=' ')
+                print("%20s" % p.name, end=' ')
+                print("%10i" % p.nProposals[0], end=' ')
 
                 if p.nProposals[0]:  # Don't divide by zero
-                    print "       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])),
+                    print("       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])), end=' ')
                 else:
-                    print "           - ",
+                    print("           - ", end=' ')
 
                 if p.tuning == None:
-                    print "      -",
+                    print("      -", end=' ')
                 elif p.tuning < 2.0:
-                    print "  %5.3f" % p.tuning,
+                    print("  %5.3f" % p.tuning, end=' ')
                 else:
-                    print "%7.1f" % p.tuning,
-                print
+                    print("%7.1f" % p.tuning, end=' ')
+                print()
 
             # # Tabulate topology changes, if any were attempted.
             # doTopol = 0
@@ -2176,33 +2217,33 @@ See :class:`TreePartitions`.
             # p.nAborts[0])
 
     def writeSwapMatrix(self):
-        print "\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
-            (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
-        print "    Swaps are presented as a square matrix, nChains * nChains."
-        print "    Upper triangle is the number of swaps proposed between two chains."
-        print "    Lower triangle is the percent swaps accepted."
-        print "    The current tunings.chainTemp is %5.3f\n" % self.tunings.chainTemp
-        print " " * 10,
+        print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
+            (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+        print("    Swaps are presented as a square matrix, nChains * nChains.")
+        print("    Upper triangle is the number of swaps proposed between two chains.")
+        print("    Lower triangle is the percent swaps accepted.")
+        print("    The current tunings.chainTemp is %5.3f\n" % self.tunings.chainTemp)
+        print(" " * 10, end=' ')
         for i in range(self.nChains):
-            print "%7i" % i,
-        print
-        print " " * 10,
+            print("%7i" % i, end=' ')
+        print()
+        print(" " * 10, end=' ')
         for i in range(self.nChains):
-            print "   ----",
-        print
+            print("   ----", end=' ')
+        print()
         for i in range(self.nChains):
-            print " " * 7, "%2i" % i,
+            print(" " * 7, "%2i" % i, end=' ')
             for j in range(self.nChains):
                 if i < j:  # upper triangle
-                    print "%7i" % self.swapMatrix[i][j],
+                    print("%7i" % self.swapMatrix[i][j], end=' ')
                 elif i == j:
-                    print "      -",
+                    print("      -", end=' ')
                 else:
                     if self.swapMatrix[j][i] == 0:  # no proposals
-                        print "      -",
+                        print("      -", end=' ')
                     else:
-                        print "  %5.1f" % (100.0 * float(self.swapMatrix[i][j]) / float(self.swapMatrix[j][i])),
-            print
+                        print("  %5.1f" % (100.0 * float(self.swapMatrix[i][j]) / float(self.swapMatrix[j][i])), end=' ')
+            print()
 
     def _makeChainsAndProposals(self):
         """Make chains and proposals."""
@@ -2228,7 +2269,7 @@ See :class:`TreePartitions`.
             # nTax-2 inclusive.
             if self.proposalsHash.has_key('polytomy') and self.tunings.doPolytomyResolutionClassPrior:
                 p = self.proposalsHash['polytomy']
-                bigT = func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
+                bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
                     p.logBigT[i] = math.log(bigT[i])
@@ -2240,13 +2281,13 @@ See :class:`TreePartitions`.
         gm = ['STMcmc._setOutputTreeFile()']
 
         # Write the preamble for the trees outfile.
-        self.treeFile = file(self.treeFileName, 'w')
+        self.treeFile = open(self.treeFileName, 'w')
         self.treeFile.write('#nexus\n\n')
         self.treeFile.write('begin taxa;\n')
         self.treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
         self.treeFile.write('  taxlabels')
         for tN in self.tree.taxNames:
-            self.treeFile.write(' %s' % func.nexusFixNameIfQuotesAreNeeded(tN))
+            self.treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
         self.treeFile.write(';\nend;\n\n')
 
         self.treeFile.write('begin trees;\n')
@@ -2259,9 +2300,9 @@ See :class:`TreePartitions`.
         self.treeFile.write('  translate\n')
         for i in range(self.tree.nTax - 1):
             self.treeFile.write('    %3i %s,\n' % (
-                i + 1, func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[i])))
+                i + 1, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[i])))
         self.treeFile.write('    %3i %s\n' % (
-            self.tree.nTax, func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
+            self.tree.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
         self.treeFile.write('  ;\n')
         self.treeFile.write('  [Tree numbers are gen+1]\n')
         self.treeFile.close()
@@ -2273,10 +2314,10 @@ See :class:`TreePartitions`.
 
         # Hidden experimental hack
         if self.doHeatingHack:
-            print "Heating hack is turned on."
+            print("Heating hack is turned on.")
             assert self.nChains == 1, "MCMCMC does not work with the heating hack"
-            print "Heating hack temperature is %.2f" % self.heatingHackTemperature
-            print "Heating hack affects proposals %s" % self.heatingHackProposalNames
+            print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
+            print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
         # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
@@ -2363,7 +2404,7 @@ See :class:`TreePartitions`.
         if self.gen > -1:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
-            f2 = file(self.treeFileName, 'a+')
+            f2 = open(self.treeFileName, 'a+')
             pos = -1
             while 1:
                 f2.seek(pos, 2)
@@ -2386,9 +2427,9 @@ See :class:`TreePartitions`.
             f2.close()
 
             if verbose:
-                print
-                print "Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen)
-                print "Set to do %i more generations." % nGensToDo
+                print()
+                print("Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen))
+                print("Set to do %i more generations." % nGensToDo)
                 # if self.writePrams:
                 #    if self.chains[0].curTree.model.nFreePrams == 0:
                 #        print "There are no free prams in the model, so I am turning writePrams off."
@@ -2398,14 +2439,14 @@ See :class:`TreePartitions`.
             self.startMinusOne = self.gen
         else:
             if verbose:
-                print "Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum)
-                print "Set to do %i generations." % nGensToDo
+                print("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+                print("Set to do %i generations." % nGensToDo)
                 if self.writePrams:
                     # if self.chains[0].curTree.model.nFreePrams == 0:
                     #     print "There are no free prams in the model, so I am turning writePrams off."
                     #     self.writePrams = False
                     # else:
-                    pramsFile = file(self.pramsFileName, 'a')
+                    pramsFile = open(self.pramsFileName, 'a')
                     if self.modelName.startswith("SR2008"):
                         pramsFile.write("    genPlus1     beta\n")
                     elif self.modelName.startswith("SPA"):
@@ -2416,13 +2457,13 @@ See :class:`TreePartitions`.
                 sys.stdout.flush()
 
         if verbose:
-            print "Sampling every %i." % self.sampleInterval
+            print("Sampling every %i." % self.sampleInterval)
             if self.checkPointInterval:
-                print "CheckPoints written every %i." % self.checkPointInterval
+                print("CheckPoints written every %i." % self.checkPointInterval)
             if nGensToDo <= 20000:
-                print "One dot is 100 generations."
+                print("One dot is 100 generations.")
             else:
-                print "One dot is 1000 generations."
+                print("One dot is 1000 generations.")
             sys.stdout.flush()
 
         self.treePartitions = None
@@ -2438,8 +2479,8 @@ See :class:`TreePartitions`.
                 diff_secs = time.time() - realTimeStart
                 total_secs = (float(nGensToDo) / float(100)) * float(diff_secs)
                 deltaTime = datetime.timedelta(seconds=int(round(total_secs)))
-                print "Estimated completion time: %s days, %s" % (
-                    deltaTime.days, time.strftime("%H:%M:%S", time.gmtime(deltaTime.seconds)))
+                print("Estimated completion time: %s days, %s" % (
+                    deltaTime.days, time.strftime("%H:%M:%S", time.gmtime(deltaTime.seconds))))
 
             # Above is a list of proposals where it is possible to abort.
             # When a gen(aProposal) is made, below, aProposal.doAbort
@@ -2485,8 +2526,8 @@ See :class:`TreePartitions`.
                     #    aProposal = self.proposalsHash['comp']
 
                     if 0:
-                        print "==== gNum=%i, chNum=%i, aProposal=%s (part %i)" % (
-                            gNum, chNum, aProposal.name, aProposal.pNum),
+                        print("==== gNum=%i, chNum=%i, aProposal=%s (part %i)" % (
+                            gNum, chNum, aProposal.name, aProposal.pNum), end=' ')
                         sys.stdout.flush()
                         # print gNum,
 
@@ -2495,9 +2536,9 @@ See :class:`TreePartitions`.
 
                     if 0:
                         if failure:
-                            print "    failure"
+                            print("    failure")
                         else:
-                            print
+                            print()
 
                     nAttempts += 1
                     if nAttempts > 1000:
@@ -2567,11 +2608,11 @@ See :class:`TreePartitions`.
             # If it is a writeInterval, write stuff
             if (self.gen + 1) % self.sampleInterval == 0:
                 if 1:
-                    likesFile = file(self.likesFileName, 'a')
+                    likesFile = open(self.likesFileName, 'a')
                     likesFile.write(
                         '%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
                     likesFile.close()
-                    treeFile = file(self.treeFileName, 'a')
+                    treeFile = open(self.treeFileName, 'a')
                     treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
                     self.chains[coldChainNum].curTree.writeNewick(treeFile,
                                                                   withTranslation=1,
@@ -2580,7 +2621,7 @@ See :class:`TreePartitions`.
                     treeFile.close()
 
                 if self.writePrams:
-                    pramsFile = file(self.pramsFileName, 'a')
+                    pramsFile = open(self.pramsFileName, 'a')
                     #pramsFile.write("%12i " % (self.gen + 1))
                     pramsFile.write("%12i" % (self.gen + 1))
                     if self.modelName.startswith("SR2008"):
@@ -2602,13 +2643,13 @@ See :class:`TreePartitions`.
                     self.hook(self.chains[coldChainNum].curTree)
 
                 if 0 and self.constraints:
-                    print "Mcmc x1c"
-                    print self.chains[0].verifyIdentityOfTwoTreesInChain()
-                    print "b checking curTree .."
+                    print("Mcmc x1c")
+                    print(self.chains[0].verifyIdentityOfTwoTreesInChain())
+                    print("b checking curTree ..")
                     self.chains[0].curTree.checkSplitKeys()
-                    print "b checking propTree ..."
+                    print("b checking propTree ...")
                     self.chains[0].propTree.checkSplitKeys()
-                    print "Mcmc xxx"
+                    print("Mcmc xxx")
 
                 # Add curTree to treePartitions
                 if self.treePartitions:
@@ -2623,11 +2664,11 @@ See :class:`TreePartitions`.
 
                 # Checking and debugging constraints
                 if 0 and self.constraints:
-                    print "Mcmc x1d"
-                    print self.chains[coldChainNum].verifyIdentityOfTwoTreesInChain()
-                    print "c checking curTree ..."
+                    print("Mcmc x1d")
+                    print(self.chains[coldChainNum].verifyIdentityOfTwoTreesInChain())
+                    print("c checking curTree ...")
                     self.chains[coldChainNum].curTree.checkSplitKeys()
-                    print "c checking propTree ..."
+                    print("c checking propTree ...")
                     self.chains[coldChainNum].propTree.checkSplitKeys()
                     # print "c checking that all constraints are present"
                     #theSplits = [n.br.splitKey for n in self.chains[0].curTree.iterNodesNoRoot()]
@@ -2635,7 +2676,7 @@ See :class:`TreePartitions`.
                     #    if sk not in theSplits:
                     #        gm.append("split %i is not present in the curTree." % sk)
                     #        raise P4Error(gm)
-                    print "Mcmc zzz"
+                    print("Mcmc zzz")
 
                 # Check that the curTree has all the constraints
                 if self.constraints:
@@ -2647,7 +2688,7 @@ See :class:`TreePartitions`.
                             gm.append(
                                 "The current tree (the last tree sampled) does not contain constraint")
                             gm.append(
-                                "%s" % func.getSplitStringFromKey(sk, self.tree.nTax))
+                                "%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
 
                 # If it is a checkPointInterval, pickle
@@ -2687,7 +2728,7 @@ See :class:`TreePartitions`.
                             else:
                                 timeString = time.strftime(
                                     "%H:%M:%S", time.gmtime(deltaTime.seconds))
-                            print "%10i - %s" % (self.gen, timeString)
+                            print("%10i - %s" % (self.gen, timeString))
 
                         else:
                             sys.stdout.write(".")
@@ -2706,7 +2747,7 @@ See :class:`TreePartitions`.
                             else:
                                 timeString = time.strftime(
                                     "%H:%M:%S", time.gmtime(deltaTime.seconds))
-                            print "%10i - %s" % (self.gen, timeString)
+                            print("%10i - %s" % (self.gen, timeString))
                         else:
                             sys.stdout.write(".")
                             sys.stdout.flush()
@@ -2715,11 +2756,11 @@ See :class:`TreePartitions`.
                         sys.stdout.flush()
 
         # Gens finished.  Clean up.
-        print
+        print()
         if verbose:
-            print "Finished %s generations." % nGensToDo
+            print("Finished %s generations." % nGensToDo)
 
-        treeFile = file(self.treeFileName, 'a')
+        treeFile = open(self.treeFileName, 'a')
         treeFile.write('end;\n\n')
         treeFile.close()
 
@@ -2742,7 +2783,7 @@ See :class:`TreePartitions`.
         if 0:
             for chNum in range(self.nChains):
                 ch = self.chains[chNum]
-                print "chain %i ==================" % chNum
+                print("chain %i ==================" % chNum)
                 ch.curTree.summarizeModelThingsNNodes()
 
         # the Frrf object does not pickle
@@ -2766,8 +2807,8 @@ See :class:`TreePartitions`.
 
         # Pickle it.
         fName = "mcmc_checkPoint_%i.%i" % (self.runNum, self.gen + 1)
-        f = file(fName, 'w')
-        cPickle.dump(theCopy, f, 1)
+        f = open(fName, 'wb')
+        pickle.dump(theCopy, f, pickle.HIGHEST_PROTOCOL)
         f.close()
 
         if self.stRFCalc == 'fastReducedRF':
@@ -2784,7 +2825,7 @@ See :class:`TreePartitions`.
 
         nProposals = len(self.proposals)
         if not nProposals:
-            print "STMcmc.writeProposalProbs().  No proposals (yet?)."
+            print("STMcmc.writeProposalProbs().  No proposals (yet?).")
             return
         #intended = self.propWeights[:]
         # for i in range(len(intended)):
@@ -2799,8 +2840,8 @@ See :class:`TreePartitions`.
             nAccepted[i] = self.proposals[i].nAcceptances[0]
         sumAttained = float(sum(nAttained))  # should be zero or nGen
         if not sumAttained:
-            print "STMcmc.writeProposalProbs().  No proposals have been made."
-            print "Possibly, due to it being a checkPoint interval, nProposals have all been set to zero."
+            print("STMcmc.writeProposalProbs().  No proposals have been made.")
+            print("Possibly, due to it being a checkPoint interval, nProposals have all been set to zero.")
             return
         # assert int(sumAttained) == self.gen + 1, "sumAttained is %i, should be gen+1, %i." % (
         #    int(sumAttained), self.gen + 1)
@@ -2812,39 +2853,39 @@ See :class:`TreePartitions`.
                 "bad sum of attained proposal probs. %s" % sum(probAttained))
 
         spacer = ' ' * 4
-        print "\nProposal probabilities (%)"
+        print("\nProposal probabilities (%)")
         # print "There are %i proposals" % len(self.proposals)
-        print "For %i gens, from gens %i to %i, inclusive." % (
-            (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen)
-        print "%2s %11s %11s  %11s %10s %23s %5s %5s" % ('', 'nProposals', 'proposed(%)',
-                                                         'accepted(%)', 'tuning', 'proposal', 'part', 'num')
+        print("For %i gens, from gens %i to %i, inclusive." % (
+            (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+        print("%2s %11s %11s  %11s %10s %23s %5s %5s" % ('', 'nProposals', 'proposed(%)',
+                                                         'accepted(%)', 'tuning', 'proposal', 'part', 'num'))
         for i in range(len(self.proposals)):
-            print "%2i" % i,
+            print("%2i" % i, end=' ')
             p = self.proposals[i]
-            print "   %7i " % self.proposals[i].nProposals[0],
-            print "   %5.1f    " % probAttained[i],
+            print("   %7i " % self.proposals[i].nProposals[0], end=' ')
+            print("   %5.1f    " % probAttained[i], end=' ')
             if nAttained[i]:
-                print "   %5.1f   " % (100.0 * float(nAccepted[i]) / float(nAttained[i])),
+                print("   %5.1f   " % (100.0 * float(nAccepted[i]) / float(nAttained[i])), end=' ')
             else:
-                print "       -   ",
+                print("       -   ", end=' ')
 
             if p.tuning == None:
-                print "       -    ",
+                print("       -    ", end=' ')
             elif p.tuning < 2.0:
-                print "   %7.3f  " % p.tuning,
+                print("   %7.3f  " % p.tuning, end=' ')
             else:
-                print "   %7.1f  " % p.tuning,
+                print("   %7.1f  " % p.tuning, end=' ')
 
-            print " %20s" % p.name,
+            print(" %20s" % p.name, end=' ')
             if p.pNum != -1:
-                print " %3i " % p.pNum,
+                print(" %3i " % p.pNum, end=' ')
             else:
-                print "   - ",
+                print("   - ", end=' ')
             if p.mtNum != -1:
-                print " %3i " % p.mtNum,
+                print(" %3i " % p.mtNum, end=' ')
             else:
-                print "   - ",
-            print
+                print("   - ", end=' ')
+            print()
 
     def writeProposalIntendedProbs(self):
         """Tabulate the intended proposal probabilities.
@@ -2852,7 +2893,7 @@ See :class:`TreePartitions`.
 
         nProposals = len(self.proposals)
         if not nProposals:
-            print "STMcmc.writeProposalIntendedProbs().  No proposals (yet?)."
+            print("STMcmc.writeProposalIntendedProbs().  No proposals (yet?).")
             return
         intended = self.propWeights[:]
         for i in range(len(intended)):
@@ -2862,24 +2903,25 @@ See :class:`TreePartitions`.
                 "bad sum of intended proposal probs. %s" % sum(intended))
 
         spacer = ' ' * 4
-        print "\nIntended proposal probabilities (%)"
+        print("\nIntended proposal probabilities (%)")
         # print "There are %i proposals" % len(self.proposals)
-        print "%2s %11s %23s %5s %5s" % ('', 'intended(%)', 'proposal', 'part', 'num')
+        print("%2s %11s %23s %5s %5s" % ('', 'intended(%)', 'proposal', 'part', 'num'))
         for i in range(len(self.proposals)):
-            print "%2i" % i,
+            print("%2i" % i, end=' ')
             p = self.proposals[i]
-            print "   %6.2f    " % (100. * intended[i]),
+            print("   %6.2f    " % (100. * intended[i]), end=' ')
 
-            print " %20s" % p.name,
+            print(" %20s" % p.name, end=' ')
             if p.pNum != -1:
-                print " %3i " % p.pNum,
+                print(" %3i " % p.pNum, end=' ')
             else:
-                print "   - ",
+                print("   - ", end=' ')
             if p.mtNum != -1:
-                print " %3i " % p.mtNum,
+                print(" %3i " % p.mtNum, end=' ')
             else:
-                print "   - ",
-            print
+                print("   - ", end=' ')
+            print()
+
 
 
 class STMcmcCheckPointReader(object):
@@ -2950,38 +2992,38 @@ class STMcmcCheckPointReader(object):
                         if mtime > mostRecent:
                             mostRecent = mtime
                             mostRecentFileName = fName
-                f = file(mostRecentFileName)
-                m = cPickle.load(f)
+                f = open(mostRecentFileName, 'rb')
+                m = pickle.load(f)
                 f.close()
                 self.mm.append(m)
 
             else:
                 # get all the files
                 for fName in fList:
-                    f = file(fName)
-                    m = cPickle.load(f)
+                    f = open(fName, 'rb')
+                    m = pickle.load(f)
                     f.close()
                     self.mm.append(m)
 
-                self.mm = func.sortListOfObjectsOn2Attributes(
+                self.mm = p4.func.sortListOfObjectsOn2Attributes(
                     self.mm, "gen", 'runNum')
         else:
             # get the file by name
-            f = file(fName)
-            m = cPickle.load(f)
+            f = open(fName, 'rb')
+            m = pickle.load(f)
             f.close()
             self.mm.append(m)
         if verbose:
             self.dump()
 
     def dump(self):
-        print "STMcmcCheckPoints (%i checkPoints read)" % len(self.mm)
-        print "%12s %12s %12s %12s" % (" ", "index", "run", "gen+1")
-        print "%12s %12s %12s %12s" % (" ", "-----", "---", "-----")
+        print("STMcmcCheckPoints (%i checkPoints read)" % len(self.mm))
+        print("%12s %12s %12s %12s" % (" ", "index", "run", "gen+1"))
+        print("%12s %12s %12s %12s" % (" ", "-----", "---", "-----"))
         for i in range(len(self.mm)):
             m = self.mm[i]
             # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
-            print "%12s %12s %12s %12s" % (" ", i, m.runNum, m.gen + 1)
+            print("%12s %12s %12s %12s" % (" ", i, m.runNum, m.gen + 1))
 
     def compareSplits(self, mNum1, mNum2, verbose=True, minimumProportion=0.1):
         """Should we be only looking at splits within the 95% ci of the topologies?"""
@@ -2991,25 +3033,25 @@ class STMcmcCheckPointReader(object):
         tp2 = m2.treePartitions
 
         if verbose:
-            print "\nSTMcmcCheckPointReader.compareSplits(%i,%i)" % (mNum1, mNum2)
-            print "%12s %12s %12s %12s %12s" % ("mNum", "runNum", "start", "gen+1", "nTrees")
+            print("\nSTMcmcCheckPointReader.compareSplits(%i,%i)" % (mNum1, mNum2))
+            print("%12s %12s %12s %12s %12s" % ("mNum", "runNum", "start", "gen+1", "nTrees"))
             for i in range(5):
-                print "   ---------",
-            print
+                print("   ---------", end=' ')
+            print()
             for mNum in [mNum1, mNum2]:
-                print " %10i " % mNum,
+                print(" %10i " % mNum, end=' ')
                 m = self.mm[mNum]
-                print " %10i " % m.runNum,
-                print " %10i " % (m.startMinusOne + 1),
-                print " %10i " % (m.gen + 1),
+                print(" %10i " % m.runNum, end=' ')
+                print(" %10i " % (m.startMinusOne + 1), end=' ')
+                print(" %10i " % (m.gen + 1), end=' ')
                 # for i in m.splitCompares:
                 #    print i
-                print " %10i " % m.treePartitions.nTrees
+                print(" %10i " % m.treePartitions.nTrees)
 
         asdos = self.compareSplitsBetweenTwoTreePartitions(
             tp1, tp2, minimumProportion, verbose=verbose)
         if asdos == None and verbose:
-            print "No splits > %s" % minimumProportion
+            print("No splits > %s" % minimumProportion)
         return asdos
 
     def compareSplitsBetweenTwoTreePartitions(tp1, tp2, minimumProportion, verbose=False):
@@ -3021,14 +3063,14 @@ class STMcmcCheckPointReader(object):
                 nSplits = len(ret)
                 for i in ret:
                     # print "            %.3f  %.3f    " % (i[2][0], i[2][1]),
-                    stdDev = math.sqrt(func.variance(i[2]))
+                    stdDev = math.sqrt(p4.func.variance(i[2]))
                     # print "%.5f" % stdDev
                     sumOfStdDevs += stdDev
                     diffs.append(math.fabs(i[2][0] - i[2][1]))
                 if verbose:
                     # print "  %f " % sumOfStdDevs,
-                    print "     nSplits=%i, average of std devs of splits %.4f " % (nSplits, sumOfStdDevs / nSplits)
-                    print "     max difference %f, mean difference %f" % (max(diffs), sum(diffs) / nSplits)
+                    print("     nSplits=%i, average of std devs of splits %.4f " % (nSplits, sumOfStdDevs / nSplits))
+                    print("     max difference %f, mean difference %f" % (max(diffs), sum(diffs) / nSplits))
             return sumOfStdDevs / nSplits
         else:
             return None
@@ -3053,16 +3095,16 @@ class STMcmcCheckPointReader(object):
                 vect[vCounter] = ret
                 vCounter += 1
                 if 0:
-                    print " %10i " % mNum1,
-                    print " %10i " % mNum2,
-                    print "%.3f" % ret
-        print results
+                    print(" %10i " % mNum1, end=' ')
+                    print(" %10i " % mNum2, end=' ')
+                    print("%.3f" % ret)
+        print(results)
 
-        print "For the %i values in one triangle," % nItems
-        print "max =  ", vect.max()
-        print "min =  ", vect.min()
-        print "mean = ", vect.mean()
-        print "var =  ", vect.var()
+        print("For the %i values in one triangle," % nItems)
+        print("max =  ", vect.max())
+        print("min =  ", vect.min())
+        print("mean = ", vect.mean())
+        print("var =  ", vect.var())
 
     def writeProposalAcceptances(self):
         for m in self.mm:
