@@ -1361,7 +1361,7 @@ class STMcmcProposalProbs(dict):
         object.__setattr__(self, 'nni', 1.0)
         object.__setattr__(self, 'spr', 1.0)
         object.__setattr__(self, 'SR2008beta_uniform', 1.0)
-        object.__setattr__(self, 'spaQ_uniform', 1.0)
+        # object.__setattr__(self, 'spaQ_uniform', 1.0)
         object.__setattr__(self, 'polytomy', 0.0)
 
     def __setattr__(self, item, val):
@@ -1645,13 +1645,6 @@ See :class:`TreePartitions`.
                 raise P4Error(gm)
             self.stRFCalc = stRFCalc
 
-        if modelName in ['SPA', 'QPA']:
-            try:
-                fspaQ = float(spaQ)
-            except ValueError:
-                gm.append("Arg spaQ (%s) should be a float" % spaQ)
-                raise P4Error(gm)
-            self.spaQ = fspaQ
 
         nChains = 1  # mcmcmc is off, temporarily
         try:
@@ -1668,6 +1661,15 @@ See :class:`TreePartitions`.
         self.startMinusOne = -1
         self.constraints = None
         self.simulate = None
+
+        self._spaQ = None
+        if modelName in ['SPA', 'QPA']:
+            try:
+                self._spaQ = float(spaQ)
+            except ValueError:
+                gm.append("Arg spaQ (%s) should be a float" % spaQ)
+                raise P4Error(gm)
+            self.spaQ = self._spaQ
 
         try:
             runNum = int(runNum)
@@ -2021,6 +2023,29 @@ See :class:`TreePartitions`.
         print("%-16s: %s" % ('inTrees', len(self.trees)))
         print("%-16s: %s" % ('nTax', self.nTax))
 
+    def _del_nothing(self):
+        gm = ["Don't/Can't delete this property."]
+        raise P4Error(gm)
+
+    def _get_spaQ(self):
+        return self._spaQ
+
+    def _set_spaQ(self, newVal):
+        try:
+            newVal = float(newVal)
+        except:
+            gm = ['This property should be set to a float.']
+            raise P4Error(gm)
+        self._spaQ = newVal
+        if self.chains:
+            for ch in self.chains:
+                ch.propTree.spaQ = newVal
+                ch.curTree.spaQ = newVal
+
+    spaQ = property(_get_spaQ, _set_spaQ, _del_nothing)
+
+
+
     def _makeProposals(self):
         """Make proposals for the STMcmc."""
 
@@ -2051,13 +2076,13 @@ See :class:`TreePartitions`.
                 #object.__setattr__(self.tuningsUsage, 'local', p)
 
         if self.modelName in ['SPA', 'QPA']:
-            if self.prob.spaQ_uniform:
-                p = STProposal(self)
-                p.name = 'spaQ_uniform'
-                # * (len(self.tree.nodes) - 1) * fudgeFactor['nni']
-                p.weight = self.prob.spaQ_uniform
-                self.proposals.append(p)
-                #object.__setattr__(self.tuningsUsage, 'local', p)
+            # if self.prob.spaQ_uniform:
+            #     p = STProposal(self)
+            #     p.name = 'spaQ_uniform'
+            #     # * (len(self.tree.nodes) - 1) * fudgeFactor['nni']
+            #     p.weight = self.prob.spaQ_uniform
+            #     self.proposals.append(p)
+            #     #object.__setattr__(self.tuningsUsage, 'local', p)
             if self.prob.polytomy:
                 p = STProposal(self)
                 p.name = 'polytomy'
@@ -2896,6 +2921,7 @@ See :class:`TreePartitions`.
             else:
                 print("   - ", end=' ')
             print()
+
 
 
 class STMcmcCheckPointReader(object):
