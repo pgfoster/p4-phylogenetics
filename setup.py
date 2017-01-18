@@ -69,7 +69,7 @@ for ipth in my_include_dirs:
 
 if not found_libgsl or not found_gsl_headers:
     for lD in likelyDirs:
-        for libdir in ['lib', 'lib64']:
+        for libdir in ['lib', 'lib64', 'lib/x86_64-linux-gnu', 'lib/i386-linux-gnu']:
             lpth = os.path.join(lD, libdir)
             if os.path.exists(lpth):
                 fList = glob.glob(os.path.join(lpth, "libgsl*"))
