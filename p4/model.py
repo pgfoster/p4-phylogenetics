@@ -144,31 +144,39 @@ class ModelPart(object):
         self.cmd1_LN_a = 10.0
         self.cmd1_LN_t = 1.0
 
+        self.ndch2 = False
+        self.ndch2_leafAlpha = 1.0      # Leaf
+        self.ndch2_internalAlpha = 1.0  # Internal
+        self.ndch2_globalComp = None
+        
+
     nComps = property(lambda self: len(self.comps))
     nRMatrices = property(lambda self: len(self.rMatrices))
     nGdasrvs = property(lambda self: len(self.gdasrvs))
 
     def setCStuff(self, theModel):
-        #gm = ['ModelPart.setCStuff()']
-
+        gm = ['ModelPart.setCStuff()']
+        #print(gm[0])
         for mNum in range(self.nComps):
+            #print(mNum)
             mt = self.comps[mNum]
-            # print "comp = %s" % mt.val
+            #print("comp %i = %s" % (mNum, mt.val))
             if 1:
-                theSum = sum(mt.val)
+                theSum = numpy.sum(mt.val)
                 theDiff = math.fabs(1.0 - theSum)
                 if theDiff > 1e-15:
                     print("Model.setCStuff().  1.0 - sum(comp.val) = %g" % theDiff)
-            for i in range(self.dim):
-                if mt.val[i] < var.PIVEC_MIN:
-                    gm = ['ModelPart.setCStuff()']
-                    gm.append("Part %i, comp %i, val %i is too small. %g" % (
-                        self.num, mNum, i, mt.val[i]))
-                    gm.append("mt.val = %s" % mt.val)
-                    gm.append("Programming error!  This should not happen.")
-                    raise P4Error(gm)
-                pf.p4_setCompVal(
-                    theModel.cModel, self.num, mNum, i, mt.val[i])
+            # for i in range(self.dim):
+            #     if mt.val[i] < var.PIVEC_MIN:
+            #         gm = ['ModelPart.setCStuff()']
+            #         gm.append("Part %i, comp %i, val %i is too small. %g" % (
+            #             self.num, mNum, i, mt.val[i]))
+            #         gm.append("mt.val = %s" % mt.val)
+            #         gm.append("Programming error!  This should not happen.")
+            #         raise P4Error(gm)
+            #     # no longer needed, as comp.val is a numpy array
+            #     #pf.p4_setCompVal(theModel.cModel, self.num, mNum, i, mt.val[i])
+            assert numpy.min(mt.val) > var.PIVEC_MIN
 
         # Do the rMatrices
         for mNum in range(self.nRMatrices):
@@ -218,8 +226,8 @@ class ModelPart(object):
             if sp.isHet:
                 omt = op.comps[mtNum]
                 omt.nNodes = smt.nNodes
-                omt.rj_isInPool = smt.rj_isInPool
-                omt.rj_f = smt.rj_f
+                # omt.rj_isInPool = smt.rj_isInPool
+                # omt.rj_f = smt.rj_f
 
         # rMatrices
         for mtNum in range(sp.nRMatrices):
@@ -237,8 +245,8 @@ class ModelPart(object):
                             omt.val[i] = smt.val[i]
                 if sp.isHet:
                     omt.nNodes = smt.nNodes
-                    omt.rj_isInPool = smt.rj_isInPool
-                    omt.rj_f = smt.rj_f
+                    # omt.rj_isInPool = smt.rj_isInPool
+                    # omt.rj_f = smt.rj_f
 
         # gdasrvs
         for mtNum in range(sp.nGdasrvs):
@@ -255,8 +263,10 @@ class ModelPart(object):
         op.relRate = sp.relRate
 
         # rjComp_k, rjRMatrix_k
-        op.rjComp_k = sp.rjComp_k
-        op.rjRMatrix_k = sp.rjRMatrix_k
+        # op.rjComp_k = sp.rjComp_k
+        # op.rjRMatrix_k = sp.rjRMatrix_k
+        op.ndch2_leafAlpha = sp.ndch2_leafAlpha
+        op.ndch2_internalAlpha = sp.ndch2_internalAlpha
 
     def copyBQETneedsResetTo(self, otherModelPart):
         sp = self
@@ -353,8 +363,8 @@ class Model(object):
                 for i in range(mp.nComps):
                     c = mp.comps[i]
                     print('%6s part %i, num %i' % ('', pNum, i))
-                    if c.val:
-                        print(" " * 14, end=' ')
+                    if c.val is not None:
+                        print(" " * 14, end='')
                         if mp.symbols:
                             theseSymbols = mp.symbols
                         else:
@@ -394,11 +404,11 @@ class Model(object):
                         pass
                     elif theSpec == '2p':
                         print("%6s part %i, num %i" % ('', pNum, i))
-                        print(" " * 15, end=' ')
+                        print(" " * 15, end='')
                         print("kappa = %f" % c.val[0])
                     else:
                         print("%6s part %i, num %i" % ('', pNum, i))
-                        print(" " * 15, end=' ')
+                        print(" " * 15, end='')
                         if mp.dim > 2:
                             p4.func._writeRMatrixTupleToOpenFile(
                                 c.val, mp.dim, sys.stdout, offset=15)
@@ -519,6 +529,21 @@ class Model(object):
                         nPrams += mp.dim
                         zeroBasedColNum += mp.dim
                         oneBasedColNum += mp.dim
+            if mp.ndch2:
+                flob.write("#   %7i %7i " % (zeroBasedColNum, oneBasedColNum))
+                flob.write("%sndch2_leafAlpha[1]\n" % spacer2)
+                pramsList[pNum].append(['ndch2_leafAlpha', 1])
+                nPrams += 1                                # even though it is a hyperparameter?
+                zeroBasedColNum += 1
+                oneBasedColNum += 1
+
+                flob.write("#   %7i %7i " % (zeroBasedColNum, oneBasedColNum))
+                flob.write("%sndch2_internalAlpha[1]\n" % spacer2)
+                pramsList[pNum].append(['ndch2_internalAlpha', 1])
+                nPrams += 1                                # even though it is a hyperparameter?
+                zeroBasedColNum += 1
+                oneBasedColNum += 1
+
             if mp.nRMatrices:
                 for i in range(mp.nRMatrices):
                     mt = mp.rMatrices[i]
@@ -591,6 +616,9 @@ class Model(object):
                     if mt.free:
                         for j in mt.val:
                             flob.write(profile2 % j)
+            if mp.ndch2:
+                flob.write(profile1 % mp.ndch2_leafAlpha)
+                flob.write(profile1 % mp.ndch2_internalAlpha)
             if mp.nRMatrices:
                 for i in range(mp.nRMatrices):
                     mt = mp.rMatrices[i]
@@ -619,6 +647,9 @@ class Model(object):
                     if mt.free:
                         for j in range(len(mt.val)):
                             flob.write('\tcomp.%i.%i.%i' % (pNum, i, j))
+            if mp.ndch2:
+                flob.write('\tndch2_leafAlpha.%i' % pNum)
+                flob.write('\tndch2_internalAlpha.%i' % pNum)
             if mp.nRMatrices:
                 for i in range(mp.nRMatrices):
                     mt = mp.rMatrices[i]
@@ -673,7 +704,8 @@ class Model(object):
                                mp.pInvar.free, mp.bQETneedsReset)
             for mNum in range(mp.nComps):
                 mt = mp.comps[mNum]
-                pf.p4_newComp(self.cModel, pNum, mNum, mt.free)
+                assert mt.val is not None  # mt.val is a numpy array
+                pf.p4_newComp(self.cModel, pNum, mNum, mt.free, mt.val)
             for mNum in range(mp.nRMatrices):
                 mt = mp.rMatrices[mNum]
                 theSpec = None
@@ -768,22 +800,23 @@ class Model(object):
                     mt.spec = 'optimized'
                     # Restore all but the last val
                     for i in range(mp.dim - 1):
-                        mt.val[i] = prams[pos]
+                        #mt.val[i] = prams[pos]
                         pos += 1
-                    # Calculate the last val
-                    mt.val[mp.dim - 1] = 1.0 - sum(mt.val[:-1])
-                    # Make sure the vals are not too small
-                    needsNormalizing = 0
-                    theSum = 0.0
-                    for i in range(mp.dim):
-                        if mt.val[i] < var.PIVEC_MIN:
-                            mt.val[
-                                i] = var.PIVEC_MIN + (var.PIVEC_MIN * 0.2) + (var.PIVEC_MIN * random.random())
-                            needsNormalizing = 1
-                        theSum += mt.val[i]
-                    if needsNormalizing or theSum != 1.0:
-                        for i in range(mp.dim):
-                            mt.val[i] /= theSum
+                    # # Calculate the last val
+                    # mt.val[mp.dim - 1] = 1.0 - sum(mt.val[:-1])
+                    # # Make sure the vals are not too small
+                    # needsNormalizing = 0
+                    # theSum = 0.0
+                    # for i in range(mp.dim):
+                    #     if mt.val[i] < var.PIVEC_MIN:
+                    #         mt.val[i] = var.PIVEC_MIN + (var.PIVEC_MIN * 0.2) + (var.PIVEC_MIN * random.random())
+                    #         needsNormalizing = 1
+                    #     theSum += mt.val[i]
+                    # if needsNormalizing or theSum != 1.0:
+                    #     for i in range(mp.dim):
+                    #         mt.val[i] /= theSum
+                    assert math.fabs(1.0 - numpy.sum(mt.val)) < 1.e-15
+                    assert numpy.min(mt.val) > var.PIVEC_MIN
                     if 0:
                         theSum = sum(mt.val)
                         print("restoreFreePrams(). pNum %i, comp %i, sum=%g, 1.0 - sum = %g" % (
@@ -896,14 +929,14 @@ class Model(object):
                         print("Model.verifyValsWith()  nNodes differ.")
                         isBad = 1
                         break
-                    elif op.comps[mtNum].rj_isInPool != sp.comps[mtNum].rj_isInPool:
-                        print("Model.verifyValsWith()  rj_isInPool differs.")
-                        isBad = 1
-                        break
-                    elif math.fabs(op.comps[mtNum].rj_f - sp.comps[mtNum].rj_f) > epsilon1:
-                        print("Model.verifyValsWith()  rj_f vals differ.")
-                        isBad = 1
-                        break
+                    # elif op.comps[mtNum].rj_isInPool != sp.comps[mtNum].rj_isInPool:
+                    #     print("Model.verifyValsWith()  rj_isInPool differs.")
+                    #     isBad = 1
+                    #     break
+                    # elif math.fabs(op.comps[mtNum].rj_f - sp.comps[mtNum].rj_f) > epsilon1:
+                    #     print("Model.verifyValsWith()  rj_f vals differ.")
+                    #     isBad = 1
+                    #     break
 
             # rMatrices
             for mtNum in range(sp.nRMatrices):
@@ -926,13 +959,13 @@ class Model(object):
                     if op.rMatrices[mtNum].nNodes != sp.rMatrices[mtNum].nNodes:
                         isBad = 1
                         break
-                    elif op.rMatrices[mtNum].rj_isInPool != sp.rMatrices[mtNum].rj_isInPool:
-                        print("Model.verifyValsWith()  rj_isInPool differs.")
-                        isBad = 1
-                        break
-                    elif math.fabs(op.rMatrices[mtNum].rj_f - sp.rMatrices[mtNum].rj_f) > epsilon1:
-                        isBad = 1
-                        break
+                    # elif op.rMatrices[mtNum].rj_isInPool != sp.rMatrices[mtNum].rj_isInPool:
+                    #     print("Model.verifyValsWith()  rj_isInPool differs.")
+                    #     isBad = 1
+                    #     break
+                    # elif math.fabs(op.rMatrices[mtNum].rj_f - sp.rMatrices[mtNum].rj_f) > epsilon1:
+                    #     isBad = 1
+                    #     break
 
             # gdasrvs
             for mtNum in range(sp.nGdasrvs):

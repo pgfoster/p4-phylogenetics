@@ -203,10 +203,7 @@ void p4_freeModelPart(p4_modelPart *mp)
     if(mp->comps) {
         for(i = 0; i < mp->nComps; i++) {
             if(mp->comps[i]) {
-                if(mp->comps[i]->val) {
-                    free(mp->comps[i]->val);
-                    mp->comps[i]->val = NULL;
-                }
+                mp->comps[i]->val = NULL; // a numpy array
                 free(mp->comps[i]);
                 mp->comps[i] = NULL;
             }
@@ -314,8 +311,7 @@ void p4_freeModelPart(p4_modelPart *mp)
 }
 
 
-
-void p4_newComp(p4_model *aModel, int pNum, int mNum, int free)
+void p4_newComp(p4_model *aModel, int pNum, int mNum, int free, PyArrayObject *val)
 {
     p4_comp  *aComp;
 
@@ -326,11 +322,7 @@ void p4_newComp(p4_model *aModel, int pNum, int mNum, int free)
         exit(1);
     }
     aComp->free = free;
-    aComp->val = malloc(aModel->parts[pNum]->dim * sizeof(double));
-    if(!aComp->val) {
-        printf("Failed to alloc memory for comp->val\n");
-        exit(1);
-    }
+    aComp->val = (double *)val->data;
     aModel->parts[pNum]->comps[mNum] = aComp;
 	
 }

@@ -220,7 +220,6 @@ class Tree(object):
         ~Tree.topologyDistance
         ~Tree.tvTopologyCompare
         ~Tree.patristicDistanceMatrix
-        ~Tree.inputTreesToSuperTreeDistances
 
 
 
@@ -2592,9 +2591,11 @@ class Tree(object):
         # partLikes
         for pNum in range(self.model.nParts):
             # if otherTree.partLikes[pNum] != self.partLikes[pNum]:
-            if math.fabs(otherTree.partLikes[pNum] - self.partLikes[pNum]) > 1.e-8:
+            myDiff = math.fabs(otherTree.partLikes[pNum] - self.partLikes[pNum])
+            if myDiff > 1.e-5:
                 print(complaintHead)
-                print("    partLikes differ.  (%.5f, (%g) %.5f (%g)" % (
+                print("    partLikes differ by %.8f (%g).  (%.8f, (%g) %.8f (%g)" % (
+                    myDiff, myDiff,
                     otherTree.partLikes[pNum], otherTree.partLikes[pNum], self.partLikes[pNum], self.partLikes[pNum]))
                 return var.DIFFERENT
 

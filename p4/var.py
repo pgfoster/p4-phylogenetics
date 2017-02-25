@@ -310,8 +310,8 @@ class Var(object):
         self.mcmcMaxCompAndRMatrixTuning = 0.9
 
         #self.allowUnusedComps = False
-        self.rjCompUniformAllocationPrior = True
-        self.rjRMatrixUniformAllocationPrior = True
+        #self.rjCompUniformAllocationPrior = True
+        #self.rjRMatrixUniformAllocationPrior = True
 
         # # Modify behavior of NexusToken.nextTok() function.
         # # write, but do not get, all [!...]
