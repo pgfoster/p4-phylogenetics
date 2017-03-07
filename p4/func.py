@@ -1600,12 +1600,12 @@ def tailAreaProbability(theStat, theDistribution, verbose=1):
             hits = hits + 1
     tap = float(hits) / float(theLen)
     if verbose:
-        print("# The stat is %s" % theStat)
-        print("# The distribution has %i items" % len(theDistribution))
-        print("# The distribution goes from %s to %s" % (theMin, theMax))
-        print("# Items in the distribution were >= theStat %i times." % hits)
-        print("# The tail-area probability is %f" % tap)
-    return tap
+        print "# The stat is %s" % theStat
+        print "# The distribution has %i items" % len(theDistribution)
+        print "# The distribution goes from %s to %s" % (theMin, theMax)
+        print "# Items in the distribution were >= theStat %i times." % hits
+        print "# The tail-area probability is %f" % tap
+    return [theStat, (theMin, theMax), tap]
 
 
 def ls():
