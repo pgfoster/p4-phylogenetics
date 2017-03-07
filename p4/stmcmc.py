@@ -1173,52 +1173,51 @@ class STChain(object):
             gm.append('Unlisted proposal.name=%s  Fix me.' % theProposal.name)
             raise P4Error(gm)
 
-        # return 0.0
         if theProposal.doAbort:
             return 0.0
-        else:
-            # print "...about to calculate the likelihood of the propTree.
-            # Model %s" % self.stMcmc.modelName
-            if self.stMcmc.modelName.startswith('SR2008_rf'):
-                if self.stMcmc.stRFCalc == 'fastReducedRF':
-                    self.getTreeLogLike_fastReducedRF()
-                elif self.stMcmc.stRFCalc == 'purePython1':
-                    self.getTreeLogLike_ppy1()
-                elif self.stMcmc.stRFCalc == 'bitarray':
-                    self.refreshBitarrayPropTree()
-                    self.getTreeLogLike_bitarray()
-            elif self.stMcmc.modelName == 'SPA':
+
+        # print "...about to calculate the likelihood of the propTree.
+        # Model %s" % self.stMcmc.modelName
+        if self.stMcmc.modelName.startswith('SR2008_rf'):
+            if self.stMcmc.stRFCalc == 'fastReducedRF':
+                self.getTreeLogLike_fastReducedRF()
+            elif self.stMcmc.stRFCalc == 'purePython1':
+                self.getTreeLogLike_ppy1()
+            elif self.stMcmc.stRFCalc == 'bitarray':
                 self.refreshBitarrayPropTree()
-                self.getTreeLogLike_spa_bitarray()
-            elif self.stMcmc.modelName == 'QPA':
-                self.getTreeLogLike_qpa_slow()
-            else:
-                gm.append('Unknown model %s' % self.stMcmc.modelName)
-                raise P4Error(gm)
+                self.getTreeLogLike_bitarray()
+        elif self.stMcmc.modelName == 'SPA':
+            self.refreshBitarrayPropTree()
+            self.getTreeLogLike_spa_bitarray()
+        elif self.stMcmc.modelName == 'QPA':
+            self.getTreeLogLike_qpa_slow()
+        else:
+            gm.append('Unknown model %s' % self.stMcmc.modelName)
+            raise P4Error(gm)
 
-            # if theProposal.name == 'polytomy':
-            # print "propTree logLike is %f, curTree logLike is %f" % (
-            #    self.propTree.logLike, self.curTree.logLike)
-            #myDist = self.propTree.topologyDistance(self.curTree)
-            # print "myDist %2i, propTree.logLike %.3f  curTree.logLike %.3f "
-            # % (myDist, self.propTree.logLike, self.curTree.logLike)
+        # if theProposal.name == 'polytomy':
+        # print "propTree logLike is %f, curTree logLike is %f" % (
+        #    self.propTree.logLike, self.curTree.logLike)
+        #myDist = self.propTree.topologyDistance(self.curTree)
+        # print "myDist %2i, propTree.logLike %.3f  curTree.logLike %.3f "
+        # % (myDist, self.propTree.logLike, self.curTree.logLike)
 
-            logLikeRatio = self.propTree.logLike - self.curTree.logLike
-            # print logLikeRatio
-            #logLikeRatio = 0.0
+        logLikeRatio = self.propTree.logLike - self.curTree.logLike
+        # print logLikeRatio
+        #logLikeRatio = 0.0
 
-            # Experimental Heating hack
-            if self.stMcmc.doHeatingHack and theProposal.name in self.stMcmc.heatingHackProposalNames:
-                heatFactor = 1.0 / (1.0 + self.stMcmc.heatingHackTemperature)
-                logLikeRatio *= heatFactor
-                self.logPriorRatio *= heatFactor
+        # Experimental Heating hack
+        if self.stMcmc.doHeatingHack and theProposal.name in self.stMcmc.heatingHackProposalNames:
+            heatFactor = 1.0 / (1.0 + self.stMcmc.heatingHackTemperature)
+            logLikeRatio *= heatFactor
+            self.logPriorRatio *= heatFactor
 
-            theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
-            #theSum = self.logProposalRatio + self.logPriorRatio
-            # if theProposal.name == 'polytomy':
-            # print "%f  %f  %f  %f" % (theSum, logLikeRatio,
-            # self.logProposalRatio, self.logPriorRatio)
-            return theSum
+        theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
+        #theSum = self.logProposalRatio + self.logPriorRatio
+        # if theProposal.name == 'polytomy':
+        # print "%f  %f  %f  %f" % (theSum, logLikeRatio,
+        # self.logProposalRatio, self.logPriorRatio)
+        return theSum
 
     def gen(self, aProposal):
         gm = ['STChain.gen()']
@@ -1361,7 +1360,7 @@ class STMcmcProposalProbs(dict):
         object.__setattr__(self, 'nni', 1.0)
         object.__setattr__(self, 'spr', 1.0)
         object.__setattr__(self, 'SR2008beta_uniform', 1.0)
-        # object.__setattr__(self, 'spaQ_uniform', 1.0)
+        object.__setattr__(self, 'spaQ_uniform', 1.0)
         object.__setattr__(self, 'polytomy', 0.0)
 
     def __setattr__(self, item, val):
@@ -2076,13 +2075,13 @@ See :class:`TreePartitions`.
                 #object.__setattr__(self.tuningsUsage, 'local', p)
 
         if self.modelName in ['SPA', 'QPA']:
-            # if self.prob.spaQ_uniform:
-            #     p = STProposal(self)
-            #     p.name = 'spaQ_uniform'
-            #     # * (len(self.tree.nodes) - 1) * fudgeFactor['nni']
-            #     p.weight = self.prob.spaQ_uniform
-            #     self.proposals.append(p)
-            #     #object.__setattr__(self.tuningsUsage, 'local', p)
+            if self.prob.spaQ_uniform:
+                p = STProposal(self)
+                p.name = 'spaQ_uniform'
+                # * (len(self.tree.nodes) - 1) * fudgeFactor['nni']
+                p.weight = self.prob.spaQ_uniform
+                self.proposals.append(p)
+                #object.__setattr__(self.tuningsUsage, 'local', p)
             if self.prob.polytomy:
                 p = STProposal(self)
                 p.name = 'polytomy'

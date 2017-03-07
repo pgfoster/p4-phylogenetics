@@ -2834,8 +2834,7 @@ class Tree(object):
         if metric == 'sd':
             # Symmetric difference.  The symmetric_difference method
             # returns all elements that are in exactly one of the sets.
-            theSD = len(
-                self.splitKeySet.symmetric_difference(tree2.splitKeySet))
+            theSD = len(self.splitKeySet.symmetric_difference(tree2.splitKeySet))
             return theSD
 
         # The difference method returns the difference of two sets as

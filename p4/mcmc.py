@@ -372,7 +372,7 @@ class McmcTuningsUsage(object):
             lst.append(sig2 %
                        (spacer, 'ndch2_leafCompsDir', len(self.parts[pNum].ndch2_leafCompsDir)))
             lst.append(sig2 %
-                       (spacer, 'ndch2_leafCompsDir', len(self.parts[pNum].ndch2_internalCompsDir)))
+                       (spacer, 'ndch2_internalCompsDir', len(self.parts[pNum].ndch2_internalCompsDir)))
             lst.append(sig2 %
                        (spacer, 'rMatrix', len(self.parts[pNum].rMatrix)))
             lst.append(sig2 %
@@ -1096,7 +1096,7 @@ class Mcmc(object):
         # Hidden experimental hacking
         self.doHeatingHack = False
         self.heatingHackTemperature = 5.0
-        self.heatingHackProposalNames = ['local', 'eTBR']
+        #self.heatingHackProposalNames = ['local', 'eTBR']
         
 
         # # Are we using rjComp in any model partitions?
@@ -1974,7 +1974,7 @@ class Mcmc(object):
             print("Heating hack is turned on.")
             assert self.nChains == 1, "MCMCMC does not work with the heating hack"
             print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
-            print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
+            #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
         if self.checkPointInterval:
             # We want a couple of things:
@@ -2057,22 +2057,22 @@ class Mcmc(object):
                 gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
                 raise P4Error(gm)
 
-        # Are we using rjComp in any model partitions?
-        rjCompParts = [mp.rjComp for mp in self.chains[
-            coldChainNum].curTree.model.parts]  # True and False
-        rjCompPartNums = [pNum for pNum in range(
-            self.chains[coldChainNum].curTree.model.nParts) if rjCompParts[pNum]]
-        # print rjCompParts
-        # print rjCompPartNums
+        # # Are we using rjComp in any model partitions?
+        # rjCompParts = [mp.rjComp for mp in self.chains[
+        #     coldChainNum].curTree.model.parts]  # True and False
+        # rjCompPartNums = [pNum for pNum in range(
+        #     self.chains[coldChainNum].curTree.model.nParts) if rjCompParts[pNum]]
+        # # print rjCompParts
+        # # print rjCompPartNums
 
-        # Are we using rjRMatrix in any model partitions?
-        rjRMatrixParts = [mp.rjRMatrix for mp in self.chains[
-            coldChainNum].curTree.model.parts]  # True and False
-        rjRMatrixPartNums = [pNum for pNum in range(
-            self.chains[coldChainNum].curTree.model.nParts) if rjRMatrixParts[pNum]]
-        # print rjRMatrixParts
-        # print rjRMatrixPartNums
-        # print self.chains[0].curTree.model.parts[1].rjRMatrix_k
+        # # Are we using rjRMatrix in any model partitions?
+        # rjRMatrixParts = [mp.rjRMatrix for mp in self.chains[
+        #     coldChainNum].curTree.model.parts]  # True and False
+        # rjRMatrixPartNums = [pNum for pNum in range(
+        #     self.chains[coldChainNum].curTree.model.nParts) if rjRMatrixParts[pNum]]
+        # # print rjRMatrixParts
+        # # print rjRMatrixPartNums
+        # # print self.chains[0].curTree.model.parts[1].rjRMatrix_k
 
         if self.gen > -1:
             # it is a re-start, so we need to back over the "end;" in the tree
@@ -2129,51 +2129,51 @@ class Mcmc(object):
                         pramsFile)
                     pramsFile.close()
 
-            if 0 and rjCompPartNums:
-                rjKFile = open(self.rjKFileName, 'w')
-                rjKFile.write(
-                    "# k_comp_max, a constant, is the number of comp vectors in a part in total\n")
-                rjKFile.write(
-                    "#             (both in the pool and not in the pool).\n")
-                rjKFile.write(
-                    "# ck, aka ModelPart.rjComp_k, is the number of comp vectors in the 'pool' (for each part)\n")
-                rjKFile.write(
-                    "# k_0 for comps (ck0 below) is the number of comp vectors on the tree (for each part)\n")
-                rjKFile.write("#\n")
-                for pNum in rjCompPartNums:
-                    rjKFile.write("# part%i: " % pNum)
-                    rjKFile.write(" k_comp_max = %i\n" % self.chains[
-                                  coldChainNum].curTree.model.parts[pNum].nComps)
-                rjKFile.write("#\n")
+            # if 0 and rjCompPartNums:
+            #     rjKFile = open(self.rjKFileName, 'w')
+            #     rjKFile.write(
+            #         "# k_comp_max, a constant, is the number of comp vectors in a part in total\n")
+            #     rjKFile.write(
+            #         "#             (both in the pool and not in the pool).\n")
+            #     rjKFile.write(
+            #         "# ck, aka ModelPart.rjComp_k, is the number of comp vectors in the 'pool' (for each part)\n")
+            #     rjKFile.write(
+            #         "# k_0 for comps (ck0 below) is the number of comp vectors on the tree (for each part)\n")
+            #     rjKFile.write("#\n")
+            #     for pNum in rjCompPartNums:
+            #         rjKFile.write("# part%i: " % pNum)
+            #         rjKFile.write(" k_comp_max = %i\n" % self.chains[
+            #                       coldChainNum].curTree.model.parts[pNum].nComps)
+            #     rjKFile.write("#\n")
 
-            if 0 and rjRMatrixPartNums:
-                if not rjCompPartNums:
-                    rjKFile = open(self.rjKFileName, 'w')
-                rjKFile.write(
-                    "# k_rMatrix_max, a constant, is the number of rMatrices in a part in total\n")
-                rjKFile.write(
-                    "#             (both in the pool and not in the pool).\n")
-                rjKFile.write(
-                    "# rk, aka ModelPart.rjRMatrix_k, is the number of rMatrices in the 'pool' (for each part)\n")
-                rjKFile.write(
-                    "# k_0 for rMatrices (rk0 below) is the number of rMatrices on the tree (for each part)\n")
-                rjKFile.write("#\n")
-                for pNum in rjRMatrixPartNums:
-                    rjKFile.write("# part%i: " % pNum)
-                    rjKFile.write(" k_rMatrix_max = %i\n" % self.chains[
-                                  coldChainNum].curTree.model.parts[pNum].nRMatrices)
-                rjKFile.write("#\n")
+            # if 0 and rjRMatrixPartNums:
+            #     if not rjCompPartNums:
+            #         rjKFile = open(self.rjKFileName, 'w')
+            #     rjKFile.write(
+            #         "# k_rMatrix_max, a constant, is the number of rMatrices in a part in total\n")
+            #     rjKFile.write(
+            #         "#             (both in the pool and not in the pool).\n")
+            #     rjKFile.write(
+            #         "# rk, aka ModelPart.rjRMatrix_k, is the number of rMatrices in the 'pool' (for each part)\n")
+            #     rjKFile.write(
+            #         "# k_0 for rMatrices (rk0 below) is the number of rMatrices on the tree (for each part)\n")
+            #     rjKFile.write("#\n")
+            #     for pNum in rjRMatrixPartNums:
+            #         rjKFile.write("# part%i: " % pNum)
+            #         rjKFile.write(" k_rMatrix_max = %i\n" % self.chains[
+            #                       coldChainNum].curTree.model.parts[pNum].nRMatrices)
+            #     rjKFile.write("#\n")
 
-            if 0 and rjCompPartNums or rjRMatrixPartNums:
-                rjKFile.write("# %10s " % 'genPlus1')
-                for pNum in rjCompPartNums:
-                    rjKFile.write("%7s " % 'p%i_ck' % pNum)
-                    rjKFile.write("%8s " % 'p%i_ck0' % pNum)
-                for pNum in rjRMatrixPartNums:
-                    rjKFile.write("%7s " % 'p%i_rk' % pNum)
-                    rjKFile.write("%8s " % 'p%i_rk0' % pNum)
-                rjKFile.write("\n")
-                rjKFile.close()
+            # if 0 and rjCompPartNums or rjRMatrixPartNums:
+            #     rjKFile.write("# %10s " % 'genPlus1')
+            #     for pNum in rjCompPartNums:
+            #         rjKFile.write("%7s " % 'p%i_ck' % pNum)
+            #         rjKFile.write("%8s " % 'p%i_ck0' % pNum)
+            #     for pNum in rjRMatrixPartNums:
+            #         rjKFile.write("%7s " % 'p%i_rk' % pNum)
+            #         rjKFile.write("%8s " % 'p%i_rk0' % pNum)
+            #     rjKFile.write("\n")
+            #     rjKFile.close()
 
         if verbose:
             print("Sampling every %i." % self.sampleInterval)
@@ -2316,8 +2316,8 @@ class Mcmc(object):
                 else:
                     self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
 
-                lnR = (
-                    1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
+                lnR = (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))
+                        ) * chain2.curTree.logLike
                 lnR += (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))
                         ) * chain1.curTree.logLike
                 lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))

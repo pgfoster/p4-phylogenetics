@@ -148,6 +148,7 @@ class ModelPart(object):
         self.ndch2_leafAlpha = 1.0      # Leaf
         self.ndch2_internalAlpha = 1.0  # Internal
         self.ndch2_globalComp = None
+        self.ndch2_writeComps = True
         
 
     nComps = property(lambda self: len(self.comps))
@@ -513,22 +514,25 @@ class Model(object):
                 zeroBasedColNum += 1
                 oneBasedColNum += 1
             if mp.nComps:
-                for i in range(mp.nComps):
-                    if mp.comps[i].free:
-                        flob.write("#   ")
-                        begin = zeroBasedColNum
-                        end = zeroBasedColNum + (mp.dim - 1)
-                        theRangeString = "%s-%s" % (begin, end)
-                        flob.write("%7s " % theRangeString)
-                        begin = oneBasedColNum
-                        end = oneBasedColNum + (mp.dim - 1)
-                        theRangeString = "%s-%s" % (begin, end)
-                        flob.write("%7s " % theRangeString)
-                        flob.write("%scomp[%i]\n" % (spacer2, mp.dim))
-                        pramsList[pNum].append(['comp', mp.dim])
-                        nPrams += mp.dim
-                        zeroBasedColNum += mp.dim
-                        oneBasedColNum += mp.dim
+                if mp.ndch2 and not mp.ndch2_writeComps:
+                    pass
+                else:
+                    for i in range(mp.nComps):
+                        if mp.comps[i].free:
+                            flob.write("#   ")
+                            begin = zeroBasedColNum
+                            end = zeroBasedColNum + (mp.dim - 1)
+                            theRangeString = "%s-%s" % (begin, end)
+                            flob.write("%7s " % theRangeString)
+                            begin = oneBasedColNum
+                            end = oneBasedColNum + (mp.dim - 1)
+                            theRangeString = "%s-%s" % (begin, end)
+                            flob.write("%7s " % theRangeString)
+                            flob.write("%scomp[%i]\n" % (spacer2, mp.dim))
+                            pramsList[pNum].append(['comp', mp.dim])
+                            nPrams += mp.dim
+                            zeroBasedColNum += mp.dim
+                            oneBasedColNum += mp.dim
             if mp.ndch2:
                 flob.write("#   %7i %7i " % (zeroBasedColNum, oneBasedColNum))
                 flob.write("%sndch2_leafAlpha[1]\n" % spacer2)
@@ -611,11 +615,14 @@ class Model(object):
             if self.doRelRates and self.relRatesAreFree:
                 flob.write(profile1 % mp.relRate)
             if mp.nComps:
-                for i in range(mp.nComps):
-                    mt = mp.comps[i]
-                    if mt.free:
-                        for j in mt.val:
-                            flob.write(profile2 % j)
+                if mp.ndch2 and not mp.ndch2_writeComps:
+                    pass
+                else:
+                    for i in range(mp.nComps):
+                        mt = mp.comps[i]
+                        if mt.free:
+                            for j in mt.val:
+                                flob.write(profile2 % j)
             if mp.ndch2:
                 flob.write(profile1 % mp.ndch2_leafAlpha)
                 flob.write(profile1 % mp.ndch2_internalAlpha)
@@ -642,11 +649,14 @@ class Model(object):
             if self.doRelRates and self.relRatesAreFree:
                 flob.write('\trelRate.%i' % pNum)
             if mp.nComps:
-                for i in range(mp.nComps):
-                    mt = mp.comps[i]
-                    if mt.free:
-                        for j in range(len(mt.val)):
-                            flob.write('\tcomp.%i.%i.%i' % (pNum, i, j))
+                if mp.ndch2 and not mp.ndch2_writeComps:
+                    pass
+                else:
+                    for i in range(mp.nComps):
+                        mt = mp.comps[i]
+                        if mt.free:
+                            for j in range(len(mt.val)):
+                                flob.write('\tcomp.%i.%i.%i' % (pNum, i, j))
             if mp.ndch2:
                 flob.write('\tndch2_leafAlpha.%i' % pNum)
                 flob.write('\tndch2_internalAlpha.%i' % pNum)

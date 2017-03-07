@@ -914,7 +914,7 @@ class Chain(object):
             self.logPriorRatio *= heatBeta
 
         # Experimental Heating hack
-        if self.mcmc.doHeatingHack and theProposal.name in self.mcmc.heatingHackProposalNames:
+        if self.mcmc.doHeatingHack: # and theProposal.name in self.mcmc.heatingHackProposalNames:
             heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature)
             logLikeRatio *= heatFactor
             self.logPriorRatio *= heatFactor
