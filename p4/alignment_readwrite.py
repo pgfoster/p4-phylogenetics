@@ -1047,7 +1047,7 @@ if True:
         if f != sys.stdout:
             f.close()
 
-    def writePhylip(self, fName=None, interleave=True, whitespaceSeparatesNames=True, flat=False):
+    def writePhylip(self, fName=None, interleave=True, whitespaceSeparatesNames=True, flat=False, offset=1):
         """Write the alignment in Phylip format.
 
         If interleave is turned off, then sequences are
@@ -1062,7 +1062,8 @@ if True:
         Other programs, eg phyml and PAML, use a phylip-like format where
         the tax name is set off from the sequence by whitespace.  There is
         no set number of spaces that the sequence needs to occupy, and
-        there may not be spaces in the tax name.
+        there may not be spaces in the tax name. 'offset' is the number of
+        spaces from the end of the name to the beginning of the sequence.
 
         This method used to write strict, real phylip format by default,
         where there is a set number of spaces for the taxon name, and
@@ -1145,7 +1146,7 @@ if True:
         nameWid = var.phylipDataMaxNameLength + 1
         spacer1 = var.phylipDataMaxNameLength + 1
         if whitespaceSeparatesNames and (maxNameLen >= nameWid):
-            nameWid = maxNameLen + 1
+            nameWid = maxNameLen + offset
             spacer1 = 11
         # print 'The nameWid is %i' % nameWid
 
