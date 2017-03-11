@@ -1204,10 +1204,18 @@ class STChain(object):
 
         logLikeRatio = self.propTree.logLike - self.curTree.logLike
         # print logLikeRatio
+
+        # To run "without the data", which shows the effect of priors.
         #logLikeRatio = 0.0
 
+        # Mcmcmc
+        if self.stMcmc.nChains > 1:
+            heatBeta = 1.0 / (1.0 + self.stMcmc.tunings.chainTemp * self.tempNum)
+            logLikeRatio *= heatBeta
+            self.logPriorRatio *= heatBeta
+
         # Experimental Heating hack
-        if self.stMcmc.doHeatingHack and theProposal.name in self.stMcmc.heatingHackProposalNames:
+        if self.stMcmc.doHeatingHack: # and theProposal.name in self.stMcmc.heatingHackProposalNames:
             heatFactor = 1.0 / (1.0 + self.stMcmc.heatingHackTemperature)
             logLikeRatio *= heatFactor
             self.logPriorRatio *= heatFactor
@@ -1290,7 +1298,7 @@ fudgeFactor['local'] = 1.5
 class STMcmcTunings(object):
 
     def __init__(self):
-        object.__setattr__(self, 'chainTemp', 0.15)  # was 0.2
+        object.__setattr__(self, 'chainTemp', 1.)
         object.__setattr__(self, 'nni', None)
         object.__setattr__(self, 'spr', None)
         object.__setattr__(self, 'SR2008beta_uniform', 0.2)
@@ -1417,8 +1425,8 @@ class STProposal(object):
         self.nAborts = [0] * self.nChains
 
     def dump(self):
-        print("proposal name=%-10s pNum=%2i, mtNum=%2i, weight=%5.1f, tuning=%7.2f" % (
-            '%s,' % self.name, self.pNum, self.mtNum, self.weight, self.tuning))
+        print("proposal name=%-10s pNum=%2i, mtNum=%2i, weight=%5.1f, tuning=%s" % (
+            self.name, self.pNum, self.mtNum, self.weight, self.tuning))
         print("    nProposals   by temperature:  %s" % self.nProposals)
         print("    nAcceptances by temperature:  %s" % self.nAcceptances)
 
@@ -1460,145 +1468,145 @@ class STMcmc(object):
 
     """An MCMC for making supertrees from a set of input trees.
 
-This week, it implements the Steel and Rodrigo 2008 model, with the
-alpha calculation using the approximation in Bryant and Steel 2009.
+    This week, it implements the Steel and Rodrigo 2008 model, with the
+    alpha calculation using the approximation in Bryant and Steel 2009.
 
-**Arguments**
+    **Arguments**
 
-inTrees
-    A list of p4 tree objects.  You could just use ``var.trees``.
+    inTrees
+        A list of p4 tree objects.  You could just use ``var.trees``.
 
-modelName
-    The SR2008 models implemented here are based on the Steel and
-    Rodrigo 2008 description of a likelihood model, "Maximum
-    likelihood supertrees" Syst. Biol. 57(2):243--250, 2008.  At
-    the moment, they are all SR2008_rf, meaning that they use
-    Robinson-Foulds distances.
+    modelName
+        The SR2008 models implemented here are based on the Steel and
+        Rodrigo 2008 description of a likelihood model, "Maximum
+        likelihood supertrees" Syst. Biol. 57(2):243--250, 2008.  At
+        the moment, they are all SR2008_rf, meaning that they use
+        Robinson-Foulds distances.
 
-    SR2008_rf_ia 
+        SR2008_rf_ia 
 
-        Here 'ia' means 'ignore alpha'.  The alpha values are not
-        calculated at all, as they are presumed (erroneously, but
-        not too badly) to cancel out.
+            Here 'ia' means 'ignore alpha'.  The alpha values are not
+            calculated at all, as they are presumed (erroneously, but
+            not too badly) to cancel out.
 
-    SR2008_rf_aZ
+        SR2008_rf_aZ
 
-        This uses the approximation for Z_T = alpha^{-1} as described
-        in Equation 30 in the Bryant and Steel paper "Computing the
-        distribution of a tree metric" in IEEE/ACM Transactions on
-        computational biology and bioinformatics, VOL. 6, 2009.
+            This uses the approximation for Z_T = alpha^{-1} as described
+            in Equation 30 in the Bryant and Steel paper "Computing the
+            distribution of a tree metric" in IEEE/ACM Transactions on
+            computational biology and bioinformatics, VOL. 6, 2009.
 
-    SR2008_rf_aZ_fb
+        SR2008_rf_aZ_fb
 
-        This is as SR2008_rf_aZ above, but additionally it allows
-        beta to be a free parameter, and it is sampled.  Samples
-        are written to mcmc_prams* files.
+            This is as SR2008_rf_aZ above, but additionally it allows
+            beta to be a free parameter, and it is sampled.  Samples
+            are written to mcmc_prams* files.
 
-beta
-    This only applies to SR2008.  The beta is the weight as
-    given in Steel and Rodrigo 2008. By default it is 1.0.
+    beta
+        This only applies to SR2008.  The beta is the weight as
+        given in Steel and Rodrigo 2008. By default it is 1.0.
 
 
-stRFCalc 
+    stRFCalc 
 
-    There are three ways to calculate the RF distances and
-    likelihood, for these SR2008_rf models above --- all giving
-    the same answer.
+        There are three ways to calculate the RF distances and
+        likelihood, for these SR2008_rf models above --- all giving
+        the same answer.
 
-    1.  purePython1.  Slow.
+        1.  purePython1.  Slow.
 
-    2.  bitarray, using the bitarray module.  About twice as fast
-        as purePython1
+        2.  bitarray, using the bitarray module.  About twice as fast
+            as purePython1
 
-    3.  fastReducedRF, written in C++ using boost and ublas.
-        About 10 times faster than purePython1, but perhaps a bit
-        of a bother to get going.  It needs the fastReducedRF
-        module, included in the p4 source code.
+        3.  fastReducedRF, written in C++ using boost and ublas.
+            About 10 times faster than purePython1, but perhaps a bit
+            of a bother to get going.  It needs the fastReducedRF
+            module, included in the p4 source code.
 
-    It is under control of the argument stRFCalc, which can be one
-    of 'purePython1', 'bitarray', and 'fastReducedRF'.  By default
-    it is purePython1, so you may want to at least install
-    bitarray.
+        It is under control of the argument stRFCalc, which can be one
+        of 'purePython1', 'bitarray', and 'fastReducedRF'.  By default
+        it is purePython1, so you may want to at least install
+        bitarray.
 
-runNum
+    runNum
 
-    You may want to do more than one 'run' in the same directory,
-    to facilitate convergence testing.  The first runNum would be
-    0, and samples, likelihoods, and checkPoints are written to
-    files with that number.
+        You may want to do more than one 'run' in the same directory,
+        to facilitate convergence testing.  The first runNum would be
+        0, and samples, likelihoods, and checkPoints are written to
+        files with that number.
 
-sampleInterval
+    sampleInterval
 
-    Interval at which the chain is sampled, including writing a tree,
-    and the logLike.  Plan to get perhaps 1000 samples; so if you are
-    planning to make a run of 10000 generations then you might set
-    sampleInterval=10.
+        Interval at which the chain is sampled, including writing a tree,
+        and the logLike.  Plan to get perhaps 1000 samples; so if you are
+        planning to make a run of 10000 generations then you might set
+        sampleInterval=10.
 
-checkPointInterval
+    checkPointInterval
 
-    Interval at which checkpoints are made.  If set to None (the
-    default) it means don't make checkpoints.  My taste is to aim to
-    make perhaps 2 to 4 per run.  So if you are planning to start out
-    with a run of 10000 generations, you could set
-    checkPointInterval=5000, which will give you 2 checkpoints.  See
-    more about checkpointing below.
+        Interval at which checkpoints are made.  If set to None (the
+        default) it means don't make checkpoints.  My taste is to aim to
+        make perhaps 2 to 4 per run.  So if you are planning to start out
+        with a run of 10000 generations, you could set
+        checkPointInterval=5000, which will give you 2 checkpoints.  See
+        more about checkpointing below.
 
-To prepare for a run, instantiate an Mcmc object, for example::
+    To prepare for a run, instantiate an Mcmc object, for example::
 
-    m = STMcmc(treeList, modelName='SR2008_rf_aZ_fb', stRFCalc='fastReducedRF', sampleInterval=10)
+        m = STMcmc(treeList, modelName='SR2008_rf_aZ_fb', stRFCalc='fastReducedRF', sampleInterval=10)
 
-To start it running, do this::
+    To start it running, do this::
 
-    # Tell it the number of generations to do
-    m.run(10000)
+        # Tell it the number of generations to do
+        m.run(10000)
 
-As it runs, it saves trees and likelihoods at sampleInterval
-intervals (actually whenever the current generation number is
-evenly divisible by the sampleInterval).
+    As it runs, it saves trees and likelihoods at sampleInterval
+    intervals (actually whenever the current generation number is
+    evenly divisible by the sampleInterval).
 
-**CheckPoints**
+    **CheckPoints**
 
-Whenever the current generation number is evenly divisible by the
-checkPointInterval it will write a checkPoint file.  A checkPoint
-file is the whole MCMC, pickled.  Using a checkPoint, you can
-re-start an STMcmc from the point you left off.  Or, in the event
-of a crash, you can restart from the latest checkPoint.  But the
-most useful thing about them is that you can query checkPoints to
-get information about how the chain has been running, and about
-convergence diagnostics.
+    Whenever the current generation number is evenly divisible by the
+    checkPointInterval it will write a checkPoint file.  A checkPoint
+    file is the whole MCMC, pickled.  Using a checkPoint, you can
+    re-start an STMcmc from the point you left off.  Or, in the event
+    of a crash, you can restart from the latest checkPoint.  But the
+    most useful thing about them is that you can query checkPoints to
+    get information about how the chain has been running, and about
+    convergence diagnostics.
 
-In order to restart the MCMC from the end of a previous run:: 
+    In order to restart the MCMC from the end of a previous run:: 
 
-    # read the last checkPoint file
-    m = func.unPickleStMcmc(0)  # runNum 0
-    m.run(20000)
+        # read the last checkPoint file
+        m = func.unPickleStMcmc(0)  # runNum 0
+        m.run(20000)
 
-Its that easy if your previous run finished properly.  However, if
-your previous run has crashed and you want to restart it from a
-checkPoint, then you will need to repair the sample output files
-to remove samples that were taken after the last checkPoint, but
-before the crash.  Fix the trees, likelihoods, prams, and sims.
-(You probably do not need to beware of confusing gen (eg 9999) and
-gen+1 (eg 10000) issues.)  When you remove trees from the tree
-files be sure to leave the 'end;' at the end-- p4 needs it, and
-will deal with it.
+    Its that easy if your previous run finished properly.  However, if
+    your previous run has crashed and you want to restart it from a
+    checkPoint, then you will need to repair the sample output files
+    to remove samples that were taken after the last checkPoint, but
+    before the crash.  Fix the trees, likelihoods, prams, and sims.
+    (You probably do not need to beware of confusing gen (eg 9999) and
+    gen+1 (eg 10000) issues.)  When you remove trees from the tree
+    files be sure to leave the 'end;' at the end-- p4 needs it, and
+    will deal with it.
 
-The checkPoints can help with convergence testing.  To help with
-that, you can use the STMcmcCheckPointReader class.  It will print
-out a table of average standard deviations of split supports
-between 2 runs, or between 2 checkPoints from the same run.  It
-will print out tables of proposal acceptances to show whether they
-change over the course of the MCMC.
+    The checkPoints can help with convergence testing.  To help with
+    that, you can use the STMcmcCheckPointReader class.  It will print
+    out a table of average standard deviations of split supports
+    between 2 runs, or between 2 checkPoints from the same run.  It
+    will print out tables of proposal acceptances to show whether they
+    change over the course of the MCMC.
 
-**Making a consensus tree**
+    **Making a consensus tree**
 
-See :class:`TreePartitions`.
+    See :class:`TreePartitions`.
 
     """
 
     def __init__(self, inTrees, bigT=None, modelName='SR2008_rf_aZ',
                  beta=1.0, spaQ=0.5, stRFCalc='purePython1',
-                 runNum=0, sampleInterval=100,
+                 nChains=1, runNum=0, sampleInterval=100,
                  checkPointInterval=None, useSplitSupport=False):
         gm = ['STMcmc.__init__()']
 
@@ -1645,7 +1653,6 @@ See :class:`TreePartitions`.
             self.stRFCalc = stRFCalc
 
 
-        nChains = 1  # mcmcmc is off, temporarily
         try:
             nChains = int(nChains)
         except (ValueError, TypeError):
@@ -2011,7 +2018,7 @@ See :class:`TreePartitions`.
         # Hidden experimental hacking
         self.doHeatingHack = False
         self.heatingHackTemperature = 5.0
-        self.heatingHackProposalNames = ['nni', 'spr']
+        #self.heatingHackProposalNames = ['nni', 'spr']
 
         print("Initializing STMcmc")
         print("%-16s: %s" % ('modelName', modelName))
@@ -2021,6 +2028,11 @@ See :class:`TreePartitions`.
             print("%-16s: %s" % ('useSplitSupport', self.useSplitSupport))
         print("%-16s: %s" % ('inTrees', len(self.trees)))
         print("%-16s: %s" % ('nTax', self.nTax))
+        if self.nChains == 1:
+            print("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
+        elif self.nChains > 1:
+            print("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
+            # Don't say the temperature here, as it will likely be re-set later.
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
@@ -2135,85 +2147,62 @@ See :class:`TreePartitions`.
             print("\nSTMcmc.writeProposalAcceptances()  There is no info in memory. ")
             print(" Maybe it was just emptied after writing to a checkpoint?  ")
             print("If so, read the checkPoint and get the proposalAcceptances from there.")
-        else:
+            return
 
-            spacer = ' ' * 8
-            print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
-                self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-            print("%s %20s %10s %13s%8s" % (spacer, 'proposal', 'nProposals', 'acceptance(%)', 'tuning'))
-            for p in self.proposals:
-                print("%s" % spacer, end=' ')
-                print("%20s" % p.name, end=' ')
-                print("%10i" % p.nProposals[0], end=' ')
+        spacer = ' ' * 8
+        print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
+            self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+        print("%s %20s %10s %13s%8s" % (spacer, 'proposal', 'nProposals', 'acceptance(%)', 'tuning'))
+        for p in self.proposals:
+            print("%s" % spacer, end=' ')
+            print("%20s" % p.name, end=' ')
+            print("%10i" % p.nProposals[0], end=' ')
 
-                if p.nProposals[0]:  # Don't divide by zero
-                    print("       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])), end=' ')
-                else:
-                    print("           - ", end=' ')
+            if p.nProposals[0]:  # Don't divide by zero
+                print("       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])), end=' ')
+            else:
+                print("           - ", end=' ')
 
-                if p.tuning == None:
-                    print("      -", end=' ')
-                elif p.tuning < 2.0:
-                    print("  %5.3f" % p.tuning, end=' ')
-                else:
-                    print("%7.1f" % p.tuning, end=' ')
-                print()
+            if p.tuning == None:
+                print("      -", end=' ')
+            elif p.tuning < 2.0:
+                print("  %5.3f" % p.tuning, end=' ')
+            else:
+                print("%7.1f" % p.tuning, end=' ')
+            print()
 
-            # # Tabulate topology changes, if any were attempted.
-            # doTopol = 0
-            # p = None
-            # try:
-            #     p = self.proposalsHash['local']
-            # except KeyError:
-            #     pass
-            # if p:
-            #     for tNum in range(self.nChains):
-            #         if p.nTopologyChangeAttempts[tNum]:
-            #             doTopol = 1
-            #             break
-            #     if doTopol:
-            #         p = self.proposalsHash['local']
-            #         print "'Local' proposal-- attempted topology changes"
-            #         print "%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer
-            #         for tNum in range(self.nChains):
-            #             print "%s" % spacer,
-            #             print "%4i " % tNum,
-            #             print "%9i" % p.nProposals[tNum],
-            #             print "%8i" % p.nAcceptances[tNum],
-            #             print "  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])),
-            #             print "%20i" % p.nTopologyChangeAttempts[tNum],
-            #             print "%13i" % p.nTopologyChanges[tNum],
-            #             print "  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum])/float(p.nTopologyChangeAttempts[tNum]))
-            #     else:
-            #         print "%sFor the 'local' proposals, there were no attempted" % spacer
-            #         print "%stopology changes in any of the chains." % spacer
+        # # Tabulate topology changes by temperature
+        if self.nChains > 1:
+            for propName in ['nni', 'spr']:
+                print("'%s' proposal-- topology changes by temperature (chainTemp is %s)" % (propName, self.tunings.chainTemp))
+                p = self.proposalsHash.get(propName)
+                print("%s tempNum   nProps nAccepts percent" % spacer)
+                for tNum in range(self.nChains):
+                    print("%s" % spacer, end=' ')
+                    print("%4i " % tNum, end=' ')
+                    print("%9i" % p.nProposals[tNum], end=' ')
+                    print("%8i" % p.nAcceptances[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])))
 
-            # Check for aborts.
-            # p = None
-            # try:
-            #     p = self.proposalsHash['local']
-            # except KeyError:
-            #     pass
-            # if p:
-            #     if hasattr(p, 'nAborts'):
-            #         if p.nAborts[0]:
-            #             print "The 'local' proposal had %i aborts." % p.nAborts[0]
-            #             print "(Aborts might be due to brLen proposals too big or too small)"
-            #             if self.constraints:
-            #                 print "(Or, more likely, due to violated constraints.)"
-            #         else:
-            #             print "The 'local' proposal had no aborts (either due to brLen proposals"
-            #             print "too big or too small, or due to violated constraints)."
-            # for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-            #     p = None
-            #     try:
-            #         p = self.proposalsHash[pN]
-            #     except KeyError:
-            #         pass
-            #     if p:
-            #         if hasattr(p, 'nAborts'):
-            # print "The %15s proposal had %5i aborts." % (p.name,
-            # p.nAborts[0])
+        #     # Check for aborts.
+        #     p = self.proposalsHash.get(propName)
+        #     if p:
+        #         if hasattr(p, 'nAborts'):
+        #             if p.nAborts[0]:
+        #                 print("The '%s' proposal had %i aborts in the cold chain." % (propName, p.nAborts[0]))
+        #                 if self.constraints:
+        #                     print("(Aborts might be due to violated constraints.)")
+        #             else:
+        #                 print("The '%s' proposal had no aborts in the cold chain" % propName)
+        for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+            p = None
+            try:
+                p = self.proposalsHash[pN]
+            except KeyError:
+                pass
+            if p:
+                if hasattr(p, 'nAborts'):
+                    print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
 
     def writeSwapMatrix(self):
         print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
@@ -2316,7 +2305,7 @@ See :class:`TreePartitions`.
             print("Heating hack is turned on.")
             assert self.nChains == 1, "MCMCMC does not work with the heating hack"
             print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
-            print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
+            #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
         # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
@@ -2371,8 +2360,8 @@ See :class:`TreePartitions`.
             for p in self.proposals:
                 p.nProposals = [0] * self.nChains
                 p.nAcceptances = [0] * self.nChains
-                p.nTopologyChangeAttempts = [0] * self.nChains
-                p.nTopologyChanges = [0] * self.nChains
+                #p.nTopologyChangeAttempts = [0] * self.nChains
+                #p.nTopologyChanges = [0] * self.nChains
             # Zero the swap matrix
             if self.nChains > 1:
                 self.swapMatrix = []
@@ -2385,6 +2374,7 @@ See :class:`TreePartitions`.
             # if self.simulate:
             #    self.writeSimFileHeader(self.tree)
         if verbose:
+            print(self.tunings)
             self.writeProposalIntendedProbs()
             sys.stdout.flush()
 
@@ -2704,8 +2694,8 @@ See :class:`TreePartitions`.
                     for p in self.proposals:
                         p.nProposals = [0] * self.nChains
                         p.nAcceptances = [0] * self.nChains
-                        p.nTopologyChangeAttempts = [0] * self.nChains
-                        p.nTopologyChanges = [0] * self.nChains
+                        #p.nTopologyChangeAttempts = [0] * self.nChains
+                        #p.nTopologyChanges = [0] * self.nChains
                         p.nAborts = [0] * self.nChains
                     # Zero the swap matrix
                     if self.nChains > 1:

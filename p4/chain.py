@@ -222,8 +222,7 @@ class Chain(object):
             #logLikeRatio = 0.0
 
             if self.mcmc.nChains > 1:
-                heatBeta = 1.0 / \
-                    (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
+                heatBeta = 1.0 / (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
                 logLikeRatio *= heatBeta
                 self.logPriorRatio *= heatBeta
 
@@ -906,8 +905,7 @@ class Chain(object):
         #logLikeRatio = 0.0
 
         if self.mcmc.nChains > 1:
-            heatBeta = 1.0 / \
-                (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
+            heatBeta = 1.0 / (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
             logLikeRatio *= heatBeta
             # print "logPriorRatio is %s, heatBeta is %s" %
             # (self.logPriorRatio, heatBeta)
