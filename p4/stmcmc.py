@@ -323,6 +323,8 @@ class STChain(object):
                 it.inbb = [n.br for n in it.iterInternalsNoRoot()]
 
         self.propTree.logLike = 0.0
+        #sumOfLogqs = 0.0
+        #sumOfLogrs = 0.0
         # self.propTree.draw()
         for it in self.stMcmc.trees:
             if 0:
@@ -392,27 +394,29 @@ class STChain(object):
 
             # S is the number of possible splits in an it-sized tree
             S = 2 ** (it.nTax - 1) - (it.nTax + 1)
-            # print "    S=%i, S_st=%i, S_x=%i" % (S, S_st, S-S_st)
+            # print("    S=%i, S_st=%i, S_x=%i" % (S, S_st, S-S_st))
             if S_st:
                 q = self.propTree.spaQ / S_st
                 R = 1. - self.propTree.spaQ
                 r = R / (S - S_st)
-                # print "q=%f" % q
+                #print("q=%g" % q)
                 logq = math.log(q)
             else:
                 R = 1.
                 r = R / S
-            # print "r=%f" % r
+            #print ("r=%g" % r)
             logr = math.log(r)
 
             for n in it.internals:
                 ret = nonRedundantStSplitDict.get(n.stSplitKeyBytes)
                 if ret:
                     if self.stMcmc.useSplitSupport and n.br.support != None:
-                        self.propTree.logLike += math.log(
-                            r + (n.br.support * (q - r)))
+                        thisSplitLike = math.log(r + (n.br.support * (q - r)))
+                        self.propTree.logLike += thisSplitLike
+                        # sumOfLogqs += thisSplitLike
                     else:
                         self.propTree.logLike += logq
+                        # sumOfLogqs += logq
                 else:
                     # If we are here when S_st is zero, then q is undefined.
                     # So fall into the else clause
@@ -427,6 +431,7 @@ class STChain(object):
                     else:
                         # This does not make the assumption above.  Safer.
                         self.propTree.logLike += logr
+                        # sumOfLogrs += logr
 
             if slowCheck:
                 for inb in it.inbb:
@@ -461,6 +466,7 @@ class STChain(object):
                     gm.append("Bad like calc. slowCheck %f, bitarray %f, diff %g" % (
                         slowCheckLogLike, self.propTree.logLike, myDiff))
                     raise P4Error(gm)
+        # print("sumOfLogqs = %g, sumOfLogrs = %g" % (sumOfLogqs, sumOfLogrs))
 
     def setupBitarrayCalcs(self):
         # Prepare self.propTree (ie bigT).  First make n.stSplitKeys.  These
