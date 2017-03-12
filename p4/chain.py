@@ -434,21 +434,21 @@ class Chain(object):
         #     # print "theProposal.name = cmd1_alpha, pNum=%i" % theProposal.pNum
         #     self.proposeCmd1Alpha(theProposal)
 
-        # elif theProposal.name in ['rMatrix', 'rMatrixDir']:
-        #     if theProposal.name == 'rMatrix':
-        #         self.proposeRMatrixWithSlider(theProposal)
-        #     else:
-        #         self.proposeRMatrixDirichlet(theProposal)
+        elif theProposal.name in ['rMatrix', 'rMatrixDir']:
+            if theProposal.name == 'rMatrix':
+                self.proposeRMatrixWithSlider(theProposal)
+            else:
+                self.proposeRMatrixDirichlet(theProposal)
 
-        #     self.propTree.model.setCStuff(partNum=theProposal.pNum)
-        #     pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
-        #     for n in self.propTree.iterPostOrder():
-        #         if not n.isLeaf:
-        #             pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
-        #                 n.cNode, theProposal.pNum)
-        #     pf.p4_partLogLike(self.propTree.cTree,
-        #                       self.propTree.data.parts[theProposal.pNum].cPart,
-        #                       theProposal.pNum, 0)
+            self.propTree.model.setCStuff(partNum=theProposal.pNum)
+            pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
+            for n in self.propTree.iterPostOrder():
+                if not n.isLeaf:
+                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                        n.cNode, theProposal.pNum)
+            pf.p4_partLogLike(self.propTree.cTree,
+                              self.propTree.data.parts[theProposal.pNum].cPart,
+                              theProposal.pNum, 0)
 
         # elif theProposal.name == 'rjRMatrix':
         #     # print "theProposal.name = rjRMatrix, pNum=%i" % theProposal.pNum

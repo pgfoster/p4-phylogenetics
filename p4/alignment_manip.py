@@ -2083,7 +2083,7 @@ if True:
             self.nexusSets.dupeCharSet(theGName, theMyName)
 
     def meanNCharsPerSite(self, includeConstantSites=True, showDistribution=True):
-        """Mean number of different chars per site, only of the variable sites.
+        """Mean number of different chars per site.
 
         Constant sites can optionally be ignored.  Gaps and ambiguities are ignored.
 
