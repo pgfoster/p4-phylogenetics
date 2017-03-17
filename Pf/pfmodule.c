@@ -1388,12 +1388,13 @@ pf_p4_newComp(PyObject *self, PyObject *args)
     int         pNum;
     int         mNum;
     int         free;
+    PyArrayObject  *val;
 
-    if(!PyArg_ParseTuple(args, "liii", &aModel, &pNum, &mNum, &free)) {
+    if(!PyArg_ParseTuple(args, "liiiO", &aModel, &pNum, &mNum, &free, &val)) {
         printf("Error pf_p4_newComp: couldn't parse tuple\n");
         return NULL;
     }
-    p4_newComp(aModel, pNum, mNum, free);
+    p4_newComp(aModel, pNum, mNum, free, val);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -1442,7 +1443,8 @@ pf_p4_newGdasrv(PyObject *self, PyObject *args)
 
 //---------------------------------------
 
-
+#if 0
+// no longer needed as comp.val is a numpy array
 static PyObject *
 pf_p4_setCompVal(PyObject *self, PyObject *args)
 {
@@ -1462,6 +1464,7 @@ pf_p4_setCompVal(PyObject *self, PyObject *args)
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif
 
 
 static PyObject *
@@ -2583,18 +2586,58 @@ pf_test(PyObject *self, PyObject *args)
 {
     p4_tree  *aTree;
     //p4_node  *aNode;
-    int pNum;
+    int pNum, compNum, chNum;
+    p4_modelPart   *mp;
+    double myIt;
 
-    if(!PyArg_ParseTuple(args, "li", &aTree, &pNum)) {
+
+    if(!PyArg_ParseTuple(args, "liii", &aTree, &pNum, &compNum, &chNum)) {
         printf("Error pf_test: couldn't parse tuple\n");
         return NULL;
     }
+    
     //p4_setPramsPart(aTree, pNum);
     //void p4_resetBigQAndEig(p4_tree *aTree, int pNum)
     //p4_resetGdasrv(aTree, pNum);
     //printf("\n");
-    Py_INCREF(Py_None);
-    return Py_None;
+
+    // {
+    //     p4_modelPart   *mp;
+    //     double sum=0.0;
+    //     int i, j;
+
+    //     mp = aTree->model->parts[pNum];
+    //     //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
+    //     for(i = 0; i < mp->nComps; i++) {
+    //         for(j = 0; j < mp->dim; j++) {
+    //             //if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+    //             if(mp->comps[i]->val[j] < PIVEC_MIN) {               // Was half PIVEC_MIN.  Why?
+    //                 printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
+    //                 exit(1);
+    //             }
+    //         }
+    //         // check
+    //         sum = 0.0;
+    //         for(j = 0; j < mp->dim; j++) {
+    //             sum += mp->comps[i]->val[j];
+    //         }
+    //         // if its wrong this time, give up  (diff of 1e-16 was too small, raised to 1e-14)
+    //         if(fabs(sum - 1.0) > 1e-14) {
+    //             printf("****p4_setPramsPart()  part %i, comp %i, values do not sum to 1.0.  sum=%g, %f\n", pNum, i, sum, sum);
+    //             printf("****  sum - 1.0 = %g\n", sum - 1.0);
+    //             //exit(1);
+    //         } else {
+    //             printf("****p4_setPramsPart()  part %i, comp %i, ok\n", pNum, i);
+    //         }
+    //     }
+    // }
+
+    mp = aTree->model->parts[pNum];
+    myIt = mp->comps[compNum]->val[chNum];
+    
+    return Py_BuildValue("d", myIt);
+    // Py_INCREF(Py_None);
+    // return Py_None;
 }
 #endif
 
@@ -2693,7 +2736,7 @@ static PyMethodDef pfMethods[] = {
     {"p4_newRMatrix", pf_p4_newRMatrix, METH_VARARGS},
     {"p4_newGdasrv", pf_p4_newGdasrv, METH_VARARGS},
 
-    {"p4_setCompVal", pf_p4_setCompVal, METH_VARARGS},
+    //{"p4_setCompVal", pf_p4_setCompVal, METH_VARARGS},
     {"p4_setRMatrixBigR", pf_p4_setRMatrixBigR, METH_VARARGS},
     {"p4_setKappa", pf_p4_setKappa, METH_VARARGS},
     //{"p4_setGdasrvVal", pf_p4_setGdasrvVal, METH_VARARGS},

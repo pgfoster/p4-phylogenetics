@@ -32,8 +32,8 @@ class Chain(object):
         self.propTree.data = aMcmc.tree.data
         self.propTree.calcLogLike(verbose=0)
 
-        # print "Chain.init() curTree %f, propTree %f" % (self.curTree.logLike,
-        # self.propTree.logLike)
+        #print("Chain.init() curTree %f, propTree %f" % (
+        #    self.curTree.logLike, self.propTree.logLike))
 
         # Oddly, the curTree and the propTree can have slightly
         # different condLikes and bigPDecks at this point.  The
@@ -222,8 +222,7 @@ class Chain(object):
             #logLikeRatio = 0.0
 
             if self.mcmc.nChains > 1:
-                heatBeta = 1.0 / \
-                    (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
+                heatBeta = 1.0 / (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
                 logLikeRatio *= heatBeta
                 self.logPriorRatio *= heatBeta
 
@@ -271,17 +270,29 @@ class Chain(object):
                               self.propTree.data.parts[theProposal.pNum].cPart,
                               theProposal.pNum, 0)
 
-        elif theProposal.name == 'rjComp':
-            # print "theProposal.name = rjComp, pNum=%i" % theProposal.pNum
-            self.proposeRjComp(theProposal)
-            if theProposal.doAbort:
-                # print "abort rjComp"
-                return 0.0
-            # This next line transfers the newComp.val to C
-            self.propTree.model.setCStuff(partNum=theProposal.pNum)
-            self.propTree.setCStuff()  # for model usage info
-            # print "about to p4_setPrams() ..."
-            pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
+        elif theProposal.name == 'allCompsDir':
+            #print("theProposal.name = allCompsDir, pNum=%i" % theProposal.pNum)
+            self.proposeAllCompsDir(theProposal)
+            # This next line is not needed because comps are numpy arrays
+            # self.propTree.model.setCStuff(partNum=theProposal.pNum)
+            if 0:
+                mpProp = self.propTree.model.parts[theProposal.pNum]
+                for mtProp in mpProp.comps:
+                    mySum = numpy.sum(mtProp.val)
+                    myDiff = math.fabs(1.0 - mySum)
+                    if myDiff > 1e-15:
+                        print("Chain.proposeSp() gen %i, allCompsDir, x myDiff is %g" % (self.mcmc.gen, myDiff)) 
+                for mtPropNum in range(len(mpProp.comps)):
+                    mtProp = mpProp.comps[mtPropNum]
+                    for chNum in range(mpProp.dim):
+                        thisNp = mtProp.val[chNum]
+                        thatNp = pf.test(self.propTree.cTree, theProposal.pNum, mtPropNum, chNum)
+                        if math.fabs(thisNp - thatNp) > 1e-14:
+                           print('++++++ gen %i comp %2i %2i' % (self.mcmc.gen, mtPropNum,chNum), "%17.15f %17.15f %g" % (thisNp, thatNp, (thisNp - thatNp))) 
+
+            # This next line is needed, and it needs to go here.  At least
+            # because of p4_calculateBigPDecksPart()
+            pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
                     pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
@@ -290,46 +301,138 @@ class Chain(object):
                               self.propTree.data.parts[theProposal.pNum].cPart,
                               theProposal.pNum, 0)
 
-        elif theProposal.name == 'cmd1_compDir':
-            # print "theProposal.name = cmd1_compDir, pNum=%i" %
-            # theProposal.pNum
-            self.proposeCmd1CompDir(theProposal)
-            if 1:
-                self.propTree.model.setCStuff(partNum=theProposal.pNum)
-                pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
-                for n in self.propTree.iterPostOrder():
-                    if not n.isLeaf:
-                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
-                            n.cNode, theProposal.pNum)
-                pf.p4_partLogLike(self.propTree.cTree,
-                                  self.propTree.data.parts[
-                                      theProposal.pNum].cPart,
-                                  theProposal.pNum, 0)
 
-        elif theProposal.name == 'cmd1_allCompDir':
-            # print "theProposal.name = cmd1_allCompDir, pNum=%i" %
-            # theProposal.pNum
-            self.proposeCmd1AllCompDir(theProposal)
-            if 1:
-                self.propTree.model.setCStuff(partNum=theProposal.pNum)
-                pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
-                for n in self.propTree.iterPostOrder():
-                    if not n.isLeaf:
-                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
-                            n.cNode, theProposal.pNum)
-                pf.p4_partLogLike(self.propTree.cTree,
-                                  self.propTree.data.parts[
-                                      theProposal.pNum].cPart,
-                                  theProposal.pNum, 0)
+        elif theProposal.name == 'ndch2_leafCompsDir':
+            #print("theProposal.name = ndch2_leafCompsDir, pNum=%i" % theProposal.pNum)
+            self.proposeNdch2_leafCompsDir(theProposal)
+            # This next line is not needed because comps are numpy arrays
+            # self.propTree.model.setCStuff(partNum=theProposal.pNum)
+            if 0:
+                mpProp = self.propTree.model.parts[theProposal.pNum]
+                for mtProp in mpProp.comps:
+                    mySum = numpy.sum(mtProp.val)
+                    myDiff = math.fabs(1.0 - mySum)
+                    if myDiff > 1e-15:
+                        print("Chain.proposeSp() gen %i, ndch2_leafCompsDir, x myDiff is %g" % (self.mcmc.gen, myDiff)) 
+                for mtPropNum in range(len(mpProp.comps)):
+                    mtProp = mpProp.comps[mtPropNum]
+                    for chNum in range(mpProp.dim):
+                        thisNp = mtProp.val[chNum]
+                        thatNp = pf.test(self.propTree.cTree, theProposal.pNum, mtPropNum, chNum)
+                        if math.fabs(thisNp - thatNp) > 1e-14:
+                           print('++++++ gen %i comp %2i %2i' % (self.mcmc.gen, mtPropNum,chNum), "%17.15f %17.15f %g" % (thisNp, thatNp, (thisNp - thatNp))) 
+            
+            pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
+            for n in self.propTree.iterPostOrder():
+                if not n.isLeaf:
+                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                        n.cNode, theProposal.pNum)
+            pf.p4_partLogLike(self.propTree.cTree,
+                              self.propTree.data.parts[theProposal.pNum].cPart,
+                              theProposal.pNum, 0)
 
-        elif theProposal.name == 'cmd1_comp0Dir':
-            # print "theProposal.name = cmd1_comp0Dir, pNum=%i" %
-            # theProposal.pNum
-            self.proposeCmd1Comp0Dir(theProposal)
 
-        elif theProposal.name == 'cmd1_alpha':
-            # print "theProposal.name = cmd1_alpha, pNum=%i" % theProposal.pNum
-            self.proposeCmd1Alpha(theProposal)
+        elif theProposal.name == 'ndch2_internalCompsDir':
+            #print("theProposal.name = ndch2_internalCompsDir, pNum=%i" % theProposal.pNum)
+            self.proposeNdch2_internalCompsDir(theProposal)
+            # This next line is not needed because comps are numpy arrays
+            # self.propTree.model.setCStuff(partNum=theProposal.pNum)
+            if 0:
+                mpProp = self.propTree.model.parts[theProposal.pNum]
+                for mtProp in mpProp.comps:
+                    mySum = numpy.sum(mtProp.val)
+                    myDiff = math.fabs(1.0 - mySum)
+                    if myDiff > 1e-15:
+                        print("Chain.proposeSp() gen %i, ndch2_internalCompsDir, x myDiff is %g" % (self.mcmc.gen, myDiff)) 
+                for mtPropNum in range(len(mpProp.comps)):
+                    mtProp = mpProp.comps[mtPropNum]
+                    for chNum in range(mpProp.dim):
+                        thisNp = mtProp.val[chNum]
+                        thatNp = pf.test(self.propTree.cTree, theProposal.pNum, mtPropNum, chNum)
+                        if math.fabs(thisNp - thatNp) > 1e-14:
+                           print('++++++ gen %i comp %2i %2i' % (self.mcmc.gen, mtPropNum,chNum), "%17.15f %17.15f %g" % (thisNp, thatNp, (thisNp - thatNp))) 
+            
+            pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
+            for n in self.propTree.iterPostOrder():
+                if not n.isLeaf:
+                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                        n.cNode, theProposal.pNum)
+            pf.p4_partLogLike(self.propTree.cTree,
+                              self.propTree.data.parts[theProposal.pNum].cPart,
+                              theProposal.pNum, 0)
+
+
+        elif theProposal.name == 'ndch2_leafCompsDirAlpha':
+            # print "theProposal.name = ndch2_leafCompsDirAlpha, pNum=%i" % theProposal.pNum
+            self.proposeNdch2_leafCompsDirAlpha(theProposal)
+            # No likelihood calcs!
+            
+
+        elif theProposal.name == 'ndch2_internalCompsDirAlpha':
+            # print "theProposal.name = ndch2_internalCompsDirAlpha, pNum=%i" % theProposal.pNum
+            self.proposeNdch2_internalCompsDirAlpha(theProposal)
+            # No likelihood calcs!
+
+
+        # elif theProposal.name == 'rjComp':
+        #     # print "theProposal.name = rjComp, pNum=%i" % theProposal.pNum
+        #     self.proposeRjComp(theProposal)
+        #     if theProposal.doAbort:
+        #         # print "abort rjComp"
+        #         return 0.0
+        #     # This next line transfers the newComp.val to C
+        #     self.propTree.model.setCStuff(partNum=theProposal.pNum)
+        #     self.propTree.setCStuff()  # for model usage info
+        #     # print "about to p4_setPrams() ..."
+        #     pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
+        #     for n in self.propTree.iterPostOrder():
+        #         if not n.isLeaf:
+        #             pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+        #                 n.cNode, theProposal.pNum)
+        #     pf.p4_partLogLike(self.propTree.cTree,
+        #                       self.propTree.data.parts[theProposal.pNum].cPart,
+        #                       theProposal.pNum, 0)
+
+        # elif theProposal.name == 'cmd1_compDir':
+        #     # print "theProposal.name = cmd1_compDir, pNum=%i" %
+        #     # theProposal.pNum
+        #     self.proposeCmd1CompDir(theProposal)
+        #     if 1:
+        #         self.propTree.model.setCStuff(partNum=theProposal.pNum)
+        #         pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
+        #         for n in self.propTree.iterPostOrder():
+        #             if not n.isLeaf:
+        #                 pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+        #                     n.cNode, theProposal.pNum)
+        #         pf.p4_partLogLike(self.propTree.cTree,
+        #                           self.propTree.data.parts[
+        #                               theProposal.pNum].cPart,
+        #                           theProposal.pNum, 0)
+
+        # elif theProposal.name == 'cmd1_allCompDir':
+        #     # print "theProposal.name = cmd1_allCompDir, pNum=%i" %
+        #     # theProposal.pNum
+        #     self.proposeCmd1AllCompDir(theProposal)
+        #     if 1:
+        #         self.propTree.model.setCStuff(partNum=theProposal.pNum)
+        #         pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
+        #         for n in self.propTree.iterPostOrder():
+        #             if not n.isLeaf:
+        #                 pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+        #                     n.cNode, theProposal.pNum)
+        #         pf.p4_partLogLike(self.propTree.cTree,
+        #                           self.propTree.data.parts[
+        #                               theProposal.pNum].cPart,
+        #                           theProposal.pNum, 0)
+
+        # elif theProposal.name == 'cmd1_comp0Dir':
+        #     # print "theProposal.name = cmd1_comp0Dir, pNum=%i" %
+        #     # theProposal.pNum
+        #     self.proposeCmd1Comp0Dir(theProposal)
+
+        # elif theProposal.name == 'cmd1_alpha':
+        #     # print "theProposal.name = cmd1_alpha, pNum=%i" % theProposal.pNum
+        #     self.proposeCmd1Alpha(theProposal)
 
         elif theProposal.name in ['rMatrix', 'rMatrixDir']:
             if theProposal.name == 'rMatrix':
@@ -347,28 +450,29 @@ class Chain(object):
                               self.propTree.data.parts[theProposal.pNum].cPart,
                               theProposal.pNum, 0)
 
-        elif theProposal.name == 'rjRMatrix':
-            # print "theProposal.name = rjRMatrix, pNum=%i" % theProposal.pNum
-            self.proposeRjRMatrix(theProposal)
-            if theProposal.doAbort:
-                # print "abort rjRMatrix"
-                return 0.0
-            # This next line transfers the newRMatrix.val to C
-            self.propTree.model.setCStuff(partNum=theProposal.pNum)
-            self.propTree.setCStuff()  # for model usage info
-            # print "about to p4_setPrams() ..."
-            pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
-            for n in self.propTree.iterPostOrder():
-                if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
-                        n.cNode, theProposal.pNum)
-            pf.p4_partLogLike(self.propTree.cTree,
-                              self.propTree.data.parts[theProposal.pNum].cPart,
-                              theProposal.pNum, 0)
+        # elif theProposal.name == 'rjRMatrix':
+        #     # print "theProposal.name = rjRMatrix, pNum=%i" % theProposal.pNum
+        #     self.proposeRjRMatrix(theProposal)
+        #     if theProposal.doAbort:
+        #         # print "abort rjRMatrix"
+        #         return 0.0
+        #     # This next line transfers the newRMatrix.val to C
+        #     self.propTree.model.setCStuff(partNum=theProposal.pNum)
+        #     self.propTree.setCStuff()  # for model usage info
+        #     # print "about to p4_setPrams() ..."
+        #     pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
+        #     for n in self.propTree.iterPostOrder():
+        #         if not n.isLeaf:
+        #             pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+        #                 n.cNode, theProposal.pNum)
+        #     pf.p4_partLogLike(self.propTree.cTree,
+        #                       self.propTree.data.parts[theProposal.pNum].cPart,
+        #                       theProposal.pNum, 0)
 
         elif theProposal.name == 'gdasrv':
             self.proposeGdasrv(theProposal)
-            self.propTree.model.setCStuff(partNum=theProposal.pNum)
+            # THis next line is not needed because gdasrv is a numpy array
+            #self.propTree.model.setCStuff(partNum=theProposal.pNum)
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
@@ -732,106 +836,114 @@ class Chain(object):
             raise P4Error(
                 "programming error.  we should not be here.  proposal %s" % theProposal.name)
 
-        else:
+        proposalsWithNoLikeCalcs = ['ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha']
+
+        if theProposal.name not in proposalsWithNoLikeCalcs:
             self.propTree.logLike = sum(self.propTree.partLikes)
 
-            # Slow check.
-            if 0:
-                # Doing a pf.p4_treeLogLike() is expensive
-                if 1:
-                    x = sum(self.curTree.partLikes)
-                    #pf.p4_partLogLike(self.curTree.cTree,self.curTree.data.parts[1].cPart, 1, 0)
-                    pf.p4_treeLogLike(self.curTree.cTree, 0)
-                    y = sum(self.curTree.partLikes)
-                    if math.fabs(x - y) > 0.00001:
-                        print("***************************** gen %i, bad curTree here b" % self.mcmc.gen)
-                        print(x, y)
-                    # else:
-                    # print "***************************** no difference to
-                    # curTree here b"
-                if 1:
-                    x = sum(self.propTree.partLikes)
-                    #pf.p4_partLogLike(self.propTree.cTree,self.propTree.data.parts[1].cPart, 1, 0)
-                    pf.p4_treeLogLike(self.propTree.cTree, 0)
-                    y = sum(self.propTree.partLikes)
-                    if math.fabs(x - y) > 0.00001:
-                        print("***************************** gen %i, bad propTree here b" % self.mcmc.gen)
-                        print(x, y)
-                    # else:
-                    # print "***************************** no difference to
-                    # propTree here b"
+        # Slow check.
+        if 0:
+            # Doing a pf.p4_treeLogLike() is expensive
+            if 1:
+                x = sum(self.curTree.partLikes)
+                #pf.p4_partLogLike(self.curTree.cTree,self.curTree.data.parts[1].cPart, 1, 0)
+                pf.p4_treeLogLike(self.curTree.cTree, 0)
+                y = sum(self.curTree.partLikes)
+                if math.fabs(x - y) > 0.00001:
+                    print("***************************** gen %i, bad curTree here b" % self.mcmc.gen)
+                    print(x, y)
+                # else:
+                # print "***************************** no difference to
+                # curTree here b"
+            if 1:
+                x = sum(self.propTree.partLikes)
+                #pf.p4_partLogLike(self.propTree.cTree,self.propTree.data.parts[1].cPart, 1, 0)
+                pf.p4_treeLogLike(self.propTree.cTree, 0)
+                y = sum(self.propTree.partLikes)
+                if math.fabs(x - y) > 0.00001:
+                    print("***************************** gen %i, bad propTree here b" % self.mcmc.gen)
+                    print(x, y)
+                # else:
+                # print "***************************** no difference to
+                # propTree here b"
 
-            # slow check
+        # slow check
+        if 0:
+            # _commonCStuff() has these ...
+            #    self.model.setCStuff()
+            #    self.setCStuff()
+            #    #print "about to p4_setPrams()..."
+            #    pf.p4_setPrams(self.cTree, -1) # "-1" means do all parts
             if 0:
-                # _commonCStuff() has these ...
-                #    self.model.setCStuff()
-                #    self.setCStuff()
-                #    #print "about to p4_setPrams()..."
-                #    pf.p4_setPrams(self.cTree, -1) # "-1" means do all parts
-                if 1:
-                    firstCalc = self.propTree.logLike
-                    # with _commonCStuff()
-                    self.propTree.calcLogLike(verbose=0)
-                    theDiff = math.fabs(firstCalc - self.propTree.logLike)
-                if 0:
-                    self.propTree.copyToTree(self.testTree)
-                    self.propTree.model.copyValsTo(self.testTree.model)
-                    self.testTree.calcLogLike(verbose=0)
-                    theDiff = math.fabs(
-                        self.testTree.logLike - self.propTree.logLike)
-                # print "%g" % theDiff
-                if theDiff > 1.e-9:
-                    gm.append("gen %i, Bad like calc.  '%s', theDiff = %g" % (
-                        self.mcmc.gen, theProposal.name, theDiff))
-                    raise P4Error(gm)
+                firstCalc = self.curTree.logLike
+                # with _commonCStuff()
+                self.curTree.calcLogLike(verbose=0)
+                theDiff = math.fabs(firstCalc - self.curTree.logLike)
+            if 1:
+                firstCalc = self.propTree.logLike
+                # with _commonCStuff()
+                self.propTree.calcLogLike(verbose=0)
+                theDiff = math.fabs(firstCalc - self.propTree.logLike)
+            if 0:
+                self.propTree.copyToTree(self.testTree)
+                self.propTree.model.copyValsTo(self.testTree.model)
+                self.testTree.calcLogLike(verbose=0)
+                theDiff = math.fabs(
+                    self.testTree.logLike - self.propTree.logLike)
+            # print "%g" % theDiff
+            if theDiff > 1.e-9:
+                gm.append("gen %i, Bad like calc.  '%s', theDiff = %g" % (
+                    self.mcmc.gen, theProposal.name, theDiff))
+                raise P4Error(gm)
 
+        if theProposal.name in proposalsWithNoLikeCalcs:
+            logLikeRatio = 0.0
+        else:
             logLikeRatio = self.propTree.logLike - self.curTree.logLike
 
-            # To run "without the data", which shows the effect of priors.
-            #logLikeRatio = 0.0
+        # To run "without the data", which shows the effect of priors.
+        #logLikeRatio = 0.0
 
-            if self.mcmc.nChains > 1:
-                heatBeta = 1.0 / \
-                    (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
-                logLikeRatio *= heatBeta
-                # print "logPriorRatio is %s, heatBeta is %s" %
-                # (self.logPriorRatio, heatBeta)
-                self.logPriorRatio *= heatBeta
+        if self.mcmc.nChains > 1:
+            heatBeta = 1.0 / (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
+            logLikeRatio *= heatBeta
+            # print "logPriorRatio is %s, heatBeta is %s" %
+            # (self.logPriorRatio, heatBeta)
+            self.logPriorRatio *= heatBeta
 
-            # Experimental Heating hack
-            if self.mcmc.doHeatingHack and theProposal.name in self.mcmc.heatingHackProposalNames:
-                heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature)
-                logLikeRatio *= heatFactor
-                self.logPriorRatio *= heatFactor
+        # Experimental Heating hack
+        if self.mcmc.doHeatingHack: # and theProposal.name in self.mcmc.heatingHackProposalNames:
+            heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature)
+            logLikeRatio *= heatFactor
+            self.logPriorRatio *= heatFactor
 
-            #print "logLikeRatio %13.10f self.logProposalRatio %9.6f self.logPriorRatio %9.6f" % (
-            #    logLikeRatio, self.logProposalRatio, self.logPriorRatio)
+        theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
+        if theProposal.name in ['rjComp', 'rjRMatrix']:
+            theSum += self.logJacobian
 
-            theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
-            if theProposal.name in ['rjComp', 'rjRMatrix']:
-                theSum += self.logJacobian
+        # if theProposal.name in ['rjComp', 'rjRMatrix']:
+        #    print "%12s: %10.2f %10.2f %10.2f %10.2f" % (theProposal.name, logLikeRatio,
+        # self.logPriorRatio, self.logProposalRatio, self.logJacobian)
 
-            # if theProposal.name in ['rjComp', 'rjRMatrix']:
-            #    print "%12s: %10.2f %10.2f %10.2f %10.2f" % (theProposal.name, logLikeRatio,
-            # self.logPriorRatio, self.logProposalRatio, self.logJacobian)
+        # if theProposal.name == 'rMatrixLocation':
+        #    print "logLikeRatio=%10.4f, logPriorRatio=%10.4f, logPosteriorRatio=%10.4f" % (
+        #        logLikeRatio, self.logPriorRatio, theSum),
+        # if theProposal.name == 'cmd1_allCompDir':
+        #     print "logLikeRatio=%10.4f, logPriorRatio=%10.4f, logProposalRatio=%10.4f, logPosteriorRatio=%10.4f" % (
+        # logLikeRatio, self.logPriorRatio, self.logProposalRatio, theSum),
 
-            # if theProposal.name == 'rMatrixLocation':
-            #    print "logLikeRatio=%10.4f, logPriorRatio=%10.4f, logPosteriorRatio=%10.4f" % (
-            #        logLikeRatio, self.logPriorRatio, theSum),
-            # if theProposal.name == 'cmd1_allCompDir':
-            #     print "logLikeRatio=%10.4f, logPriorRatio=%10.4f, logProposalRatio=%10.4f, logPosteriorRatio=%10.4f" % (
-            # logLikeRatio, self.logPriorRatio, self.logProposalRatio, theSum),
-
-            # if theProposal.name == 'polytomy':
-            #    theSum += self.logJacobian
-            #    self.logJacobian = 0.0
-            # print "logLikeRatio = %f" % logLikeRatio
-            # print "  %.2f  %.2f" % (self.logProposalRatio,
-            # self.logPriorRatio)
-            return theSum
+        # if theProposal.name == 'polytomy':
+        #    theSum += self.logJacobian
+        #    self.logJacobian = 0.0
+        # print "logLikeRatio = %f" % logLikeRatio
+        # print "  %.2f  %.2f" % (self.logProposalRatio,
+        # self.logPriorRatio)
+        return theSum
 
     def gen(self, aProposal):
         gm = ['Chain.gen()']
+        #print(gm[0], 'gen %s' % self.mcmc.gen, end=' ')
+
 
         # doAborts means that it was not a valid generation,
         # neither accepted or rejected.  Give up, by returning True.
@@ -1106,17 +1218,22 @@ class Chain(object):
             elif random.random() < r:
                 acceptMove = True
 
-        # if aProposal.name == 'rMatrixLocation':
-        #    print " acceptMove = %s" % acceptMove
+        # print()
+        # print(aProposal.name)
+        # if aProposal.name == 'ndch2_internalCompsDirAlpha':
+        #     print(" %f %f " %  (
+        #         self.curTree.model.parts[aProposal.pNum].ndch2_internalAlpha,
+        #         self.propTree.model.parts[aProposal.pNum].ndch2_internalAlpha),
+        #         end=' ')
+        #     print(" acceptMove = %s" % acceptMove)
         # if aProposal.name == 'cmd1_allCompDir':
         #     print " acceptMove = %s" % acceptMove
 
         # if aProposal.name in ['rMatrix', 'comp', 'gdasrv']:
         #    acceptMove = False
 
-        # if self.mcmc.gen > 130 and self.mcmc.gen < 140:
-        # print "-------------- (gen %5i, %20s) acceptMove = %s" %
-        # (self.mcmc.gen, aProposal.name, acceptMove)
+        #if self.mcmc.gen > 0 and self.mcmc.gen < 200:
+        #    print("-------------- (gen %5i, %20s) acceptMove = %s" % (self.mcmc.gen, aProposal.name, acceptMove))
 
         aProposal.nProposals[self.tempNum] += 1
         if acceptMove:
@@ -1147,14 +1264,22 @@ class Chain(object):
                 b = self.propTree
 
             # Model values for one partition only.
-            if aProposal.name in ['comp', 'compDir', 'rMatrix', 
+            if aProposal.name in ['comp', 'compDir', 'allCompsDir',
+                                  'ndch2_leafCompsDir', 'ndch2_internalCompsDir',
+                                  'ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha', 'rMatrix', 
                                   'rMatrixDir', 'gdasrv', 'pInvar', 
                                   'cmd1_compDir', 'cmd1_allCompDir']:
                 b.logLike = a.logLike
                 pNum = aProposal.pNum
                 b.partLikes[pNum] = a.partLikes[pNum]
                 a.model.parts[pNum].copyValsTo(b.model.parts[pNum])
-                b.model.setCStuff(partNum=pNum)
+                if aProposal.name not in ['ndch2_leafCompsDir', 
+                                          'ndch2_internalCompsDir', 
+                                          'ndch2_leafCompsDirAlpha', 
+                                          'ndch2_internalCompsDirAlpha', 
+                                          'allCompsDir', 
+                                          'gdasrv']:  # numpy arrays and hyperparameters
+                    b.model.setCStuff(partNum=pNum)
 
                 # Occasionally, pf.p4_setPrams() will change the bQETneedsReset
                 if not (a.model.parts[pNum].bQETneedsReset == b.model.parts[pNum].bQETneedsReset).all():
@@ -1678,14 +1803,15 @@ class Chain(object):
         # The tuning is the Dirichlet alpha.
         # print theProposal.tuning
 
-        # This method uses p4.func.dirichlet1, which is for lists not numpy
+        # This method previously used p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
         # returned.
         #dirichlet1(inSeq, alpha, theMin, theMax)
         #newVal = p4.func.dirichlet1(
         #    mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
-        mtval = numpy.array(mt.val)
-        myProposer = scipy.stats.dirichlet(theProposal.tuning * mtval)
+        # Now it uses scipy.
+        mtVal = numpy.array(mt.val)
+        myProposer = scipy.stats.dirichlet(theProposal.tuning * mtVal)
         newVal = myProposer.rvs(size=1)[0]
         while  newVal.min() < var.PIVEC_MIN:
             for i in range(dim):
@@ -1722,7 +1848,7 @@ class Chain(object):
         forwardLnPdf = myProposer.logpdf(newVal)
         # Another dirichlet distribution for the reverse
         spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
-        reverseLnPdf = spDist.logpdf(mtval)
+        reverseLnPdf = spDist.logpdf(mtVal)
         self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
         # assert math.fabs(logProposalRatio - self.logProposalRatio) < 1.e-12 
@@ -3283,3 +3409,258 @@ class Chain(object):
             self.logPriorRatio += diff
 
         mp.cmd1_alpha = newVal
+
+
+
+    def proposeAllCompsDir(self, theProposal):
+        gm = ['Chain.proposeAllCompsDir()']
+        # all the comps in one go.
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+
+        assert not mpCur.ndch2, "allCompsDir proposal is not for ndch2"
+        # The proposal mtNum is -1, meaning do all, or any
+        assert theProposal.mtNum == -1
+
+        # Make proposals, accumulate log proposal ratios in the same loop
+        self.logProposalRatio = 0.0
+        for cNum in range(mpCur.nComps):
+            mtCur = mpCur.comps[cNum]
+            mtProp = mpProp.comps[cNum]
+            # Result of the proposal goes into mtProp.val
+            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            while  mtProp.val.min() < var.PIVEC_MIN:
+                for i in range(mpCur.dim):
+                    if mtProp.val[i] < var.PIVEC_MIN:
+                        mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
+                thisSum = mtProp.val.sum()
+                for i in range(mpCur.dim):
+                    mtProp.val[i] /= thisSum
+
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            self.logProposalRatio += reverseLnPdf - forwardLnPdf
+
+        # prior ratio
+        self.logPriorRatio = 0.0
+
+    def proposeNdch2_leafCompsDir(self, theProposal):
+        gm = ['Chain.proposeNdch2_leafCompsDir()']
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+        assert mpCur.ndch2
+
+        # The proposal mtNum is -1, meaning do all, or any
+        assert theProposal.mtNum == -1
+
+        # Does this work for polytomies?  With that in mind, I iterate over
+        # nodes rather than comps.
+
+        self.logProposalRatio = 0.0
+        self.logPriorRatio = 0.0
+
+        for nCur in self.curTree.iterLeavesNoRoot():
+            mtNum = nCur.parts[theProposal.pNum].compNum
+            mtCur = mpCur.comps[mtNum]
+            mtProp = mpProp.comps[mtNum]
+
+            # Make proposals. Result of the proposal goes into mtProp.val
+            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            while  mtProp.val.min() < var.PIVEC_MIN:
+                for i in range(mpCur.dim):
+                    if mtProp.val[i] < var.PIVEC_MIN:
+                        mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
+                thisSum = mtProp.val.sum()
+                for i in range(mpCur.dim):
+                    mtProp.val[i] /= thisSum
+
+            # log proposal ratios
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            self.logProposalRatio += reverseLnPdf - forwardLnPdf
+
+            # prior ratio
+            thisComp = mtCur.val
+            dirPrams = mpCur.ndch2_leafAlpha * thisComp
+            lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
+            lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
+            self.logPriorRatio += lnPdfProps - lnPdfCurrs            
+
+
+    def proposeNdch2_internalCompsDir(self, theProposal):
+        gm = ['Chain.proposeNdch2_internalCompsDir()']
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+        assert mpCur.ndch2
+
+        # The proposal mtNum is -1, meaning do all, or any
+        assert theProposal.mtNum == -1
+
+        # Does this work for polytomies?  With that in mind, I iterate over
+        # nodes rather than comps.
+
+        # At the moment, the prior only looks at the global comp, and so I can
+        # make the proposals, proposal ratios, and prior ratio all in one
+        # iterInternals() loop.  If I were to look at local comps (ie neighbours)
+        # then I would need to separate out the prior calc into its own loop.
+
+        self.logProposalRatio = 0.0
+        self.logPriorRatio = 0.0
+
+        for nCur in self.curTree.iterInternals():
+            mtNum = nCur.parts[theProposal.pNum].compNum
+            mtCur = mpCur.comps[mtNum]
+            mtProp = mpProp.comps[mtNum]
+
+            # Make proposals. Result of the proposal goes into mtProp.val
+            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            while  mtProp.val.min() < var.PIVEC_MIN:
+                for i in range(mpCur.dim):
+                    if mtProp.val[i] < var.PIVEC_MIN:
+                        mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
+                thisSum = mtProp.val.sum()
+                for i in range(mpCur.dim):
+                    mtProp.val[i] /= thisSum
+
+            # log proposal ratios
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            self.logProposalRatio += reverseLnPdf - forwardLnPdf
+
+            # prior ratio
+            dirPrams = mpCur.ndch2_internalAlpha * mpCur.ndch2_globalComp  # this is set in Mcmc.__init__()
+            lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
+            lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
+            self.logPriorRatio += lnPdfProps - lnPdfCurrs            
+
+
+
+
+    def proposeNdch2_leafCompsDirAlpha(self, theProposal):
+        # The Dirichlet hyperparameter alphaL, for leaves. 
+        gm = ['Chain.proposNdch2_leafCompsDirAlpha()']
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+
+        NDCH2_ALPHAL_MIN = 1.0 
+        NDCH2_ALPHAL_MAX = 1000.
+
+        if 0:
+            # Slider proposal
+            myTuning = 50.
+            oldVal = mpCur.ndch2_leafAlpha
+            newVal = oldVal + (random.random() - 0.5) * myTuning
+
+            # Linear reflect
+            isGood = False
+            while not isGood:
+                if newVal < NDCH2_ALPHAL_MIN:
+                    newVal = (NDCH2_ALPHAL_MIN - newVal) + NDCH2_ALPHAL_MIN
+                elif newVal > NDCH2_ALPHAL_MAX:
+                    newVal = NDCH2_ALPHAL_MAX - (newVal - NDCH2_ALPHAL_MAX)
+                else:
+                    isGood = True
+            mpProp.ndch2_leafAlpha = newVal
+            self.logProposalRatio = 0.0
+
+        if 1: 
+            # Multiplier proposal
+            myTuning = 2.0 * math.log(3.0)
+            oldVal = mpCur.ndch2_leafAlpha
+            newVal = oldVal * math.exp((random.random() - 0.5) * myTuning)
+
+            # Log reflect
+            isGood = False
+            while not isGood:
+                if newVal < NDCH2_ALPHAL_MIN:
+                    newVal = NDCH2_ALPHAL_MIN * NDCH2_ALPHAL_MIN  / newVal
+                elif newVal > NDCH2_ALPHAL_MAX:
+                    newVal = NDCH2_ALPHAL_MAX * NDCH2_ALPHAL_MAX / newVal
+                else:
+                    isGood = True
+            mpProp.ndch2_leafAlpha = newVal
+            self.logProposalRatio = math.log(newVal / oldVal)
+        
+        # Now the prior
+        self.logPriorRatio = 0.0
+        if 0:
+            meanNeighbors = mpCur.ndch2_globalComp
+            #print("proposeAllCompsDirAlphaL() meanNeighbors ", meanNeighbors)
+
+        for nCur in self.curTree.iterNodes():
+            mtNum = nCur.parts[theProposal.pNum].compNum
+            mtCur = mpCur.comps[mtNum]
+
+            # Leaf nodes use their own comp, only.
+            if nCur.isLeaf:
+                thisComp = mtCur.val
+                #thisComp = mpCur.ndch2_globalComp
+                lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, newVal * thisComp, mtCur.val)
+                lnPdfCur = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, oldVal * thisComp, mtCur.val)
+                self.logPriorRatio += lnPdfProp - lnPdfCur
+
+    def proposeNdch2_internalCompsDirAlpha(self, theProposal):
+        # The Dirichlet hyperparameter alpha 
+        gm = ['Chain.proposeNdch2_internalCompsDirAlpha()']
+        # all the comps in one go.
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+
+        NDCH2_ALPHAI_MIN = 1.0 
+        NDCH2_ALPHAI_MAX = 200.
+
+        self.logProposalRatio = 0.0
+        if 0:
+            # Slider proposal
+            myTuning = 50.
+            oldVal = mpCur.ndch2_internalAlpha
+            newVal = oldVal + (random.random() - 0.5) * myTuning
+
+            # Linear reflect
+            isGood = False
+            while not isGood:
+                if newVal < NDCH2_ALPHAI_MIN:
+                    newVal = (NDCH2_ALPHAI_MIN - newVal) + NDCH2_ALPHAI_MIN
+                elif newVal > NDCH2_ALPHAI_MAX:
+                    newVal = NDCH2_ALPHAI_MAX - (newVal - NDCH2_ALPHAI_MAX)
+                else:
+                    isGood = True
+            mpProp.ndch2_internalAlpha = newVal
+
+        if 1: 
+            # Multiplier proposal
+            myTuning = 2.0 * math.log(3.0)
+            oldVal = mpCur.ndch2_internalAlpha
+            newVal = oldVal * math.exp((random.random() - 0.5) * myTuning)
+
+            # Log reflect
+            isGood = False
+            while not isGood:
+                if newVal < NDCH2_ALPHAI_MIN:
+                    newVal = NDCH2_ALPHAI_MIN * NDCH2_ALPHAI_MIN  / newVal
+                elif newVal > NDCH2_ALPHAI_MAX:
+                    newVal = NDCH2_ALPHAI_MAX * NDCH2_ALPHAI_MAX / newVal
+                else:
+                    isGood = True
+            mpProp.ndch2_internalAlpha = newVal
+            self.logProposalRatio = math.log(newVal / oldVal)
+        
+        # Now the prior
+        self.logPriorRatio = 0.0
+        thisComp = mpCur.ndch2_globalComp
+        for nCur in self.curTree.iterInternals():
+            mtNum = nCur.parts[theProposal.pNum].compNum
+            mtCur = mpCur.comps[mtNum]
+
+            lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, newVal * thisComp, mtCur.val)
+            lnPdfCur = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, oldVal * thisComp, mtCur.val)
+            self.logPriorRatio += lnPdfProp - lnPdfCur
+
+
+
+

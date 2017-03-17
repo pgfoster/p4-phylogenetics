@@ -16,6 +16,7 @@ from p4.p4exceptions import P4Error
 from p4.treepartitions import TreePartitions
 from p4.constraints import Constraints
 import datetime
+import numpy
 
 # for proposal probs
 fudgeFactor = {}
@@ -31,6 +32,10 @@ fudgeFactor['root3'] = 0.02
 fudgeFactor['compLocation'] = 0.01
 fudgeFactor['rMatrixLocation'] = 0.01
 fudgeFactor['gdasrvLocation'] = 0.01
+fudgeFactor['allCompsDir'] = 1.0
+fudgeFactor['ndch2comp'] = 0.2
+fudgeFactor['ndch2alpha'] = 0.04
+
 
 
 class McmcTuningsPart(object):
@@ -41,6 +46,9 @@ class McmcTuningsPart(object):
         object.__setattr__(self, 'comp', 0.3)
         # This would depend on the dim; this is done in Mcmc.__init__()
         object.__setattr__(self, 'compDir', 100.)
+        object.__setattr__(self, 'allCompsDir', 500.)
+        object.__setattr__(self, 'ndch2_leafCompsDir', 200.)
+        object.__setattr__(self, 'ndch2_internalCompsDir', 100.)
         #object.__setattr__(self, 'rjComp', 200.)
         # rMatrix with sliders longer changed depending on the dim (ie size of rMatrix)
         object.__setattr__(self, 'rMatrix', 0.3)
@@ -171,6 +179,21 @@ class McmcTunings(object):
             aLine += " %10.3f" % self.parts[pNum].compDir
         lst.append(aLine)
 
+        aLine = theSig % (spacer, 'allCompsDir')
+        for pNum in range(self.nParts):
+            aLine += " %10.3f" % self.parts[pNum].allCompsDir
+        lst.append(aLine)
+
+        aLine = theSig % (spacer, 'ndch2_leafCompsDir')
+        for pNum in range(self.nParts):
+            aLine += " %10.3f" % self.parts[pNum].ndch2_leafCompsDir
+        lst.append(aLine)
+
+        aLine = theSig % (spacer, 'ndch2_internalCompsDir')
+        for pNum in range(self.nParts):
+            aLine += " %10.3f" % self.parts[pNum].ndch2_internalCompsDir
+        lst.append(aLine)
+
         #aLine = theSig % (spacer, 'rjComp')
         #for pNum in range(self.nParts):
         #    aLine += " %10.3f" % self.parts[pNum].rjComp
@@ -247,6 +270,9 @@ class McmcTuningsUsagePart(object):
         object.__setattr__(self, 'num', partNum)
         object.__setattr__(self, 'comp', [])
         object.__setattr__(self, 'compDir', [])
+        object.__setattr__(self, 'allCompsDir', [])
+        object.__setattr__(self, 'ndch2_leafCompsDir', [])
+        object.__setattr__(self, 'ndch2_internalCompsDir', [])
         #object.__setattr__(self, 'rjComp', [])
         #object.__setattr__(self, 'addComp', [])
         object.__setattr__(self, 'rMatrix', [])
@@ -342,6 +368,12 @@ class McmcTuningsUsage(object):
             lst.append(sig2 %
                        (spacer, 'compDir', len(self.parts[pNum].compDir)))
             lst.append(sig2 %
+                       (spacer, 'allCompsDir', len(self.parts[pNum].allCompsDir)))
+            lst.append(sig2 %
+                       (spacer, 'ndch2_leafCompsDir', len(self.parts[pNum].ndch2_leafCompsDir)))
+            lst.append(sig2 %
+                       (spacer, 'ndch2_internalCompsDir', len(self.parts[pNum].ndch2_internalCompsDir)))
+            lst.append(sig2 %
                        (spacer, 'rMatrix', len(self.parts[pNum].rMatrix)))
             lst.append(sig2 %
                        (spacer, 'rMatrixDir', len(self.parts[pNum].rMatrixDir)))
@@ -409,6 +441,11 @@ class McmcProposalProbs(dict):
     def __init__(self):
         object.__setattr__(self, 'comp', 1.0)
         object.__setattr__(self, 'compDir', 0.0)
+        object.__setattr__(self, 'allCompsDir', 0.0)
+        object.__setattr__(self, 'ndch2_leafCompsDir', 0.0)
+        object.__setattr__(self, 'ndch2_internalCompsDir', 0.0)
+        object.__setattr__(self, 'ndch2_leafCompsDirAlpha', 0.0)
+        object.__setattr__(self, 'ndch2_internalCompsDirAlpha', 0.0)
         #object.__setattr__(self, 'rjComp', 0.0)
         object.__setattr__(self, 'rMatrix', 1.0)
         object.__setattr__(self, 'rMatrixDir', 0.0)
@@ -447,7 +484,8 @@ class McmcProposalProbs(dict):
 
         else:
             self.dump()
-            gm.append("    Can't set '%s'-- no such proposal." % item)
+            gm.append("Can't set '%s'-- no such proposal." % item)
+            gm.append("See the list of proposal probabilities above for valid proposals.")
             raise P4Error(gm)
 
     def reprString(self):
@@ -459,7 +497,7 @@ class McmcProposalProbs(dict):
         theKeys = self.__dict__.keys()
         theKeys.sort()
         for k in theKeys:
-            stuff.append("        %15s: %s" % (k, getattr(self, k)))
+            stuff.append("        %30s: %s" % (k, getattr(self, k)))
         return string.join(stuff, '\n')
 
     def dump(self):
@@ -503,7 +541,9 @@ class Proposal(object):
             return getattr(self.mcmc.tunings, self.name)
         elif self.name in ['eTBR']:
             return getattr(self.mcmc.tunings, 'etbrLambda')
-        elif self.name in ['comp', 'compDir', 'rjComp', 'rMatrix', 
+        elif self.name in ['comp', 'compDir', 'allCompsDir', 
+                           'ndch2_leafCompsDir', 'ndch2_internalCompsDir',
+                           'rjComp', 'rMatrix', 
                            'rMatrixDir', 'rjRMatrix', 'gdasrv', 'pInvar']:
             # print "getting tuning for %s, partNum %i, returning %f" % (
             #    self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum], self.name))
@@ -927,11 +967,15 @@ class Mcmc(object):
                 self.tunings.parts[pNum].rMatrix = 1.0 / nRates
 
         # Two new tunings --- compDir and rMatrixDir, seem to depend on the dim.
+        # And now allCompsDir
         if 1:
             for pNum in range(self.tunings.nParts):
                 theDim = self.tree.model.parts[pNum].dim
                 nRates = ((theDim * theDim) - theDim) / 2
                 self.tunings.parts[pNum].compDir = 50. * theDim
+                self.tunings.parts[pNum].allCompsDir = 100. * theDim
+                self.tunings.parts[pNum].ndch2_leafCompsDir = 2000. * theDim
+                self.tunings.parts[pNum].ndch2_internalCompsDir = 500. * theDim
                 self.tunings.parts[pNum].rMatrixDir = 50. * nRates
             
 
@@ -952,6 +996,37 @@ class Mcmc(object):
         else:
             self.prob.relRate = 0.0
 
+        nNodes = len(self.tree.nodes)
+        for pNum in range(self.tree.model.nParts):
+            mp = self.tree.model.parts[pNum]
+            if mp.ndch2:
+                if mp.nComps != nNodes:
+                    gm.append("Model part %i, ndch2 is on, nNodes is %i, nComps is %i" % (
+                        pNum, nNodes, mp.nComps))
+                    gm.append("For ndch2 there should be one comp for each node.")
+                    raise P4Error(gm)
+                if mp.nRMatrices > 1:
+                    gm.append("Model part %i, ndch2 is on, nNodes is %i, nRMatrices is %i" % (
+                        pNum, nNodes, mp.nRMatrices))
+                    gm.append("This week, for ndch2 there should be only one rMatrix.")
+                    raise P4Error(gm)
+                if mp.nGdasrvs > 1:
+                    gm.append("Model part %i, ndch2 is on, nNodes is %i, nGdasrvs is %i" % (
+                        pNum, nNodes, mp.nGdasrvs))
+                    gm.append("This week, for ndch2 there should be only one gdasrv.")
+                    raise P4Error(gm)
+
+                mp.ndch2_globalComp = numpy.array(self.tree.data.parts[pNum].composition())
+                while mp.ndch2_globalComp.min()  < var.PIVEC_MIN:
+                    for i in range(mp.dim):
+                        if mp.ndch2_globalComp[i] < var.PIVEC_MIN:
+                            mp.ndch2_globalComp[i] += (1.0 + random.random()) * var.PIVEC_MIN
+                    thisSum = mp.ndch2_globalComp.sum()
+                    for i in range(mp.dim):
+                        mp.ndch2_globalComp[i] /= thisSum
+
+               
+
         if self.tree.model.isHet:
             props_on = []
             if verbose:
@@ -963,23 +1038,43 @@ class Mcmc(object):
                 self.tree.summarizeModelThingsNNodes()
 
             for pNum in range(self.tree.model.nParts):
-                if self.tree.model.parts[pNum].nComps > 1:
+                mp = self.tree.model.parts[pNum]
+
+                if mp.nComps > 1 and mp.nComps < nNodes:
                     self.prob.compLocation = 1.0
-                    if self.verbose:
-                        if "composition location" not in props_on:
-                            props_on.append("composition location")
+                    if "composition location" not in props_on:
+                        props_on.append("composition location")
 
-                if self.tree.model.parts[pNum].nRMatrices > 1:
+                if mp.nRMatrices > 1 and mp.nRMatrices < nNodes:
                     self.prob.rMatrixLocation = 1.0
-                    if self.verbose:
-                        if "rate matrix location" not in props_on:
-                            props_on.append("rate matrix location")
+                    if "rate matrix location" not in props_on:
+                        props_on.append("rate matrix location")
 
-                if self.tree.model.parts[pNum].nGdasrvs > 1:
+                if mp.nGdasrvs > 1 and mp.nGdasrvs < nNodes:
                     self.prob.gdasrvLocation = 1.0
-                    if self.verbose:
-                        if "gamma rate location" not in props_on:
-                            props_on.append("gamma rate location")
+                    if "gamma rate location" not in props_on:
+                        props_on.append("gamma rate location")
+
+                if mp.ndch2:
+                    self.prob.ndch2_leafCompsDir = 1.0
+                    thisMString = "ndch2_leafCompsDir"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
+                    self.prob.ndch2_internalCompsDir = 1.0
+                    thisMString = "ndch2_internalCompsDir"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
+                    self.prob.ndch2_leafCompsDirAlpha = 1.0
+                    thisMString = "ndch2_leafCompsDirAlpha"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
+                    self.prob.ndch2_internalCompsDirAlpha = 1.0
+                    thisMString = "ndch2_internalCompsDirAlpha"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
 
             self.prob.root3 = 1.0
 
@@ -987,7 +1082,7 @@ class Mcmc(object):
                 props_on.append("root location")
                 print("\n%23s" % "Additional proposals:")
                 for prop in props_on:
-                    print("%25s = on" % prop)
+                    print("%30s = on" % prop)
                 print("\n  %s" % "[You can of course turn them")
                 print("  %s" % "off again before Mcmc.run()]\n")
         else:
@@ -996,132 +1091,137 @@ class Mcmc(object):
             self.prob.rMatrixLocation = 0.0
             self.prob.gdasrvLocation = 0.0
 
-        # Are we using rjComp in any model partitions?
-        # True and False
-        rjCompParts = [mp.rjComp for mp in self.tree.model.parts]
-        rjCompPartNums = [
-            pNum for pNum in range(self.tree.model.nParts) if rjCompParts[pNum]]
-        # print rjCompParts
-        # print rjCompPartNums
-        if rjCompPartNums:
-            if verbose:
-                print("\nInitiating rjComp...")
-                print("Turning on proposal for rjComp.")
 
-            for pNum in rjCompPartNums:
-                mp = self.tree.model.parts[pNum]
-                # Do some checking
-                if mp.nComps <= 1:
-                    gm.append("rjComp is turned on for part %i, but there are %i comps.  Too few." % (
-                        pNum, mp.nComps))
-                    gm.append("You will want to add more comps.")
-                    raise P4Error(gm)
-                elif mp.nComps > len(self.tree.nodes):
-                    gm.append("rjComp is turned on for part %i, but there are %i comps.  Too many." % (
-                        pNum, mp.nComps))
-                    gm.append(
-                        "That is more than the number of nodes in the tree.")
-                    raise P4Error(gm)
-
-                self.prob.rjComp = 1.0
-
-                # Calculate the initial pool size, setting rjComp_k
-                mp.rjComp_k = 0
-                for comp in mp.comps:
-                    if comp.nNodes:
-                        mp.rjComp_k += 1
-                        comp.rj_isInPool = True   # False by default
-
-                if verbose:
-                    print("Part %i: nComps %i, pool size (rjComp_k) %i" % (pNum, mp.nComps, mp.rjComp_k))
-
-                # This stuff below applies when
-                # rjCompUniformAllocationPrior is not on, meaning it
-                # uses the hierarchical allocation prior.
-
-                # This next calc of rj_f depends on
-                # self.tree.setModelThingsNNodes() having been done, above.
-                mySum = float(len(self.tree.nodes))
-                for comp in mp.comps:
-                    if comp.nNodes:
-                        comp.rj_f = comp.nNodes / mySum
-                # for comp in mp.comps:
-                #    print comp.num, comp.nNodes, comp.rj_f
-
-        # Are we using rjRMatrix in any model partitions?
-        # True and False
-        rjRMatrixParts = [mp.rjRMatrix for mp in self.tree.model.parts]
-        rjRMatrixPartNums = [
-            pNum for pNum in range(self.tree.model.nParts) if rjRMatrixParts[pNum]]
-        # print rjRMatrixParts
-        # print rjRMatrixPartNums
-        if rjRMatrixPartNums:
-            if verbose:
-                print("\nInitiating rjRMatrix...")
-                print("Turning on proposal for rjRMatrix.")
-
-            for pNum in rjRMatrixPartNums:
-                mp = self.tree.model.parts[pNum]
-                # Do some checking
-                if mp.nRMatrices <= 1:
-                    gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too few." % (
-                        pNum, mp.nRMatrices))
-                    gm.append("You will want to add more rMatrices.")
-                    raise P4Error(gm)
-                elif mp.nRMatrices > (len(self.tree.nodes) - 1):
-                    gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too many." % (
-                        pNum, mp.nRMatrices))
-                    gm.append(
-                        "That is more than the number of branches in the tree.")
-                    raise P4Error(gm)
-
-                self.prob.rjRMatrix = 1.0
-
-                # Calculate the initial pool size, setting rjRMatrix_k
-                mp.rjRMatrix_k = 0
-                for rMatrix in mp.rMatrices:
-                    if rMatrix.nNodes:
-                        mp.rjRMatrix_k += 1
-                        rMatrix.rj_isInPool = True   # False by default
-
-                if verbose:
-                    print("Part %i: nRMatrices %i, pool size (rjRMatrix_k) %i" % (pNum, mp.nRMatrices, mp.rjRMatrix_k))
-
-                # This stuff below applies when
-                # rjRMatrixUniformAllocationPrior is not on, meaning it
-                # uses the hierarchical allocation prior.
-
-                # This next calc of rj_f depends on
-                # self.tree.setModelThingsNNodes() having been done, above.
-                mySum = float(len(self.tree.nodes) - 1.)
-                for rMatrix in mp.rMatrices:
-                    if rMatrix.nNodes:
-                        rMatrix.rj_f = rMatrix.nNodes / mySum
-                # for rMatrix in mp.rMatrices:
-                #    print rMatrix.num, rMatrix.nNodes, rMatrix.rj_f
 
         # Hidden experimental hacking
         self.doHeatingHack = False
         self.heatingHackTemperature = 5.0
-        self.heatingHackProposalNames = ['local', 'eTBR']
+        #self.heatingHackProposalNames = ['local', 'eTBR']
         
 
-        # Are we doing cmd1 in any model partitions?
-        cmd1Parts = [mp.cmd1 for mp in self.tree.model.parts]  # True and False
-        # empty if there are none that do cmd1
-        cmd1PartNums = [
-            pNum for pNum in range(self.tree.model.nParts) if cmd1Parts[pNum]]
-        if cmd1PartNums:
-            if verbose:
-                print("\nInitiating cmd1 ...")
-                print("Turning on proposals for cmd1")
-            self.prob.cmd1_compDir = 1.0
-            self.prob.cmd1_comp0Dir = 1.0
-            self.prob.cmd1_allCompDir = 1.0
-            self.prob.cmd1_alpha = 1.0
-            for pNum in cmd1PartNums:
-                mp = self.tree.model.parts[pNum]
-                mp.cmd1_pi0 = [1.0 / mp.dim] * mp.dim
+        # # Are we using rjComp in any model partitions?
+        # # True and False
+        # rjCompParts = [mp.rjComp for mp in self.tree.model.parts]
+        # rjCompPartNums = [
+        #     pNum for pNum in range(self.tree.model.nParts) if rjCompParts[pNum]]
+        # # print rjCompParts
+        # # print rjCompPartNums
+        # if rjCompPartNums:
+        #     if verbose:
+        #         print("\nInitiating rjComp...")
+        #         print("Turning on proposal for rjComp.")
+
+        #     for pNum in rjCompPartNums:
+        #         mp = self.tree.model.parts[pNum]
+        #         # Do some checking
+        #         if mp.nComps <= 1:
+        #             gm.append("rjComp is turned on for part %i, but there are %i comps.  Too few." % (
+        #                 pNum, mp.nComps))
+        #             gm.append("You will want to add more comps.")
+        #             raise P4Error(gm)
+        #         elif mp.nComps > len(self.tree.nodes):
+        #             gm.append("rjComp is turned on for part %i, but there are %i comps.  Too many." % (
+        #                 pNum, mp.nComps))
+        #             gm.append(
+        #                 "That is more than the number of nodes in the tree.")
+        #             raise P4Error(gm)
+
+        #         self.prob.rjComp = 1.0
+
+        #         # Calculate the initial pool size, setting rjComp_k
+        #         mp.rjComp_k = 0
+        #         for comp in mp.comps:
+        #             if comp.nNodes:
+        #                 mp.rjComp_k += 1
+        #                 comp.rj_isInPool = True   # False by default
+
+        #         if verbose:
+        #             print("Part %i: nComps %i, pool size (rjComp_k) %i" % (pNum, mp.nComps, mp.rjComp_k))
+
+        #         # This stuff below applies when
+        #         # rjCompUniformAllocationPrior is not on, meaning it
+        #         # uses the hierarchical allocation prior.
+
+        #         # This next calc of rj_f depends on
+        #         # self.tree.setModelThingsNNodes() having been done, above.
+        #         mySum = float(len(self.tree.nodes))
+        #         for comp in mp.comps:
+        #             if comp.nNodes:
+        #                 comp.rj_f = comp.nNodes / mySum
+        #         # for comp in mp.comps:
+        #         #    print comp.num, comp.nNodes, comp.rj_f
+
+        # # Are we using rjRMatrix in any model partitions?
+        # # True and False
+        # rjRMatrixParts = [mp.rjRMatrix for mp in self.tree.model.parts]
+        # rjRMatrixPartNums = [
+        #     pNum for pNum in range(self.tree.model.nParts) if rjRMatrixParts[pNum]]
+        # # print rjRMatrixParts
+        # # print rjRMatrixPartNums
+        # if rjRMatrixPartNums:
+        #     if verbose:
+        #         print("\nInitiating rjRMatrix...")
+        #         print("Turning on proposal for rjRMatrix.")
+
+        #     for pNum in rjRMatrixPartNums:
+        #         mp = self.tree.model.parts[pNum]
+        #         # Do some checking
+        #         if mp.nRMatrices <= 1:
+        #             gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too few." % (
+        #                 pNum, mp.nRMatrices))
+        #             gm.append("You will want to add more rMatrices.")
+        #             raise P4Error(gm)
+        #         elif mp.nRMatrices > (len(self.tree.nodes) - 1):
+        #             gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too many." % (
+        #                 pNum, mp.nRMatrices))
+        #             gm.append(
+        #                 "That is more than the number of branches in the tree.")
+        #             raise P4Error(gm)
+
+        #         self.prob.rjRMatrix = 1.0
+
+        #         # Calculate the initial pool size, setting rjRMatrix_k
+        #         mp.rjRMatrix_k = 0
+        #         for rMatrix in mp.rMatrices:
+        #             if rMatrix.nNodes:
+        #                 mp.rjRMatrix_k += 1
+        #                 rMatrix.rj_isInPool = True   # False by default
+
+        #         if verbose:
+        #             print("Part %i: nRMatrices %i, pool size (rjRMatrix_k) %i" % (pNum, mp.nRMatrices, mp.rjRMatrix_k))
+
+        #         # This stuff below applies when
+        #         # rjRMatrixUniformAllocationPrior is not on, meaning it
+        #         # uses the hierarchical allocation prior.
+
+        #         # This next calc of rj_f depends on
+        #         # self.tree.setModelThingsNNodes() having been done, above.
+        #         mySum = float(len(self.tree.nodes) - 1.)
+        #         for rMatrix in mp.rMatrices:
+        #             if rMatrix.nNodes:
+        #                 rMatrix.rj_f = rMatrix.nNodes / mySum
+        #         # for rMatrix in mp.rMatrices:
+        #         #    print rMatrix.num, rMatrix.nNodes, rMatrix.rj_f
+
+
+        # # Are we doing cmd1 in any model partitions?
+        # cmd1Parts = [mp.cmd1 for mp in self.tree.model.parts]  # True and False
+        # # empty if there are none that do cmd1
+        # cmd1PartNums = [
+        #     pNum for pNum in range(self.tree.model.nParts) if cmd1Parts[pNum]]
+        # if cmd1PartNums:
+        #     if verbose:
+        #         print("\nInitiating cmd1 ...")
+        #         print("Turning on proposals for cmd1")
+        #     self.prob.cmd1_compDir = 1.0
+        #     self.prob.cmd1_comp0Dir = 1.0
+        #     self.prob.cmd1_allCompDir = 1.0
+        #     self.prob.cmd1_alpha = 1.0
+        #     for pNum in cmd1PartNums:
+        #         mp = self.tree.model.parts[pNum]
+        #         mp.cmd1_pi0 = [1.0 / mp.dim] * mp.dim
+
+                
 
     def _makeProposals(self):
         """Make proposals for the mcmc."""
@@ -1252,6 +1352,58 @@ class Mcmc(object):
                         p.mtNum = mtNum
                         self.proposals.append(p)
                         self.tuningsUsage.parts[pNum].compDir.append(p)
+
+            # allCompsDir
+            if self.prob.allCompsDir:
+                for mtNum in range(mp.nComps):
+                    assert mp.comps[mtNum].free
+                p = Proposal(self)
+                p.name = 'allCompsDir'
+                p.weight = self.prob.allCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['allCompsDir']
+                p.pNum = pNum
+                self.proposals.append(p)
+                self.tuningsUsage.parts[pNum].allCompsDir.append(p)
+
+            # ndch2_leafCompsDir
+            if self.prob.ndch2_leafCompsDir:
+                for mtNum in range(mp.nComps):
+                    assert mp.comps[mtNum].free
+                p = Proposal(self)
+                p.name = 'ndch2_leafCompsDir'
+                p.weight = self.prob.ndch2_leafCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
+                p.pNum = pNum
+                self.proposals.append(p)
+                self.tuningsUsage.parts[pNum].ndch2_leafCompsDir.append(p)
+
+            # ndch2_internalCompsDir
+            if self.prob.ndch2_internalCompsDir:
+                for mtNum in range(mp.nComps):
+                    assert mp.comps[mtNum].free
+                p = Proposal(self)
+                p.name = 'ndch2_internalCompsDir'
+                p.weight = self.prob.ndch2_internalCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
+                p.pNum = pNum
+                self.proposals.append(p)
+                self.tuningsUsage.parts[pNum].ndch2_internalCompsDir.append(p)
+
+            # ndch2_leafCompsDirAlpha
+            if self.prob.ndch2_leafCompsDirAlpha:
+                p = Proposal(self)
+                p.name = 'ndch2_leafCompsDirAlpha'
+                p.weight = self.prob.ndch2_leafCompsDirAlpha * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
+                p.pNum = pNum
+                self.proposals.append(p)
+                #self.tuningsUsage.parts[pNum].allCompsDir.append(p)
+
+            # ndch2_internalCompsDirAlpha
+            if self.prob.ndch2_internalCompsDirAlpha:
+                p = Proposal(self)
+                p.name = 'ndch2_internalCompsDirAlpha'
+                p.weight = self.prob.ndch2_internalCompsDirAlpha * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
+                p.pNum = pNum
+                self.proposals.append(p)
+                #self.tuningsUsage.parts[pNum].allCompsDir.append(p)
+
 
             # # rjComp
             # if self.prob.rjComp:
@@ -1416,11 +1568,6 @@ class Mcmc(object):
         gm = ['Mcmc._refreshProposalProbsAndTunings()']
 
         for p in self.proposals:
-            # local
-            if p.name == 'local':
-                p.weight = self.prob.local * \
-                    (len(self.tree.nodes) - 1) * fudgeFactor['local']
-
             # brLen
             if p.name == 'brLen':
                 p.weight = self.prob.brLen * \
@@ -1436,10 +1583,15 @@ class Mcmc(object):
                 p.weight = self.prob.eTBR * \
                     (len(self.tree.nodes) - 1) * fudgeFactor['eTBR']
 
-            # treeScale
-            if p.name == 'treeScale':
-                p.weight = self.prob.treeScale * \
-                    (len(self.tree.nodes) - 1) * fudgeFactor['treeScale']
+            # local
+            if p.name == 'local':
+                p.weight = self.prob.local * \
+                    (len(self.tree.nodes) - 1) * fudgeFactor['local']
+
+            # # treeScale
+            # if p.name == 'treeScale':
+            #     p.weight = self.prob.treeScale * \
+            #         (len(self.tree.nodes) - 1) * fudgeFactor['treeScale']
 
             # polytomy
             if p.name == 'polytomy':
@@ -1468,9 +1620,34 @@ class Mcmc(object):
                 mp = self.tree.model.parts[p.pNum]
                 p.weight = self.prob.compDir * float(mp.dim - 1)
 
-            # rjComp
-            if p.name == 'rjComp':
-                p.weight = self.prob.rjComp * fudgeFactor['rjComp']
+            # allCompsDir
+            if p.name == 'allCompsDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.allCompsDir * float(mp.dim - 1) * mp.nComps * fudgeFactor['allCompsDir']
+
+            # ndch2_leafCompsDir
+            if p.name == 'ndch2_leafCompsDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndch2_leafCompsDir * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
+
+            # ndch2_internalCompsDir
+            if p.name == 'ndch2_internalCompsDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndch2_internalCompsDir * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
+
+            # ndch2_leafCompsDirAlpha
+            if p.name == 'ndch2_leafCompsDirAlpha':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndch2_leafCompsDirAlpha * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
+
+            # ndch2_internalCompsDirAlpha
+            if p.name == 'ndch2_internalCompsDirAlpha':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndch2_internalCompsDirAlpha * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
+
+            # # rjComp
+            # if p.name == 'rjComp':
+            #     p.weight = self.prob.rjComp * fudgeFactor['rjComp']
 
             # rMatrix
             if p.name == 'rMatrix':
@@ -1490,9 +1667,9 @@ class Mcmc(object):
                     p.weight = self.prob.rMatrixDir * \
                         ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
 
-            # rjRMatrix
-            if p.name == 'rjRMatrix':
-                p.weight = self.prob.rjRMatrix * fudgeFactor['rjRMatrix']
+            # # rjRMatrix
+            # if p.name == 'rjRMatrix':
+            #     p.weight = self.prob.rjRMatrix * fudgeFactor['rjRMatrix']
 
             # gdasrv
             if p.name == 'gdasrv':
@@ -1547,10 +1724,10 @@ class Mcmc(object):
             spacer = ' ' * 8
             print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
                 self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-            print("%s %15s %5s %5s %10s %13s%8s" % (spacer, 'proposal', 'part', 'num', 'nProposals', 'acceptance(%)', 'tuning'))
+            print("%s %30s %5s %5s %10s %13s%8s" % (spacer, 'proposal', 'part', 'num', 'nProposals', 'acceptance(%)', 'tuning'))
             for p in self.proposals:
                 print("%s" % spacer, end=' ')
-                print("%15s" % p.name, end=' ')
+                print("%30s" % p.name, end=' ')
                 if p.pNum != -1:
                     print(" %3i " % p.pNum, end=' ')
                 else:
@@ -1797,7 +1974,7 @@ class Mcmc(object):
             print("Heating hack is turned on.")
             assert self.nChains == 1, "MCMCMC does not work with the heating hack"
             print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
-            print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
+            #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
         if self.checkPointInterval:
             # We want a couple of things:
@@ -1880,22 +2057,22 @@ class Mcmc(object):
                 gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
                 raise P4Error(gm)
 
-        # Are we using rjComp in any model partitions?
-        rjCompParts = [mp.rjComp for mp in self.chains[
-            coldChainNum].curTree.model.parts]  # True and False
-        rjCompPartNums = [pNum for pNum in range(
-            self.chains[coldChainNum].curTree.model.nParts) if rjCompParts[pNum]]
-        # print rjCompParts
-        # print rjCompPartNums
+        # # Are we using rjComp in any model partitions?
+        # rjCompParts = [mp.rjComp for mp in self.chains[
+        #     coldChainNum].curTree.model.parts]  # True and False
+        # rjCompPartNums = [pNum for pNum in range(
+        #     self.chains[coldChainNum].curTree.model.nParts) if rjCompParts[pNum]]
+        # # print rjCompParts
+        # # print rjCompPartNums
 
-        # Are we using rjRMatrix in any model partitions?
-        rjRMatrixParts = [mp.rjRMatrix for mp in self.chains[
-            coldChainNum].curTree.model.parts]  # True and False
-        rjRMatrixPartNums = [pNum for pNum in range(
-            self.chains[coldChainNum].curTree.model.nParts) if rjRMatrixParts[pNum]]
-        # print rjRMatrixParts
-        # print rjRMatrixPartNums
-        # print self.chains[0].curTree.model.parts[1].rjRMatrix_k
+        # # Are we using rjRMatrix in any model partitions?
+        # rjRMatrixParts = [mp.rjRMatrix for mp in self.chains[
+        #     coldChainNum].curTree.model.parts]  # True and False
+        # rjRMatrixPartNums = [pNum for pNum in range(
+        #     self.chains[coldChainNum].curTree.model.nParts) if rjRMatrixParts[pNum]]
+        # # print rjRMatrixParts
+        # # print rjRMatrixPartNums
+        # # print self.chains[0].curTree.model.parts[1].rjRMatrix_k
 
         if self.gen > -1:
             # it is a re-start, so we need to back over the "end;" in the tree
@@ -1952,51 +2129,51 @@ class Mcmc(object):
                         pramsFile)
                     pramsFile.close()
 
-            if 1 and rjCompPartNums:
-                rjKFile = open(self.rjKFileName, 'w')
-                rjKFile.write(
-                    "# k_comp_max, a constant, is the number of comp vectors in a part in total\n")
-                rjKFile.write(
-                    "#             (both in the pool and not in the pool).\n")
-                rjKFile.write(
-                    "# ck, aka ModelPart.rjComp_k, is the number of comp vectors in the 'pool' (for each part)\n")
-                rjKFile.write(
-                    "# k_0 for comps (ck0 below) is the number of comp vectors on the tree (for each part)\n")
-                rjKFile.write("#\n")
-                for pNum in rjCompPartNums:
-                    rjKFile.write("# part%i: " % pNum)
-                    rjKFile.write(" k_comp_max = %i\n" % self.chains[
-                                  coldChainNum].curTree.model.parts[pNum].nComps)
-                rjKFile.write("#\n")
+            # if 0 and rjCompPartNums:
+            #     rjKFile = open(self.rjKFileName, 'w')
+            #     rjKFile.write(
+            #         "# k_comp_max, a constant, is the number of comp vectors in a part in total\n")
+            #     rjKFile.write(
+            #         "#             (both in the pool and not in the pool).\n")
+            #     rjKFile.write(
+            #         "# ck, aka ModelPart.rjComp_k, is the number of comp vectors in the 'pool' (for each part)\n")
+            #     rjKFile.write(
+            #         "# k_0 for comps (ck0 below) is the number of comp vectors on the tree (for each part)\n")
+            #     rjKFile.write("#\n")
+            #     for pNum in rjCompPartNums:
+            #         rjKFile.write("# part%i: " % pNum)
+            #         rjKFile.write(" k_comp_max = %i\n" % self.chains[
+            #                       coldChainNum].curTree.model.parts[pNum].nComps)
+            #     rjKFile.write("#\n")
 
-            if 1 and rjRMatrixPartNums:
-                if not rjCompPartNums:
-                    rjKFile = open(self.rjKFileName, 'w')
-                rjKFile.write(
-                    "# k_rMatrix_max, a constant, is the number of rMatrices in a part in total\n")
-                rjKFile.write(
-                    "#             (both in the pool and not in the pool).\n")
-                rjKFile.write(
-                    "# rk, aka ModelPart.rjRMatrix_k, is the number of rMatrices in the 'pool' (for each part)\n")
-                rjKFile.write(
-                    "# k_0 for rMatrices (rk0 below) is the number of rMatrices on the tree (for each part)\n")
-                rjKFile.write("#\n")
-                for pNum in rjRMatrixPartNums:
-                    rjKFile.write("# part%i: " % pNum)
-                    rjKFile.write(" k_rMatrix_max = %i\n" % self.chains[
-                                  coldChainNum].curTree.model.parts[pNum].nRMatrices)
-                rjKFile.write("#\n")
+            # if 0 and rjRMatrixPartNums:
+            #     if not rjCompPartNums:
+            #         rjKFile = open(self.rjKFileName, 'w')
+            #     rjKFile.write(
+            #         "# k_rMatrix_max, a constant, is the number of rMatrices in a part in total\n")
+            #     rjKFile.write(
+            #         "#             (both in the pool and not in the pool).\n")
+            #     rjKFile.write(
+            #         "# rk, aka ModelPart.rjRMatrix_k, is the number of rMatrices in the 'pool' (for each part)\n")
+            #     rjKFile.write(
+            #         "# k_0 for rMatrices (rk0 below) is the number of rMatrices on the tree (for each part)\n")
+            #     rjKFile.write("#\n")
+            #     for pNum in rjRMatrixPartNums:
+            #         rjKFile.write("# part%i: " % pNum)
+            #         rjKFile.write(" k_rMatrix_max = %i\n" % self.chains[
+            #                       coldChainNum].curTree.model.parts[pNum].nRMatrices)
+            #     rjKFile.write("#\n")
 
-            if 1 and rjCompPartNums or rjRMatrixPartNums:
-                rjKFile.write("# %10s " % 'genPlus1')
-                for pNum in rjCompPartNums:
-                    rjKFile.write("%7s " % 'p%i_ck' % pNum)
-                    rjKFile.write("%8s " % 'p%i_ck0' % pNum)
-                for pNum in rjRMatrixPartNums:
-                    rjKFile.write("%7s " % 'p%i_rk' % pNum)
-                    rjKFile.write("%8s " % 'p%i_rk0' % pNum)
-                rjKFile.write("\n")
-                rjKFile.close()
+            # if 0 and rjCompPartNums or rjRMatrixPartNums:
+            #     rjKFile.write("# %10s " % 'genPlus1')
+            #     for pNum in rjCompPartNums:
+            #         rjKFile.write("%7s " % 'p%i_ck' % pNum)
+            #         rjKFile.write("%8s " % 'p%i_ck0' % pNum)
+            #     for pNum in rjRMatrixPartNums:
+            #         rjKFile.write("%7s " % 'p%i_rk' % pNum)
+            #         rjKFile.write("%8s " % 'p%i_rk0' % pNum)
+            #     rjKFile.write("\n")
+            #     rjKFile.close()
 
         if verbose:
             print("Sampling every %i." % self.sampleInterval)
@@ -2059,15 +2236,15 @@ class Mcmc(object):
                             # Can't do root3 on a star tree.
                             if self.chains[chNum].curTree.nInternalNodes == 1:
                                 gotIt = False
-                        elif aProposal.name in ['comp', 'compDir']:
-                            # If we do RJ on this part, make sure the comp is
-                            # actually in the RJ pool.
-                            mp = self.chains[chNum].curTree.model.parts[
-                                aProposal.pNum]
-                            if mp.rjComp:
-                                mt = mp.comps[aProposal.mtNum]
-                                if not mt.rj_isInPool:
-                                    gotIt = False
+                        # elif aProposal.name in ['comp', 'compDir']:
+                        #     # If we do RJ on this part, make sure the comp is
+                        #     # actually in the RJ pool.
+                        #     mp = self.chains[chNum].curTree.model.parts[
+                        #         aProposal.pNum]
+                        #     if mp.rjComp:
+                        #         mt = mp.comps[aProposal.mtNum]
+                        #         if not mt.rj_isInPool:
+                        #             gotIt = False
                         elif aProposal.name in ['rMatrix']:
                             # If we do RJ on this part, make sure the rMatrix
                             # is actually in the RJ pool.
@@ -2139,8 +2316,8 @@ class Mcmc(object):
                 else:
                     self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
 
-                lnR = (
-                    1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
+                lnR = (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))
+                        ) * chain2.curTree.logLike
                 lnR += (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))
                         ) * chain1.curTree.logLike
                 lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))
@@ -2188,6 +2365,23 @@ class Mcmc(object):
                     likesFile.write(
                         '%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
                     likesFile.close()
+
+                    # Check the likelihood every write interval
+                    if 0:
+                        oldLike = self.chains[coldChainNum].curTree.logLike
+                        print("gen+1 %11i  %f  " % (
+                            self.gen+1, 
+                            self.chains[coldChainNum].curTree.logLike), end=' ')
+                        self.chains[coldChainNum].curTree.calcLogLike(verbose=False)
+                        newLike = self.chains[coldChainNum].curTree.logLike
+                        print("%f" % self.chains[coldChainNum].curTree.logLike, end=' ')
+                        likeDiff = math.fabs(oldLike - newLike)
+                        if likeDiff > 1e-14:
+                            print("%f" % likeDiff)
+                        else:
+                            print()
+                                                                  
+
                     treeFile = open(self.treeFileName, 'a')
                     treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
                     self.chains[coldChainNum].curTree.writeNewick(treeFile,
@@ -2196,7 +2390,7 @@ class Mcmc(object):
                                                                   doMcmcCommandComments=self.tree.model.isHet)
                     treeFile.close()
 
-                if 1 and rjCompPartNums:  # we made rjCompPartNums above
+                if 0 and rjCompPartNums:  # we made rjCompPartNums above
                     rjKFile = open(self.rjKFileName, 'a')
                     rjKFile.write("%12i " % (self.gen + 1))
                     for pNum in rjCompPartNums:
@@ -2222,7 +2416,7 @@ class Mcmc(object):
                         rjKFile.write("\n")
                         rjKFile.close()
 
-                if 1 and rjRMatrixPartNums:  # we made rjRMatrixPartNums above
+                if 0 and rjRMatrixPartNums:  # we made rjRMatrixPartNums above
                     if not rjCompPartNums:
                         rjKFile = open(self.rjKFileName, 'a')
                         rjKFile.write("%12i " % (self.gen + 1))
@@ -2257,8 +2451,7 @@ class Mcmc(object):
                     pramsFile = open(self.pramsFileName, 'a')
                     #pramsFile.write("%12i " % (self.gen + 1))
                     pramsFile.write("%12i" % (self.gen + 1))
-                    self.chains[coldChainNum].curTree.model.writePramsLine(
-                        pramsFile)
+                    self.chains[coldChainNum].curTree.model.writePramsLine(pramsFile)
                     pramsFile.close()
 
                 # Do a simulation
@@ -2342,6 +2535,8 @@ class Mcmc(object):
                         self.swapMatrix = []
                         for i in range(self.nChains):
                             self.swapMatrix.append([0] * self.nChains)
+
+                    
 
             # Reassuring pips ...
             # We want to skip the first gen of every call to run()
@@ -2485,6 +2680,9 @@ class Mcmc(object):
                 print("chain %i ==================" % chNum)
                 ch.curTree.summarizeModelThingsNNodes()
 
+        #print("Before removing data", end=' ')
+        #self.chains[0].curTree.calcLogLike(verbose=True, resetEmpiricalComps=False)
+
         # Make a copy of self, but with no cStuff.
         # But we don't want to copy data.  So detach it.
         savedData = self.tree.data
@@ -2508,6 +2706,7 @@ class Mcmc(object):
         for chNum in range(self.nChains):
             ch = self.chains[chNum]
             ch.curTree.data = savedData
+            #print("After restoring data", end=' ')
             ch.curTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
             ch.propTree.data = savedData
             ch.propTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
@@ -3080,6 +3279,123 @@ class Mcmc(object):
                             print(sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].compDir))
                         needsToBeTuned = True
 
+                # allCompsDir
+                if self.tuningsUsage.parts[pNum].allCompsDir:
+                    isTooBig = 0
+                    isTooSmall = 0
+                    #isVerySmall = 0
+                    for p in self.tuningsUsage.parts[pNum].allCompsDir:
+                        accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+                        if verbose:
+                            print(theSig % ("allCompsDir", accepted), end=' ')
+                        if accepted < safeLower:
+                            if verbose:
+                                print(sig2 % "too small")
+                            isTooSmall += 1
+                        elif accepted > safeUpper:
+                            if verbose:
+                                print(sig2 % "too big")
+                            isTooBig += 1
+                        else:
+                            if verbose:
+                                print(sig2 % "ok")
+                    if isTooBig and isTooSmall:
+                        if verbose:
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
+                    elif isTooBig:
+                        if verbose:
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].allCompsDir))
+                        self.tunings.parts[pNum].allCompsDir /= 1.5
+                        if verbose:
+                            print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].allCompsDir))
+                        needsToBeTuned = True
+                    elif isTooSmall:
+                        if verbose:
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].allCompsDir))
+                        self.tunings.parts[pNum].allCompsDir *= 1.5
+                        if verbose:
+                            print(sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].allCompsDir))
+                        needsToBeTuned = True
+
+                # ndch2_leafCompsDir
+                if self.tuningsUsage.parts[pNum].ndch2_leafCompsDir:
+                    isTooBig = 0
+                    isTooSmall = 0
+                    #isVerySmall = 0
+                    for p in self.tuningsUsage.parts[pNum].ndch2_leafCompsDir:
+                        accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+                        if verbose:
+                            print(theSig % ("ndch2_leafCompsDir", accepted), end=' ')
+                        if accepted < safeLower:
+                            if verbose:
+                                print(sig2 % "too small")
+                            isTooSmall += 1
+                        elif accepted > safeUpper:
+                            if verbose:
+                                print(sig2 % "too big")
+                            isTooBig += 1
+                        else:
+                            if verbose:
+                                print(sig2 % "ok")
+                    if isTooBig and isTooSmall:
+                        if verbose:
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
+                    elif isTooBig:
+                        if verbose:
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].ndch2_leafCompsDir))
+                        self.tunings.parts[pNum].ndch2_leafCompsDir /= 1.5
+                        if verbose:
+                            print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].ndch2_leafCompsDir))
+                        needsToBeTuned = True
+                    elif isTooSmall:
+                        if verbose:
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].ndch2_leafCompsDir))
+                        self.tunings.parts[pNum].ndch2_leafCompsDir *= 1.5
+                        if verbose:
+                            print(sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].ndch2_leafCompsDir))
+                        needsToBeTuned = True
+
+                # ndch2_internalCompsDir
+                if self.tuningsUsage.parts[pNum].ndch2_internalCompsDir:
+                    isTooBig = 0
+                    isTooSmall = 0
+                    #isVerySmall = 0
+                    for p in self.tuningsUsage.parts[pNum].ndch2_internalCompsDir:
+                        accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
+                        if verbose:
+                            print(theSig % ("ndch2_internalCompsDir", accepted), end=' ')
+                        if accepted < safeLower:
+                            if verbose:
+                                print(sig2 % "too small")
+                            isTooSmall += 1
+                        elif accepted > safeUpper:
+                            if verbose:
+                                print(sig2 % "too big")
+                            isTooBig += 1
+                        else:
+                            if verbose:
+                                print(sig2 % "ok")
+                    if isTooBig and isTooSmall:
+                        if verbose:
+                            print(sig3 % (' ', "Combination of too big and too small."))
+                            print(sig3 % (' ', "-> leaving it alone."))
+                    elif isTooBig:
+                        if verbose:
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].ndch2_internalCompsDir))
+                        self.tunings.parts[pNum].ndch2_internalCompsDir /= 1.5
+                        if verbose:
+                            print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].ndch2_internalCompsDir))
+                        needsToBeTuned = True
+                    elif isTooSmall:
+                        if verbose:
+                            print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].ndch2_internalCompsDir))
+                        self.tunings.parts[pNum].ndch2_internalCompsDir *= 1.5
+                        if verbose:
+                            print(sig3 % (' ', "-> increase it to %.3f" % self.tunings.parts[pNum].ndch2_internalCompsDir))
+                        needsToBeTuned = True
+
                 # rMatrix
                 if self.tuningsUsage.parts[pNum].rMatrix:
                     isTooBig = 0
@@ -3571,19 +3887,19 @@ class Mcmc(object):
         for i in range(len(intended)):
             intended[i] /= self.totalPropWeights
         if math.fabs(sum(intended) - 1.0 > 1e-14):
-            raise P4Error(
-                "bad sum of intended proposal probs. %s" % sum(intended))
+            raise P4Error("bad sum of intended proposal probs. %s" % sum(intended))
 
         spacer = ' ' * 4
         print("\nIntended proposal probabilities (%)")
         # print "There are %i proposals" % len(self.proposals)
-        print("%2s %11s %18s %5s %5s" % ('', 'intended(%)', 'proposal', 'part', 'num'))
+        print("%2s %11s %30s %5s %5s %12s" % ('', 'intended(%)', 'proposal', 'part', 'num', 'tuning'))
         for i in range(len(self.proposals)):
             print("%2i" % i, end=' ')
             p = self.proposals[i]
             print("   %6.2f    " % (100. * intended[i]), end=' ')
 
-            print(" %15s" % p.name, end=' ')
+            print(" %27s" % p.name, end=' ')
+
             if p.pNum != -1:
                 print(" %3i " % p.pNum, end=' ')
             else:
@@ -3592,4 +3908,14 @@ class Mcmc(object):
                 print(" %3i " % p.mtNum, end=' ')
             else:
                 print("   - ", end=' ')
+
+            if p.tuning == None:
+                print(" %12s "% '    -   ', end=' ')
+            else:
+                if p.tuning < 0.1:
+                    print(" %12.4g" % p.tuning, end=' ')
+                elif p.tuning < 1.0:
+                    print(" %12.4f" % p.tuning, end=' ')
+                else:
+                    print(" %12s " % p.tuning, end=' ')
             print()
