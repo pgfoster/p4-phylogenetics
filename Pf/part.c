@@ -1447,10 +1447,10 @@ double partMeanNCharsPerSite(part *thePart)
                 counts[symbNum] = 0;
             }
         }
-        if(totalThisSite > 1) {
-            theTotal += totalThisSite;
-            nSites += 1;
-        }
+        //if(totalThisSite > 1) {
+        theTotal += totalThisSite;
+        nSites += 1;
+        //}
     }
 
     free(counts);

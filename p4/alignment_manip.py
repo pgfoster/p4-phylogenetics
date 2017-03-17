@@ -2082,10 +2082,10 @@ if True:
         if 1:
             self.nexusSets.dupeCharSet(theGName, theMyName)
 
-    def meanNCharsPerSite(self, showDistribution=True):
-        """Mean number of different chars per site, only of the variable sites.
+    def meanNCharsPerSite(self, includeConstantSites=True, showDistribution=True):
+        """Mean number of different chars per site.
 
-        Constant sites are ignored.  Gaps and ambiguities are ignored.
+        Constant sites can optionally be ignored.  Gaps and ambiguities are ignored.
 
         This is in pure Python, and can be used for Alignments with one
         part.  It is also implemented in c in the Data class, which allows
@@ -2111,15 +2111,20 @@ if True:
                 if v:
                     hitsAtThisPos += 1
                     counters[k] = 0
-            if hitsAtThisPos > 1:   # ignore constant sites
+            if includeConstantSites:
                 hits += hitsAtThisPos
                 nPos += 1
+            else:
+                if hitsAtThisPos > 1:   # ignore constant sites
+                    hits += hitsAtThisPos
+                    nPos += 1
             if showDistribution:
                 if distro.has_key(hitsAtThisPos):
                     distro[hitsAtThisPos] += 1
                 else:
                     distro[hitsAtThisPos] = 1
             # print pos, hits
+        print(hits, nPos)
         if showDistribution:
             kk = distro.keys()
             kk.sort()

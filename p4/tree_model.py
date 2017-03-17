@@ -303,7 +303,6 @@ if True:
             self.deleteCStuff()
         mt = Comp()
         mt.partNum = partNum
-        #mt.dim = self.data.parts[partNum].dim
         mt.free = free
 
         # spec
@@ -328,12 +327,9 @@ if True:
         # assign val
         dim = self.model.parts[partNum].dim
         if spec == 'equal':
-            oneComp = 1.0 / dim
-            mt.val = []
-            for i in range(dim):
-                mt.val.append(oneComp)
+            mt.val = numpy.ones(dim, float) / dim
         elif spec == 'empirical':
-            mt.val = None
+            assert mt.val is None
         elif spec == 'specified':
             if not val:
                 gm.append("Specified comp, but no val.")
@@ -900,6 +896,9 @@ if True:
         for pNum in range(self.model.nParts):
             mp = self.model.parts[pNum]
 
+            if mp.ndch2:
+                continue
+
             # First do comps
             if mp.nComps == 1:
                 for n in self.nodes:
@@ -1074,6 +1073,8 @@ if True:
             # First do comps
             if mp.nComps == 1:
                 pass
+            elif mp.ndch2:
+                print("%16s" % "ndch2 is on")
             elif mp.nComps > 1:
                 for mtNum in range(mp.nComps):
                     # print "  comp %i nNodes=%i" % (mtNum,
@@ -1228,6 +1229,11 @@ if True:
                 complaints.append('    No pInvar in part %s' % pNum)
                 partIsBad = 1
 
+            if mp.ndch2:
+                if mp.nComps != len(self.nodes):
+                    complaints.append('Part %i, ndch2 needs a comp for each node' % pNum)
+                    partIsBad = 1
+
             if partIsBad:
                 gm.append("  (Indices are zero-based.)")
                 gm += complaints
@@ -1236,7 +1242,7 @@ if True:
             # Check if comp values have been set.
             for mt in mp.comps:
                 if mt.spec != 'empirical' or not resetEmpiricalComps:
-                    if not mt.val:
+                    if mt.val is None:
                         complaints.append(
                             '    No composition val in part %s' % pNum)
                         partIsBad = 1
@@ -1506,28 +1512,26 @@ if True:
                             gm.append(
                                 "Maybe you need to yourTree.setModelThing() or ")
                             gm.append("yourTree.setModelThingsRandomly()")
-                            gm.append(
-                                "Or maybe its an extra comp in an RJ MCMC? -- If so, fix")
-                            gm.append("the comp val to eg 'equal'.")
+                            #gm.append(
+                            #    "Or maybe its an extra comp in an RJ MCMC? -- If so, fix")
+                            #gm.append("the comp val to eg 'equal'.")
                             raise P4Error(gm)
 
-                    c.val = self.data.parts[mp.num].composition(
-                        seqNums)  # dim long, not dim - 1
+                    # dim long, not dim - 1
+                    c.val = self.data.parts[mp.num].composition(seqNums)  
                     # print "  seqNums=%s, c.val=%s" % (seqNums, c.val)
 
                     needsNormalizing = 0
-                    theSum = 0.0
                     for i in range(len(c.val)):
                         if c.val[i] < var.PIVEC_MIN:
-                            c.val[
-                                i] = var.PIVEC_MIN + (0.2 * var.PIVEC_MIN) + (var.PIVEC_MIN * random.random())
+                            c.val[i] = var.PIVEC_MIN + (0.2 * var.PIVEC_MIN) + (var.PIVEC_MIN * random.random())
                             needsNormalizing = 1
-                        theSum += c.val[i]
+                    theSum = numpy.sum(c.val)
                     # print "setEmpiricalComps().  Got theSum = %i" % theSum
 
                     # We may have asked for the comp of an empty sequence,
                     # in which case val is all zeros.  Check for that.
-                    if abs(1.0 - theSum) > 0.1:
+                    if math.fabs(1.0 - theSum) > 0.1:
                         gm.append(
                             "Something is very wrong here.  Empirical comp vals should sum to 1.0")
                         gm.append("The sum of the comp vals for part %s, comp %s, is %s" % (
@@ -1537,8 +1541,7 @@ if True:
                         raise P4Error(gm)
 
                     if needsNormalizing or abs(theSum - 1.0) > 1e-16:
-                        for i in range(len(c.val)):
-                            c.val[i] /= theSum
+                        c.val /= theSum
 
     # def __del__(self, freeTree=pf.p4_freeTree, freeNode=pf.p4_freeNode):
     # def __del__(self, freeTree=pf.p4_freeTree, dp_freeTree = pf.dp_freeTree, mysys=sys):
@@ -1569,8 +1572,11 @@ class Gdasrv(object):
         self.freqs = None
         self.rates = None
         self.nGammaCat = None
-        self.c = None    # a p4_gdasrvStruct, if it exists.
+        self.c = None    # a p4_gdasrvStruct, if it exists.  It is used in calcRates, below.
         self.nNodes = 0
+
+    def _getVal(self):
+        return self._val
 
     def _setVal(self, theVal):
         if theVal < 1.e-16:
@@ -1581,20 +1587,25 @@ class Gdasrv(object):
             raise P4Error(gm)
         self._val[0] = theVal
         self.calcRates()
+    
+    def _delVal(self):
+        gm = ["Don't/Can't delete this Gdasrv property."]
+        raise P4Error(gm)
 
-    val = property(lambda self: self._val, _setVal)
+
+    val = property(_getVal, _setVal, _delVal)
 
     def calcRates(self):
         # Use either the p4_gdasrvStruct, or just use the NumPy
         # array vals (np = NumPy).
-        # print "self.c = %s" % self.c
-        if self.c:  # this week, this is not used
+        # print("self.c = %s" % self.c)
+        if self.c:
             pf.gdasrvCalcRates(self.c)
         else:
             # this week, this is the one that is used
             pf.gdasrvCalcRates_np(
                 self.nGammaCat, self._val[0], self.freqs, self.rates)
-        # print 'xxx self.rates = %s, val=%s' % (self.rates, self._val[0])
+        # print('xxx self.rates = %s, val=%s' % (self.rates, self._val[0]))
 
 
 class Comp(object):
@@ -1605,10 +1616,29 @@ class Comp(object):
         self.free = None
         self.spec = None
         self.symbol = None
-        self.val = None
+        self._val = None
         self.nNodes = 0
-        self.rj_isInPool = False
-        self.rj_f = 0.0
+        #self.rj_isInPool = False
+        #self.rj_f = 0.0
+
+    def _getVal(self):
+        return self._val
+
+    def _setVal(self, theVal):
+        if self._val is None:
+            self._val = numpy.array(theVal)
+        else:
+            #print("Resetting comp val.")
+            assert len(self._val) == len(theVal)
+            for i in range(len(theVal)):
+                self._val[i] = theVal[i]
+
+    def _delVal(self):
+        gm = ["Don't/Can't delete this Comp property."]
+        raise P4Error(gm)
+
+
+    val = property(_getVal, _setVal, _delVal)
 
 
 class PInvar(object):

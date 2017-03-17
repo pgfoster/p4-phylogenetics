@@ -223,6 +223,7 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
     p4_bigQAndEig  *aQE;
 
     //printf("p4_setPramsPart here.\n");
+
     mp = aTree->model->parts[pNum];
     if(mp->nCat > 1) {
         // Set gdasrv->rates using Yang's DiscreteGamma function.
@@ -421,7 +422,8 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
         //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+                //if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+                if(mp->comps[i]->val[j] < PIVEC_MIN) {               // Was half PIVEC_MIN.  Why?
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }

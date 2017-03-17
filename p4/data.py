@@ -748,9 +748,9 @@ class Data:
         return d
 
     def meanNCharsPerSite(self):
-        """Mean number of different characters per site, of variable sites only.
+        """Mean number of different characters per site
 
-        Constant sites are ignored.  Ambiguities and gaps are ignored.
+        Constant sites are not ignored.  Ambiguities and gaps are ignored.
 
         This is implemented in C, allowing multiple parts.  It is also
         implemented in pure Python in the Alignment class, for single
