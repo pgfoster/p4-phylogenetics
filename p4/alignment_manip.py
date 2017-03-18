@@ -2124,7 +2124,7 @@ if True:
                 else:
                     distro[hitsAtThisPos] = 1
             # print pos, hits
-        print(hits, nPos)
+        #print(hits, nPos)
         if showDistribution:
             kk = distro.keys()
             kk.sort()
