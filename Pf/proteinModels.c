@@ -2258,7 +2258,7 @@ void gcpREVRMatrix(double **r)
 }
 
 //Li et al 2014 Syst Biol
-void stmtREV(double **r)
+void stmtREVRMatrix(double **r)
 {
      r[ 0][ 0] =   0.0000;  r[ 0][ 1] =   0.1159;  r[ 0][ 2] =   0.2459; 
      r[ 0][ 3] =   0.9579;  r[ 0][ 4] =   0.2327;  r[ 0][ 5] =   0.3309; 
