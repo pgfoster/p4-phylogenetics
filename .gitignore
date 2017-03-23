@@ -23,7 +23,7 @@ build/
 # *.egg-info/
 # .installed.cfg
 # *.egg
-.swp
+*.swp
 
 
 # Sphinx documentation

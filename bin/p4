@@ -37,7 +37,9 @@ argvAfterDoubleDash = []
 # back to being an empty string, the way it usually is when you run interactive
 # python.
 
-sys.path[0] = ''  
+# Cymon seems to think this is needed to pull in the correct libraries:
+# sys.path = [os.path.dirname(sys.path[0])] + sys.path
+sys.path[0] = ''
 
 if len(sys.argv) > 1:  # Is there stuff on the command line?
     for f in sys.argv[1:]:

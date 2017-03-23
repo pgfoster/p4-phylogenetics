@@ -3850,27 +3850,29 @@ class Mcmc(object):
             rd = {}
             for i in range(len(self.proposals)):
                 p = self.proposals[i]
-                rd[p.name] = []
-                rd[p.name].append(self.proposals[i].nProposals[0])
-                rd[p.name].append(probAttained[i])
-                if nAttained[i]:
-                    rd[p.name].append((100.0 * float(nAccepted[i]) / float(nAttained[i])))
-                else:
-                    rd[p.name].append(None)
-                if p.tuning == None:
-                    rd[p.name].append(None)
-                elif p.tuning < 2.0:
-                    rd[p.name].append(p.tuning)
-                else:
-                    rd[p.name].append(p.tuning)
                 if p.pNum != -1:
-                    rd[p.name].append(p.pNum)
+                    if p.mtNum != -1:
+                            pname = p.name + "_%i_%i" % (p.pNum, p.mtNum)
+                    else:
+                        pname = p.name + "_%i" % p.pNum
                 else:
-                    rd[p.name].append(None)
-                if p.mtNum != -1:
-                    rd[p.name].append(p.mtNum)
+                    if p.mtNum != -1:
+                        pname = p.name + "_%i" % p.mtNum
+                    else:
+                        pname = p.name
+                rd[pname] = []
+                rd[pname].append(self.proposals[i].nProposals[0])
+                rd[pname].append(probAttained[i])
+                if nAttained[i]:
+                    rd[pname].append((100.0 * float(nAccepted[i]) / float(nAttained[i])))
                 else:
-                    rd[p.name].append(None)
+                    rd[pname].append(None)
+                if p.tuning == None:
+                    rd[pname].append(None)
+                elif p.tuning < 2.0:
+                    rd[pname].append(p.tuning)
+                else:
+                    rd[pname].append(p.tuning)
             return rd
 
     def writeProposalIntendedProbs(self):

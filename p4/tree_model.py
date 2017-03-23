@@ -535,14 +535,19 @@ if True:
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
-        # Cymon was here!  gcpREV (green chloroplast plant REV seeing how
-        # is estimated from green plant chloroplasts alone rather than all
-        # chloroplasts).
         elif spec == 'gcpREV':
             mt.val = [0.079510, 0.056001, 0.040459, 0.033220, 0.009051,
                       0.037505, 0.049675, 0.080233, 0.021880, 0.080496,
                       0.107512, 0.049324, 0.020776, 0.047731, 0.039916,
                       0.073820, 0.053615, 0.016705, 0.030790, 0.071781]
+            theSum = sum(mt.val)
+            for i in range(len(mt.val)):
+                mt.val[i] /= theSum
+        elif spec == 'stmtREV':
+            mt.val = [0.046181, 0.053408, 0.036197, 0.023332, 0.023417,
+                      0.039040, 0.034128, 0.038916, 0.016464, 0.089153,
+                      0.161731, 0.055134, 0.023326, 0.091125, 0.034471,
+                      0.077108, 0.041860, 0.020078, 0.030542, 0.064385]
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
