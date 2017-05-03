@@ -1214,7 +1214,7 @@ if True:
                 d.matrix[j][i] = fDiffs
         return d
 
-    def recodeDayhoff(self, firstLetter=False):
+    def recodeDayhoff(self, firstLetter=False, ambigsBecomeGaps=True):
         """Recode protein data into Dayhoff groups, in place.
 
         1.  c
@@ -1231,6 +1231,8 @@ if True:
         If arg *firstLetter* is set, then the character is recoded as the
         first letter of its group rather than as a number.  Eg k would be
         recoded as h rather than as 4.
+
+        If ambigsBecomeGaps is True, 'b', 'z', and 'j' are coded as gaps.
         """
 
         gm = ['Alignment.recodeDayhoff()']
@@ -1277,9 +1279,16 @@ if True:
                     pass  # They stay as they are.
                 elif c == 'x':
                     s.sequence[i] = '-'
+                elif c in 'bzj':
+                    if ambigsBecomeGaps:
+                        s.sequence[i] = '-'
+                    else:
+                        gm.append("Ambiguity character '%s' is not handled." % c)
+                        gm.append("Perhaps set 'ambigsBecomeGaps' as True.")
+                        raise P4Error(gm)
                 else:
-                    # Maybe this should raise a P4Error?
-                    print("skipping character '%s'" % c)
+                    gm.append("Unknown character state '%s'" % c)
+                    raise P4Error(gm)
             s.sequence = string.join(s.sequence, '')
         self.dataType = 'standard'
         self.equates = {}
