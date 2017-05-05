@@ -22,6 +22,7 @@ from p4.constraints import Constraints
 from p4.tree import Tree
 import datetime
 import itertools
+from scipy.optimize import minimize
 
 try:
     import bitarray
@@ -262,6 +263,7 @@ class STChain(object):
             gm.append("bad propTree.spaQ value %f" % self.propTree.spaQ)
             raise P4Error(gm)
 
+        
         for n in self.propTree.iterInternalsPostOrder():
             if n == self.propTree.root:
                 break
@@ -1613,7 +1615,9 @@ class STMcmc(object):
     def __init__(self, inTrees, bigT=None, modelName='SR2008_rf_aZ',
                  beta=1.0, spaQ=0.5, stRFCalc='purePython1',
                  nChains=1, runNum=0, sampleInterval=100,
-                 checkPointInterval=None, useSplitSupport=False):
+                 checkPointInterval=None, useSplitSupport=False, verbose=True,
+                 checkForOutputFiles=True):
+
         gm = ['STMcmc.__init__()']
 
         assert inTrees
@@ -1693,42 +1697,39 @@ class STMcmc(object):
             raise P4Error(gm)
         self.runNum = runNum
 
-        # Check that we are not going to over-write good stuff
-        ff = os.listdir(os.getcwd())
-        hasPickle = False
-        for fName in ff:
-            if fName.startswith("mcmc_checkPoint_%i." % self.runNum):
-                hasPickle = True
-                break
-        if hasPickle:
-            gm.append("runNum is set to %i" % self.runNum)
-            gm.append(
-                "There is at least one mcmc_checkPoint_%i.xxx file in this directory." % self.runNum)
-            gm.append(
-                "This is a new STMcmc, and I am refusing to over-write exisiting files.")
-            gm.append(
-                "Maybe you want to re-start from the latest mcmc_checkPoint_%i file?" % self.runNum)
-            gm.append(
-                "Otherwise, get rid of the existing mcmc_xxx_%i.xxx files and start again." % self.runNum)
-            raise P4Error(gm)
+        if checkForOutputFiles:
+            # Check that we are not going to over-write good stuff
+            ff = os.listdir(os.getcwd())
+            hasPickle = False
+            for fName in ff:
+                if fName.startswith("mcmc_checkPoint_%i." % self.runNum):
+                    hasPickle = True
+                    break
+            if hasPickle:
+                gm.append("runNum is set to %i" % self.runNum)
+                gm.append("There is at least one mcmc_checkPoint_%i.xxx file in this directory." % self.runNum)
+                gm.append("This is a new STMcmc, and I am refusing to over-write exisiting files.")
+                gm.append("Maybe you want to re-start from the latest mcmc_checkPoint_%i file?" % self.runNum)
+                gm.append("Otherwise, get rid of the existing mcmc_xxx_%i.xxx files and start again." % self.runNum)
+                raise P4Error(gm)
 
-        if var.strictRunNumberChecking:
-            # We want to start runs with number 0, so if runNum is more than
-            # that, check that there are other runs.
-            if self.runNum > 0:
-                for runNum2 in range(self.runNum):
-                    hasTrees = False
-                    for fName in ff:
-                        if fName.startswith("mcmc_trees_%i" % runNum2):
-                            hasTrees = True
-                            break
-                    if not hasTrees:
-                        gm.append("runNum is set to %i" % self.runNum)
-                        gm.append("runNums should go from zero up.")
-                        gm.append("There are no mcmc_trees_%i.nex files to show that run %i has been done." % (
-                            runNum2, runNum2))
-                        gm.append("Set the runNum to that, first.")
-                        raise P4Error(gm)
+            if var.strictRunNumberChecking:
+                # We want to start runs with number 0, so if runNum is more than
+                # that, check that there are other runs.
+                if self.runNum > 0:
+                    for runNum2 in range(self.runNum):
+                        hasTrees = False
+                        for fName in ff:
+                            if fName.startswith("mcmc_trees_%i" % runNum2):
+                                hasTrees = True
+                                break
+                        if not hasTrees:
+                            gm.append("runNum is set to %i" % self.runNum)
+                            gm.append("runNums should go from zero up.")
+                            gm.append("There are no mcmc_trees_%i.nex files to show that run %i has been done." % (
+                                runNum2, runNum2))
+                            gm.append("Set the runNum to that, first.")
+                            raise P4Error(gm)
 
         self.sampleInterval = sampleInterval
         self.checkPointInterval = checkPointInterval
@@ -1952,8 +1953,8 @@ class STMcmc(object):
                     raise P4Error(gm)
 
         if self.modelName in ['QPA']:
-            self.tree.taxBits = [1 << i for i in range(self.tree.nTax)]
             t = self.tree
+            t.taxBits = [1 << i for i in range(t.nTax)]
             for n in t.iterPostOrder():
                 if n == t.root:
                     break
@@ -2026,19 +2027,20 @@ class STMcmc(object):
         self.heatingHackTemperature = 5.0
         #self.heatingHackProposalNames = ['nni', 'spr']
 
-        print("Initializing STMcmc")
-        print("%-16s: %s" % ('modelName', modelName))
-        if self.modelName.startswith("SR2008"):
-            print("%-16s: %s" % ('stRFCalc', self.stRFCalc))
-        if self.modelName in ["SPA", "QPA"]:
-            print("%-16s: %s" % ('useSplitSupport', self.useSplitSupport))
-        print("%-16s: %s" % ('inTrees', len(self.trees)))
-        print("%-16s: %s" % ('nTax', self.nTax))
-        if self.nChains == 1:
-            print("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
-        elif self.nChains > 1:
-            print("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
-            # Don't say the temperature here, as it will likely be re-set later.
+        if verbose:
+            print("Initializing STMcmc")
+            print("%-16s: %s" % ('modelName', modelName))
+            if self.modelName.startswith("SR2008"):
+                print("%-16s: %s" % ('stRFCalc', self.stRFCalc))
+            if self.modelName in ["SPA", "QPA"]:
+                print("%-16s: %s" % ('useSplitSupport', self.useSplitSupport))
+            print("%-16s: %s" % ('inTrees', len(self.trees)))
+            print("%-16s: %s" % ('nTax', self.nTax))
+            if self.nChains == 1:
+                print("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
+            elif self.nChains > 1:
+                print("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
+                # Don't say the temperature here, as it will likely be re-set later.
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
@@ -2180,15 +2182,16 @@ class STMcmc(object):
         # # Tabulate topology changes by temperature
         if self.nChains > 1:
             for propName in ['nni', 'spr']:
-                print("'%s' proposal-- topology changes by temperature (chainTemp is %s)" % (propName, self.tunings.chainTemp))
                 p = self.proposalsHash.get(propName)
-                print("%s tempNum   nProps nAccepts percent" % spacer)
-                for tNum in range(self.nChains):
-                    print("%s" % spacer, end=' ')
-                    print("%4i " % tNum, end=' ')
-                    print("%9i" % p.nProposals[tNum], end=' ')
-                    print("%8i" % p.nAcceptances[tNum], end=' ')
-                    print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])))
+                if p:
+                    print("'%s' proposal-- topology changes by temperature (chainTemp is %s)" % (propName, self.tunings.chainTemp))
+                    print("%s tempNum   nProps nAccepts percent" % spacer)
+                    for tNum in range(self.nChains):
+                        print("%s" % spacer, end=' ')
+                        print("%4i " % tNum, end=' ')
+                        print("%9i" % p.nProposals[tNum], end=' ')
+                        print("%8i" % p.nAcceptances[tNum], end=' ')
+                        print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])))
 
         #     # Check for aborts.
         #     p = self.proposalsHash.get(propName)
@@ -3113,3 +3116,143 @@ class STMcmcCheckPointReader(object):
     def writeProposalProbs(self):
         for m in self.mm:
             m.writeProposalProbs()
+
+
+class QpaML(object):
+    """Uses STMcmc to do likelihood calcs and Q optimization."""
+    def __init__(self, inTrees, bigT):
+        assert inTrees
+        ttDupes = []
+        for t in inTrees:
+            ttDupes.append(t.dupe())
+        
+
+        assert bigT
+        bigTDupe = bigT.dupe()
+        if bigTDupe.taxNames:
+            pass
+        else:
+            raise P4Error('The bigT needs taxNames')
+
+        stm = STMcmc(ttDupes, bigT=bigTDupe, modelName='QPA',
+                     beta=1.0, spaQ=0.5, stRFCalc='purePython1',
+                     nChains=1, runNum=0, sampleInterval=100,
+                     checkPointInterval=None, useSplitSupport=False, verbose=False,
+                     checkForOutputFiles=False)
+        self.ch = STChain(stm)
+
+
+
+    def setSuperTree(self, st):
+        assert self.ch.propTree.taxNames
+        st = st.dupe()
+        if st.taxNames:
+            assert st.taxNames == self.ch.propTree.taxNames
+        else:
+            st.taxNames = self.ch.propTree.taxNames
+        st.setPreAndPostOrder()
+        #st.draw()
+
+        st.taxBits = [1 << i for i in range(st.nTax)]
+        for n in st.iterPostOrder():
+            if n == st.root:
+                break
+            if n.isLeaf:
+                spot = st.taxNames.index(n.name)
+                n.stSplitKey = 1 << spot
+            else:
+                n.stSplitKey = n.leftChild.stSplitKey
+                p = n.leftChild.sibling
+                while p:
+                    n.stSplitKey |= p.stSplitKey    # "or", in-place
+                    p = p.sibling
+        st.skk = [n.stSplitKey for n in st.iterInternalsNoRoot()]
+        st.qSet = set()
+        for sk in st.skk:
+            ups = [txBit for txBit in st.taxBits if (sk & txBit)]
+            downs = [txBit for txBit in st.taxBits if not (sk & txBit)]
+            for down in itertools.combinations(downs, 2):
+                assert down[0] < down[1]   # probably not needed
+                for up in itertools.combinations(ups, 2):
+                    assert up[0] < up[1]  # probably not needed
+                    if down[0] < up[0]:
+                        st.qSet.add(down + up)
+                    else:
+                        st.qSet.add(up + down)
+        # print st.qSet
+        st.nQuartets = len(st.qSet)
+
+        self.ch.propTree = st
+        
+
+                
+    def calcP(self, Q):
+        if Q >= 1.:
+            return 10000000.
+        if Q <= 0.:
+            return 10000000.
+        self.ch.propTree.spaQ = Q
+        self.ch.getTreeLogLike_qpa_slow()
+        return -self.ch.propTree.logLike
+
+
+    def optimizeQ(self, x0=0.3):
+        res = minimize(self.calcP, x0, method='Nelder-Mead')
+        return (res.x, res.fun)
+
+
+
+class SpaML(object):
+    """Using STMcmc."""
+
+    def __init__(self, inTrees, bigT):
+        assert inTrees
+
+        ttDupes = []
+        for t in inTrees:
+            ttDupes.append(t.dupe())
+        
+
+        assert bigT
+        bigTDupe = bigT.dupe()
+        if bigTDupe.taxNames:
+            pass
+        else:
+            raise P4Error('The bigT needs taxNames')
+
+        stm = STMcmc(ttDupes, bigT=bigTDupe, modelName='SPA',
+                     beta=1.0, spaQ=0.5, stRFCalc='purePython1',
+                     nChains=1, runNum=0, sampleInterval=100,
+                     checkPointInterval=None, useSplitSupport=False, verbose=False, 
+                     checkForOutputFiles=False)
+        self.ch = STChain(stm)
+
+
+    def setSuperTree(self, st):
+        assert self.ch.propTree.taxNames
+        st = st.dupe()
+        if st.taxNames:
+            assert st.taxNames == self.ch.propTree.taxNames
+        else:
+            st.taxNames = self.ch.propTree.taxNames
+        st.setPreAndPostOrder()
+
+        self.ch.propTree = st
+        self.ch.setupBitarrayCalcs()
+        
+                
+    def calcP(self, Q):
+        if Q >= 1.:
+            return 10000000.
+        if Q <= 0.:
+            return 10000000.
+        self.ch.propTree.spaQ = Q
+        self.ch.getTreeLogLike_spa_bitarray()
+        return -self.ch.propTree.logLike
+
+
+    def optimizeQ(self, x0=0.3):
+        res = minimize(self.calcP, x0, method='Nelder-Mead')
+        return (res.x, res.fun)
+
+

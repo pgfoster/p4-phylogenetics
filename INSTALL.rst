@@ -15,7 +15,7 @@ libraries, headers, and so on.
 
 You need Xcode, available from the Apple App Store.
 
-You need ``numpy``, a python module, and the ``gsl`` library (Gnu
+You need ``scipy``, a python module, and the ``gsl`` library (Gnu
 Scientific Library).  For these, `Homebrew <http://brew.sh>`_ is recommended.
 
 
@@ -25,10 +25,10 @@ Scientific Library).  For these, `Homebrew <http://brew.sh>`_ is recommended.
 If the installation process complains about lack of Python.h, then you
 need what on Ubuntu would be called 'python-dev'. 
 
-I have recently installed p4 Ubuntu 14.04, and had to::
+I have recently installed p4 on Ubuntu 16.04, and had to::
 
-    sudo apt-get install python-numpy
-    sudo apt-get install libgsl0-dev
+    sudo apt-get install python-scipy
+    sudo apt-get install libgsl-dev
     sudo apt-get install python-dev
 
 And if you want to use the GUI tree-drawing::

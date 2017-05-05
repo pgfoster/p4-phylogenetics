@@ -3084,8 +3084,8 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
     pramsdict = {}
     if pramsProfile:
         if not makeDict:
-            print("%s   %16s         mean      variance       ess  " % (spacer1, ' '))
-            print("%s   %16s       --------    --------    --------" % (spacer1, ' '))
+            print("%s   %26s         mean      variance       ess  " % (spacer1, ' '))
+            print("%s   %26s       --------    --------    --------" % (spacer1, ' '))
         pramCounter = 0
         for partNum in range(len(pramsProfile)):
             if len(pramsProfile) > 1:
@@ -3099,7 +3099,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
                     pramCounts = pramsProfile[partNum][pramNum][1]
                     for p in range(pramCounts):
                         if not makeDict:
-                            print("%s%3i %12s[%2i]   " % (spacer1, pramCounter, pString, p), end=' ')
+                            print("%s%3i %22s[%2i]   " % (spacer1, pramCounter, pString, p), end=' ')
                         d = numpy.array(numsList[pramCounter], numpy.float)
                         m, v = gsl_meanVariance(d)
                         ess = effectiveSampleSize(d, m)
