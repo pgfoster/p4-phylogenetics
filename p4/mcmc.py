@@ -1939,7 +1939,7 @@ class Mcmc(object):
             self.tree.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
         self.treeFile.write('  ;\n')
         # write the models comment
-        if self.tree.model.isHet:
+        if self.tree.model.isHet and not self.tree.model.parts[0].ndch2:
             self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
             for pNum in range(self.tree.model.nParts):
                 self.treeFile.write(
@@ -2384,10 +2384,16 @@ class Mcmc(object):
 
                     treeFile = open(self.treeFileName, 'a')
                     treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
-                    self.chains[coldChainNum].curTree.writeNewick(treeFile,
-                                                                  withTranslation=1,
-                                                                  translationHash=self.translationHash,
-                                                                  doMcmcCommandComments=self.tree.model.isHet)
+                    if self.tree.model.parts[0].ndch2:     # and therefore all model parts
+                        self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                                                                      withTranslation=1,
+                                                                      translationHash=self.translationHash,
+                                                                      doMcmcCommandComments=False)
+                    else:
+                        self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                                                                      withTranslation=1,
+                                                                      translationHash=self.translationHash,
+                                                                      doMcmcCommandComments=self.tree.model.isHet)
                     treeFile.close()
 
                 if 0 and rjCompPartNums:  # we made rjCompPartNums above
