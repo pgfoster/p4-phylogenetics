@@ -3024,6 +3024,7 @@ class Mcmc(object):
             # border, so we use 'safe' limits.
             safeLower = 0.15
             safeUpper = 0.60
+            safeMultiUpper = 0.40  # For allBrLens, compDir, allCompsDir, 
             # It appears that branch length lower limits should be
             # very low.  Say 5%.
             brLenLower = 0.05
@@ -3073,7 +3074,7 @@ class Mcmc(object):
                     if verbose:
                         print("tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.allBrLens))
                     needsToBeTuned = True
-                elif accepted > safeUpper:
+                elif accepted > safeMultiUpper:
                     if verbose:
                         print(sig2 % "too big", end=' ')
                     oldTuning = self.tunings.allBrLens
@@ -3259,7 +3260,7 @@ class Mcmc(object):
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
-                        elif accepted > safeUpper:
+                        elif accepted > safeMultiUpper:
                             if verbose:
                                 print(sig2 % "too big")
                             isTooBig += 1
@@ -3298,7 +3299,7 @@ class Mcmc(object):
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
-                        elif accepted > safeUpper:
+                        elif accepted > safeMultiUpper:
                             if verbose:
                                 print(sig2 % "too big")
                             isTooBig += 1
@@ -3337,7 +3338,7 @@ class Mcmc(object):
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
-                        elif accepted > safeUpper:
+                        elif accepted > safeMultiUpper:
                             if verbose:
                                 print(sig2 % "too big")
                             isTooBig += 1
@@ -3376,7 +3377,7 @@ class Mcmc(object):
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
-                        elif accepted > safeUpper:
+                        elif accepted > safeMultiUpper:
                             if verbose:
                                 print(sig2 % "too big")
                             isTooBig += 1
@@ -3514,7 +3515,7 @@ class Mcmc(object):
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
-                        elif accepted > safeUpper:
+                        elif accepted > safeMultiUpper:
                             if verbose:
                                 print(sig2 % "too big")
                             isTooBig += 1
@@ -3650,7 +3651,7 @@ class Mcmc(object):
                             print(sig3 % (' ', "-> halve it to %.3f" % self.tunings.parts[pNum].pInvar))
                         needsToBeTuned = True
 
-            if 0 and self.nChains > 1:
+            if 1 and self.nChains > 1:
                 # Try to autoTune the swaps, by adjusting the
                 # chainTemp.  Arbitrary rules.  If the coldest -
                 # hottest is less than 1%, and the mean of the top
@@ -3659,6 +3660,11 @@ class Mcmc(object):
                 # 70% then the chainTemp is too low.  The swaps are in
                 # self.swapMatrix[][], where the upper triangle is
                 # nProposed and the lower triangle is nAccepted.
+
+                # New arbitrary rules, to encourage a high temperature.  I think
+                # that the most important number is between the cold chain and
+                # the next chain, and it should be low.  I think 1-10% should be
+                # OK.
 
                 # First check that there were enough proposals to make a valid
                 # calculation.
@@ -3675,50 +3681,84 @@ class Mcmc(object):
                         atLeast, tooFews))
                     raise P4Error(gm)
 
-                diagonal = []
-                for i in range(self.nChains)[:-1]:
-                    j = i + 1
-                    accepted = float(
-                        self.swapMatrix[j][i]) / float(self.swapMatrix[i][j])
-                    diagonal.append(accepted)
-                # print diagonal
-                meanDiagonal = p4.func.mean(diagonal)
+                
+                # diagonal = []
+                # for i in range(self.nChains)[:-1]:
+                #     j = i + 1
+                #     accepted = float(
+                #         self.swapMatrix[j][i]) / float(self.swapMatrix[i][j])
+                #     diagonal.append(accepted)
+                # print(diagonal)
+                # meanDiagonal = p4.func.mean(diagonal)
+                # isOK = True
+                # if meanDiagonal > 0.7:  # chainTemp is too low
+                #     isOK = False
+                #     if verbose:
+                #         self.writeSwapMatrix()
+                #         print("    Current chainTemp is %5.3f; too low" % self.tunings.chainTemp)
+                #     self.tunings.chainTemp *= 1.3333
+                #     if verbose:
+                #         print("    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal)
+                #         print("      -> raising the chainTemp by one third, to %5.3f" % self.tunings.chainTemp)
+                #     needsToBeTuned = True
+                # elif meanDiagonal < 0.5:  # maybe too high
+                #     accepted = float(
+                #         self.swapMatrix[self.nChains - 1][0]) / float(self.swapMatrix[0][self.nChains - 1])
+                #     # print "coldest minus hottest acceptance is %5.3f" %
+                #     # accepted
+                #     if accepted < 0.01:
+                #         isOK = False
+                #         if verbose:
+                #             self.writeSwapMatrix()
+                #             print("    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp)
+                #             print("    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal)
+                #         if meanDiagonal > 0.25:
+                #             self.tunings.chainTemp /= 1.3333
+                #             if verbose:
+                #                 print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp)
+                #         elif meanDiagonal > 0.1:
+                #             self.tunings.chainTemp /= 2.0
+                #             if verbose:
+                #                 print("      -> lowering the chainTemp by half, to %5.3f" % self.tunings.chainTemp)
+                #         else:
+                #             self.tunings.chainTemp /= 3.0
+                #             if verbose:
+                #                 print("      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp)
+
+                #         needsToBeTuned = True
+                myAccepted = float(self.swapMatrix[1][0]) / float(self.swapMatrix[0][1])
                 isOK = True
-                if meanDiagonal > 0.7:  # chainTemp is too low
+                if myAccepted > 0.1:   # temperature too low
                     isOK = False
                     if verbose:
                         self.writeSwapMatrix()
                         print("    Current chainTemp is %5.3f; too low" % self.tunings.chainTemp)
                     self.tunings.chainTemp *= 1.3333
                     if verbose:
-                        print("    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal)
+                        print("    Acceptance of chain 0 with chain 1 is is %5.3f" % myAccepted)
                         print("      -> raising the chainTemp by one third, to %5.3f" % self.tunings.chainTemp)
                     needsToBeTuned = True
-                elif meanDiagonal < 0.5:  # maybe too high
-                    accepted = float(
-                        self.swapMatrix[self.nChains - 1][0]) / float(self.swapMatrix[0][self.nChains - 1])
-                    # print "coldest minus hottest acceptance is %5.3f" %
-                    # accepted
-                    if accepted < 0.01:
-                        isOK = False
+                elif myAccepted < 0.01:  # temperature too high
+                    isOK = False
+                    if verbose:
+                        self.writeSwapMatrix()
+                        print("    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp)
+                        print("    Acceptance of chain 0 with chain 1 is %5.3f" % myAccepted)
+                    if myAccepted > 0.005:
+                        self.tunings.chainTemp /= 1.3333
                         if verbose:
-                            self.writeSwapMatrix()
-                            print("    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp)
-                            print("    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal)
-                        if meanDiagonal > 0.25:
-                            self.tunings.chainTemp /= 1.3333
-                            if verbose:
-                                print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp)
-                        elif meanDiagonal > 0.1:
-                            self.tunings.chainTemp /= 2.0
-                            if verbose:
-                                print("      -> lowering the chainTemp by half, to %5.3f" % self.tunings.chainTemp)
-                        else:
-                            self.tunings.chainTemp /= 3.0
-                            if verbose:
-                                print("      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp)
+                            print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp)
+                    elif myAccepted > 0.001:
+                        self.tunings.chainTemp /= 2.0
+                        if verbose:
+                            print("      -> lowering the chainTemp by half, to %5.3f" % self.tunings.chainTemp)
+                    else:
+                        self.tunings.chainTemp /= 3.0
+                        if verbose:
+                            print("      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp)
 
-                        needsToBeTuned = True
+                    needsToBeTuned = True
+                        
                 if isOK:
                     if verbose:
                         print("    Chain temp appears to be ok.")
