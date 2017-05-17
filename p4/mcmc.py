@@ -1938,17 +1938,19 @@ class Mcmc(object):
         self.treeFile.write('    %3i %s\n' % (
             self.tree.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
         self.treeFile.write('  ;\n')
+
         # write the models comment
-        if self.tree.model.isHet and not self.tree.model.parts[0].ndch2:
-            self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
-            for pNum in range(self.tree.model.nParts):
-                self.treeFile.write(
-                    ' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
-                self.treeFile.write(
-                    ' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
-                self.treeFile.write(
-                    ' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
-            self.treeFile.write(']\n')
+        if self.tree.model.isHet:
+            if (not self.tree.model.parts[0].ndch2) or (self.tree.model.parts[0].ndch2 and self.tree.model.parts[0].ndch2_writeComps):
+                self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
+                for pNum in range(self.tree.model.nParts):
+                    self.treeFile.write(
+                        ' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
+                    self.treeFile.write(
+                        ' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
+                    self.treeFile.write(
+                        ' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
+                self.treeFile.write(']\n')
         self.treeFile.write('  [Tree numbers are gen+1]\n')
         self.treeFile.close()
 
@@ -2385,10 +2387,17 @@ class Mcmc(object):
                     treeFile = open(self.treeFileName, 'a')
                     treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
                     if self.tree.model.parts[0].ndch2:     # and therefore all model parts
-                        self.chains[coldChainNum].curTree.writeNewick(treeFile,
-                                                                      withTranslation=1,
-                                                                      translationHash=self.translationHash,
-                                                                      doMcmcCommandComments=False)
+                        if self.tree.model.parts[0].ndch2_writeComps:
+                            self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                                                                          withTranslation=1,
+                                                                          translationHash=self.translationHash,
+                                                                          doMcmcCommandComments=True)
+                        else:
+                            self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                                                                          withTranslation=1,
+                                                                          translationHash=self.translationHash,
+                                                                          doMcmcCommandComments=False)
+
                     else:
                         self.chains[coldChainNum].curTree.writeNewick(treeFile,
                                                                       withTranslation=1,
@@ -2769,20 +2778,11 @@ class Mcmc(object):
         rate and its neighbor with too high an acceptance rate-- in
         that case the tuning is left alone.
 
-        The chainTemp is also tested.  I test the acceptance based in
-        part on the acceptances between adjacent temperature chains,
-        that is between the cold chain and the first heated chain, the
-        first heated chain and the second heated chain, and so on.  I
-        call that the 'diagonal acceptances', a vector nChains long,
-        and I use its average.  This week, I am saying that if the
-        average diagonal acceptance is low (less than 50%) and the
-        exchanges between the cold chain and the hottest chain are
-        accepted less than 1% of the time, then the temperature is too
-        high.  However, if the average diagonal acceptance is high
-        (more than 70%), then I judge the temperature to be too low.
-
-        (NOTE that chain temp tuning is turned off for the moment, due
-        to problems encountered with very low temps.)
+        The chainTemp is also tested.  I test the acceptance based on the
+        acceptances between the first two adjacent temperature chains, that is
+        between the cold chain and the first heated chain.  If acceptance is
+        less than 1% then the temperature is too high and so is lowered, and if
+        the acceptance is more than 10% then the temperature is too low.
 
         It is a bit of a hack, so you might see a tuning adjusted on
         one cycle, and then that adjustment is reversed on another
@@ -2812,7 +2812,6 @@ class Mcmc(object):
             f.close()
             m.tunings = theTunings
             m.tunings.dump()  # see the autoTune()'d tunings
-
 
         """
 
