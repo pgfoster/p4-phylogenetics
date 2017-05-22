@@ -533,20 +533,6 @@ class Model(object):
                             nPrams += mp.dim
                             zeroBasedColNum += mp.dim
                             oneBasedColNum += mp.dim
-            if mp.ndch2:
-                flob.write("#   %7i %7i " % (zeroBasedColNum, oneBasedColNum))
-                flob.write("%sndch2_leafAlpha[1]\n" % spacer2)
-                pramsList[pNum].append(['ndch2_leafAlpha', 1])
-                nPrams += 1                                # even though it is a hyperparameter?
-                zeroBasedColNum += 1
-                oneBasedColNum += 1
-
-                flob.write("#   %7i %7i " % (zeroBasedColNum, oneBasedColNum))
-                flob.write("%sndch2_internalAlpha[1]\n" % spacer2)
-                pramsList[pNum].append(['ndch2_internalAlpha', 1])
-                nPrams += 1                                # even though it is a hyperparameter?
-                zeroBasedColNum += 1
-                oneBasedColNum += 1
 
             if mp.nRMatrices:
                 for i in range(mp.nRMatrices):
@@ -623,9 +609,6 @@ class Model(object):
                         if mt.free:
                             for j in mt.val:
                                 flob.write(profile2 % j)
-            if mp.ndch2:
-                flob.write(profile1 % mp.ndch2_leafAlpha)
-                flob.write(profile1 % mp.ndch2_internalAlpha)
             if mp.nRMatrices:
                 for i in range(mp.nRMatrices):
                     mt = mp.rMatrices[i]
@@ -639,6 +622,18 @@ class Model(object):
                         flob.write(profile1 % mt.val[0])
             if mp.pInvar and mp.pInvar.free:
                 flob.write(profile2 % mp.pInvar.val)
+        flob.write("\n")
+
+    def writeHypersLine(self, flob):
+        """Write a line of model hyperparameters for mcmc output."""
+
+        profile1 = "\t%12.6f"
+        profile2 = "\t%10.8f"
+        for pNum in range(self.nParts):
+            mp = self.parts[pNum]
+            if mp.ndch2:
+                flob.write(profile1 % mp.ndch2_leafAlpha)
+                flob.write(profile1 % mp.ndch2_internalAlpha)
         flob.write("\n")
 
     def writePramsHeaderLine(self, flob):
@@ -673,6 +668,16 @@ class Model(object):
                         flob.write('\tgdasrv.%i.%i' % (pNum, i))
             if mp.pInvar and mp.pInvar.free:
                 flob.write('\tpInvar.%i' % pNum)
+        flob.write("\n")
+
+    def writeHypersHeaderLine(self, flob):
+        """Write a header line of model hyperparameters for mcmc output."""
+
+        for pNum in range(self.nParts):
+            mp = self.parts[pNum]
+            if mp.ndch2:
+                flob.write('\tndch2_leafAlpha.%i' % pNum)
+                flob.write('\tndch2_internalAlpha.%i' % pNum)
         flob.write("\n")
 
     def allocCStuff(self):

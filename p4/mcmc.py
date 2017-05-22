@@ -137,7 +137,7 @@ class McmcTunings(object):
         spacer = ' ' * 4
 
         lst.append("%s%15s: %s" % (spacer, 'chainTemp', self.chainTemp))
-        lst.append("%s%15s: %5.3f" % (spacer, 'local', self.local))
+        lst.append("%s%15s: %7.5f" % (spacer, 'local', self.local))
         lst.append("%s%15s: %5.3f" % (spacer, 'brLen', self.brLen))
         lst.append("%s%15s: %s" %
                    (spacer, 'brLenPriorType', self.brLenPriorType))
@@ -856,9 +856,10 @@ class Mcmc(object):
         self.treeFileName = "mcmc_trees_%i.nex" % runNum
         self.simFileName = "mcmc_sims_%i" % runNum
         self.pramsFileName = "mcmc_prams_%i" % runNum
-        self.mtNumsFileName = "mcmc_mtNums_%i" % runNum
-        self.rjKFileName = "mcmc_rjK_%i" % runNum
+        self.hypersFileName = "mcmc_hypers_%i" % runNum
+        #self.rjKFileName = "mcmc_rjK_%i" % runNum
         self.writePrams = writePrams
+        self.writeHypers = True
 
         self.lastTimeCheck = None
 
@@ -2130,6 +2131,14 @@ class Mcmc(object):
                     self.chains[0].curTree.model.writePramsHeaderLine(
                         pramsFile)
                     pramsFile.close()
+            if self.writeHypers:
+                if not self.tree.model.parts[0].ndch2:     # and therefore all model parts, this week
+                    self.writeHypers = False
+                else:
+                    hypersFile = open(self.hypersFileName, 'a')
+                    hypersFile.write('genPlus1')
+                    self.chains[0].curTree.model.writeHypersHeaderLine(hypersFile)
+                    hypersFile.close()
 
             # if 0 and rjCompPartNums:
             #     rjKFile = open(self.rjKFileName, 'w')
@@ -2468,6 +2477,12 @@ class Mcmc(object):
                     pramsFile.write("%12i" % (self.gen + 1))
                     self.chains[coldChainNum].curTree.model.writePramsLine(pramsFile)
                     pramsFile.close()
+
+                if self.writeHypers:
+                    hypersFile = open(self.hypersFileName, 'a')
+                    hypersFile.write("%12i" % (self.gen + 1))
+                    self.chains[coldChainNum].curTree.model.writeHypersLine(hypersFile)
+                    hypersFile.close()
 
                 # Do a simulation
                 if self.simulate:
