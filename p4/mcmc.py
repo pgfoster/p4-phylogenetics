@@ -906,6 +906,7 @@ class Mcmc(object):
             tf = open(tuningsFileName, 'rb')
             self.tunings = pickle.load(tf)
             tf.close()
+            #self.tunings.dump()
         else:
             self.tunings = McmcTunings(self.tree.model.nParts)
 
@@ -969,7 +970,7 @@ class Mcmc(object):
 
         # Two new tunings --- compDir and rMatrixDir, seem to depend on the dim.
         # And now allCompsDir
-        if 1:
+        if 1 and not tuningsFileName:
             for pNum in range(self.tunings.nParts):
                 theDim = self.tree.model.parts[pNum].dim
                 nRates = ((theDim * theDim) - theDim) / 2
@@ -2763,7 +2764,7 @@ class Mcmc(object):
         pickle.dump(theCopy, f, pickle.HIGHEST_PROTOCOL)
         f.close()
 
-    def autoTune(self, gensPerProposal=500, verbose=True, giveUpAfter=10, writeTunings=True):
+    def autoTune(self, gensPerProposal=500, verbose=True, giveUpAfter=10, writeTunings=True, carryOn=False):
         """Attempt to tune the Mcmc automatically.  A bit of a hack.
 
         Here we let the Mcmc run for a while, and then examine the
@@ -2785,6 +2786,12 @@ class Mcmc(object):
         stops.  If arg 'giveUpAfter' (by default 10) cycles complete
         without getting it right, it gives up.
 
+        The carryOn arg is set to False by default, meaning that if it gives up
+        after so many cycles then it dies with a P4Error.  However, if you set
+        carryOn to True then it does not die, even though it is not tuned.  This
+        may be useful for difficult tunings, as a partially tuned chain may be
+        better than completely untuned.
+
         It is complicated a little because for tree-hetero models,
         some proposals use the same tuning.  For example, if there is
         more than one rMatrix in a given partition, all the rMatrix
@@ -2793,11 +2800,11 @@ class Mcmc(object):
         rate and its neighbor with too high an acceptance rate-- in
         that case the tuning is left alone.
 
-        The chainTemp is also tested.  I test the acceptance based on the
-        acceptances between the first two adjacent temperature chains, that is
-        between the cold chain and the first heated chain.  If acceptance is
-        less than 1% then the temperature is too high and so is lowered, and if
-        the acceptance is more than 10% then the temperature is too low.
+        The chainTemp is also tested.  I test the acceptance between the cold
+        chain and the first heated chain.  If acceptance is less than 1% then
+        the temperature is deemed too high and so is lowered, and if the
+        acceptance is more than 10% then the temperature is deemed too low and
+        raised.
 
         It is a bit of a hack, so you might see a tuning adjusted on
         one cycle, and then that adjustment is reversed on another
@@ -2807,26 +2814,21 @@ class Mcmc(object):
         the chains in the state they are left in by this method, which
         might save some burn-in time.
 
-        News: you can pickle the tunings from this method by turning
-        on the arg *writeTunings*, which writes a pickle file.  The
-        name of the pickle file incorporates the ``runNum``, eg
-        ``mcmc_tunings_0.pickle`` for runNum 0.  You can then apply
-        the autoTune tuning values to another Mcmc, like this::
+        News: you can pickle the tunings from this method by turning on the arg
+        *writeTunings*, which writes a pickle file.  The name of the pickle file
+        incorporates the ``runNum``, eg ``mcmc_tunings_0.pickle`` for runNum 0.
+        You can then read it by::
 
-            # Start an Mcmc with runNum=1, having previously done one with runNum=0
-            m = Mcmc(t, nChains=1, runNum=1, sampleInterval=10, checkPointInterval=2000, writeTunings=False)
+            tf = open(tuningsFileName, 'rb')
+            tunings = pickle.load(tf)
+            tf.close()
+            tunings.dump()
+        
+        and you can then apply the autoTune tuning values to another Mcmc, like
+        this::
 
-            # autoTune() was done before on runNum 0 and pickled, so no autoTune this time
-            #m.autoTune()     
-            m.tunings.dump()  # see the default tunings for comparison
+            m = Mcmc(t, tuningsFileName='myTuningsFile.pickle')
 
-            # apply the saved runNum 0 tunings to this run
-            import pickle
-            f = open('mcmc_tunings_0.pickle', 'rb')
-            theTunings = pickle.load(f)
-            f.close()
-            m.tunings = theTunings
-            m.tunings.dump()  # see the autoTune()'d tunings
 
         """
 
@@ -2839,18 +2841,6 @@ class Mcmc(object):
                 gm.append("File '%s' already exists." % tuningsFileName)
                 gm.append("I'm refusing to over-write.  Delete it or move it.")
                 raise P4Error(gm)
-
-        # doingRj = False
-        # for mp in self.tree.model.parts:
-        #     if mp.rjComp or mp.rjRMatrix:
-        #         doingRj = True
-        #         break
-        # if doingRj:
-        #     gm.append(
-        #         "Sorry, autoTune() does not play well with rjComp or rjRMatrix.")
-        #     gm.append(
-        #         "Autotune with a regular (fixed) hetero model, and then turn on RJ.")
-        #     raise P4Error(gm)
 
         if self.proposals:  # Its a re-start
             self.gen = -1
@@ -3039,6 +3029,7 @@ class Mcmc(object):
             safeLower = 0.15
             safeUpper = 0.60
             safeMultiUpper = 0.40  # For allBrLens, compDir, allCompsDir, 
+            safeMultiLower = 0.05
             # It appears that branch length lower limits should be
             # very low.  Say 5%.
             brLenLower = 0.05
@@ -3270,7 +3261,7 @@ class Mcmc(object):
                         #        print sig2 % "very small"
                         #    isVerySmall += 1
                         #    isTooSmall += 1
-                        if accepted < safeLower:
+                        if accepted < safeMultiLower:
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
@@ -3309,7 +3300,7 @@ class Mcmc(object):
                         accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
                             print(theSig % ("allCompsDir", accepted), end=' ')
-                        if accepted < safeLower:
+                        if accepted < safeMultiLower:
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
@@ -3348,7 +3339,7 @@ class Mcmc(object):
                         accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
                             print(theSig % ("ndch2_leafCompsDir", accepted), end=' ')
-                        if accepted < safeLower:
+                        if accepted < safeMultiLower:
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
@@ -3366,7 +3357,7 @@ class Mcmc(object):
                     elif isTooBig:
                         if verbose:
                             print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].ndch2_leafCompsDir))
-                        self.tunings.parts[pNum].ndch2_leafCompsDir /= 1.5
+                        self.tunings.parts[pNum].ndch2_leafCompsDir /= 2.0
                         if verbose:
                             print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].ndch2_leafCompsDir))
                         needsToBeTuned = True
@@ -3387,7 +3378,7 @@ class Mcmc(object):
                         accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
                         if verbose:
                             print(theSig % ("ndch2_internalCompsDir", accepted), end=' ')
-                        if accepted < safeLower:
+                        if accepted < safeMultiLower:
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
@@ -3405,7 +3396,7 @@ class Mcmc(object):
                     elif isTooBig:
                         if verbose:
                             print(sig3 % (' ', "Current tuning is %.3f" % self.tunings.parts[pNum].ndch2_internalCompsDir))
-                        self.tunings.parts[pNum].ndch2_internalCompsDir /= 1.5
+                        self.tunings.parts[pNum].ndch2_internalCompsDir /= 2.0
                         if verbose:
                             print(sig3 % (' ', "-> decrease it to %.3f" % self.tunings.parts[pNum].ndch2_internalCompsDir))
                         needsToBeTuned = True
@@ -3525,7 +3516,7 @@ class Mcmc(object):
                         #        print sig2 % "very small"
                         #    isTooSmall += 1
                         #    isVerySmall += 1
-                        if accepted < safeLower:
+                        if accepted < safeMultiLower:
                             if verbose:
                                 print(sig2 % "too small")
                             isTooSmall += 1
@@ -3666,16 +3657,8 @@ class Mcmc(object):
                         needsToBeTuned = True
 
             if 1 and self.nChains > 1:
-                # Try to autoTune the swaps, by adjusting the
-                # chainTemp.  Arbitrary rules.  If the coldest -
-                # hottest is less than 1%, and the mean of the top
-                # diagonal row is less than 50%, then the temp is too
-                # high.  If the mean of the top diagonal is more than
-                # 70% then the chainTemp is too low.  The swaps are in
-                # self.swapMatrix[][], where the upper triangle is
-                # nProposed and the lower triangle is nAccepted.
-
-                # New arbitrary rules, to encourage a high temperature.  I think
+                # Try to autoTune the swaps, by adjusting the chainTemp.  New
+                # arbitrary rules, to encourage a high temperature.  I think
                 # that the most important number is between the cold chain and
                 # the next chain, and it should be low.  I think 1-10% should be
                 # OK.
@@ -3782,10 +3765,22 @@ class Mcmc(object):
             #    needsToBeTuned = False
             if needsToBeTuned and roundCounter >= giveUpAfter:
                 self.tunings.dump(advice=False)
-                gm.append(
-                    "autoTune() has gone thru %i rounds, and it still needs tuning." % giveUpAfter)
-                gm.append("Giving up.  Do it by hand?")
-                raise P4Error(gm)
+                myMessage = "autoTune() has gone thru %i rounds, and it still needs tuning." % giveUpAfter
+                if not carryOn:
+                    gm.append(myMessage)
+                    gm.append("Giving up.  Do it by hand?  Or set carryOn to not give up?")
+                    if writeTunings:
+                        print("Writing tunings to pickle file '%s'" % tuningsFileName)
+                        self.pickleTunings(tuningsFileName)
+                    raise P4Error(gm)
+                else:
+                    # carry on
+                    if verbose:
+                        print(myMessage)
+                        print('carryOn is set, so continuing anyway ...')
+                    break
+                    
+                
 
             # self.writeProposalProbs()
 
@@ -3834,10 +3829,13 @@ class Mcmc(object):
 
         if writeTunings:
             print("Writing tunings to pickle file '%s'" % tuningsFileName)
-            f = open(tuningsFileName, 'wb')
-            pickle.dump(self.tunings, f, pickle.HIGHEST_PROTOCOL)
-            f.close()
+            self.pickleTunings(tuningsFileName)
 
+    def pickleTunings(self, tuningsFileName):
+        f = open(tuningsFileName, 'wb')
+        pickle.dump(self.tunings, f, pickle.HIGHEST_PROTOCOL)
+        f.close()
+        
     def writeProposalProbs(self, makeDict=False):
         """(Another) Pretty-print the proposal probabilities.
 
