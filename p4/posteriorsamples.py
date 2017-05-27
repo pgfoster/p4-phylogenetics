@@ -237,7 +237,7 @@ class PosteriorSamples(object):
             # Read in the pramsProfile
             self.nPrams = None
             self.pramsProfile = None
-            fName = "mcmc_pramsProfile.py"
+            fName = "mcmc_pramsProfile_%i.py" % self.runNum
             if self.directory != '.':
                 fName = os.path.join(self.directory, fName)
             try:

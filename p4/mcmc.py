@@ -2126,11 +2126,9 @@ class Mcmc(object):
                     self.writePrams = False
                 else:
                     pramsFile = open(self.pramsFileName, 'a')
-                    self.chains[0].curTree.model.writePramsProfile(pramsFile)
-                    #pramsFile.write("     genPlus1")
+                    self.chains[0].curTree.model.writePramsProfile(pramsFile, self.runNum)
                     pramsFile.write("genPlus1")
-                    self.chains[0].curTree.model.writePramsHeaderLine(
-                        pramsFile)
+                    self.chains[0].curTree.model.writePramsHeaderLine(pramsFile)
                     pramsFile.close()
             if self.writeHypers:
                 if not self.tree.model.parts[0].ndch2:     # and therefore all model parts, this week
