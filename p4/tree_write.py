@@ -315,7 +315,7 @@ if True:
         if toString:
             return "".join(sList)
         elif fName == None:
-            print("".join(sList))
+            print("".join(sList), end='')  # avoid a redundant newling
         elif type(fName) == type('string'):
             if append:
                 fName2 = open(fName, 'a')
