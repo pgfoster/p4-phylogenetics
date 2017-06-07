@@ -921,6 +921,10 @@ class Chain(object):
         if theProposal.name in ['rjComp', 'rjRMatrix']:
             theSum += self.logJacobian
 
+        # if theProposal.name in ['ndch2_leafCompsDir']:
+        #     print("%20s: %10.2f %10.2f %10.2f %10.2f" % (theProposal.name, logLikeRatio,
+        #                                                  self.logPriorRatio, self.logProposalRatio, theSum), end=' ')
+
         # if theProposal.name in ['rjComp', 'rjRMatrix']:
         #    print "%12s: %10.2f %10.2f %10.2f %10.2f" % (theProposal.name, logLikeRatio,
         # self.logPriorRatio, self.logProposalRatio, self.logJacobian)
@@ -1226,8 +1230,8 @@ class Chain(object):
         #         self.propTree.model.parts[aProposal.pNum].ndch2_internalAlpha),
         #         end=' ')
         #     print(" acceptMove = %s" % acceptMove)
-        # if aProposal.name == 'cmd1_allCompDir':
-        #     print " acceptMove = %s" % acceptMove
+        # if aProposal.name == 'ndch2_leafCompsDir':
+        #     print(" acceptMove = %s" % acceptMove)
 
         # if aProposal.name in ['rMatrix', 'comp', 'gdasrv']:
         #    acceptMove = False
@@ -3435,8 +3439,7 @@ class Chain(object):
                     if mtProp.val[i] < var.PIVEC_MIN:
                         mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
                 thisSum = mtProp.val.sum()
-                for i in range(mpCur.dim):
-                    mtProp.val[i] /= thisSum
+                mtProp.val /= thisSum
 
             forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
             reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
@@ -3473,8 +3476,7 @@ class Chain(object):
                     if mtProp.val[i] < var.PIVEC_MIN:
                         mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
                 thisSum = mtProp.val.sum()
-                for i in range(mpCur.dim):
-                    mtProp.val[i] /= thisSum
+                mtProp.val /= thisSum
 
             # log proposal ratios
             forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
@@ -3522,8 +3524,7 @@ class Chain(object):
                     if mtProp.val[i] < var.PIVEC_MIN:
                         mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
                 thisSum = mtProp.val.sum()
-                for i in range(mpCur.dim):
-                    mtProp.val[i] /= thisSum
+                mtProp.val /= thisSum
 
             # log proposal ratios
             forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
@@ -3546,8 +3547,10 @@ class Chain(object):
         mpCur = self.curTree.model.parts[theProposal.pNum]
         mpProp = self.propTree.model.parts[theProposal.pNum]
 
+        # if the max (below) gets too big, then the prior ratio can be so bad
+        # that it will never be accepted.
         NDCH2_ALPHAL_MIN = 1.0 
-        NDCH2_ALPHAL_MAX = 1000.
+        NDCH2_ALPHAL_MAX = 10000.   
 
         if 0:
             # Slider proposal
@@ -3569,7 +3572,8 @@ class Chain(object):
 
         if 1: 
             # Multiplier proposal
-            myTuning = 2.0 * math.log(3.0)
+            #myTuning = 2.0 * math.log(3.0)
+            myTuning = 2.0 * math.log(1.2)
             oldVal = mpCur.ndch2_leafAlpha
             newVal = oldVal * math.exp((random.random() - 0.5) * myTuning)
 
@@ -3612,7 +3616,7 @@ class Chain(object):
         mpProp = self.propTree.model.parts[theProposal.pNum]
 
         NDCH2_ALPHAI_MIN = 1.0 
-        NDCH2_ALPHAI_MAX = 200.
+        NDCH2_ALPHAI_MAX = 2000.
 
         self.logProposalRatio = 0.0
         if 0:

@@ -601,14 +601,15 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
     int i,k;
     //int j;
     double theRanDouble;
-    // int cNum;
 
 
     dp = t->data->parts[partNum];
     mp = t->model->parts[partNum];
 
     patNum = dp->sequencePositionPatternIndex[seqPos];
+
     // printf("There are %i patterns\n", dp->nPatterns);
+    // int cNum;
     // for(cNum = 0; cNum < dp->nChar; cNum++) {
     //     printf(" %i", dp->sequencePositionPatternIndex[cNum]);
     // }
@@ -631,7 +632,7 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
     for(i = 0; i <  (mp->dim * (mp->nCat + 1)); i++) {
         mp->ancStPicker[i] = 0.0;
     }
-
+    
     if(!dp->drawAncStResults) {
         dp->drawAncStResults = malloc(sizeof(p4_drawAncStResults));
         if(!dp->drawAncStResults) {
@@ -639,7 +640,7 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
             exit(1);
         }
     }
-
+    
     // printf("pat %3i\n ", patNum);
     // for(catNum = 0; catNum < mp->nCat; catNum++) {
     //     printf("cat %i:", catNum);
@@ -674,8 +675,8 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
             sLike += sLikeC;
             mp->ancStPicker[i] = sLike;
             i++;
-            //printf("    patNum %i  catNum %i chStNum %i  sLikeC %10.8f  sLike %10.8f\n",
-            //        patNum, catNum, chStNum, sLikeC, sLike);
+            // printf("    patNum %i  catNum %i chStNum %i  sLikeC %10.8f  sLike %10.8f\n",
+            //         patNum, catNum, chStNum, sLikeC, sLike);
         }
     }
     if(mp->pInvar->val[0]) { // do pInvar

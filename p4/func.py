@@ -2988,35 +2988,56 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
     can set the run to a specific run number, and that is the only one
     that is done.
 
-    The 'profile', with the names of the parameters, and the number of
-    each, is found in mcmc_pramsProfile.py.  It is not essential, but
-    it gives names to the parameters.
+    The 'profile', with the names of the parameters, and the number of each, is
+    found in mcmc_pramsProfile_N.py (N=0,1,2 ...).  It is not essential, but it
+    gives names to the parameters.
 
     """
 
     gm = ["func.summarizeMcmcPrams()"]
     nPrams = None
     pramsProfile = None
-    try:
-        loc = {}
-        execfile(os.path.join(theDir, "mcmc_pramsProfile.py"), {}, loc)
-        # loc =locals()  no workee.
-        # print "loc = %s" % loc
-        nPrams = loc['nPrams']
-        pramsProfile = loc['pramsProfile']
-    except IOError:
-        print("The file 'mcmc_pramsProfile.py' cannot be found.")
-        if makeDict:
-            print("Cannot make dictionary without mcmc_pramsProfile.py")
-            return None
 
     numsList = None
     if run == -1:
         runNum = 0
+        # read in the prams profile only once.  Assume it will apply to all runs.
+        try:
+            loc = {}
+            theFName = "mcmc_pramsProfile_%i.py" % runNum
+            execfile(os.path.join(theDir, theFName), {}, loc)
+            # loc =locals()  no workee.
+            # print "loc = %s" % loc
+            nPrams = loc['nPrams']
+            pramsProfile = loc['pramsProfile']
+        except IOError:
+            print("The file '%s' cannot be found." % theFName)
+            if makeDict:
+                print("Cannot make dictionary without %s" % theFName)
+                return None
+
     else:
         runNum = run
     totalLinesRead = 0
+
     while 1:
+
+        if run != -1:
+            # possibly different prams profiles for each run
+            try:
+                loc = {}
+                theFName = "mcmc_pramsProfile_%i.py" % runNum
+                execfile(os.path.join(theDir, theFName), {}, loc)
+                # loc =locals()  no workee.
+                # print "loc = %s" % loc
+                nPrams = loc['nPrams']
+                pramsProfile = loc['pramsProfile']
+            except IOError:
+                print("The file '%s' cannot be found." % theFName)
+                if makeDict:
+                    print("Cannot make dictionary without %s" % theFName)
+                    return None
+
         try:
             theFName = os.path.join(theDir, "mcmc_prams_%i" % runNum)
             flob = open(theFName)
@@ -3024,6 +3045,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
                 print("Reading prams from file %s" % theFName)
         except IOError:
             break
+
         theLines = flob.readlines()
         flob.close()
         runNum += 1
