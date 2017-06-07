@@ -373,7 +373,7 @@ class Trees(object):
                 d.matrix[j][i] = theDist
         return d
 
-    def inputTreesToSuperTreeDistances(self, inputTrees, latex=False):
+    def inputTreesToSuperTreeDistances(self, inputTrees, latex=False, verbose=True):
         """Make a table of supertree distances.
 
         See the method
@@ -392,40 +392,45 @@ class Trees(object):
             nn.append(t.name)
             sdd.append(sd)
             qdd.append(qd)
-        longest = 0
-        for n in nn:
-            if len(n) > longest:
-                longest = len(n)
-        name_sig = " %%-%is" % longest
 
-        longest = 0
-        for n in sdd:
-            s = "%s" % n
-            if len(s) > longest:
-                longest = len(s)
-        sd_sig = " %%-%is" % longest
+        if verbose:
+            longest = 0
+            for n in nn:
+                if len(n) > longest:
+                    longest = len(n)
+            name_sig = " %%-%is" % longest
 
-        longest = 0
-        for n in qdd:
-            s = "%s" % n
-            if len(s) > longest:
-                longest = len(s)
-        qd_sig = " %%-%is" % longest
+            longest = 0
+            for n in sdd:
+                s = "%s" % n
+                if len(s) > longest:
+                    longest = len(s)
+            sd_sig = " %%-%is" % longest
 
-        if latex:
-            print("\\begin{center}")
-            print("\\begin{tabular}{lrr} \\toprule")
-            sig = "%s & %s & %s \\\\" % (name_sig, sd_sig, qd_sig)
-        else:
-            sig = "%s %s  %s" % (name_sig, sd_sig, qd_sig)
+            longest = 0
+            for n in qdd:
+                s = "%s" % n
+                if len(s) > longest:
+                    longest = len(s)
+            qd_sig = " %%-%is" % longest
+
+            if latex:
+                print("\\begin{center}")
+                print("\\begin{tabular}{lrr} \\toprule")
+                sig = "%s & %s & %s \\\\" % (name_sig, sd_sig, qd_sig)
+            else:
+                sig = "%s %s  %s" % (name_sig, sd_sig, qd_sig)
+
         results = []
         for tNum in range(len(self.trees)):
             nm = nn[tNum]
             sd = sdd[tNum]
             qd = qdd[tNum]
-            print(sig % (nm, sd, qd))
+            if verbose:
+                print(sig % (nm, sd, qd))
             results.append([nm, sd, qd])
-        if latex:
+        
+        if verbose and latex:
             print("\\bottomrule")
             print("\\end{tabular}")
             print("\\end{center}")

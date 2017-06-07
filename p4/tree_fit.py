@@ -513,7 +513,7 @@ if True:
                                    (partNum, goldmanIndividualSimStats[partNum]))
 
             prob = p4.func.tailAreaProbability(
-                originalGoldmanCoxStat, goldmanOverallSimStats, verbose=0)
+                originalGoldmanCoxStat, goldmanOverallSimStats, verbose=0)[2]
             if doOut:
                 flob.write('\n              Overall Goldman-Cox test: ')
                 if prob <= 0.05:
@@ -527,7 +527,7 @@ if True:
                     flob.write('  Tests for individual data partitions:\n')
                 for partNum in range(self.data.nParts):
                     prob = p4.func.tailAreaProbability(originalGoldmanCoxStatsByPart[partNum],
-                                                    goldmanIndividualSimStats[partNum], verbose=0)
+                                                    goldmanIndividualSimStats[partNum], verbose=0)[2]
                     if doOut:
                         flob.write(
                             '                               Part %-2i: ' % partNum)
@@ -726,7 +726,7 @@ if True:
                     '\nAssessment of fit from null distribution from %i simulations\n' % nSims)
                 flob.write('%s%30s:  ' % (spacer1, 'Overall'))
             prob = p4.func.tailAreaProbability(
-                h['overallStat'], h['overallSimStats'], verbose=0)
+                h['overallStat'], h['overallSimStats'], verbose=0)[2]
             if doOut:
                 if prob <= 0.05:
                     flob.write('%13s' % 'Doesn\'t fit.')
@@ -745,7 +745,7 @@ if True:
                         flob.write('%13s\n' % 'skipped.')
                 else:
                     prob = p4.func.tailAreaProbability(h['individualStats'][taxNum],
-                                                    h['individualSimStats'][taxNum], verbose=0)
+                                                    h['individualSimStats'][taxNum], verbose=0)[2]
                     if doOut:
                         if prob <= 0.05:
                             flob.write('%13s' % "Doesn't fit.")
@@ -973,8 +973,8 @@ if True:
         partTaps = []
         for pNum in range(self.data.nParts):
             partTaps.append(
-                p4.func.tailAreaProbability(original[pNum][0], full[pNum], verbose=0))
-
+                p4.func.tailAreaProbability(original[pNum][0], full[pNum], verbose=0)[2])
+        #print("partTaps is ", partTaps)
         # Intro
         if verbose:
             print("Composition homogeneity test using simulations.")
@@ -1020,7 +1020,7 @@ if True:
                 for pNum in range(self.data.nParts):
                     if tNum not in skips[pNum]:
                         ret = p4.func.tailAreaProbability(
-                            original[pNum][3][tNum], rows[pNum][tNum], verbose=0)
+                            original[pNum][3][tNum], rows[pNum][tNum], verbose=0)[2]
                         print(string.center('%6.4f' % ret, partWid), end=' ')
                     else:
                         print(string.center('%s' % ('-' * 4), partWid), end=' ')

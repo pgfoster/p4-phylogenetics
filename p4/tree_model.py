@@ -359,12 +359,15 @@ if True:
             else:  # len = dim
                 theSum = sum(val)
                 theDiff = math.fabs(theSum - 1.0)
-                # How big to make the delta?  With reasonably good,
-                # normalized protein comps (where all the values had just
-                # been divided by the total, so it should have summed to
-                # 1.0 at that point) I kept getting 1.1e-16.  So make it
-                # 5.e-16
-                if theDiff > 5.e-16:  # 1e-17 was too small for protein
+
+                # How big to make the delta?  With reasonably good, normalized
+                # protein comps (where all the values had just been divided by
+                # the total, so it should have summed to 1.0 at that point) I
+                # kept getting 1.1e-16.  So make it 5.e-16.  No, too small.
+                # With protein I am getting diffs of 8.88178e-16, so make the
+                # cutoff 9e-16
+
+                if theDiff > 9.e-16:  # 1e-17 was too small for protein
                     gm.append("Bad comp vals %s" % val)
                     gm.append("does not sum to 1.0")
                     gm.append("The sum = %f" % theSum)
@@ -1178,9 +1181,8 @@ if True:
 
         complaintHead = '\nTree.modelSanityCheck()'
         gm = [complaintHead]
-        # print "\nTree.modelSanityCheck() here. self.model.nParts=%s" % self.model.nParts
-        # print "\nTree.modelSanityCheck() here.  resetEmpiricalComps=%s" %
-        # resetEmpiricalComps
+        # print("\nTree.modelSanityCheck() here. self.model.nParts=%s" % self.model.nParts)
+        # print("\nTree.modelSanityCheck() here.  resetEmpiricalComps=%s" % resetEmpiricalComps)
         isBad = 0
         complaints = []
         if not self.data:
@@ -1198,6 +1200,15 @@ if True:
                 mp.isHet = 1
             if mp.nGammaCat > 1 and mp.nGdasrvs > 1:
                 mp.isHet = 1
+
+        # This week ndch2 does not play well with other hetero models like ndch,
+        # so insist that all partitions are or are not ndch2.
+        firstPartIsNdch2 = self.model.parts[0].ndch2
+        for pNum in range(self.model.nParts):
+            mp = self.model.parts[pNum]
+            if mp.ndch2 != firstPartIsNdch2:
+                complaints.append("    Can't mix ndch2 with non-ndch2 models.")
+                isBad = 1
 
         # Check that all parts have all the required stuff.  Make a list
         # of errors.  If there is something missing or wrong, don't die

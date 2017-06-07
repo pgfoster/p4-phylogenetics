@@ -462,29 +462,22 @@ class Model(object):
 ##                    qe[cNum][rNum] = BigQAndEig(mp.dim, mp.comps[cNum], mp.rMatrices[rNum])
 ##            mp.bigQAndEigArray = qe
 
-    def writePramsProfile(self, flob):
+    def writePramsProfile(self, flob, runNum):
         """Write commented lines as a key to the model prams."""
 
-        flob.write("# Model.writePramsProfile()\n")
+        flob.write("# Model.writePramsProfile() runNum %i\n" % runNum)
         flob.write("# \n")
         flob.write("# There are %i free parameters in this model.\n" %
                    self.nFreePrams)
-        flob.write(
-            "# The parameters sampled at a given gen+1 are written on one line.\n")
-        flob.write(
-            "# The first number is gen+1, followed by any changeable model parameters.\n")
-        flob.write(
-            "# The number of changeable model parameters may be more than the \n")
-        flob.write(
-            "#  number of free model parameters, eg for DNA composition, there are\n")
+        flob.write("# The parameters sampled at a given gen+1 are written on one line.\n")
+        flob.write("# The first number is gen+1, followed by any changeable model parameters.\n")
+        flob.write("# The number of changeable model parameters may be more than the \n")
+        flob.write("#  number of free model parameters, eg for DNA composition, there are\n")
         flob.write("#  3 free parameters, but 4 changeable parameters.\n")
-        flob.write(
-            "# The column number or column range for each parameter or\n")
-        flob.write(
-            "#  parameter set is given twice-- the first is zero-based \n")
+        flob.write("# The column number or column range for each parameter or\n")
+        flob.write("#  parameter set is given twice-- the first is zero-based \n")
         flob.write("#  numbering, and the second is one-based numbering.\n")
-        flob.write(
-            "# Numbers in square brackets are the number of parameters listed.\n")
+        flob.write("# Numbers in square brackets are the number of parameters listed.\n")
         flob.write("# \n")
         nPrams = 0
         spacer1 = ' ' * 23
@@ -533,20 +526,6 @@ class Model(object):
                             nPrams += mp.dim
                             zeroBasedColNum += mp.dim
                             oneBasedColNum += mp.dim
-            if mp.ndch2:
-                flob.write("#   %7i %7i " % (zeroBasedColNum, oneBasedColNum))
-                flob.write("%sndch2_leafAlpha[1]\n" % spacer2)
-                pramsList[pNum].append(['ndch2_leafAlpha', 1])
-                nPrams += 1                                # even though it is a hyperparameter?
-                zeroBasedColNum += 1
-                oneBasedColNum += 1
-
-                flob.write("#   %7i %7i " % (zeroBasedColNum, oneBasedColNum))
-                flob.write("%sndch2_internalAlpha[1]\n" % spacer2)
-                pramsList[pNum].append(['ndch2_internalAlpha', 1])
-                nPrams += 1                                # even though it is a hyperparameter?
-                zeroBasedColNum += 1
-                oneBasedColNum += 1
 
             if mp.nRMatrices:
                 for i in range(mp.nRMatrices):
@@ -598,9 +577,10 @@ class Model(object):
         flob.write("# \n")
         flob.write("# %i changeable prams in all.\n" % nPrams)
         flob.write("# \n")
-        f = open("mcmc_pramsProfile.py", 'w')
+
+        f = open("mcmc_pramsProfile_%i.py" % runNum, 'w')
         f.write(
-            "# This file, 'mcmc_pramsProfile.py', is used by func.summarizeMcmcPrams()\n")
+            "# This file, 'mcmc_pramsProfile_%i.py', is used by func.summarizeMcmcPrams() and PosteriorSamples\n" % runNum)
         f.write("pramsProfile = %s\n" % pramsList)
         f.write("nPrams = %i\n" % nPrams)
         f.close()
@@ -623,9 +603,6 @@ class Model(object):
                         if mt.free:
                             for j in mt.val:
                                 flob.write(profile2 % j)
-            if mp.ndch2:
-                flob.write(profile1 % mp.ndch2_leafAlpha)
-                flob.write(profile1 % mp.ndch2_internalAlpha)
             if mp.nRMatrices:
                 for i in range(mp.nRMatrices):
                     mt = mp.rMatrices[i]
@@ -639,6 +616,18 @@ class Model(object):
                         flob.write(profile1 % mt.val[0])
             if mp.pInvar and mp.pInvar.free:
                 flob.write(profile2 % mp.pInvar.val)
+        flob.write("\n")
+
+    def writeHypersLine(self, flob):
+        """Write a line of model hyperparameters for mcmc output."""
+
+        profile1 = "\t%12.6f"
+        profile2 = "\t%10.8f"
+        for pNum in range(self.nParts):
+            mp = self.parts[pNum]
+            if mp.ndch2:
+                flob.write(profile1 % mp.ndch2_leafAlpha)
+                flob.write(profile1 % mp.ndch2_internalAlpha)
         flob.write("\n")
 
     def writePramsHeaderLine(self, flob):
@@ -657,9 +646,6 @@ class Model(object):
                         if mt.free:
                             for j in range(len(mt.val)):
                                 flob.write('\tcomp.%i.%i.%i' % (pNum, i, j))
-            if mp.ndch2:
-                flob.write('\tndch2_leafAlpha.%i' % pNum)
-                flob.write('\tndch2_internalAlpha.%i' % pNum)
             if mp.nRMatrices:
                 for i in range(mp.nRMatrices):
                     mt = mp.rMatrices[i]
@@ -673,6 +659,16 @@ class Model(object):
                         flob.write('\tgdasrv.%i.%i' % (pNum, i))
             if mp.pInvar and mp.pInvar.free:
                 flob.write('\tpInvar.%i' % pNum)
+        flob.write("\n")
+
+    def writeHypersHeaderLine(self, flob):
+        """Write a header line of model hyperparameters for mcmc output."""
+
+        for pNum in range(self.nParts):
+            mp = self.parts[pNum]
+            if mp.ndch2:
+                flob.write('\tndch2_leafAlpha.%i' % pNum)
+                flob.write('\tndch2_internalAlpha.%i' % pNum)
         flob.write("\n")
 
     def allocCStuff(self):

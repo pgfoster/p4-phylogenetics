@@ -31,4 +31,5 @@ Tutorials and Examples
    mrp
    kosiol_ais
    partitionCompositionDifferences
+   ancestralStateDraw
 

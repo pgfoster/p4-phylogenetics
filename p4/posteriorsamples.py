@@ -113,7 +113,7 @@ class PosteriorSamples(object):
             for compNum in range(self.model.parts[pNum].nComps):
                 if self.model.parts[pNum].comps[compNum].spec == 'empirical':
                     self.model.parts[pNum].comps[compNum].spec = 'specified'
-                if not self.model.parts[pNum].comps[compNum].val:
+                if not self.model.parts[pNum].comps[compNum].val[0]:
                     gm.append(
                         "Comp %i in partition %i has no val set." % (compNum, pNum))
                     gm.append("Maybe fix by calculating a likelihood before?")
@@ -237,7 +237,7 @@ class PosteriorSamples(object):
             # Read in the pramsProfile
             self.nPrams = None
             self.pramsProfile = None
-            fName = "mcmc_pramsProfile.py"
+            fName = "mcmc_pramsProfile_%i.py" % self.runNum
             if self.directory != '.':
                 fName = os.path.join(self.directory, fName)
             try:
@@ -466,7 +466,7 @@ class PosteriorSamples(object):
         splIndx = 3          # but could be Gen     LnL     LnPr    TL  ...
         while splIndx < self.nPrams:
             pNum = 0
-            print("splIndx = %i, pramsHeader = %s" % (splIndx, self.pramsHeader[splIndx]))
+            #print("splIndx = %i, pramsHeader = %s" % (splIndx, self.pramsHeader[splIndx]))
             if self.pramsHeader[splIndx].startswith('r(A<->C)'):
                 if self.tree.model.nParts > 1:
                     try:
@@ -539,6 +539,8 @@ class PosteriorSamples(object):
                     except:
                         raise P4Error("could not get the part number")
                 t.model.parts[pNum].relRate = float(splitPLine[splIndx])
+                splIndx += 1
+            elif self.pramsHeader[splIndx].startswith('TL'):
                 splIndx += 1
             else:
                 print("splIndx=%i.  Got unknown pram %s.  Fix me!" % (splIndx, self.pramsHeader[splIndx]))

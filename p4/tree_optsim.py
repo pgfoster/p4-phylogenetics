@@ -407,6 +407,45 @@ if True:
                 gm.append("which is probably not going to work as you want.")
                 raise P4Error(gm)
 
+    def ancestralStateDraw(self):
+        """Make a draw from the inferred root character state distribution
+
+        This method works on a tree with an attached model and data.
+
+        Conditional on the tree, branch lengths, model, and data, this method
+        infers the ancestral character states of the root node.  However, that
+        inference is probabilistic, a distribution, and this method takes a
+        single draw.  It returns a string.
+
+        """
+
+        gm = ['Tree.ancestralStateDraw().']
+        self._commonCStuff()
+        self.logLike = pf.p4_treeLogLike(self.cTree, 0)
+        draw = numpy.empty(4, dtype=numpy.int32)
+        ancSts = []
+        for pNum in range(self.data.nParts):
+            dp = self.data.parts[pNum]
+            ancStsPart = []
+            for seqPos in range(dp.nChar):
+                pf.p4_drawAncState(self.cTree, pNum, seqPos, draw)
+                if draw[1] >= 0:        # gamma cat if it is a variable site, else -1  
+                    assert draw[2] == 0 # not invar
+                    assert draw[0] >= 0 # char num
+                    ancStsPart.append(dp.symbols[draw[0]])
+                elif draw[2]:           # isInvar, zero if not
+                    assert draw[0] == -1
+                    assert draw[1] == -1
+                    assert draw[3] >= 0    # invar char num
+                    ancStsPart.append(dp.symbols[draw[3]])
+                else:
+                    gm.append("Problem with returned draw.  Got %s" % draw)
+                    raise P4Error(gm)
+            assert len(ancStsPart) == dp.nChar
+            ancSts.append(''.join(ancStsPart))
+        return ''.join(ancSts)
+                    
+
     def getSiteLikes(self):
         """Likelihoods, not log likes. Placed in self.siteLikes, a list."""
         self._commonCStuff()
