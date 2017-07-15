@@ -10,3 +10,7 @@ print("The 'weighted Robinson Foulds distance'  = ", t1.topologyDistance(t2, met
 ret = t1.topologyDistance(t2, metric='bld')
 print("The 'branch score' = %.4f" % (ret * ret))
 print("The 'branch-length distance' = %.4f" % ret)
+
+# And this one may work if you have scqdist installed
+ret = t1.topologyDistance(t2, metric='scqdist')
+print("The quartet distance from scqdist = %i" % ret)

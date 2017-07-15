@@ -21,6 +21,35 @@ HomeBrew, or if you installed python-dev.
 
 ====================================================================
 
+Vignette: Installing boost on my mac.
+
+Since I sometimes need to switch versions, I installed from source in my home
+directory.  At the time of writing this, the latest version is 1.64.0, so I did
+this ---
+
+mkdir -p ~/Source/Boost    # or wherever ...
+cd ~/Source/Boost
+wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
+tar --bzip2 -xf boost_1_64_0.tar.bz2
+cd boost_1_64_0
+./bootstrap.sh --with-libraries=python
+./b2
+
+Then it said:
+
+The Boost C++ Libraries were successfully built!
+
+The following directory should be added to compiler include paths:
+
+    /Users/peter/Source/Boost/boost_1_64_0
+
+The following directory should be added to linker library paths:
+
+    /Users/peter/Source/Boost/boost_1_64_0/stage/lib
+
+
+====================================================================
+
 Now for scqdist, the sub-cubic quartet distance code from the clever
 and helpful folks at BIRC at Aarhus.
 
@@ -38,10 +67,38 @@ mess of files in this directory.  That is what you want, this time.
 Next step is to do "cmake ." (note the dot) on it, in order to make
 the file "include_blas.hpp", which is needed to include in Matrix.hpp.
 
-In a compile on a mac yosemite, I got an compile error from the
-include_blas.hpp, saying it could not find <vecLib/vBLAS.h>.  I
-replaced it with #include <Accelerate/Accelerate.h> and that seemed to
-work.
+In a compile on a mac yosemite (and again on El Cap and Sierra), I got an
+compile error from the include_blas.hpp, saying it could not find
+<vecLib/vBLAS.h>.  VecLib is deprecated.  I replaced that line (in
+include_blas.hpp) with 
+
+#include <Accelerate/Accelerate.h> 
+
+and that worked.
+
+====================================================================
+
+Vignette continued: Building the thing on my mac (Sierra, this week ...)
+
+I have a setup.py file.  It has boilerplate
+
+                    # Adjust the following to be able to find boost root and cblas/blas/atlas.
+                    #include_dirs = ["/opt/local/include"],
+                    #library_dirs = ["/opt/local/lib"],
+
+and I needed to adjust that to what the boost installation above told me.
+
+                    # Adjust the following to be able to find boost root and cblas/blas/atlas.
+                    include_dirs = ["/Users/peter/Source/Boost/boost_1_64_0"],
+                    library_dirs = ["/Users/peter/Source/Boost/boost_1_64_0/stage/lib"],
+
+I did not need to adjust the line that says
+
+                    libraries = ["cblas", "boost_python"])             # this worked on my mac
+
+
+====================================================================
+
 
 Based on the main.cpp in the qdist src, I have made a file
 scqdistmodule.cpp, to make a Python module.  Do this ---
@@ -68,3 +125,7 @@ Use it like this ---
 # tsA and tsB are two newick trees as Python strings.
 import scqdist
 mydist = scqdist.qdist(tsA, tsB)
+
+There is an example of its use in p4 in share/Examples/G_trees/B_topologyDistance
+
+

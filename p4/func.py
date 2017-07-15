@@ -14,6 +14,9 @@ import types
 import pickle
 import random
 import array
+import inspect
+import datetime
+import subprocess
 
 from p4.var import var
 # from p4.sequencelist import Sequence, SequenceList
@@ -27,7 +30,7 @@ from p4.constraints import Constraints
 import p4.pf as pf
 import numpy
 from p4.pnumbers import Numbers
-
+import p4.version
 
 def nexusCheckName(theName):
     """Check to see if theName conforms to Nexus standards."""
@@ -996,6 +999,43 @@ p.foster@nhm.ac.uk""")
         print("\nSee the examples in %s" % var.examplesDir)
     print('')
     print("(Control-d to quit.)\n")
+
+def splash2():
+    """Another splash, showing things like version, git hash, and date"""
+
+    # Stolen from Cymon.  Thanks!
+    print("\nSummary from func.splash2()")
+    print("%16s: %s" % ("P4 version", p4.version.versionString))
+    lp = os.path.dirname(inspect.getfile(p4))
+    print("%16s: %s" % ("Library path", lp))
+    #lp = "/Users/peter/C"
+
+    # Get git version.
+    if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
+        try:
+            # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
+            # subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+            # ret = subprocess.check_output(['git', '-C', '%s' % lp, 'rev-parse', '--short', 'HEAD'])
+            ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
+            #ret = ret.strip()    # get rid of newline, needed for rev-parse
+            ret = ret[1:-1]       # get rid of quotes, needed for log
+            print("%16s: %s" % ("git hash", ret))
+
+        except subprocess.CalledProcessError:
+            #print("%16s: %s" % ("git hash", "Not a git repo?"))
+            pass
+    else:
+        print("%16s: %s" % ("git hash", "Not a git repo"))
+
+
+    print("%16s: %s" % ("Python version", ".".join([str(i) for i in sys.version_info[:-2]])))
+    #print("%16s: %s" % ("Date" , datetime.datetime.now().strftime("%d/%m/%Y")))
+    print("%16s: %s" % ("Today's date" , datetime.datetime.now().strftime("%Y-%m-%d")))  # iso 8601 see https://xkcd.com/1179/
+    host = os.uname()[1].split('.')[0]
+    print("%16s: %s" % ("Host", host))
+    print("\n")
+    # sys.stdout.flush()
+
 
 
 def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None):
