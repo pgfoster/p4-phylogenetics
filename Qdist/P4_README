@@ -17,38 +17,10 @@ box for other reasons, and it did not hurt.
 
 Make sure you have Python.h in your include path.  You probably have
 that if you installed Python from source, from MacPorts, from
-HomeBrew, or if you installed python-dev.
+Homebrew, or if you installed python-dev.
 
-====================================================================
-
-Vignette: Installing boost on my mac.
-
-Since I sometimes need to switch versions, I installed from source in my home
-directory.  At the time of writing this, the latest version is 1.64.0, so I did
-this ---
-
-mkdir -p ~/Source/Boost    # or wherever ...
-cd ~/Source/Boost
-wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
-tar --bzip2 -xf boost_1_64_0.tar.bz2
-cd boost_1_64_0
-./bootstrap.sh --with-libraries=python
-./b2
-
-Then it said:
-
-The Boost C++ Libraries were successfully built!
-
-The following directory should be added to compiler include paths:
-
-    /Users/peter/Source/Boost/boost_1_64_0
-
-The following directory should be added to linker library paths:
-
-    /Users/peter/Source/Boost/boost_1_64_0/stage/lib
-
-
-====================================================================
+On my mac, I have python from Homebrew, and I installed boost-python from
+homebrew as well.  That worked.
 
 Now for scqdist, the sub-cubic quartet distance code from the clever
 and helpful folks at BIRC at Aarhus.
@@ -76,30 +48,6 @@ include_blas.hpp) with
 
 and that worked.
 
-====================================================================
-
-Vignette continued: Building the thing on my mac (Sierra, this week ...)
-
-I have a setup.py file.  It has boilerplate
-
-                    # Adjust the following to be able to find boost root and cblas/blas/atlas.
-                    #include_dirs = ["/opt/local/include"],
-                    #library_dirs = ["/opt/local/lib"],
-
-and I needed to adjust that to what the boost installation above told me.
-
-                    # Adjust the following to be able to find boost root and cblas/blas/atlas.
-                    include_dirs = ["/Users/peter/Source/Boost/boost_1_64_0"],
-                    library_dirs = ["/Users/peter/Source/Boost/boost_1_64_0/stage/lib"],
-
-I did not need to adjust the line that says
-
-                    libraries = ["cblas", "boost_python"])             # this worked on my mac
-
-
-====================================================================
-
-
 Based on the main.cpp in the qdist src, I have made a file
 scqdistmodule.cpp, to make a Python module.  Do this ---
 
@@ -110,8 +58,12 @@ usually ok)
 
 On Ubuntu, I needed to add #include <cstddef> near the top of Tree.hpp.
 
-It might work.  If it does, you will get a module, scqdist.so, which
-you can put in your Python path.  Make sure that you can import it.
+On my mac, with Python and boost-python from Homebrew, I did not need to modify
+setup.py --- it just worked.
+
+If it works, you will get a module, scqdist.so, which you can put in your Python
+path (a good and obvious place would be in the p4 python lib directory).  Make
+sure that you can import it.
 
 If it does not work, you may need to adjust your setup.py.  You may
 need to remove the atlas lib from the list (I needed to do that on
