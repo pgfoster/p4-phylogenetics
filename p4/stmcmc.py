@@ -3692,3 +3692,58 @@ class SpaML(object):
         return (res.x, res.fun)
 
 
+class SR2008ML(object):
+    """Using STMcmc, with SR2008_rf_aZ_fb."""
+
+    def __init__(self, inTrees, bigT):
+        assert inTrees
+
+        ttDupes = []
+        for t in inTrees:
+            ttDupes.append(t.dupe())
+        
+
+        assert bigT
+        bigTDupe = bigT.dupe()
+        if bigTDupe.taxNames:
+            pass
+        else:
+            raise P4Error('SR2008ML: The bigT needs taxNames')
+
+        stm = STMcmc(ttDupes, bigT=bigTDupe, modelName='SR2008_rf_aZ_fb',
+                     beta=1.0, spaQ=0.5, stRFCalc='purePython1',
+                     nChains=1, runNum=0, sampleInterval=100,
+                     checkPointInterval=None, useSplitSupport=False, verbose=False, 
+                     checkForOutputFiles=False)
+        self.ch = STChain(stm)
+
+
+    def setSuperTree(self, st):
+        assert self.ch.propTree.taxNames
+        st = st.dupe()
+        if st.taxNames:
+            assert st.taxNames == self.ch.propTree.taxNames
+        else:
+            st.taxNames = self.ch.propTree.taxNames
+        st.setPreAndPostOrder()
+
+        self.ch.propTree = st
+        #self.ch.setupBitarrayCalcs()
+        
+                
+    def calcP(self, beta):
+        myMIN = 1.e-10
+        myMAX = 1.e+10
+        if beta >= myMAX:
+            return 10000000.
+        if beta <= myMIN:
+            return 10000000.
+        self.ch.propTree.beta = beta
+        self.ch.getTreeLogLike_ppy1()  # pure python
+        return -self.ch.propTree.logLike
+
+
+    def optimizeBeta(self, x0=1.0):
+        res = minimize(self.calcP, x0, method='Nelder-Mead')
+        return (res.x, res.fun)
+    
