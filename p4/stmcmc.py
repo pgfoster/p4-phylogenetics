@@ -1586,7 +1586,7 @@ class STMcmc(object):
     In order to restart the MCMC from the end of a previous run:: 
 
         # read the last checkPoint file
-        m = func.unPickleStMcmc(0)  # runNum 0
+        m = func.unPickleSTMcmc(0)  # runNum 0
         m.run(20000)
 
     Its that easy if your previous run finished properly.  However, if

@@ -8,6 +8,7 @@ import os
 import string
 import io
 import copy
+import math
 
 
 class PosteriorSamples(object):
@@ -495,11 +496,19 @@ class PosteriorSamples(object):
                     except:
                         raise P4Error("could not get the part number")
                 thisSum = 0.0
+                theseComps = []
                 for i in range(4):
                     theFloat = float(splitPLine[splIndx])
                     t.model.parts[pNum].comps[0].val[i] = theFloat
                     thisSum += theFloat
+                    theseComps.append(theFloat)
                     splIndx += 1
+                if math.fabs(1.0 - thisSum) > 1.e-6:
+                    gm = ["The current parameters line is ---"]
+                    gm.append(pLine)
+                    gm.append("Compositions %s in (zero-based) partition %i "\
+                        "sum to %f; should sum to 1.0" % (theseComps, pNum, thisSum))
+                    raise P4Error(gm)
                 factor = 1.0 / thisSum  # must sum to one
                 for i in range(4):
                     t.model.parts[pNum].comps[0].val[i] *= factor
@@ -521,8 +530,8 @@ class PosteriorSamples(object):
             elif self.pramsHeader[splIndx].startswith('pinvar'):
                 if self.tree.model.nParts > 1:
                     try:
-                        splitPramHeader = self.pramsHeader[
-                            splIndx].split('{')[1][:-1]
+                        splitPramHeader = self.pramsHeader[splIndx].split('{')[1][:-1]
+                        print("pinvar", splitPramHeader)
                         pNum = int(splitPramHeader)
                         pNum -= 1
                     except:
