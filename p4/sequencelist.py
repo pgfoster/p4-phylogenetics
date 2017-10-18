@@ -306,6 +306,39 @@ class SequenceList(object):
                 s.name), "duped name %s" % s.name
             self.sequenceForNameDict[s.name] = s
 
+    def _readFastaMakeSeq(self, splHeadLine, sLineList):
+        gm = ['SequenceList._readFastaMakeSeq()']
+
+        if not splHeadLine or not splHeadLine[0]:
+            gm.append("No name for new fasta sequence.  This should not happen.")
+            raise P4Error(gm)
+        if not sLineList:
+            gm.append("No sequence for %s" % splHeadLine)
+            raise P4Error(gm)
+
+        mySeq = Sequence()
+        mySeq.name = splHeadLine[0]
+        if len(splHeadLine) == 2:
+            mySeq.comment = splHeadLine[1]
+        mySeq.sequence = ''.join(sLineList).lower()
+        return mySeq
+
+        
+    def _readFastaReadHeadLine(self, aLine):
+        gm = ['SequenceList._readFastaReadHeadLine(%s)']
+        assert aLine.startswith(">")  # or else we would not be here.
+        # There should be no space after the ">"
+        if aLine[1] in string.whitespace:
+            gm.append("The '>' should not be followed by whitespace.")
+            raise P4Error(gm)
+
+        # In this next line, the comment, if it exists, picks up a newline.  Get
+        # rid of it with strip().
+        splHeadLine = [myWord.strip() for myWord in aLine[1:].split(None, 1)]
+        return splHeadLine
+        
+        
+
     def _readFastaFile(self, flob):
         flob.seek(0)
         gm = ['SequenceList._readFastaFile()']
@@ -316,7 +349,7 @@ class SequenceList(object):
         Lines should not be longer than 120 characters.
         This will be overlooked here, but other programs may gag.
         """
-        alreadyComplainedAboutLength = 0
+        alreadyComplainedAboutLength = False
 
         # The first line might start with a ';'
         # Move the position to the first '>'
@@ -324,88 +357,50 @@ class SequenceList(object):
         while aLine[0] != '>':
             aLine = flob.readline()
 
-        mySeq = Sequence()
-        # So I can append lines.  I'll change it back to a string later
-        mySeq.sequence = []
+        if not aLine:
+            gm.append("Unable to find a line that starts with '>'")
+            raise P4Error(gm)
 
-        # Note that anything after the comment char ';' is ignored
-        aLine = aLine[:string.find(aLine, ';')]
+        sList = []
+        splHeadLine = self._readFastaReadHeadLine(aLine)
+        # print(splHeadLine)
 
-        # Get rid of any readseq-generated checksum and bases, ie >theName, 8 bases, A87261CF checksum.
-        # print aLine[-9:]
-        if aLine[-9:] == 'checksum.':
-            i = string.rfind(aLine, ',')  # find the last comma
-            if i != -1:                  # -1 if a comma was not found
-                aLine = aLine[:i]
-                if aLine[-5:] == 'bases':
-                    i = string.rfind(aLine, ',')
-                    if i != -1:
-                        aLine = aLine[:i]
-        # print "aLine is now '%s'" % aLine
+        # read the rest of the flob
+        while 1:
+            aLine = flob.readline()
+            # print("read aLine: %s" % aLine, end='')
 
-        # Split the first line into two parts, at the first space, if there is
-        # one.
-        i = string.find(aLine, ' ')
-        if i != -1:
-            mySeq.headLineList = [
-                string.strip(aLine[1:i]), string.strip(aLine[i:])]
-        else:
-            mySeq.headLineList = [string.strip(aLine[1:])]
-        # print mySeq.headLineList
-
-        # This may seem backwards, but it works...
-        aLine = flob.readline()
-        while aLine:
-            # print "aLine, before find: %s   %s" % (aLine, aLine[-1])
-            # There seems to be a bug with find.  If aLine does not end in '\n',
-            # then it gets shortened by one.  Here is a workaround.
-            if aLine[-1] == '\n' or aLine[-1] == '\r':
-                aLine = aLine[:string.find(aLine, ';')]
-            else:
-                aLine = aLine + '\n'
-                aLine = aLine[:string.find(aLine, ';')]
-            # print "aLine, after find: %s" % aLine
-
-            if len(aLine) and aLine[0] == '>':
-                self.sequences.append(mySeq)
-                mySeq = Sequence()
-                mySeq.sequence = []
-
-                # Get rid of any readseq-generated checksum
-                # print aLine[-9:]
-                if aLine[-9:] == 'checksum.':
-                    i = string.rfind(aLine, ',')  # find the last comma
-                    if i != -1:                  # -1 if a comma was not found
-                        aLine = aLine[:i]
-                        if aLine[-5:] == 'bases':
-                            i = string.rfind(aLine, ',')
-                            if i != -1:
-                                aLine = aLine[:i]
-                i = string.find(aLine, ' ')
-                if i != -1:
-                    mySeq.headLineList = [
-                        string.strip(aLine[1:i]), string.strip(aLine[i:])]
+            # If we are at the end, stash the last sequence and break.
+            if not aLine:
+                if not splHeadLine:
+                    break
                 else:
-                    mySeq.headLineList = [string.strip(aLine[1:])]
-                # print mySeq.headLineList
-                aLine = flob.readline()
+                    if not sList:
+                        gm.append("No sequence for '%s'?" % splHeadLine[0])
+                        raise P4Error(gm)
+                    mySeq = self._readFastaMakeSeq(splHeadLine, sList)
+                    # print("Got seq, %s, %s, %s" % (mySeq, mySeq.name, mySeq.sequence))
+                    self.sequences.append(mySeq)
+                    del(sList)
+                    break
+                
+            elif aLine[0] == '>':
+                # Stash the previous sequence
+                if not sList:
+                    gm.append("No sequence for '%s'?" % splHeadLine[0])
+                    raise P4Error(gm)
+                mySeq = self._readFastaMakeSeq(splHeadLine, sList)
+                self.sequences.append(mySeq)
+
+                sList = []
+                splHeadLine = self._readFastaReadHeadLine(aLine)
+                
             else:
-                assert mySeq
-                mySeq.sequence.append(string.lower(string.strip(aLine)))
-                aLine = flob.readline()
-        self.sequences.append(mySeq)
+                sList.append(aLine.strip())
+
 
         # now fix the sequences
-        toLowerTransTable = string.maketrans(
-            string.uppercase[:26], string.lowercase[:26])
         for mySeq in self.sequences:
-            mySeq.sequence = string.joinfields(mySeq.sequence, '')
-            # print mySeq.sequence
-            if string.count(mySeq.sequence, '.'):
-                gm.append("Dots don't work in a fasta file, do they?")
-                raise P4Error(gm)
-            mySeq.sequence = string.translate(mySeq.sequence, toLowerTransTable,
-                                              string.digits + string.whitespace + '\0')
             dType = p4.func.isDnaRnaOrProtein(mySeq.sequence)
             if dType == 1:
                 # print "Its dna"
@@ -423,12 +418,6 @@ class SequenceList(object):
                 # print "Its protein"
                 mySeq.dataType = 'protein'
 
-            if mySeq.headLineList:
-                if len(mySeq.headLineList) == 1:
-                    mySeq.name = mySeq.headLineList[0]
-                elif len(mySeq.headLineList) == 2:
-                    mySeq.name = mySeq.headLineList[0]
-                    mySeq.comment = mySeq.headLineList[1]
         if 0:
             for mySeq in self.sequences:
                 print('%20s  %-30s' % ('name', mySeq.name))
@@ -479,6 +468,7 @@ class SequenceList(object):
                     gm.append("Got bad characters.")
                     raise P4Error(gm)
         flob.close()
+
 
     def _readOpenPirFile(self, flob):
 

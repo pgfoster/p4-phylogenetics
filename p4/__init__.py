@@ -35,6 +35,7 @@ from past.builtins import execfile
 import sys
 import os
 import glob
+import string
 
 from .var import var
 from . import func

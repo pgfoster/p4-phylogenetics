@@ -17,9 +17,10 @@ box for other reasons, and it did not hurt.
 
 Make sure you have Python.h in your include path.  You probably have
 that if you installed Python from source, from MacPorts, from
-HomeBrew, or if you installed python-dev.
+Homebrew, or if you installed python-dev.
 
-====================================================================
+On my mac, I have python from Homebrew, and I installed boost-python from
+homebrew as well.  That worked.
 
 Now for scqdist, the sub-cubic quartet distance code from the clever
 and helpful folks at BIRC at Aarhus.
@@ -38,10 +39,14 @@ mess of files in this directory.  That is what you want, this time.
 Next step is to do "cmake ." (note the dot) on it, in order to make
 the file "include_blas.hpp", which is needed to include in Matrix.hpp.
 
-In a compile on a mac yosemite, I got an compile error from the
-include_blas.hpp, saying it could not find <vecLib/vBLAS.h>.  I
-replaced it with #include <Accelerate/Accelerate.h> and that seemed to
-work.
+In a compile on a mac yosemite (and again on El Cap and Sierra), I got an
+compile error from the include_blas.hpp, saying it could not find
+<vecLib/vBLAS.h>.  VecLib is deprecated.  I replaced that line (in
+include_blas.hpp) with 
+
+#include <Accelerate/Accelerate.h> 
+
+and that worked.
 
 Based on the main.cpp in the qdist src, I have made a file
 scqdistmodule.cpp, to make a Python module.  Do this ---
@@ -53,8 +58,12 @@ usually ok)
 
 On Ubuntu, I needed to add #include <cstddef> near the top of Tree.hpp.
 
-It might work.  If it does, you will get a module, scqdist.so, which
-you can put in your Python path.  Make sure that you can import it.
+On my mac, with Python and boost-python from Homebrew, I did not need to modify
+setup.py --- it just worked.
+
+If it works, you will get a module, scqdist.so, which you can put in your Python
+path (a good and obvious place would be in the p4 python lib directory).  Make
+sure that you can import it.
 
 If it does not work, you may need to adjust your setup.py.  You may
 need to remove the atlas lib from the list (I needed to do that on
@@ -68,3 +77,7 @@ Use it like this ---
 # tsA and tsB are two newick trees as Python strings.
 import scqdist
 mydist = scqdist.qdist(tsA, tsB)
+
+There is an example of its use in p4 in share/Examples/G_trees/B_topologyDistance
+
+
