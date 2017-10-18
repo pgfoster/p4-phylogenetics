@@ -9,7 +9,7 @@ var.trees[1].name = 'mrpMajRule'
 var.trees[2].name = 'mrpStrict'
 
 
-from p4.SuperTreeSupport import SuperTreeSupport
+from p4.supertreesupport import SuperTreeSupport
 print("%20s  %6s  %6s  %6s  %6s  %6s" % (' ', 'S', 'P', 'Q', 'R', 'V'))
 for st in var.trees:
     
