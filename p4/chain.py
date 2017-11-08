@@ -3488,7 +3488,8 @@ class Chain(object):
             dirPrams = mpCur.ndch2_leafAlpha * thisComp
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
-            self.logPriorRatio += lnPdfProps - lnPdfCurrs            
+            self.logPriorRatio += lnPdfProps - lnPdfCurrs 
+            # self.logPriorRatio = 0.0
 
 
     def proposeNdch2_internalCompsDir(self, theProposal):

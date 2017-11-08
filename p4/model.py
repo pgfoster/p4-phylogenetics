@@ -145,7 +145,7 @@ class ModelPart(object):
         self.cmd1_LN_t = 1.0
 
         self.ndch2 = False
-        self.ndch2_leafAlpha = 1.0      # Leaf
+        self.ndch2_leafAlpha = 100.0      # Leaf
         self.ndch2_internalAlpha = 1.0  # Internal
         self.ndch2_globalComp = None
         self.ndch2_writeComps = True
