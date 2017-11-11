@@ -291,7 +291,7 @@ class ConcurrentCombineIntersectionDicts(Process):
                 print('Thread %s processed %s combinations' % (self.getName(), q + 1))
                 sys.stdout.flush()
 
-        for i, j in dict.iteritems():
+        for i, j in dict.items():
             self.addAndUpdate(long(i[0]), long(i[1]), j, list[q][2])
 
         for q in range(len(list)):

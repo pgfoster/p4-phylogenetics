@@ -812,7 +812,7 @@ class SequenceList(object):
             else:
                 snDict[s.name] = 1
         nDupes = 0
-        for k, v in snDict.iteritems():
+        for k, v in snDict.items():
             if v > 1:
                 print("Got %2i copies of sequence name %s" % (v, k))
                 nDupes += 1

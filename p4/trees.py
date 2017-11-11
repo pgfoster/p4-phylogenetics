@@ -471,7 +471,7 @@ class Trees(object):
                 dTree.stripBrLens()
                 skd[skk] = [1, dTree]
 
-        # for v in skd.itervalues():
+        # for v in skd.values():
         #    print v
 
         # Flatten to a list, order by counts

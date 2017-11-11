@@ -143,7 +143,7 @@ class TreeSubsets(object):
             sys.stdout.flush()
 #            print 'SubtreeSets:'
 #            for dict in subtreeDicts:
-#                for name, subtree in dict.iteritems():
+#                for name, subtree in dict.items():
 #                    print name
 #                    subtree.draw(width=80, showNodeNums=0)
 # print '********************************************************'

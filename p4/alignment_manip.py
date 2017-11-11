@@ -507,7 +507,7 @@ if True:
                     pass
             hitsAtThisPos = 0
             thereIsASingleton = False  
-            for k,v in counters.iteritems():
+            for k,v in counters.items():
                 if v:
                     hitsAtThisPos += 1
                     if v == 1:
@@ -552,7 +552,7 @@ if True:
                 except KeyError:
                     pass
             hitsAtThisPos = 0
-            for k,v in counters.iteritems():
+            for k,v in counters.items():
                 if v:
                     hitsAtThisPos += 1
                 counters[k] = 0                # Initialize for next pos
@@ -618,7 +618,7 @@ if True:
                     pass
             hitsAtThisPos = 0
             thereIsASingleton = False  
-            for k,v in counters.iteritems():
+            for k,v in counters.items():
                 if v:
                     hitsAtThisPos += 1
                     if v == 1:
@@ -2106,7 +2106,7 @@ if True:
                     counters[c] += 1
             #hits = 0
             hitsAtThisPos = 0
-            for k, v in counters.iteritems():
+            for k, v in counters.items():
                 if v:
                     hitsAtThisPos += 1
                     counters[k] = 0

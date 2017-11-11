@@ -2930,7 +2930,7 @@ class Tree(object):
         if sd == 0:
             print("The trees are the same. No tv.")
             return
-        # for sk in self.splitKeyHash.iterkeys():
+        # for sk in self.splitKeyHash.keys():
         #    if not treeB.splitKeyHash.has_key(sk):
         #        print "self has sk
 
