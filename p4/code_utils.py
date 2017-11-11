@@ -253,7 +253,6 @@ class Code(object):
         self.code['-' * self.codelength] = "-"
 
         for i in range(len(symbols) ** self.codelength):
-            #theCodon = string.lower(Base1[i] + Base2[i] + Base3[i])
             # Generalized version (can deal with any code length):
             theCodon = reduce(operator.add, [Bases[j][i] for j in range(self.codelength)]).lower()
             theAA = AAs[i].lower()

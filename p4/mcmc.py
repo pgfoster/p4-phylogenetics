@@ -251,7 +251,7 @@ class McmcTunings(object):
             lst.append("  or")
             lst.append("    yourMcmc.tunings.parts[0].comp = 0.5")
 
-        return string.join(lst, '\n')
+        return '\n'.join(lst)
 
     def dump(self, advice=True):
         print(self.reprString(advice))
@@ -407,7 +407,7 @@ class McmcTuningsUsage(object):
         lst.append(
             "There are %i tunings for the model (not including the chainTemp tuning, if it exists)." % nTunings)
 
-        return string.join(lst, '\n')
+        return '\n'.join(lst)
 
     def dump(self):
         print(self.reprString())
@@ -498,7 +498,7 @@ class McmcProposalProbs(dict):
         theKeys.sort()
         for k in theKeys:
             stuff.append("        %30s: %s" % (k, getattr(self, k)))
-        return string.join(stuff, '\n')
+        return '\n'.join(stuff)
 
     def dump(self):
         print(self.reprString())

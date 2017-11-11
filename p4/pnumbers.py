@@ -119,7 +119,7 @@ class Numbers(object):
                         try:
                             theOne = splitLine[col]
                         except IndexError:
-                            gm.append("Line '%s'.  " % string.rstrip(aLine))
+                            gm.append("Line '%s'.  " % aLine.rstrip())
                             gm.append(
                                 "Can't get the item at (zero-based) index %i  " % col)
                             raise P4Error(gm)
@@ -127,7 +127,7 @@ class Numbers(object):
                             aFloat = float(theOne)
                             self.data.append(aFloat)
                         except (ValueError, TypeError):
-                            gm.append("Line '%s'.  " % string.rstrip(aLine))
+                            gm.append("Line '%s'.  " % aLine.rstrip())
                             gm.append("Can't make sense of '%s'" % theOne)
                             raise P4Error(gm)
         elif type(inThing) == type([]):

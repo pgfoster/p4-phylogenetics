@@ -120,7 +120,7 @@ def nexusSkipPastBlockEnd(flob):
     while 1:
         tok = nextTok(flob)
         if tok:
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             if lowTok == 'end' or lowTok == 'endblock':
                 tok2 = nextTok(flob)
                 if not tok2 or tok2 != ';':

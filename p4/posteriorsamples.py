@@ -122,7 +122,7 @@ class PosteriorSamples(object):
         self.model.cModel = None
         self.runNum = int(runNum)
         self.goodPrograms = ['p4', 'mrbayes']
-        lowProgram = string.lower(program)
+        lowProgram = program.lower()
         if program not in self.goodPrograms:
             gm.append(
                 "The program generating the files should be one of %s" % self.goodPrograms)

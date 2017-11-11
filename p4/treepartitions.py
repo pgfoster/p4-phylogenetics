@@ -247,7 +247,7 @@ def _getModelInfo(theComment):
             break
         elif tok[0] in ['c', 'r', 'g']:
             ending = tok[1:]
-            splitEnding = string.split(ending, '.')
+            splitEnding = ending.split('.')
             # print "got splitEnding = %s" % splitEnding
             try:
                 firstNum = int(splitEnding[0])
@@ -400,7 +400,7 @@ something like this::
             if taxNames:
                 self.taxNames = taxNames
                 self.nTax = len(taxNames)
-        if type(inThing) == type('string'):
+        if type(inThing) == types.StringType:
             if not os.path.isfile(inThing):
                 gm.append(
                     "The inThing is a string, but does not appear to be a file name.")
@@ -424,8 +424,7 @@ something like this::
                 self._readNexusFile(inThing, skip, max)
         elif isinstance(inThing, Tree):
             if skip or max:
-                gm.append(
-                    "Args skip and and max only come into play when reading from files.")
+                gm.append("Args skip and and max only come into play when reading from files.")
                 raise P4Error(gm)
             if not inThing.taxNames:
                 gm.append("If inThing is a Tree object, it needs taxNames.")
@@ -476,7 +475,7 @@ something like this::
             for i in range(skip):
                 nexusSkipPastNextSemiColon(f)
             #tok = safeNextTok(f)
-            #lowTok = string.lower(tok)
+            #lowTok = tok.lower()
 
         # Read in the trees
         while 1:
@@ -517,7 +516,7 @@ something like this::
         # Read the #nexus
         tok = nextTok(f)
         if tok:
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
         else:
             gm.append("Empty file?!?")
             raise P4Error(gm)
@@ -530,7 +529,7 @@ something like this::
         inBlock = 0
         while 1:
             tok = safeNextTok(f)
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             if not inBlock:
                 if lowTok != 'begin':
                     gm.append("Expecting the 'begin' of a nexus block.")
@@ -563,7 +562,7 @@ something like this::
         nexusSkipPastNextSemiColon(f)
         tok = safeNextTok(f)
         # print "t got tok = %s" % tok
-        lowTok = string.lower(tok)
+        lowTok = tok.lower()
         if lowTok == 'translate':
             translationHash = nf.readTranslateCommand(f)
             if not self.taxNames:
@@ -606,7 +605,7 @@ something like this::
                         elif ret == 2:
                             self.doModelComments = 1
                 else:
-                    lowTok = string.lower(tok)
+                    lowTok = tok.lower()
             var.nexus_getP4CommandComments = savedState
 
         if not self.taxNames or not self.nTax:
@@ -631,7 +630,7 @@ something like this::
             for i in range(skip):
                 nexusSkipPastNextSemiColon(f)
             tok = safeNextTok(f)
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
 
         # Read in the trees
         while 1:
@@ -673,7 +672,7 @@ something like this::
                 gm.append("I was expecting 'tree' or 'end'.")
                 raise P4Error(gm)
             tok = safeNextTok(f)
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             # print "xx got tok %s" % tok
         f.close()
 

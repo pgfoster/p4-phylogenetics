@@ -287,7 +287,7 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
 
     for seq in ali.sequences:
         # Convert from list to string.
-        #s.sequence = string.join(s.sequence, '')
+        #s.sequence = ''.join(s.sequence)
         seq.sequence = CAT(seq.sequence)
         #print s.sequence
     return ali

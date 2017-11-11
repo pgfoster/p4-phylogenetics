@@ -176,13 +176,13 @@ def _handleComment(flob):
             gm = ["NexusToken._skipComment()"]
             gm.append("Reached the end while still in a comment.")
             raise P4Error(gm)
-        if c == '&' and string.lower(c2) == 'w' and var.nexus_getWeightCommandComments:
+        if c == '&' and c2.lower() == 'w' and var.nexus_getWeightCommandComments:
             flob.seek(commentStartPos, 0)
             return _getComment(flob)
         elif c2 == '&' and var.nexus_getP4CommandComments:
             # ask whether the next 3 characters are 'p4 ' (ie p, 4, space)
             c2 = flob.read(3)
-            if len(c2) != 3 or string.lower(c2) != 'p4 ':
+            if len(c2) != 3 or c2.lower() != 'p4 ':
                 flob.seek(commentStartPos + 1, 0)
                 _skipComment(flob)
                 return
@@ -330,7 +330,7 @@ def _getWord(flob):
                 # print "gw got theWordPiece = %s" % theWordPiece
                 pieces.append(theWordPiece)
             break
-    theWord = string.join(pieces, '')
+    theWord = ''.join(pieces)
     pieces = []
     return theWord
 
@@ -409,7 +409,7 @@ def _getQuotedStuff(flob):
             gm = [complaintHead]
             gm.append("File ended while still in a quoted word.")
             raise P4Error(gm)
-    return string.join(['\''] + local_pieces + ['\''], '')
+    return ''.join(['\''] + local_pieces + ['\''])
 
 # (Thats it for the token generation stuff)
 
@@ -440,7 +440,7 @@ def nexusSkipPastBlockEnd(flob):
         tok = nextTok(flob)
         # print "nexusSkipPastBlockEnd() tok=%s" % tok
         if tok:
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             if lowTok == 'end' or lowTok == 'endblock':
                 tok2 = nextTok(flob)
                 if not tok2 or tok2 != ';':
@@ -473,7 +473,7 @@ def nexusNextCommand(flob):
     tok = nextTok(flob)
     if not tok:  # end of file, not an error
         return None
-    if string.lower(tok) == '#nexus':
+    if tok.lower() == '#nexus':
         tok = nextTok(flob)
     while tok:
         if tok == ';':

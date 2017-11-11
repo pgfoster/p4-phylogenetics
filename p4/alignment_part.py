@@ -32,7 +32,7 @@ if True:
         if self.equates:
             eqSymb = self.equates.keys()
             eqSymb.sort()
-            eqSymb = string.join(eqSymb, '')
+            eqSymb = ''.join(eqSymb)
         else:
             eqSymb = ''
 
@@ -98,7 +98,7 @@ if True:
                         equatesTable.append('0')
                 if verbose:
                     print('')
-            equatesTable = string.join(equatesTable, '')
+            equatesTable = ''.join(equatesTable)
             if verbose:
                 print("\n\nequatesTable:")
                 print(equatesTable)
@@ -110,8 +110,8 @@ if True:
             if 0:
                 print(gm[0])
                 print("sList = %s" % sList)
-                print("joined = %s" % string.join(sList, ''))
-            pf.pokeSequences(aPart.cPart, string.join(sList, ''))
+                print("joined = %s" % ''.join(sList))
+            pf.pokeSequences(aPart.cPart, ''.join(sList))
             # print "about to makePatterns ..."
             pf.makePatterns(aPart.cPart)
             # print "about to setInvar"
@@ -129,7 +129,7 @@ if True:
                 # This very method, but now there are no charPartitions in b.
                 b._initParts()
                 b.parts[0].name = cpp.name
-                b.parts[0].lowName = string.lower(cpp.name)
+                b.parts[0].lowName = cpp.name.lower()
                 self.parts.append(b.parts[0])
                 b.parts = []  # so we don't try free-ing it twice
 
@@ -170,7 +170,7 @@ if True:
                 b.initDataParts()
                 b.parts[0].alignment = self
                 b.parts[0].name = cpp.name
-                b.parts[0].lowName = string.lower(cpp.name)
+                b.parts[0].lowName = cpp.name.lower()
                 self.parts.append(b.parts[0])
                 b.parts = []  # so we don't try free-ing the new part twice
 
@@ -205,8 +205,7 @@ if True:
                                 s.sequence[k] = partSeq[spot]
                                 spot += 1
                 for i in range(len(self.sequences)):
-                    self.sequences[i].sequence = string.join(
-                        self.sequences[i].sequence, '')
+                    self.sequences[i].sequence = ''.join(self.sequences[i].sequence)
         else:
             if len(self.parts) == 1:
                 for i in range(len(self.sequences)):
@@ -228,8 +227,7 @@ if True:
                                 s.sequence[k] = partSeq[spot]
                                 spot += 1
                 for i in range(len(self.sequences)):
-                    self.sequences[i].sequence = string.join(
-                        self.sequences[i].sequence, '')
+                    self.sequences[i].sequence = ''.join(self.sequences[i].sequence)
 
     def resetPartsContentFromSequences(self):
         """Reset Part.cPart sequences from self.sequences.
@@ -244,7 +242,7 @@ if True:
                 sList = []
                 for s in self.sequences:
                     sList.append(s.sequence)
-                pf.pokeSequences(aPart.cPart, string.join(sList, ''))
+                pf.pokeSequences(aPart.cPart, ''.join(sList))
                 # are the following necessary?
                 pf.makePatterns(aPart.cPart)
                 pf.setGlobalInvarSitesVec(aPart.cPart)
@@ -282,7 +280,7 @@ if True:
                     sList = []
                     for s in b.sequences:
                         sList.append(s.sequence)
-                    pf.pokeSequences(aPart.cPart, string.join(sList, ''))
+                    pf.pokeSequences(aPart.cPart, ''.join(sList))
                     # are the following necessary?
                     pf.makePatterns(aPart.cPart)
                     pf.setGlobalInvarSitesVec(aPart.cPart)

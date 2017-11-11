@@ -38,7 +38,7 @@ def nexusCheckName(theName):
         return 0
     if var.nexus_allowAllDigitNames:
         return 1
-    if len(theName) == 1 and theName[0] not in string.letters:
+    if len(theName) == 1 and theName[0] not in string.ascii_letters:
         return 0
     try:
         int(theName)
@@ -63,7 +63,7 @@ def nexusUnquoteAndDeUnderscoreName(theName):
             return theName.replace('\'\'', '\'')
         else:
             return theName
-    if string.count(theName, '_'):
+    if '_' in theName:
         return theName.replace('_', ' ')
     else:
         return theName
@@ -143,15 +143,15 @@ def isDnaRnaOrProtein(aString):
 
     It only works for lowercase symbol letters.
     """
-    nGaps = string.count(aString, '-')
-    nQs = string.count(aString, '?')
+    nGaps = aString.count('-')
+    nQs = aString.count('?')
     strLenNoGaps = len(aString) - (nGaps + nQs)
-    acgn = (string.count(aString, 'a') +
-            string.count(aString, 'c') +
-            string.count(aString, 'g') +
-            string.count(aString, 'n'))
-    t = string.count(aString, 't')
-    u = string.count(aString, 'u')
+    acgn = (aString.count('a') +
+            aString.count('c') +
+            aString.count('g') +
+            aString.count('n'))
+    t = aString.count('t')
+    u = aString.count('u')
     if 0:
         print("stringLength(no gaps) = %s" % strLenNoGaps)
         print("acgn = %f" % acgn)
@@ -171,16 +171,16 @@ def isDnaRnaOrProtein(aString):
     # prevent eg 'rymkswhvd' from being assigned as dna.
 
     threshold1 = 0.75 * strLenNoGaps
-    tally = (string.count(aString, 'r') +
-             string.count(aString, 'y') +
-             string.count(aString, 'm') +
-             string.count(aString, 'k') +
-             string.count(aString, 's') +
-             string.count(aString, 'w') +
-             string.count(aString, 'h') +
-             string.count(aString, 'b') +
-             string.count(aString, 'v') +
-             string.count(aString, 'd'))
+    tally = (aString.count('r') +
+             aString.count('y') +
+             aString.count('m') +
+             aString.count('k') +
+             aString.count('s') +
+             aString.count('w') +
+             aString.count('h') +
+             aString.count('b') +
+             aString.count('v') +
+             aString.count('d'))
     threshold2 = 0.99 * strLenNoGaps
     # print "  string length is %i, strLenNoGaps is %i" % (len(aString), strLenNoGaps)
     # print "  threshold2 is %3.1f, acgn + t + ambigs = %i" % (threshold, (acgn + t + tally))
@@ -200,7 +200,7 @@ def stringZapWhitespaceAndDigits(inString):
     for i in theRange:
         if out[i] in string.whitespace or out[i] in string.digits:
             del out[i]
-    return string.join(out, '')
+    return ''.join(out)
 
 
 def dump():
@@ -393,7 +393,7 @@ def readFile(fName):
     if result:
         #baseName = result.group(1)
         # print "got result.group(2) = %s" % result.group(2)
-        suffix = string.lower(result.group(2))
+        suffix = result.group(2).lower()
         # print "readFile: got suffix '%s'" % suffix
         if suffix == 'py':
             flob.close()
@@ -642,9 +642,9 @@ def _tryToReadNexusFile(fName, flob):
             if len(var.trees):
                 tnList = []
                 for t in var.trees:
-                    tnList.append(string.lower(t.name))
+                    tnList.append(t.name.lower())
                 for t in var.trees:
-                    if tnList.count(string.lower(t.name)) > 1:
+                    if tnList.count(t.name.lower()) > 1:
                         print("P4: Warning: got duplicated tree name '%s' (names are compared in lowercase)" \
                               % t.name)
                         # print "Lowercased tree names: %s" % tnList
@@ -1443,9 +1443,9 @@ def getSplitStringFromKey(theKey, nTax, escaped=False):
             ss[i] = '*'
             #ss[i] = '1'
     if escaped:
-        return '\\' + string.join(ss, '\\')
+        return '\\' + '\\'.join(ss)
     else:
-        return string.join(ss, '')
+        return ''.join(ss)
 
 
 def getSplitKeyFromTaxNames(allTaxNames, someTaxNames):
@@ -1891,7 +1891,7 @@ def fixCharsForLatex(theString):
         for i in theRange[:-1]:
             if l[i] == '\'' and l[i - 1] == '\'':
                 del(l[i])
-    return string.join(l, '')
+    return ''.join(l)
 
 
 def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
@@ -1913,7 +1913,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
     #cListAllPat = re.compile('all\\\\?(\d+)?')
 
     # print "char list is: %s" % nexusCharListString
-    cList = string.split(nexusCharListString)
+    cList = nexusCharListString.split()
     # print "cList is %s" % cList
     mask = array.array('c', maskLength * '0')
     for c in cList:        # eg 6-10\2
@@ -1948,7 +1948,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
                       nexusCharListString)
             raise P4Error(gm)
         elif first and not second:  # its a single
-            if string.lower(first) == 'all':
+            if first.lower() == 'all':
                 for i in range(len(mask)):
                     mask[i] = '1'
             elif first == '.':
@@ -2380,15 +2380,15 @@ def recipes(writeToFile=var.recipesWriteToFile):
 
     for recNum in range(len(recipesList)):
         rec = recipesList[recNum]
-        print("%s.  %s" % (string.uppercase[recNum], rec[0]))
+        print("%s.  %s" % (string.ascii_uppercase[recNum], rec[0]))
     ret = raw_input('Tell me a letter: ')
     # print "Got %s" % ret
     if ret == '':
         return
-    elif ret[0] in string.uppercase:
-        recNum = string.uppercase.index(ret[0])
-    elif ret[0] in string.lowercase:
-        recNum = string.lowercase.index(ret[0])
+    elif ret[0] in string.ascii_uppercase:
+        recNum = string.ascii_uppercase.index(ret[0])
+    elif ret[0] in string.ascii_lowercase:
+        recNum = string.ascii_lowercase.index(ret[0])
     else:
         return
     # print "Got recNum %i" % recNum
@@ -2399,7 +2399,7 @@ def recipes(writeToFile=var.recipesWriteToFile):
         if ret == '':
             theFName = recipesList[recNum][1]
         else:
-            theFName = string.strip(ret)
+            theFName = ret.strip()
         if os.path.exists(theFName):
             "The file %s already exists.  I'm refusing to over-write it, so I'm doing nothing." % theFName
             return
@@ -2443,7 +2443,7 @@ and the documentation in the directory
 """ % (installation.p4ScriptPath, installation.p4LibDir, installation.p4DocDir))
 
     ret = raw_input('Ok to do this? [y/n]')
-    ret = string.lower(ret)
+    ret = ret.lower()
     if ret not in ['y', 'yes']:
         return
     print("Ok, deleting ...")
@@ -3137,7 +3137,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
                         try:
                             theOne = splitLine[pramNum + 1]
                         except IndexError:
-                            gm.append("Line '%s'.  " % string.rstrip(aLine))
+                            gm.append("Line '%s'.  " % aLine.rstrip())
                             gm.append(
                                 "Can't get parameter number %i  " % pramNum)
                             raise P4Error(gm)

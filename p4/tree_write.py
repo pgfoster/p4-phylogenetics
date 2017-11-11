@@ -321,11 +321,11 @@ if True:
                 fName2 = open(fName, 'a')
             else:
                 fName2 = open(fName, 'w')
-            fName2.write(string.join(sList, ''))
+            fName2.write(''.join(sList))
     #        fName2.write('\n')
             fName2.close()
         elif hasattr(fName, 'write'):
-            fName.write(string.join(sList, ''))
+            fName.write(''.join(sList))
             # fName.write('\n')
             # Somebody else opened the fName, so somebody else can close it.
         else:
@@ -346,7 +346,7 @@ if True:
                     sList.append(' g%i.%i' %
                                  (pNum, theNode.br.parts[pNum].gdasrvNum))
         sList.append(']')
-        return string.join(sList, '')
+        return ''.join(sList)
 
     def draw(self, showInternalNodeNames=1, addToBrLen=0.2, width=None, showNodeNums=1, partNum=0, model=None):
         """Draw the tree to the screen.
@@ -372,7 +372,7 @@ if True:
                               addToBrLen=addToBrLen, width=width,
                               autoIncreaseWidth=True,
                               showNodeNums=showNodeNums, partNum=partNum, model=model)
-        print(string.join(s, '\n'))
+        print('\n'.join(s))
 
     def textDrawList(self, showInternalNodeNames=1, addToBrLen=0.2, width=None, autoIncreaseWidth=True, showNodeNums=1, partNum=0, model=False):
 

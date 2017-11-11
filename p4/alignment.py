@@ -136,7 +136,7 @@ class ExcludeDelete(object):
             for i in range(len(self.mask)):
                 if self.mask[i]:
                     s.append(self.sequences[sNum].sequence[i])
-            self.alignment.sequences[sNum].sequence = string.join(s, '')
+            self.alignment.sequences[sNum].sequence = ''.join(s)
         self.alignment.length = len(self.alignment.sequences[0].sequence)
 
 
@@ -533,14 +533,12 @@ class Alignment(SequenceList):
             grandNSites = grandNSites + nSites
 
             for symb in self.symbols:
-                #symbolFreq[symb] = symbolFreq[symb] + float(string.count(seq.sequence, symb))
-                symbolFreq[symb] = float(string.count(seq.sequence, symb))
+                #symbolFreq[symb] = symbolFreq[symb] + float(seq.sequence.count(symb))
+                symbolFreq[symb] = float(seq.sequence.count(symb))
             if self.equates:
                 for equate in equatesKeys:
-                    # equateFreq[equate] = equateFreq[equate] + \
-                    #                     float(string.count(seq.sequence, equate))
-                    equateFreq[equate] = float(
-                        string.count(seq.sequence, equate))
+                    # equateFreq[equate] = equateFreq[equate] + float(seq.sequence.count(equate))
+                    equateFreq[equate] = float(seq.sequence.count(equate))
                     if equateFreq[equate]:
                         hasEquates = 1
 
@@ -617,7 +615,7 @@ class Alignment(SequenceList):
 ##            gm.append("This alignment has no charPartitions")
 ##            raise P4Error(gm)
 ##        theCP = None
-##        lowName = string.lower(charPartitionName)
+##        lowName = charPartitionName.lower()
 # for cp in self.nexusSets.charPartitions:
 # if cp.lowName == lowName:
 ##                theCP = cp
@@ -656,7 +654,7 @@ class Alignment(SequenceList):
 
 # Find the charPartition
 ##        theCP = None
-##        lowName = string.lower(charPartitionName)
+##        lowName = charPartitionName.lower()
 # for cp in self.nexusSets.charPartitions:
 # if cp.lowName == lowName:
 ##                theCP = cp
@@ -667,7 +665,7 @@ class Alignment(SequenceList):
 
 # Find the charPartitionSubset
 ##        theCPsubset = None
-##        lowName = string.lower(charPartitionSubsetName)
+##        lowName = charPartitionSubsetName.lower()
 # for cps in theCP.subsets:
 # if cps.lowName == lowName:
 ##                theCPsubset = cps
@@ -709,7 +707,7 @@ class Alignment(SequenceList):
             self.setNexusSets()
 
         theCS = None
-        lowName = string.lower(charSetName)
+        lowName = charSetName.lower()
         if lowName not in self.nexusSets.predefinedCharSetLowNames and lowName not in self.nexusSets.charSetLowNames:
             gm.append("This alignment has no charset named '%s'" % charSetName)
             raise P4Error(gm)
@@ -840,7 +838,7 @@ class Alignment(SequenceList):
 
         # replace the sequences
         for i in range(len(self.sequences)):
-            a.sequences[i].sequence = string.join(newList[i], '')
+            a.sequences[i].sequence = ''.join(newList[i])
 
         a.checkLengthsAndTypes()
         if 0:
@@ -1212,7 +1210,7 @@ class Alignment(SequenceList):
         if self.nexusSets.taxSets:
             # print("%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets)))
             # Check that no taxSet name is a taxName
-            lowSelfTaxNames = [string.lower(txName)
+            lowSelfTaxNames = [txName.lower()
                                for txName in self.taxNames]
             for ts in self.nexusSets.taxSets:
                 if ts.lowName in lowSelfTaxNames:

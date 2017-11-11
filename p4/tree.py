@@ -448,7 +448,7 @@ class Tree(object):
             elif tok == ';':
                 gm.append("Got ';' before any tree description.")
                 raise P4Error(gm)
-            elif tok[0] in string.letters + string.digits + '_' + '\'':
+            elif tok[0] in string.ascii_letters + string.digits + '_' + '\'':
                 flob.seek(savedPos, 0)
                 self.parseNewick(flob, translationHash, doModelComments)
                 # self._initFinish()
@@ -473,7 +473,7 @@ class Tree(object):
         if not cTok:
             # print "no cTok -- returning nothing"
             return
-        lowCTok = string.lower(cTok)
+        lowCTok = cTok.lower()
         if lowCTok in ['&r', '&u']:
             # print "got %s -- returning nothing" % cTok
             return
@@ -647,7 +647,7 @@ class Tree(object):
                     gm.append('Empty stack.  Out of place unparen?')
                     raise P4Error(gm)
 
-            elif tok[0] in string.letters or tok[0] in string.digits or tok[0] in var.nexus_safeChars \
+            elif tok[0] in string.ascii_letters or tok[0] in string.digits or tok[0] in var.nexus_safeChars \
                  or isQuotedTok or tok[0] in [
                     '_', '#', '\\', '/', '"', '(', ')']:
                 # A single-node tree, not ()aName, rather just aName.
@@ -695,7 +695,7 @@ class Tree(object):
 
                 else:
                     # A new terminal node.
-                    if tok[0] in string.letters or tok[0] in ['_']:
+                    if tok[0] in string.ascii_letters or tok[0] in ['_']:
                         if translationHash and translationHash.has_key(tok):
                             # print 'got key %s, val is %s' % (tok,
                             # translationHash[tok])
@@ -924,7 +924,7 @@ class Tree(object):
                             break
                         elif tok2[0] in ['c', 'r', 'g']:
                             ending = tok2[1:]
-                            splitEnding = string.split(ending, '.')
+                            splitEnding = ending.split('.')
                             try:
                                 firstNum = int(splitEnding[0])
                                 secondNum = int(splitEnding[1])
@@ -1515,7 +1515,7 @@ class Tree(object):
         if self.nexusSets.taxSets:
             # print "%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets))
             # Check that no taxSet name is a taxName
-            lowSelfTaxNames = [string.lower(txName)
+            lowSelfTaxNames = [txName.lower()
                                for txName in self.taxNames]
             for ts in self.nexusSets.taxSets:
                 if ts.lowName in lowSelfTaxNames:
@@ -2262,7 +2262,7 @@ class Tree(object):
         assert self.nexusSets
         assert self.taxNames
         assert self.nexusSets.taxSets
-        lowArgTaxSetName = string.lower(taxSetName)
+        lowArgTaxSetName = taxSetName.lower()
         theTS = None
         for ts in self.nexusSets.taxSets:
             if ts.lowName == lowArgTaxSetName:

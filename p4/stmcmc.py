@@ -1343,7 +1343,7 @@ class STMcmcTunings(object):
         lst.append("%s%32s: %s" % (spacer, 'polytomyPriorLogBigC', self.polytomyPriorLogBigC))
         lst.append("%s%32s: %s" % (spacer, 'spaQPriorType', self.spaQPriorType))
         lst.append("%s%32s: %s" % (spacer, 'spaQExpPriorLambda', self.spaQExpPriorLambda))
-        return string.join(lst, '\n')
+        return '\n'.join(lst)
 
     def dump(self):
         print(self.reprString())
@@ -1408,7 +1408,7 @@ class STMcmcProposalProbs(dict):
         theKeys.sort()
         for k in theKeys:
             stuff.append("        %20s: %s" % (k, getattr(self, k)))
-        return string.join(stuff, '\n')
+        return '\n'.join(stuff)
 
     def dump(self):
         print(self.reprString())

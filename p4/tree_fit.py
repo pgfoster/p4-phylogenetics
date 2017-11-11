@@ -28,7 +28,7 @@ def _fixFileName(fName):
             theChar = fName[i]
             if theChar == '.' or theChar == ' ':
                 fName[i] = '_'
-        fName = string.join(fName, '')
+        fName = ''.join(fName)
     return fName
 
 longMessage1 = """
@@ -987,27 +987,27 @@ if True:
         if verbose:
             print(headSig % 'Part Num', end=' ')
             for pNum in range(self.data.nParts):
-                print(string.center('%i' % pNum, partWid), end=' ')
+                print(('%i' % pNum).center(partWid), end=' ')
             print()
             print(headSig % 'Part Name', end=' ')
             for pNum in range(self.data.nParts):
-                print(string.center('%s' % self.data.parts[pNum].name, partWid), end=' ')
+                print(self.data.parts[pNum].name.center(partWid), end=' ')
             print()
             print(headSig % ('-' * (headWid - 2)), end=' ')
             for pNum in range(self.data.nParts):
-                print(string.center('%s' % ('-' * (partWid - 2)), partWid), end=' ')
+                print(('-' * (partWid - 2)).center(partWid), end=' ')
             print()
 
         # Print the all-sequences results
         if verbose:
             print(headSig % 'All Sequences', end=' ')
             for pNum in range(self.data.nParts):
-                print(string.center('%6.4f' % partTaps[pNum], partWid), end=' ')
+                print(('%6.4f' % partTaps[pNum]).center(partWid), end=' ')
             print()
             if doChiSquare:
                 print(headSig % '(Chi-Squared Prob)', end=' ')
                 for pNum in range(self.data.nParts):
-                    print(string.center('(%6.4f)' % original[pNum][2], partWid), end=' ')
+                    print(('(%6.4f)' % original[pNum][2]).center(partWid), end=' ')
                 print()
 
         if doIndividualSequences and verbose:
@@ -1021,9 +1021,9 @@ if True:
                     if tNum not in skips[pNum]:
                         ret = p4.func.tailAreaProbability(
                             original[pNum][3][tNum], rows[pNum][tNum], verbose=0)[2]
-                        print(string.center('%6.4f' % ret, partWid), end=' ')
+                        print(('%6.4f' % ret).center(partWid), end=' ')
                     else:
-                        print(string.center('%s' % ('-' * 4), partWid), end=' ')
+                        print(('-' * 4).center(partWid), end=' ')
                 print()
                 if doChiSquare:
                     print(headSig % ' ', end=' ')
@@ -1033,9 +1033,9 @@ if True:
                         if tNum not in skips[pNum]:
                             ret = p4.func.chiSquaredProb(
                                 original[pNum][3][tNum], dof)
-                            print(string.center('(%6.4f)' % ret, partWid), end=' ')
+                            print(('(%6.4f)' % ret).center(partWid), end=' ')
                         else:
-                            print(string.center('%s' % ('-' * 4), partWid), end=' ')
+                            print(('-' * 4).center(partWid), end=' ')
                     print()
 
         # Replace the saved data

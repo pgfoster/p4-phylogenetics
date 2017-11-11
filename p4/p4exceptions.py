@@ -49,7 +49,6 @@ class P4Error(Exception):
                 else:
                     pass
 
-            #self.msg = string.join(niceMsgList, '\n')
             self.msg = '\n'.join(niceMsgList)
 
             # try:

@@ -1134,7 +1134,7 @@ if True:
                                 % (nUndefinedLogDets, biggest))
             else:
                 dMessage.append("There were no undefined log dets.")
-        d.message = string.join(dMessage, '\n    ')
+        d.message = '\n    '.join(dMessage)
 
         return d
 

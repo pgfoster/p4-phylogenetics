@@ -731,7 +731,7 @@ if True:
                 sList = []
                 for i in range(len(self.sequences)):
                     sList.append(self.sequences[i].sequence[pos])
-                # return string.join(sList, '')
+                # return ''.join(sList)
                 return sList
             else:
                 raise P4Error("Alignment.sequenceSlice().  pos out of range")
@@ -957,8 +957,7 @@ if True:
                     for j in range(seqCount):
                         newAlig.sequences[j].sequence.append(theSlice[j])
         for j in range(seqCount):
-            newAlig.sequences[j].sequence = string.join(
-                newAlig.sequences[j].sequence, '')
+            newAlig.sequences[j].sequence = ''.join(newAlig.sequences[j].sequence)
         newAlig.checkLengthsAndTypes()
         return newAlig
 
@@ -967,7 +966,7 @@ if True:
 
         ambigs = self.equates.keys()
         ambigs.append('-')
-        ambigs = string.join(ambigs, '')
+        ambigs = ''.join(ambigs)
         # print("got ambigs = '%s'" % ambigs)
 
         for s in self.sequences:
@@ -1013,7 +1012,7 @@ if True:
                 newList[i][j] = self.sequences[i].sequence[r]
         # replace the sequences
         for i in range(n):
-            a.sequences[i].sequence = string.join(newList[i], '')
+            a.sequences[i].sequence = ''.join(newList[i])
         return a
 
     def compositionEuclideanDistanceMatrix(self):
@@ -1280,7 +1279,7 @@ if True:
                 else:
                     # Maybe this should raise a P4Error?
                     print("skipping character '%s'" % c)
-            s.sequence = string.join(s.sequence, '')
+            s.sequence = ''.join(s.sequence)
         self.dataType = 'standard'
         self.equates = {}
         self.dim = 6
@@ -1612,7 +1611,7 @@ if True:
                                 i, self.sequences[i].name, theCodon))
 
         for s in a.sequences:
-            s.sequence = string.join(s.sequence, '')
+            s.sequence = ''.join(s.sequence)
             # print(s.sequence)
         return a
 
@@ -1622,7 +1621,7 @@ if True:
         gm = ['Alignment.excludeCharSet()']
         if not self.nexusSets:
             self.setNexusSets()
-        lowName = string.lower(theCharSetName)
+        lowName = theCharSetName.lower()
         theCS = None
 
         # We have either a pre-defined or non pre-defined char set
@@ -1763,7 +1762,7 @@ if True:
                     s.sequence[j] = dnaSeq.sequence[dnaPos:dnaPos + 3]
                     dnaPos = dnaPos + 3
                 # print(", codon %s" %  s.sequence[j])
-            s.sequence = string.join(s.sequence, '')
+            s.sequence = ''.join(s.sequence)
             # print(s.sequence)
             a.sequences.append(s)
 

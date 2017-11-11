@@ -130,7 +130,7 @@ class DistanceMatrix:
             for i in self.names:
                 #f.write('%-10s' % i[:9])
                 colName = '%s' % i[:totWid - 1]
-                f.write(string.center(colName, totWid))
+                f.write(colName.center(totWid))
             f.write(']\n')
 
         for i in range(self.dim):
@@ -232,7 +232,7 @@ class DistanceMatrix:
         import string
         self.names = []
         f = open(theFileName, 'r')
-        splitString = string.split(f.readline())
+        splitString = f.readline().split()
         if len(splitString) != 1:
             gm.append(
                 "The first line should have the number of taxa, and thats all.")
@@ -248,7 +248,7 @@ class DistanceMatrix:
             if not aLine:
                 gm.append("File too short?")
                 raise P4Error(gm)
-            splitLine = string.split(aLine)
+            splitLine = aLine.split()
             if len(splitLine) == 0:
                 gm.append("Empty line?")
                 gm.append("Got: '%s'" % aLine)
@@ -276,7 +276,7 @@ class DistanceMatrix:
                 if not aLine:
                     gm.append("File too short?")
                     raise P4Error(gm)
-                splitLine = string.split(aLine)
+                splitLine = aLine.split()
                 if len(splitLine) == 0:
                     gm.append("Empty line?")
                     gm.append("Got: '%s'" % aLine)

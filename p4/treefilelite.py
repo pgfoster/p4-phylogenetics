@@ -127,8 +127,8 @@ class TreeFileLite(object):
         headerLines = []
         lNum = 0
         aLine = fLines[0]
-        sLine = aLine.lstrip()
-        lowLine = string.lower(sLine)
+        aLine = aLine.lstrip()
+        lowLine = aLine.lower()
         while 1:
             if lowLine.startswith("tree"):
                 break
@@ -136,8 +136,8 @@ class TreeFileLite(object):
             lNum += 1
             try:
                 aLine = fLines[lNum]
-                sLine = aLine.lstrip()
-                lowLine = string.lower(sLine)
+                aLine = aLine.lstrip()
+                lowLine = aLine.lower()
             except IndexError:
                 headerLines = []  # something went wrong ...
                 break
@@ -149,23 +149,23 @@ class TreeFileLite(object):
         translateLines = []
         lNum = 0
         aLine = fLines[0].strip()
-        lowLine = string.lower(aLine)
+        lowLine = aLine.lower()
         # print "a aLine: %s" % aLine
         try:
             while not lowLine.startswith("translate"):
                 lNum += 1
                 aLine = fLines[lNum].strip()
-                lowLine = string.lower(aLine)
+                lowLine = aLine.lower()
                 if lowLine.startswith('tree'):  # then we have gone too far
                     lNum = 0
                     aLine = fLines[0].strip()
-                    lowLine = string.lower(aLine)
+                    lowLine = aLine.lower()
                     break
         except IndexError:
             # no translate line, so go back to the beginning
             lNum = 0
             aLine = fLines[0].strip()
-            lowLine = string.lower(aLine)
+            lowLine = aLine.lower()
 
         # print "b lowLine: %s" % lowLine
 

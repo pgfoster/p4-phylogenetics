@@ -1194,7 +1194,7 @@ if True:
                         cycleType = LAST_CYCLE
                         # print "We are now in the last cycle.  hasFreqOnly=%s"
                         # % hasFreqOnly
-                        splitLine = string.split(prevLine)
+                        splitLine = prevLine.split()
                         thisKeyLength = len(splitLine[0])
                         keyCounter = 0
                     elif cycleType == MIDDLE_CYCLE:
@@ -1228,7 +1228,7 @@ if True:
                         # It will usually be a line like: ...*....*.     67.83  67.9%
                         # But it will sometimes be a line like: ...*....*.
                         # 68
-                        splitLine = string.split(aLine)
+                        splitLine = aLine.split()
                         theKey = splitLine[0]
                         if hasFreqOnly:
                             theSupport = float(splitLine[-1])

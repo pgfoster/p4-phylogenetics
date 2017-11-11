@@ -470,7 +470,7 @@ class TreePicture(object):
             stringList.append('</svg>\n\n')
         else:
             stringList.append('\nshowpage \n\n')
-        return string.join(stringList, '')
+        return ''.join(stringList)
 
     def textString(self, returnAsList=False):
 
@@ -629,9 +629,9 @@ class TreePicture(object):
         # Make strings from the list elements
         stringList.reverse()
         for i in range(len(stringList)):
-            #stringList[i] = string.join(stringList[i] + ['|'], '')
-            stringList[i] = string.join(stringList[i], '')
-            stringList[i] = string.rstrip(stringList[i])
+            #stringList[i] = ''.join(stringList[i] + ['|'])
+            stringList[i] = ''.join(stringList[i])
+            stringList[i] = stringList[i].rstrip()
 
         # Put a model key on the end
         if self.partNum > -1:
@@ -675,5 +675,5 @@ class TreePicture(object):
         if returnAsList:
             return stringList
         else:
-            s = string.join([''] + stringList, '\n')
+            s = '\n'.join([''] + stringList)
             return s
