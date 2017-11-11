@@ -1373,9 +1373,14 @@ if True:
 
         gm = ["Tree.restoreNamesFromRenameForPhylip()"]
         if os.path.exists(dictFName):
-            import __main__
-            execfile(dictFName, __main__.__dict__,  __main__.__dict__)
-            from __main__ import p4_renameForPhylip_dict, p4_renameForPhylip_originalNames
+            loc = {}
+            exec(open(dictFName).read(), {},  loc)
+            try:
+                p4_renameForPhylip_dict = loc['p4_renameForPhylip_dict']
+                p4_renameForPhylip_originalNames = loc['p4_renameForPhylip_originalNames']
+            except KeyError:
+                gm.append("Dict file %s exists, but I can't read it correctly." % dictFName)
+                raise P4Error(gm)
         else:
             gm.append("The dictionary file '%s' can't be found." % dictFName)
             raise P4Error(gm)
@@ -1394,8 +1399,7 @@ if True:
                 gm.append("self.taxNames is set, and should be replaced, but")
                 gm.append("p4_renameForPhylip_originalNames is None. ?!?")
                 raise P4Error(gm)
-        del(__main__.p4_renameForPhylip_dict)
-        del(__main__.p4_renameForPhylip_originalNames)
+
 
     def restoreDupeTaxa(self, dictFileName='p4DupeSeqRenameDict.py', asMultiNames=True):
         """Restore previously removed duplicate taxa from a dict file.
@@ -1422,7 +1426,7 @@ if True:
             gm.append("Can't find dict file '%s'" % dictFileName)
             raise P4Error(gm)
         loc = {}
-        execfile(dictFileName, {}, loc)
+        exec(open(dictFileName).read(), {}, loc)
         try:
             p4DupeSeqRenameDict = loc['p4DupeSeqRenameDict']
         except KeyError:

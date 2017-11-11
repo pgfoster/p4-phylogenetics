@@ -243,7 +243,7 @@ class PosteriorSamples(object):
                 fName = os.path.join(self.directory, fName)
             try:
                 loc = {}
-                execfile(fName, {}, loc)
+                exec(open(fName).read(), {}, loc)
                 # loc =locals()  no workee.
                 # print "loc = %s" % loc
                 self.nPrams = loc['nPrams']

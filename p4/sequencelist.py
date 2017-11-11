@@ -882,7 +882,7 @@ class SequenceList(object):
         gm = ["SequenceLists.restoreNamesFromRenameForPhylip()"]
         if os.path.exists(dictFName):
             import __main__
-            execfile(dictFName, __main__.__dict__,  __main__.__dict__)
+            exec(open(dictFName).read(), __main__.__dict__,  __main__.__dict__)
             from __main__ import p4_renameForPhylip_dict
         else:
             gm.append("The dictionary file '%s' can't be found." % dictFName)

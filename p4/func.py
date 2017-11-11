@@ -368,7 +368,7 @@ def read(stuff):
 
 
 def readFile(fName):
-    """If its a data or tree file, read it.  If its python code, execfile it."""
+    """If its a data or tree file, read it.  If its python code, exec it."""
 
     gm = ['func.readFile(%s)' % fName]
 
@@ -399,7 +399,7 @@ def readFile(fName):
             flob.close()
             import __main__
             #print "__main__.__dict__ is %s" % __main__.__dict__
-            execfile(fName, __main__.__dict__,  __main__.__dict__)
+            exec(open(fName).read(), __main__.__dict__,  __main__.__dict__)
             if hasattr(__main__, 'pyFileCount'):
                 __main__.pyFileCount += 1
             return
@@ -576,7 +576,7 @@ def _decideFromContent(fName, flob):
         flob.close()
         try:
             import __main__
-            execfile(fName, __main__.__dict__, __main__.__dict__)
+            exec(open(fName).read(), __main__.__dict__, __main__.__dict__)
             if hasattr(__main__, 'pyFileCount'):
                 __main__.pyFileCount += 1
         except:
@@ -3061,7 +3061,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
         try:
             loc = {}
             theFName = "mcmc_pramsProfile_%i.py" % runNum
-            execfile(os.path.join(theDir, theFName), {}, loc)
+            exec(open(os.path.join(theDir, theFName)).read(), {}, loc)
             # loc =locals()  no workee.
             # print "loc = %s" % loc
             nPrams = loc['nPrams']
@@ -3083,7 +3083,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
             try:
                 loc = {}
                 theFName = "mcmc_pramsProfile_%i.py" % runNum
-                execfile(os.path.join(theDir, theFName), {}, loc)
+                exec(open(os.path.join(theDir, theFName)).read(), {}, loc)
                 # loc =locals()  no workee.
                 # print "loc = %s" % loc
                 nPrams = loc['nPrams']

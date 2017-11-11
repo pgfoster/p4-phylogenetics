@@ -30,7 +30,6 @@ Documentation is at <http://p4.nhm.ac.uk>
 
 """
 from __future__ import print_function
-from past.builtins import execfile
 
 import sys
 import os
@@ -88,7 +87,7 @@ if 1:
     verboseStartupFiles = False  # Turn on for debugging...
     if 0:  # If you want it, turn it on.
         try:
-            execfile(os.environ['P4_STARTUP'])
+            exec(open(os.environ['P4_STARTUP']).read(), __main__.__dict__,  __main__.__dict__)
             if verboseStartupFiles:
                 print('\n\n ***** ...have read p4 config file from $P4_STARTUP *****')
         except KeyError:
@@ -115,7 +114,7 @@ if 1:
                 for fName in pyFileNames:
                     if verboseStartupFiles:
                         print('...reading %s' % fName)
-                    execfile(fName)
+                    exec(open(fName).read(), __main__.__dict__,  __main__.__dict__)
     del(fName)
     del(pathPat)
     del(pyFileNames)
