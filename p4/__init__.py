@@ -87,7 +87,8 @@ if 1:
     verboseStartupFiles = False  # Turn on for debugging...
     if 0:  # If you want it, turn it on.
         try:
-            exec(open(os.environ['P4_STARTUP']).read(), __main__.__dict__,  __main__.__dict__)
+            import __main__
+            exec(open(os.environ['P4_STARTUP']).read())     # an official python anti-idiom!
             if verboseStartupFiles:
                 print('\n\n ***** ...have read p4 config file from $P4_STARTUP *****')
         except KeyError:
@@ -114,7 +115,7 @@ if 1:
                 for fName in pyFileNames:
                     if verboseStartupFiles:
                         print('...reading %s' % fName)
-                    exec(open(fName).read(), __main__.__dict__,  __main__.__dict__)
+                    exec(open(fName).read())    # an official python anti-idiom
     del(fName)
     del(pathPat)
     del(pyFileNames)
