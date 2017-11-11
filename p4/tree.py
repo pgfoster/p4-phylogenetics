@@ -405,7 +405,7 @@ class Tree(object):
             print('    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok)
 
         if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok
+            from p4.nexustoken2 import nextTok, safeNextTok
         else:
             from p4.nexustoken import nextTok, safeNextTok
 
@@ -562,7 +562,7 @@ class Tree(object):
         lastPopped = None
 
         if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok
+            from p4.nexustoken2 import nextTok, safeNextTok
         else:
             from p4.nexustoken import nextTok, safeNextTok
 

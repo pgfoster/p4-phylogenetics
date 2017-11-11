@@ -11,7 +11,7 @@ from p4.nexus import Nexus, NexusData
 from p4.p4exceptions import P4Error
 #from p4.nexustoken import nextTok,safeNextTok,nexusSkipPastNextSemiColon
 import p4.nexustoken   # needed for cStrings
-# import nexustoken2  # Faster, in c
+# import p4.nexustoken2  # Faster, in c
 import p4.func
 from p4.var import var
 
@@ -464,8 +464,8 @@ something like this::
         # print 'TreePartitions._readPhylipTreeFile().
         # var.nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
         if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok, nexusSkipPastNextSemiColon
-            from nexustoken2 import checkLineLengths
+            from p4.nexustoken2 import nextTok, safeNextTok, nexusSkipPastNextSemiColon
+            from p4.nexustoken2 import checkLineLengths
             checkLineLengths(f)
         else:
             from p4.nexustoken import nextTok, safeNextTok, nexusSkipPastNextSemiColon
@@ -505,8 +505,8 @@ something like this::
         # print 'TreePartitions._readNexusFile().  var.nexus_doFastNextTok=%s'
         # % var.nexus_doFastNextTok
         if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok, nexusSkipPastNextSemiColon
-            from nexustoken2 import checkLineLengths
+            from p4.nexustoken2 import nextTok, safeNextTok, nexusSkipPastNextSemiColon
+            from p4.nexustoken2 import checkLineLengths
             checkLineLengths(f)
         else:
             from p4.nexustoken import nextTok, safeNextTok, nexusSkipPastNextSemiColon

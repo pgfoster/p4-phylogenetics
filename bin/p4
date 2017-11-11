@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python2
 
 # As of mid-october 2017, homebrew on my mac uses python2.7.14, aliased to python2 
 # BUT NOT aliased to python.  Saying python gives me ancient /usr/bin/python v 2.7.10.
@@ -134,10 +134,8 @@ if 1:
     if os.path.isdir(theDir):
         fName = os.path.join(theDir, 'interactive')
         if os.path.isfile(fName):
-            try:
-                execfile(fName)
-            except:
-                pass
+            #print("reading %s ..." % fName)
+            exec(open(fName).read())
         del(fName)
     del(theDir)
 
