@@ -62,8 +62,9 @@ def nexusCheckName(theName):
 
     Single digit names are prohibited, regardless.
     """
-    if not isinstance(theName, bytes):
-        print("nexusCheckName() %s is not bytes, is %s" % (theName, type(theName)))
+    if not isinstance(theName, str):
+        print("func.nexusCheckName() %s is not str, is %s" % (theName, type(theName)))
+        return 0
     if len(theName) == 1 and theName[0] not in string.ascii_letters:
         return 0
     if not var.nexus_allowAllDigitNames:
