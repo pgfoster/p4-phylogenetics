@@ -448,7 +448,7 @@ class Tree(object):
             elif tok == ';':
                 gm.append("Got ';' before any tree description.")
                 raise P4Error(gm)
-            elif tok[0] in string.ascii_letters + string.digits + '_' + '\'':
+            elif tok[0] in string.ascii_letters + string.digits + '_' + "'":
                 flob.seek(savedPos, 0)
                 self.parseNewick(flob, translationHash, doModelComments)
                 # self._initFinish()

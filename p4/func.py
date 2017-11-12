@@ -32,19 +32,47 @@ import numpy
 from p4.pnumbers import Numbers
 import p4.version
 
+# From http://python3porting.com/problems.html#bytes-strings-and-unicode
+if sys.version_info < (3,):
+    def b(x):
+        return x
+else:
+    import codecs
+    def b(x):
+        return codecs.latin_1_encode(x)[0]
+
+# # Py2/3 compatibility
+# try:
+#   basestring
+# except NameError:
+#   basestring = str
+
+
+
+
 def nexusCheckName(theName):
-    """Check to see if theName conforms to Nexus standards."""
-    if type(theName) != type('string'):
-        return 0
-    if var.nexus_allowAllDigitNames:
-        return 1
+    """Check to see if theName conforms to Nexus standards
+
+    See page 597 of Maddison, Swofford, and Maddison 1997, where they say "Names
+    are single NEXUS words; they cannot consist entirely of digits (e.g., a
+    taxon called 123 is illegal).
+
+    The all-digit name restriction can be relaxed in p4 by setting 
+    var.nexus_allowAllDigitNames.
+
+    Single digit names are prohibited, regardless.
+    """
+    if not isinstance(theName, bytes):
+        print("nexusCheckName() %s is not bytes, is %s" % (theName, type(theName)))
     if len(theName) == 1 and theName[0] not in string.ascii_letters:
         return 0
-    try:
-        int(theName)
-        return 0  # we don't allow all-digit names
-    except ValueError:
-        return 1
+    if not var.nexus_allowAllDigitNames:
+        try:
+            int(theName)
+            return 0  
+        except ValueError:
+            return 1
+
 
 
 def nexusUnquoteAndDeUnderscoreName(theName):
@@ -55,12 +83,12 @@ def nexusUnquoteAndDeUnderscoreName(theName):
     cases of 2 single quotes in a row to 1 single quote.
     """
 
-    if theName[0] == '\'':
+    if theName[0] == "'":
         assert theName[-1] == "'", \
             "func.nexusUnquoteAndDeUnderscoreName().  First char is a single quote, but last char is not."
         theName = theName[1:-1]
-        if theName.count('\'\''):
-            return theName.replace('\'\'', '\'')
+        if theName.count('\"'"):
+            return theName.replace("''", "'")
         else:
             return theName
     if '_' in theName:
@@ -76,15 +104,15 @@ def nexusUnquoteName(theName):
     theName is quoted, remove the outside quotes, and convert any
     cases of 2 single quotes in a row to 1 single quote."""
 
-    if theName[0] == '\'':
+    if theName[0] == "'":
         if theName[-1] != "'":
             gm = ['func.nexusUnquotName()']
             gm.append('the name is %s' % theName)
             gm.append("First char is a single quote, but last char is not.")
             raise P4Error(gm)
         theName = theName[1:-1]
-        if theName.count('\'\''):
-            return theName.replace('\'\'', '\'')
+        if theName.count("''"):
+            return theName.replace("''", "'")
         else:
             return theName
     else:
@@ -106,7 +134,7 @@ def nexusFixNameIfQuotesAreNeeded(theName, verbose=0):
 
     if theName == None:
         return theName
-    if theName.startswith('\''):
+    if theName.startswith("'"):
         return theName
     quotesAreNeeded = 0
     # for c in var.nexus_punctuation:
@@ -122,13 +150,13 @@ def nexusFixNameIfQuotesAreNeeded(theName, verbose=0):
     if quotesAreNeeded:
         if verbose:
             oldName = theName
-        if theName.count('\''):
+        if theName.count("'"):
             # If we have doubled quotes, don't re-double them
-            if theName.count('\'\''):
+            if theName.count("''"):
                 pass
             else:
-                theName = theName.replace('\'', '\'\'')
-        newName = '\'' + theName + '\''
+                theName = theName.replace("'", "''")
+        newName = "'" + theName + "'"
         if verbose:
             print("Warning. Nexus quoting |%s| to |%s|" % (oldName, newName))
         return newName
@@ -1883,13 +1911,13 @@ def fixCharsForLatex(theString):
                 l[i] = '$' + l[i] + '$'
         else:
             pass
-    if l[0] == '\'' and l[-1] == '\'':
+    if l[0] == "'" and l[-1] == "'":
         del(l[-1])
         del(l[0])
         theRange = range(len(l))
         theRange.reverse()
         for i in theRange[:-1]:
-            if l[i] == '\'' and l[i - 1] == '\'':
+            if l[i] == "'" and l[i - 1] == "'":
                 del(l[i])
     return ''.join(l)
 

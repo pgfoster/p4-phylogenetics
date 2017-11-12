@@ -344,10 +344,10 @@ def _getQuotedStuff(flob):
     # 2 single quotes is ok, tho.
     c = flob.read(1)
     if c:
-        if c == '\'':
+        if c == "'":
             c2 = flob.read(1)
             if c2:
-                if c2 == '\'':
+                if c2 == "'":
                     # The opening single quote has been directly
                     # followed by 2 single quotes. Thats ok.
                     flob.seek(-2, 1)  # Back up 2 spaces.
@@ -384,7 +384,7 @@ def _getQuotedStuff(flob):
                 print("gq %3i  whitespace" % flob.tell())
             else:
                 print("gq %3i  %s" % (flob.tell(), c))
-        if c == '\'':
+        if c == "'":
             c2 = flob.read(1)
             if c2:
                 flob.seek(-1, 1)
@@ -396,8 +396,8 @@ def _getQuotedStuff(flob):
                 # print "gq got thePiece = %s" % thePiece
                 local_pieces.append(thePiece)
 
-            if c2 and c2 == '\'':  # ie 2 single quotes in a row
-                local_pieces.append('\'\'')
+            if c2 and c2 == "'":  # ie 2 single quotes in a row
+                local_pieces.append("''")
                 flob.seek(2, 1)
                 startPos = flob.tell()
                 continue
@@ -409,7 +409,7 @@ def _getQuotedStuff(flob):
             gm = [complaintHead]
             gm.append("File ended while still in a quoted word.")
             raise P4Error(gm)
-    return ''.join(['\''] + local_pieces + ['\''])
+    return ''.join(["'"] + local_pieces + ["'"])
 
 # (Thats it for the token generation stuff)
 

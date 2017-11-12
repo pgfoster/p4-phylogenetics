@@ -420,7 +420,7 @@ class TreePicture(object):
                         stringList.append('%f %f moveto \n' %
                                           (self.rootNameContribution + self.xOrigin + ((n.xPos + n.parent.xPos) * 0.5 * self.xScale),
                                            self.yOrigin + (n.yPos * self.yScale) + 2))
-                        # if n.name[0] == '\'' and n.name[-1] == '\'':  # Is this needed?
+                        # if n.name[0] == "'" and n.name[-1] == "'":  # Is this needed?
                         #    theName = n.name[1:-1]
                         # else:
                         #    theName = n.name
@@ -435,7 +435,7 @@ class TreePicture(object):
                         stringList.append('%f %f moveto \n' %
                                           (self.rootNameContribution + self.xOrigin + (n.xPos * self.xScale) + (self.labelTextSize / 3.0),
                                            self.yOrigin + (n.yPos * self.yScale) - (self.labelTextSize / 2.0) + (self.labelTextSize / 3.0)))
-                        # if n.name[0] == '\'' and n.name[-1] == '\'':
+                        # if n.name[0] == "'" and n.name[-1] == "'":
                         #    theName = n.name[1:-1]
                         # else:
                         #    theName = n.name
@@ -455,7 +455,7 @@ class TreePicture(object):
                         stringList.append('%f %f moveto \n' %
                                           (self.rootNameContribution + self.xOrigin + ((n.xPos + n.parent.xPos) * 0.5 * self.xScale),
                                            self.yOrigin + (n.yPos * self.yScale) + 2))
-                        if n.br.name[0] == '\'' and n.br.name[-1] == '\'':
+                        if n.br.name[0] == "'" and n.br.name[-1] == "'":
                             theName = n.br.name[1:-1]
                         else:
                             theName = n.br.name
