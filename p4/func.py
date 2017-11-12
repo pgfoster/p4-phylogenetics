@@ -82,16 +82,15 @@ def nexusUnquoteAndDeUnderscoreName(theName):
     If theName is not quoted, convert any underscores to spaces.  If
     theName is quoted, remove the outside quotes, and convert any
     cases of 2 single quotes in a row to 1 single quote.
+
+    This does not appear to be used in the rest of p4.
     """
 
     if theName[0] == "'":
         assert theName[-1] == "'", \
             "func.nexusUnquoteAndDeUnderscoreName().  First char is a single quote, but last char is not."
         theName = theName[1:-1]
-        if theName.count('\"'"):
-            return theName.replace("''", "'")
-        else:
-            return theName
+        return theName.replace("''", "'")
     if '_' in theName:
         return theName.replace('_', ' ')
     else:
@@ -103,7 +102,8 @@ def nexusUnquoteName(theName):
 
     If theName is not quoted, just return it.  If
     theName is quoted, remove the outside quotes, and convert any
-    cases of 2 single quotes in a row to 1 single quote."""
+    cases of 2 single quotes in a row to 1 single quote.
+    """
 
     if theName[0] == "'":
         if theName[-1] != "'":
@@ -131,7 +131,8 @@ def nexusFixNameIfQuotesAreNeeded(theName, verbose=0):
     If it has (nexus-defined) punctuation, or spaces, then put quotes
     around it before returning it.  If there are internal single
     quotes, then double them, nexus-style.  Except if there are any
-    already doubled single quotes, don't double them.  """
+    already doubled single quotes, don't double them.  
+    """
 
     if theName == None:
         return theName
