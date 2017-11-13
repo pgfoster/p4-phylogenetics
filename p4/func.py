@@ -73,6 +73,8 @@ def nexusCheckName(theName):
             return 0  
         except ValueError:
             return 1
+    else:
+        return 1
 
 
 
@@ -226,8 +228,7 @@ def isDnaRnaOrProtein(aString):
 def stringZapWhitespaceAndDigits(inString):
     out = list(inString)
     theRange = range(len(out))
-    theRange.reverse()
-    for i in theRange:
+    for i in reversed(theRange):
         if out[i] in string.whitespace or out[i] in string.digits:
             del out[i]
     return ''.join(out)
@@ -360,7 +361,6 @@ def read(stuff):
     # ()A; they cannot be specified simply as A.
 
     gm = ['p4.read()']
-    # if type(stuff) != type('string'):
     if isinstance(stuff, str):
         pass
     else:
@@ -369,7 +369,6 @@ def read(stuff):
     #nAlignments = len(var.alignments)
 
     if os.path.exists(stuff):
-        #var.nexus_doFastNextTok = False
         readFile(stuff)
     else:
         # Is it a glob?
@@ -387,8 +386,11 @@ def read(stuff):
                 print("    Maybe it was a mis-specified file name?")
                 print("    (You can turn off this warning by turning var.warnReadNoFile off.)\n")
             var.nexus_doFastNextTok = False
-            flob = io.BytesIO(stuff)
-                    
+            if sys.version_info < (3,):
+                flob = io.BytesIO(stuff)
+            else:
+                flob = io.StringIO(stuff)
+
             _decideFromContent('<input string>', flob)
             #_decideFromContent(stuff, flob)
             # if var.verboseRead:
@@ -1917,8 +1919,7 @@ def fixCharsForLatex(theString):
         del(l[-1])
         del(l[0])
         theRange = range(len(l))
-        theRange.reverse()
-        for i in theRange[:-1]:
+        for i in reversed(theRange[:-1]):
             if l[i] == "'" and l[i - 1] == "'":
                 del(l[i])
     return ''.join(l)
