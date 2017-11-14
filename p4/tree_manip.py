@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
 import string
-import types
 import math
 import copy
 import os
@@ -32,18 +31,18 @@ if True:
 
         gm = ['Tree.node()']
 
-        if type(specifier) == types.IntType:
+        if isinstance(specifier, int):
             nodeNum = specifier
-        elif type(specifier) == numpy.int32:
+        elif isinstance(specifier, numpy.int32):
             nodeNum = specifier
-        elif isinstance(specifier, Node):   # if its a node object
+        elif isinstance(specifier, Node):
             if specifier in self.nodes:
                 return specifier
             else:
                 gm.append(
                     "The specifier is a node object, but is not part of self.")
                 raise P4Error(gm)
-        elif type(specifier) == types.StringType:   # if its a string
+        elif isinstance(specifier, str):
             for n in self.iterNodes():
                 if n.name == specifier:
                     return n

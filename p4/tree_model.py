@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
 import string
-import types
 import math
 import copy
 import os
@@ -249,7 +248,7 @@ if True:
             raise P4Error(gm)
 
         if symbol:
-            if type(symbol) != type('s') or len(symbol) != 1:
+            if not isinstance(symbol, str) or len(symbol) != 1:
                 gm.append("Symbols must be 1-length strings.")
                 raise P4Error(gm)
             if symbol == '?':
@@ -885,7 +884,7 @@ if True:
             self.deleteCStuff()
         # self.model.dump()
 
-        if type(forceRepresentation) != type(1) or forceRepresentation < 1:
+        if not isinstance(forceRepresentation, int) or forceRepresentation < 1:
             gm.append("Arg 'forceRepresentation' should be 1 or more.")
             gm.append("Got forceRepresentation = %s" % forceRepresentation)
             raise P4Error(gm)
@@ -1107,7 +1106,7 @@ if True:
     def setTextDrawSymbol(self, theSymbol='-', node=None, clade=1):
         gm = ['\nTree.setTextDrawString()']
 
-        if not theSymbol or type(theSymbol) != type('c') or len(theSymbol) != 1:
+        if not theSymbol or not isinstance(theSymbol, str)  or len(theSymbol) != 1:
             gm.append("theSymbol should be a single character string.")
             raise P4Error(gm)
 

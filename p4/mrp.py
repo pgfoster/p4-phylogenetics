@@ -31,7 +31,7 @@ def mrp(trees, taxNames=None):
     """
 
     gm = ['mrp()']
-    if type(trees) != type([]):
+    if not isinstance(trees, list):
         gm.append("The 'trees' arg should be a list of p4 tree objects.")
         raise P4Error(gm)
     for t in trees:

@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
 import string
-import types
 import math
 import copy
 import os
@@ -316,7 +315,7 @@ if True:
             return "".join(sList)
         elif fName == None:
             print("".join(sList), end='')  # avoid a redundant newling
-        elif type(fName) == type('string'):
+        elif isinstance(fName, str):
             if append:
                 fName2 = open(fName, 'a')
             else:

@@ -1083,11 +1083,9 @@ class Chain(object):
                     print("7777777777777777777777777777777777777777777777777777777777 bad Cur Tree")
                 if math.fabs(self.propTree.logLike - sum(self.propTree.partLikes)) > 0.0001:
                     print("8888888888888888888888888888888888888888888888888888888888 bad Prop Tree")
-                # print self.propTree.partLikes, type(self.propTree.partLikes)
-                assert type(self.propTree.partLikes) == type(
-                    self.propTree.preOrder)
-                assert type(self.curTree.partLikes) == type(
-                    self.curTree.preOrder)
+                # print(self.propTree.partLikes, type(self.propTree.partLikes))
+                assert isinstance(self.propTree.partLikes, numpy.ndarray)
+                assert isinstance(self.curTree.partLikes, numpy.ndarray)
             pRet = self.proposeSp(aProposal)
         else:
             pRet = self.propose(aProposal)
@@ -1740,7 +1738,7 @@ class Chain(object):
         dim = self.propTree.model.parts[theProposal.pNum].dim
 
         # mt.val is a list, not a numpy array
-        #assert type(mt.val) == numpy.ndarray
+        #assert isinstance(mt.val, numpy.ndarray)
 
         indxs = random.sample(range(dim), 2)
         currentAplusB = mt.val[indxs[0]] + mt.val[indxs[1]]
@@ -1802,7 +1800,7 @@ class Chain(object):
         dim = self.propTree.model.parts[theProposal.pNum].dim
 
         # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0])
+        # print(type(mt.val), type(mt.val[0]))
 
         # The tuning is the Dirichlet alpha.
         # print theProposal.tuning
@@ -2341,7 +2339,7 @@ class Chain(object):
             # zero.
 
             # note that mtCur.val and mtProp.val are both ndarrays 
-            # print mtCur.val, type(mtCur.val)
+            # print(mtCur.val, type(mtCur.val))
             old = [0.0, 0.0]
             old[0] = mtCur.val[0] / (mtCur.val[0] + 1.0)
             old[1] = 1.0 - old[0]
@@ -2372,7 +2370,7 @@ class Chain(object):
                 theProposal.pNum].rMatrices[theProposal.mtNum]
 
             # mt.val is a numpy array
-            assert type(mt.val) == numpy.ndarray
+            assert isinstance(mt.val, numpy.ndarray)
 
             nRates = len(mt.val)  # eg 6 for dna gtr, not 5
             indxs = random.sample(range(nRates), 2)
@@ -2442,7 +2440,7 @@ class Chain(object):
             # the prior ratio 1.0 and the logPriorRatio zero.
 
             # note that mtCur.val and mtProp.val are both ndarrays, shape (1,) 
-            # print mtCur.val, type(mtCur.val), mtCur.val.shape
+            # print(mtCur.val, type(mtCur.val), mtCur.val.shape)
             oldVal = numpy.array([0.0, 0.0])
             oldVal[0] = mtCur.val[0] / (mtCur.val[0] + 1.0)
             oldVal[1] = 1.0 - oldVal[0]
@@ -2463,7 +2461,7 @@ class Chain(object):
 
 
             mtProp.val[0] = newVal[0] / newVal[1]
-            # print mtProp.val, type(mtProp.val), mtProp.val.shape
+            # print(mtProp.val, type(mtProp.val), mtProp.val.shape)
 
             # Calculate the proposal ratio
             # We can re-use myProposer to get the log pdf
@@ -2479,7 +2477,7 @@ class Chain(object):
                 theProposal.pNum].rMatrices[theProposal.mtNum]
 
             # mt.val is a numpy array
-            assert type(mt.val) == numpy.ndarray
+            assert isinstance(mt.val, numpy.ndarray)
             myProposer = scipy.stats.dirichlet(theProposal.tuning * mt.val)
 
             safety = 0
@@ -2948,7 +2946,7 @@ class Chain(object):
         #mt.val /= theProposal.tuning
 
         # mt.val is a numpy.ndarray type, an array with 1 element.
-        assert type(mt.val) == numpy.ndarray
+        assert isinstance(mt.val, numpy.ndarray)
         oldVal = mt.val
         newVal = oldVal * \
             math.exp(theProposal.tuning * (random.random() - 0.5))
@@ -2962,7 +2960,7 @@ class Chain(object):
             else:
                 isGood = True
 
-        # print type(self.logProposalRatio), type(self.logPriorRatio),
+        # print(type(self.logProposalRatio), type(self.logPriorRatio), end=' ')
         self.logProposalRatio = math.log(newVal / oldVal)
 
         self.logPriorRatio = 0.0
@@ -2970,8 +2968,8 @@ class Chain(object):
         #self.logPriorRatio = self.mcmc.tunings.parts[theProposal.pNum].gdasrvPriorLambda * float(oldVal - newVal)
         mt.val = newVal
         assert type(mt.val) == numpy.ndarray
-        # print type(self.logProposalRatio), type(self.logPriorRatio),
-        # print self.logProposalRatio, self.logPriorRatio
+        # print(type(self.logProposalRatio), type(self.logPriorRatio), end= ' ')
+        # print(self.logProposalRatio, self.logPriorRatio)
 
     def proposePInvar(self, theProposal):
         mt = self.propTree.model.parts[theProposal.pNum].pInvar
@@ -3170,7 +3168,7 @@ class Chain(object):
         mt = random.choice(mp.comps)
 
         # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0]), mt.val, mt.num
+        # print(type(mt.val), type(mt.val[0]), mt.val, mt.num)
 
         # This method uses p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
@@ -3210,7 +3208,7 @@ class Chain(object):
         curVal = mp.cmd1_pi0
 
         # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0]), mt.val, mt.num
+        # print(type(mt.val), type(mt.val[0]), mt.val, mt.num)
 
         # This method uses p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
@@ -3260,7 +3258,7 @@ class Chain(object):
         # First do proposal for pi0
 
         # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0]), mt.val, mt.num
+        # print(type(mt.val), type(mt.val[0]), mt.val, mt.num)
         # This method uses p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
         # returned.
@@ -3343,7 +3341,7 @@ class Chain(object):
         assert curVal >= MIN
 
         # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0]), mt.val, mt.num
+        # print(type(mt.val), type(mt.val[0]), mt.val, mt.num)
 
         if 0:
             # Do a log scale proposal

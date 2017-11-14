@@ -13,7 +13,6 @@ import time
 import copy
 import os
 import pickle
-import types
 import glob
 import numpy as np
 from p4.p4exceptions import P4Error

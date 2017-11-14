@@ -66,7 +66,7 @@ class SuperTreeInputTrees(object):
 
         if isinstance(inputTree, Tree):
             self.inputTree = inputTree            # not a list.
-        elif type(inputTree) == type(""):
+        elif isinstance(inputTree, str):
             var.trees = []
             read(inputTree)
             if len(var.trees) > 1:
@@ -115,7 +115,7 @@ class SuperTreeInputTrees(object):
 
         if distributionTrees:
             self.useTaxonDistribution = True
-            if type(distributionTrees) == type([]):
+            if isinstance(distributionTrees, list):
                 for t in distributionTrees:
                     if not isinstance(t, Tree):
                         gm.append(
@@ -123,7 +123,7 @@ class SuperTreeInputTrees(object):
                         raise P4Error(gm)
                 superTree = distributionTrees.pop(0)
                 inputTrees = distributionTrees
-            elif type(distributionTrees) == type(""):
+            elif isinstance(distributionTrees, list):
                 var.trees = []
                 read(distributionTrees)
                 if len(var.trees) < 1:
@@ -481,14 +481,14 @@ class SuperTreeSupport(object):
 
         var.warnReadNoFile = False
 
-        if type(inputTrees) == type([]):
+        if isinstance(inputTrees, list):
             for t in inputTrees:
                 if not isinstance(t, Tree):
                     gm.append(
                         "Input trees should be a list of p4 Tree objects. Got %s" % t)
                     raise P4Error(gm)
             self.inputTrees = inputTrees
-        elif type(inputTrees) == type(""):
+        elif isinstance(inputTrees, str):
             var.trees = []
             read(inputTrees)
             if len(var.trees) < 1:
@@ -503,7 +503,7 @@ class SuperTreeSupport(object):
 
         if isinstance(supertree, Tree):
             self.supertree = supertree            # not a list.
-        elif type(supertree) == type(""):
+        elif isinstance(supertree, str):
             var.trees = []
             read(supertree)
             if len(var.trees) > 1:

@@ -5,7 +5,6 @@ date: 25/08/2016
 from __future__ import print_function
 import sys
 import os
-import types
 import subprocess
 import re
 import copy
@@ -235,7 +234,7 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
         code = Code(transl_table, in_type="dna", out_type=out_type).code
         codelength = Code(transl_table).codelength
     else:
-        if isinstance(code, types.StringType):
+        if isinstance(code, str):
             code = getBiopythonCode(code) # defined in code_utils.py
         # We assume that the "codons" have all the same length,
         # and we look at the first codon in the dictionary to know this length.
@@ -381,7 +380,7 @@ def getHasAAsMask(self, aas, transl_table=1, code=None):
 
     if code is None:
         code = Code(transl_table).code
-    elif isinstance(code, types.StringType):
+    elif isinstance(code, str):
         code = getBiopythonCode(code)
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -433,7 +432,7 @@ def getConstantAAMask(self, transl_table=1, code=None, restrict_to=[]):
 
     if code is None:
         code = Code(transl_table).code
-    elif isinstance(code, types.StringType):
+    elif isinstance(code, str):
         code = getBiopythonCode(code) # defined in code_utils.py
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -488,7 +487,7 @@ def getDegenerateCodonsMask(self, transl_table=1, code=None, restrict_to=[], ign
     if code is None:
         #code = GeneticCode(transl_table).code
         code = Code(transl_table).code
-    elif isinstance(code, types.StringType):
+    elif isinstance(code, str):
         code = getBiopythonCode(code) # defined in code_utils.py
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -567,7 +566,7 @@ def getDegenerateSiteMaskForPos(self, pos, transl_table=1, code=None, restrict_t
 
     if code is None:
         code = Code(transl_table).code
-    elif isinstance(code, types.StringType):
+    elif isinstance(code, str):
         code = getBiopythonCode(code) # defined in code_utils.py
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -612,7 +611,7 @@ def degenerate(self, code="Standard", positions=[1, 2, 3], restrict_to=[], ignor
     serine codons, with degeneracy only within each type. The codons still count as coding
     their original amino-acid with respect to the *restrict_to* and *ignore* options.
     """ % "\n".join(sorted(CodonTable.unambiguous_dna_by_name.keys()))
-    if isinstance(code, types.StringType):
+    if isinstance(code, str):
         code = getBiopythonCode(code) # defined in code_utils.py
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -737,7 +736,7 @@ def degenerateByCodonColumn(self, code="Standard", restrict_to=[]):
     Default is to use the standard genetic code. Possible values for *code* are:
     %s
     """ % "\n".join(sorted(CodonTable.unambiguous_dna_by_name.keys()))
-    if isinstance(code, types.StringType):
+    if isinstance(code, str):
         code = getBiopythonCode(code) # defined in code_utils.py
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -767,7 +766,7 @@ def indelizeCodons(self, aas, code="Standard"):
     Default is to use the standard genetic code. Possible values for *code* are:
     %s
     """ % "\n".join(sorted(CodonTable.unambiguous_dna_by_name.keys()))
-    if isinstance(code, types.StringType):
+    if isinstance(code, str):
         code = getBiopythonCode(code) # defined in code_utils.py
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -861,12 +860,12 @@ def treeFinderMAPAnalysis(alignment, groups,
 
     for param in [gamma, invariant, bootstrap,
                   remove_files, run_analysis, verbose]:
-        if not isinstance(param, types.BooleanType):
+        if not isinstance(param, bool):
             msg = "%s value must be either True or False" % param
             gm.append(msg)
             raise P4Error(gm)
 
-    if not isinstance(nreplicates, types.IntType):
+    if not isinstance(nreplicates, int):
         msg = "nreplictes must be an integer"
         gm.append(msg)
         raise P4Error(gm)

@@ -10,7 +10,6 @@ import io
 import random
 import glob
 import time
-import types
 import pickle
 import random
 import array
@@ -595,10 +594,6 @@ def _decideFromContent(fName, flob):
 
         # If we are here then it isn't a nexus or gde file.
         # Last alternative: its assumed to be a python script
-        if var.verboseRead:
-            # print "As a last resort, guessing that '%s' is a python file..."
-            # % fName
-            print("Trying to read '%s' as a python file..." % fName)
         try:
             # get it, for a possible error message below, while the flob is
             # still open
@@ -606,29 +601,37 @@ def _decideFromContent(fName, flob):
         except AttributeError:
             theString = None
         flob.close()
+        if var.verboseRead:
+            # print "As a last resort, guessing that '%s' is a python file..."
+            # % fName
+            print("Trying to read '%s' as a python file..." % fName)
         try:
             import __main__
-            exec(open(fName).read(), __main__.__dict__, __main__.__dict__)
-            if hasattr(__main__, 'pyFileCount'):
-                __main__.pyFileCount += 1
-        except:
+            exec(theString, __main__.__dict__, __main__.__dict__)
+            if fName is not "<input string>":
+                if hasattr(__main__, 'pyFileCount'):
+                    __main__.pyFileCount += 1
             if var.verboseRead:
-                gm = ["Failed to read '%s' as a python file..." % fName]
-                gm.append("Giving up on trying to read '%s' at all." % fName)
+                print("... appears to have succeeded in reading '%s' as a python file..." % fName)
+
+        except NameError:
+            if var.verboseRead:
+                print("Failed to read '%s' as a python file..." % fName)
+                print("Giving up on trying to read '%s' at all." % fName)
+
+            # probably a mis-spelled file name
+            if isinstance(flob, (io.BytesIO, io.StringIO)):
+                if theString:
+                    if len(theString) < 100:
+                        gm = [
+                            "Couldn't make sense out of the input '%s'" % theString]
+                    else:
+                        gm = [
+                            "Couldn't make sense out of the input '%s ...'" % theString[100]]
+                gm.append(
+                    "It is not a file name, and I could not make sense out of it otherwise.")
             else:
-                # probably a mis-spelled file name
-                if type(flob) == type(io.BytesIO('foo')):
-                    if theString:
-                        if len(theString) < 100:
-                            gm = [
-                                "Couldn't make sense out of the input '%s'" % theString]
-                        else:
-                            gm = [
-                                "Couldn't make sense out of the input '%s ...'" % theString[100]]
-                    gm.append(
-                        "It is not a file name, and I could not make sense out of it otherwise.")
-                else:
-                    gm = ["Couldn't make sense of the input '%s'." % fName]
+                gm = ["Couldn't make sense of the input '%s'." % fName]
             raise P4Error(gm)
 
 
@@ -1548,7 +1551,7 @@ def _sumOfRows(aList):
     Adds up the rows of a 2d matrix, returning the vector.
     Eg _sumOfRows([[2,3], [6,13]]) returns [5, 19]
     """
-    if type(aList[0]) != type([]):
+    if not isinstance(aList[0], list):
         print("_sumOfRows: not a 2D array.  Assume its a row vector and return sum")
         return sum(aList)
     outList = []
@@ -1562,7 +1565,7 @@ def _sumOfColumns(aList):
     Adds up the rows of a 2d matrix, returning the vector.
     Eg _sumOfColumns([[2,3], [6,13]]) returns [8, 16]
     """
-    if type(aList[0]) != type([]):
+    if not isinstance(aList[0], list):
         print("_sumOfColumns: not a 2D array.  Assume its a column vector and return sum")
         return sum(aList)
     theLen = len(aList[0])
@@ -1712,7 +1715,7 @@ def which(what, verbose=0):
     given by the argument 'what') is in the path.  It returns 0 or 1.
     If verbose is turned on, it speaks the path, if it exists."""
 
-    if type(what) != type('aString'):
+    if not isinstance(what, str):
         raise P4Error("function which().  I was expecting a string argument.")
     f = os.popen('which %s 2> /dev/null' % what, 'r')
     aLine = f.readline()
@@ -2822,14 +2825,14 @@ def gsl_meanVariance(seq, mean=None, variance=None):
 
     """
 
-    if type(seq) == numpy.ndarray:
+    if isinstance(sec, numpy.ndarray):
         mySeq = seq
     else:
         mySeq = numpy.array(seq, numpy.float)
 
-    if type(mean) == types.NoneType:
+    if mean is None:
         mean = numpy.array([0.0])
-    if type(variance) == types.NoneType:
+    if variance is None:
         variance = numpy.array([0.0])
     pf.gsl_meanVariance(mySeq, len(seq), mean, variance)
     if 0:
@@ -2892,8 +2895,8 @@ def dirichlet2(inSeq, outSeq, alpha, theMin):
     """
 
     gm = ['func.dirichlet2()']
-    assert type(inSeq) == numpy.ndarray
-    assert type(outSeq) == numpy.ndarray
+    assert isinstance(inSeq, numpy.ndarray)
+    assert isinstance(outSeq, numpy.ndarray)
     kk = len(inSeq)
     theMax = 1.0 - ((kk - 1) * theMin)
     safety = 0
@@ -2937,8 +2940,8 @@ def gsl_ran_dirichlet(alpha, theta, seed=None):
     complaintHead = '\nfunc.gsl_ran_dirichlet()'
     gm = complaintHead
     try:
-        assert type(alpha) == numpy.ndarray
-        assert type(theta) == numpy.ndarray
+        assert isinstance(alpha, numpy.ndarray)
+        assert isinstance(theta, numpy.ndarray)
     except AssertionError:
         gm.append(" alpha, theta, should be numpy arrays.")
         raise P4Error(gm)
@@ -3014,10 +3017,8 @@ def effectiveSampleSize(data, mean):
         maxLag = 1000
 
     gammaStatAtPreviousLag = numpy.array([0.0])
-    assert type(data) == type(
-        gammaStatAtPreviousLag), "Arg 'data' should be a numpy.array.  Its %s" % type(data)
-    assert type(mean) == type(
-        gammaStatAtPreviousLag), "Arg 'mean' should be a numpy.array.  Its %s" % type(mean)
+    assert isinstance(data, numpy.ndarray), "Arg 'data' should be a numpy.array.  Its %s" % type(data)
+    assert isinstance(mean, numpy.ndarray), "Arg 'mean' should be a numpy.array.  Its %s" % type(mean)
     gammaStat = numpy.array([0.0])
     varStat = numpy.array([0.0])
     gammaStatAtLagZero = numpy.array([0.0])

@@ -12,7 +12,6 @@ import p4.func
 import re
 import sys
 import array
-import types
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix
@@ -647,10 +646,10 @@ if True:
         gm = ["Alignment.orMasks()"]
 
         # check for silliness
-        if type(maskA) != type('str'):
+        if not isinstance(maskA, str):
             gm.append("Alignment: orMasks(). Masks must be strings.")
             raise P4Error(gm)
-        if type(maskB) != type('str'):
+        if not isinstance(maskB, str):
             gm.append("Alignment: orMasks(). Masks must be strings.")
             raise P4Error(gm)
         if len(maskA) != self.length or len(maskB) != self.length:
@@ -687,10 +686,10 @@ if True:
         gm = ['Alignment.andMasks']
 
         # check for silliness
-        if type(maskA) != type('str'):
+        if not isinstance(maskA, str):
             gm.append("Masks must be strings.")
             raise P4Error(gm)
-        if type(maskB) != type('str'):
+        if not isinstance(maskB, str):
             gm.append("Masks must be strings.")
             raise P4Error(gm)
         if len(maskA) != self.length or len(maskB) != self.length:
@@ -1061,13 +1060,13 @@ if True:
         gm = ['Alignment.covarionStats()']
 
         # listA and listB should be lists
-        if type(listA) != type([1, 2]) or type(listB) != type([1, 2]):
+        if not isinstance(listA, list) or not isinstance(listB, list):
             gm.append("The args should be lists of sequences numbers or names")
             raise P4Error(gm)
         lstA = []
         lstB = []
         for i in listA:
-            if type(i) == type('string'):
+            if isinstance(i, str):
                 it = None
                 for s in range(len(self.sequences)):
                     if self.sequences[s].name == i:
@@ -1076,7 +1075,7 @@ if True:
                     gm.append("Name '%s' is not in self." % i)
                     raise P4Error(gm)
                 lstA.append(it)
-            elif type(i) == type(1) and i >= 0 and i < len(self.sequences):
+            elif isinstance(i, int) and i >= 0 and i < len(self.sequences):
                 lstA.append(i)
             else:
                 gm.append(
@@ -1084,7 +1083,7 @@ if True:
                 raise P4Error(gm)
 
         for i in listB:
-            if type(i) == type('string'):
+            if isinstance(i, str):
                 it = None
                 for s in range(len(self.sequences)):
                     if self.sequences[s].name == i:
@@ -1093,7 +1092,7 @@ if True:
                     gm.append("Name '%s' is not in self." % i)
                     raise P4Error(gm)
                 lstB.append(it)
-            elif type(i) == type(1) and i >= 0 and i < len(self.sequences):
+            elif isinstance(i, int) and i >= 0 and i < len(self.sequences):
                 lstB.append(i)
             else:
                 gm.append(
@@ -1309,12 +1308,12 @@ if True:
             gm.append("This is only for protein alignments.")
             raise P4Error(gm)
 
-        assert type(groups) == types.ListType
+        assert isinstance(groups, list)
         nGroups = len(groups)
         assert nGroups > 1
         assert nGroups < 20
         for gr in groups:
-            assert type(gr) == types.StringType
+            assert isinstance(gr, str)
         myGroups = [gr.lower() for gr in groups]
         theseSymbols = ''.join(myGroups)
         assert len(theseSymbols) == 20
@@ -1442,7 +1441,7 @@ if True:
             gm.append("Self should be a DNA alignment.")
             raise P4Error(gm)
         if not theProteinAlignment or \
-                type(theProteinAlignment) != type(self) or \
+                not isinstance(theProteinAlignment, p4.alignment.Alignment) or \
                 theProteinAlignment.dataType != 'protein':
             gm.append("Something wrong with theProteinAlignment")
             raise P4Error(gm)
@@ -1855,8 +1854,8 @@ if True:
         # if sequenceType == 'p':
         #    if self.dataType != 'protein':
         #        errors.append("Gblocks sequenceType is p, but this alignment is dataType %s" % self.dataType)
-        if isinstance(b1, types.NoneType):
-            if not isinstance(b2, types.NoneType):
+        if b1 is None:
+            if b2 is not None:
                 errors.append(
                     "\tYou must set b1 and b2 together or not at all")
                 errors.append(
@@ -1865,7 +1864,7 @@ if True:
                     "\tb2 = Minimum number of sequences for a flank position")
             pass
         else:
-            if not isinstance(b1, types.IntType):
+            if not isinstance(b1, int):
                 errors.append(
                     "\tb1 (Minimum number of sequences for a conserved position)")
                 errors.append("\tmust be None or an integer")
@@ -1880,20 +1879,20 @@ if True:
                         "\tb1 (Minimum number of sequences for a conserved position)")
                     errors.append(
                         "\tmust be > than the number of taxa in matrix /2")
-        if isinstance(b2, types.NoneType):
+        if b2 is None:
             pass
         else:
-            if not isinstance(b2, types.IntType):
+            if not isinstance(b2, int):
                 errors.append(
                     "\tb2 (Minimum number of sequences for a flank position)")
                 errors.append("\tmust be None or an integer")
             elif b2 < b1:
                 errors.append(
                     "\tb2 (Minimum number of sequences for a flank position) must be >= b1")
-        if not isinstance(b3, types.IntType):
+        if not isinstance(b3, int):
             errors.append(
                 "\tb3 (Maximum Number Of Contiguous Nonconserved Positions) must be an integer")
-        if not isinstance(b4, types.IntType):
+        if not isinstance(b4, int):
             errors.append(
                 "\tb4 (Minimum Length Of A Block) must be an integer")
         if b5 not in ['n', 'h', 'a']:

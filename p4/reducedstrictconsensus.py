@@ -1579,7 +1579,7 @@ class TreeHandler(object):
             gm.append("No input?")
             raise P4Error(gm)
         # print "inThing = %s, type %s" % (inThing, type(inThing))
-        if type(inThing) == type('string'):
+        if isinstance(inThing, str):
             var.trees = []
             read(inThing)
             if len(var.trees) < 1:
@@ -1588,7 +1588,7 @@ class TreeHandler(object):
                 raise P4Error(gm)
             self.trees = var.trees
 #            self.tfl = TreeFileLite(inThing)
-        elif type(inThing) == type([]):
+        elif isinstance(inThing, list):
             for t in inThing:
                 if not isinstance(t, Tree):
                     gm.append(

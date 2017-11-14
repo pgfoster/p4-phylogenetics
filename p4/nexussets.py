@@ -3,7 +3,6 @@ import os
 import sys
 import string
 import array
-import types
 import copy
 from p4.var import var
 # Don't bother with NexusToken2, cuz sets blocks are small
@@ -40,7 +39,7 @@ class CaseInsensitiveDict(dict):
         #self.keyDict = {}
 
     def __setitem__(self, key, val):
-        if type(key) != types.StringType:
+        if not isinstance(key, str):
             gm = ["CaseInsensitiveDict()"]
             gm.append("The key must be a string.  Got '%s'" % key)
             raise P4Error(gm)
@@ -49,7 +48,7 @@ class CaseInsensitiveDict(dict):
         #self.keyDict[key.lower()] = key
 
     def __getitem__(self, key):
-        if type(key) != types.StringType:
+        if not isinstance(key, str):
             gm = ["CaseInsensitiveDict()"]
             gm.append("The key must be a string.  Got '%s'" % key)
             raise P4Error(gm)
@@ -579,7 +578,7 @@ class TaxOrCharSet(object):
         while tokNum < len(self.tokens):
             tok = self.tokens[tokNum]
             # print "Considering tok[%i]  '%s'" % (tokNum, tok)
-            if type(tok) == type('str'):
+            if isinstance(tok, string):
                 lowTok = tok.lower()
             else:
                 lowTok = None
@@ -649,7 +648,7 @@ class TaxOrCharSet(object):
                             "Tax or char set '.' may not be followed by a '\\'")
                         raise P4Error(gm)
 
-            elif type(tok) == type(1) or type(tok) == type('str'):
+            elif isinstance(tok, (int, str)):
                 aTriplet = [tok, None, None]
                 tokNum += 1
                 if tokNum < len(self.tokens):
@@ -657,10 +656,10 @@ class TaxOrCharSet(object):
                         tokNum += 1
                         if tokNum < len(self.tokens):
                             # maybe '.'
-                            if type(self.tokens[tokNum]) == type('str'):
+                            if isinstance(self.tokens[tokNum], str):
                                 aTriplet[1] = self.tokens[tokNum]
-                            elif type(self.tokens[tokNum]) == type(1):
-                                if type(aTriplet[0]) == type(1):
+                            elif isinstance(self.tokens[tokNum], int):
+                                if isinstance(aTriplet[0], int):
                                     if self.tokens[tokNum] > aTriplet[0]:
                                         aTriplet[1] = self.tokens[tokNum]
                                     else:
@@ -687,7 +686,7 @@ class TaxOrCharSet(object):
                                 if self.tokens[tokNum] == '\\':
                                     tokNum += 1
                                     if tokNum < len(self.tokens):
-                                        if type(self.tokens[tokNum]) == type(1):
+                                        if isinstance(self.tokens[tokNum], int):
                                             aTriplet[2] = self.tokens[tokNum]
                                         else:
                                             gm.append(
@@ -757,9 +756,9 @@ class TaxOrCharSet(object):
 
                 lowFirst = None
                 lowSecond = None
-                if type(first) == type('str'):
+                if isinstance(first, str):
                     lowFirst = first.lower()
-                if type(second) == type('str'):
+                if isinstance(second, str):
                     lowSecond = second.lower()
 
                 # its a single, or an existing set, not a range
@@ -793,7 +792,7 @@ class TaxOrCharSet(object):
 
                     elif first == '.':
                         mask[-1] = '1'
-                    elif type(first) == type(1):
+                    elif isinstance(first, int):
                         if first > 0 and first <= thisMaskLen:
                             mask[first - 1] = '1'
                         else:
@@ -863,7 +862,7 @@ class TaxOrCharSet(object):
                 #    flob.write(' %s' % i)
                 previousTok = None
                 for theTok in self.tokens:
-                    if type(theTok) == types.StringType:
+                    if isinstance(theTok, str):
                         if theTok not in ['-', '\\']:
                             tok = p4.func.nexusFixNameIfQuotesAreNeeded(theTok)
                         else:
@@ -980,7 +979,7 @@ class CharSet(TaxOrCharSet):
                 second = aTriplet[1]
                 third = aTriplet[2]
                 if first and not second:  # its a single
-                    if type(first) == type(1):
+                    if isinstance(first, int):
                         if first > 0 and first <= self.aligNChar:
                             pass
                         else:
@@ -1053,12 +1052,12 @@ class TaxSet(TaxOrCharSet):
                 # print " considering '%s'" % trItem
                 if trItem == None:
                     numTr.append(trItem)
-                elif type(trItem) == type(1):
+                elif isinstance(trItem, int):
                     numTr.append(trItem)
                 elif trItem == '.':
                     numTr.append(self.nexusSets.nTax)
                 else:
-                    assert type(trItem) == type('str')
+                    assert isinstance(trItem, str)
                     lowTrItem = trItem.lower()
                     if lowTrItem in self.nexusSets.taxSetLowNames:
                         numTr.append(trItem)
@@ -1075,19 +1074,19 @@ class TaxSet(TaxOrCharSet):
             if trItem == None:
                 numTr.append(None)
             else:
-                assert type(trItem) == type(1)
+                assert isinstance(trItem, int)
                 numTr.append(trItem)
             assert len(numTr) == 3
             # print numTr
 
             first = numTr[0]
             # first might be a pre-existing taxSet name
-            if type(first) == type('str'):
+            if isinstance(first, str):
                 pass
             else:
                 second = numTr[1]
-                assert type(first) == type(1) and first != 0
-                if type(second) == type(1):
+                assert isinstance(first, int) and first != 0
+                if isinstance(second, int):
                     assert second != 0
                     if second <= first:
                         gm.append("Triplet %s" % tr)
@@ -1290,7 +1289,7 @@ class CharPartition(object):
             aSubset.triplets = []
             while i < len(aSubset.tokens):
                 tok = aSubset.tokens[i]
-                if type(tok) == type('string'):
+                if isinstance(tok, str):
                     lowTok = tok.lower()
                 else:
                     lowTok = None
@@ -1374,7 +1373,7 @@ class CharPartition(object):
                                 "Char set '.' may not be followed by a '\\'")
                             raise P4Error(gm)
 
-                elif type(tok) == type(1):
+                elif isinstance(tok, int):
                     aTriplet = [tok, None, None]
                     i = i + 1
                     if i < len(aSubset.tokens):
@@ -1383,7 +1382,7 @@ class CharPartition(object):
                             if i < len(aSubset.tokens):
                                 if aSubset.tokens[i] == '.':
                                     aTriplet[1] = aSubset.tokens[i]
-                                elif type(aSubset.tokens[i]) == type(1):
+                                elif isinstance(aSubset.tokens[i], int):
                                     if aSubset.tokens[i] > aTriplet[0]:
                                         aTriplet[1] = aSubset.tokens[i]
                                     else:
@@ -1412,7 +1411,7 @@ class CharPartition(object):
                                     if aSubset.tokens[i] == '\\':
                                         i = i + 1
                                         if i < len(aSubset.tokens):
-                                            if type(aSubset.tokens[i]) == type(1):
+                                            if isinstance(aSubset.tokens[i], int):
                                                 aTriplet[2] = aSubset.tokens[i]
                                             else:
                                                 gm.append(
@@ -1447,9 +1446,9 @@ class CharPartition(object):
                 third = aTriplet[2]
                 lowFirst = None
                 lowSecond = None
-                if type(first) == type('str'):
+                if isinstance(first, str):
                     lowFirst = first.lower()
-                if type(second) == type('str'):
+                if isinstance(second, str):
                     lowSecond = second.lower()
 
                 if first and not second:  # its a single
@@ -1482,7 +1481,7 @@ class CharPartition(object):
                     # Its legit to use this as a single char.
                     elif first == '.':
                         aSubset.mask[-1] = '1'
-                    elif type(first) == type(1):
+                    elif isinstance(first, int):
                         if first > 0 and first <= self.nexusSets.aligNChar:
                             aSubset.mask[first - 1] = '1'
                         else:

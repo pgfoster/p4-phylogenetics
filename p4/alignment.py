@@ -11,7 +11,6 @@ import string
 import re
 import sys
 import array
-import types
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix
@@ -498,7 +497,7 @@ class Alignment(SequenceList):
         if dbug:
             print("Alignment.composition() sequenceNumberList = %s" % sequenceNumberList)
         if sequenceNumberList:
-            if type(sequenceNumberList) != type([1, 2]):
+            if not isinstance(sequenceNumberList, list):
                 gm.append("The sequenceNumberList should be a list, ok?")
                 raise P4Error(gm)
             if len(sequenceNumberList) == 0:
@@ -515,12 +514,11 @@ class Alignment(SequenceList):
         maxIterations = 1000
 
         for i in sequenceNumberList:
-            if type(i) != type(1):
+            if not isinstance(i, int):
                 gm.append("The sequenceNumberList should be integers, ok?")
                 raise P4Error(gm)
             if i < 0 or i > len(self.sequences) - 1:
-                gm.append(
-                    "Item '%i' in sequenceNumberList is out of range" % i)
+                gm.append("Item '%i' in sequenceNumberList is out of range" % i)
                 raise P4Error(gm)
 
             seq = self.sequences[i]
@@ -772,7 +770,7 @@ class Alignment(SequenceList):
                 gm.append("equal the alignment length (%i)" % self.length)
                 raise P4Error(gm)
 
-        if type(theMaskChar) != type('a') or len(theMaskChar) != 1:
+        if not isinstance(theMaskChar, str) or len(theMaskChar) != 1:
             gm.append("theMaskChar needs to be a single-character string")
             raise P4Error(gm)
 

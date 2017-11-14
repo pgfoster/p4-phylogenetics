@@ -8,7 +8,6 @@ from p4.node import Node, NodeBranch
 import sys
 import random
 import copy
-import types
 from p4.pnumbers import Numbers
 import math
 
@@ -140,8 +139,7 @@ class QuartetJoining(object):
 
         gm = ['QuartetJoining.__init__()']
         # Check the input trees.
-        assert type(theTrees) == type(
-            []), "Arg theTrees should be a list of p4 tree objects."
+        assert isinstance(theTrees, list), "Arg theTrees should be a list of p4 tree objects."
         for t in theTrees:
             assert isinstance(
                 t, Tree), "Input trees should be p4 Tree objects.  Got %s" % t

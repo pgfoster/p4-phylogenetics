@@ -5,7 +5,6 @@ date: 25/08/2016
 import sys
 import copy
 import warnings
-import types
 from itertools import combinations, product
 import operator
 from Bio.Data import CodonTable
@@ -304,7 +303,7 @@ class Codon(object):
         # The dictionary starts with the distance to self (0)
         self._distances = {self.id : 0}
         # genetic code according to which the codon should be translated
-        if isinstance(code, types.StringType):
+        if isinstance(code, str):
             self.code = getBiopythonCode(code)
         else:
             msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -400,7 +399,7 @@ class Codon(object):
         if code is None:
             # self.code should be something valid.
             code = self.code
-        elif isinstance(code, types.StringType):
+        elif isinstance(code, str):
             code = getBiopythonCode(code)
         else:
             msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -480,7 +479,7 @@ class MutationGraph(object):
     Non-degenerate codons are neighbours if they differ by only one nucleotide.
     Degenerate codons are sets of non-degenerate codons."""
     def __init__(self, code="Standard"):
-        if isinstance(code, types.StringType):
+        if isinstance(code, str):
             self.code = getBiopythonCode(code)
         else:
             msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -837,7 +836,7 @@ def recode_sequence(sequence, converter, positions=None, code="Standard"):
     By default, all positions are recoded.
     """
     gm = ['p4.code_utils.recode_sequence()']
-    if isinstance(code, types.StringType):
+    if isinstance(code, str):
         code = getBiopythonCode(code)
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -897,7 +896,7 @@ def codon_usage(sequence, code="Standard"):
     should be the Biopython name of the genetic code under which the sequence is to
     be interpreted. Alternatively, it can be the dictionary giving the
     correspondence between codons and amino-acids."""
-    if isinstance(code, types.StringType):
+    if isinstance(code, str):
         code = getBiopythonCode(code)
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."

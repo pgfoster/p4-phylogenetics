@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy
-import types
 from p4.p4exceptions import P4Error
 
 # A           Ala            Alanine

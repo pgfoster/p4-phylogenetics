@@ -19,7 +19,7 @@ class TreeSubsets(object):
 
     def __init__(self, inputTrees):
         gm = ['TreeSubsets()']
-        if type(inputTrees) == type([]):
+        if isinstance(inputTrees, list):
             trees = []
             for t in inputTrees:
                 if not isinstance(t, Tree):
@@ -33,7 +33,7 @@ class TreeSubsets(object):
                     'Sorry, at least one tree must be supplied as input tree')
                 raise P4Error(gm)
             self.inputTrees = trees
-        elif type(inputTrees) == type(""):
+        elif isinstance(inputTrees, str):
             var.trees = []
             read(inputTrees)
             if len(var.trees) < 1:
@@ -228,7 +228,7 @@ class CherryRemover(object):
     def __init__(self, inputTrees):
 
         gm = ['CherryRemover()']
-        if type(inputTrees) == type([]):
+        if isinstance(inputTrees, list):
             trees = []
             for t in inputTrees:
                 if not isinstance(t, Tree):
@@ -242,7 +242,7 @@ class CherryRemover(object):
                     'Sorry, at least one tree must be supplied as input tree')
                 raise P4Error(gm)
             self.inputTrees = trees
-        elif type(inputTrees) == type(""):
+        elif isinstance(inputTrees, str):
             var.trees = []
             read(inputTrees)
             if len(var.trees) < 1:
@@ -457,14 +457,14 @@ class LeafSupport(object):
 
         gm = ['LeafSupport.__init__(filename)']
         self.inputTrees = []
-        if type(inputTrees) == type([]):
+        if isinstance(inputTrees, list):
             for t in inputTrees:
                 if not isinstance(t, Tree):
                     gm.append(
                         "Input trees should be a list of p4 Tree objects. Got %s" % t)
                     raise P4Error(gm)
             self.inputTrees = inputTrees
-        elif type(inputTrees) == type(""):
+        elif isinstance(inputTrees, str):
             var.trees = []
             read(inputTrees)
             if len(var.trees) < 1:
@@ -538,11 +538,11 @@ class LeafSupport(object):
             print('%s, %s' % (index, name))
             index = index + 1
 
-    def defineGroup(self, list):
+    def defineGroup(self, list):   # isn't "list" a reserved word.  It is at least a type.  Does this work?
         if not self.init:
             self._init()
         gm = ['defineGroup.(list))']
-        if type(list) != type([]):
+        if not isinstance(list, list):
             gm.append('Input must be a list of taxnames and/or taxnumbers')
             raise P4Error(gm)
         group = []
@@ -569,7 +569,7 @@ class LeafSupport(object):
         if not self.init:
             self._init()
         gm = ['defineTaxSet.(list))']
-        if type(list) != type([]):
+        if not isinstance(list, list):
             gm.append('Input must be a list of taxnames and/or taxnumbers')
             raise P4Error(gm)
         taxSet = []
@@ -595,7 +595,7 @@ class LeafSupport(object):
         if not self.init:
             self._init()
         gm = ['defineClade.(list))']
-        if type(list) != type([]):
+        if not isinstance(list, list):
             gm.append('Input must be a list of taxnames and/or taxnumbers')
             raise P4Error(gm)
         clade = []

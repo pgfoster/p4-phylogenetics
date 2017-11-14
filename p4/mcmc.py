@@ -10,7 +10,6 @@ import time
 import copy
 import os
 import pickle
-import types
 from p4.chain import Chain
 from p4.p4exceptions import P4Error
 from p4.treepartitions import TreePartitions
@@ -70,7 +69,7 @@ class McmcTuningsPart(object):
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
         if item in self.__dict__.keys():
-            if type(val) != types.FloatType:
+            if not isinstance(val, float):
                 gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
                 gm.append('Tunings must be floats.')
                 raise P4Error(gm)

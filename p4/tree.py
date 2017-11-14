@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
 import string
-import types
 import io
 import math
 import copy
@@ -273,7 +272,7 @@ class Tree(object):
 
     def _setTaxNames(self, theTaxNames):
         gm = ['Tree._setTaxNames()']
-        if type(theTaxNames) != type([]):
+        if not isinstance(theTaxNames, list):
             gm.append("You can only set property 'taxNames' to a list.")
             gm.append("Got attempt to set to '%s'" % theTaxNames)
             raise P4Error(gm)
@@ -988,8 +987,7 @@ class Tree(object):
                             theVal = False
                         else:
                             theVal = eval(theValString)
-                        assert type(theVal) in [
-                            types.FloatType, types.TupleType, types.BooleanType]
+                        assert isinstance(theVal, (float, tuple, bool))
                         n.__setattr__(theNameString, theVal)
                         i = j + 1
 
@@ -1717,7 +1715,7 @@ class Tree(object):
         theNode = self.root
         preOrdIndx = 0
         postOrdIndx = 0
-        if type(self.preOrder) == types.NoneType or type(self.postOrder) == types.NoneType or len(self.preOrder) != len(self.nodes) or len(self.postOrder) != len(self.nodes):
+        if self.preOrder is None or self.postOrder is None or len(self.preOrder) != len(self.nodes) or len(self.postOrder) != len(self.nodes):
             self.preOrder = numpy.array(
                 [var.NO_ORDER] * len(self.nodes), numpy.int32)
             self.postOrder = numpy.array(

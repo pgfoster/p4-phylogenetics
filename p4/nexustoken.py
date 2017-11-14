@@ -2,7 +2,6 @@ from __future__ import print_function
 import os
 import string
 import sys
-import types
 from p4.var import var
 from p4.p4exceptions import P4Error
 

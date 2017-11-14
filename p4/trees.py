@@ -43,7 +43,7 @@ class Trees(object):
             else:
                 self.trees = var.trees
         else:
-            if type(trees) != type([]):
+            if not isinstance(trees, list):
                 gm.append("If provided, the trees arg should be a list.")
                 raise P4Error(gm)
             if not len(trees):
@@ -55,7 +55,7 @@ class Trees(object):
                 raise P4Error(gm)
             self.trees = trees
         if taxNames:
-            if type(taxNames) == type([]) and len(taxNames) and type(taxNames[0]) == type('string'):
+            if isinstance(taxNames, list) and len(taxNames) and isinstance(taxNames[0], str):
                 pass
             else:
                 gm.append(

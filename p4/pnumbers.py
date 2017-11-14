@@ -53,7 +53,7 @@ class Numbers(object):
         #self.range = None
         # self.col
         # self.skip
-        if type(inThing) == numpy.ndarray:
+        if isinstance(inThing, numpy.ndarray):
             inThing = list(inThing)
         if inThing:
             self.read(inThing, col, skip)
@@ -79,7 +79,7 @@ class Numbers(object):
         than one list or file.  """
 
         gm = ['Numbers.read()']
-        if type(inThing) == type('string') and os.path.isfile(inThing):
+        if isinstance(inThing, str) and os.path.isfile(inThing):
             # col and skip only come into play if its a file.
             try:
                 self.col = int(col)
@@ -130,7 +130,7 @@ class Numbers(object):
                             gm.append("Line '%s'.  " % aLine.rstrip())
                             gm.append("Can't make sense of '%s'" % theOne)
                             raise P4Error(gm)
-        elif type(inThing) == type([]):
+        elif isinstance(inThing, list):
             for thing in inThing:
                 try:
                     aFloat = float(thing)

@@ -11,7 +11,6 @@ import p4.func
 import re
 import sys
 import array
-import types
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix

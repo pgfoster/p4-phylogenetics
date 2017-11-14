@@ -1,5 +1,4 @@
 from __future__ import print_function
-import types
 import string
 import io
 import sys
@@ -400,7 +399,7 @@ something like this::
             if taxNames:
                 self.taxNames = taxNames
                 self.nTax = len(taxNames)
-        if type(inThing) == types.StringType:
+        if isinstance(inThing, str):
             if not os.path.isfile(inThing):
                 gm.append(
                     "The inThing is a string, but does not appear to be a file name.")
@@ -1928,16 +1927,16 @@ something like this::
         """
 
         gm = ['TreePartitions.makeTreeFromPartitions()']
-        if type(partitions) != types.ListType:
+        if not isinstance(partitions, list):
             gm.append('The partitions should be a list of lists of ints.')
             raise P4Error(gm)
 
         for it in partitions:
-            if type(it) != types.ListType:
+            if not isinstance(it, list):
                 gm.append('The partitions should be a list of lists of ints.')
                 raise P4Error(gm)
             for it2 in it:
-                if type(it2) != types.IntType:
+                if not isinstance(it2, int):
                     gm.append(
                         'The partitions should be a list of lists of ints.')
                     raise P4Error(gm)

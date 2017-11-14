@@ -3,7 +3,6 @@ import p4.pf as pf
 import sys
 import random
 import math
-import types
 import p4.func
 from p4.var import var
 from p4.p4exceptions import P4Error
@@ -1022,7 +1021,7 @@ class Model(object):
                             break
             if 1:
                 # bQETneedsReset is a numpy array of ints
-                assert type(op.bQETneedsReset) == numpy.ndarray
+                assert isinstance(op.bQETneedsReset, numpy.ndarray)
                 # ret is an array of booleans.
                 ret = op.bQETneedsReset != sp.bQETneedsReset
                 if numpy.any(ret):
