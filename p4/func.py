@@ -30,6 +30,7 @@ import p4.pf as pf
 import numpy
 from p4.pnumbers import Numbers
 import p4.version
+from p4.nexustoken import nextTok
 
 # # From http://python3porting.com/problems.html#bytes-strings-and-unicode
 # if sys.version_info < (3,):
@@ -377,14 +378,12 @@ def read(stuff):
             for fName in myFlist:
                 readFile(fName)
         else:  # Nope, not a glob.  Is it a string, not a file name?
-            saved_nexus_doFastNextTok = var.nexus_doFastNextTok
             if var.warnReadNoFile:
                 print("\nread()")
                 print("    A file by the name specified by the argument cannot be found.")
                 print("    So I am assuming that it is to be taken as a string.")
                 print("    Maybe it was a mis-specified file name?")
                 print("    (You can turn off this warning by turning var.warnReadNoFile off.)\n")
-            var.nexus_doFastNextTok = False
             if sys.version_info < (3,):
                 flob = io.BytesIO(stuff)
             else:
@@ -395,7 +394,6 @@ def read(stuff):
             # if var.verboseRead:
             # print "(You can turn off these messages by turning
             # var.verboseRead off.)\n"
-            var.nexus_doFastNextTok = saved_nexus_doFastNextTok
 
 
 def readFile(fName):
@@ -403,18 +401,11 @@ def readFile(fName):
 
     gm = ['func.readFile(%s)' % fName]
 
-    if var.nexus_doFastNextTok:
-        gm.append("var.nexus_doFastNextTok is not working this week.  Don't turn it on.")
-        raise P4Error(gm)
-
-    # print gm
-    # print 'func.readFile().  nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
     # I should check if the file is a text file, an executable, or whatever.
     try:
         flob = open(fName, "U")  # Universal line endings.
     except IOError:
-        gm.append(
-            "Can't open %s.  Are you sure you have the right name?" % fName)
+        gm.append("Can't open %s.  Are you sure you have the right name?" % fName)
         raise P4Error(gm)
 
     # See if there is an informative suffix on the file name
@@ -843,12 +834,6 @@ def _tryToReadPhylipFile(fName, flob, firstLine):
         print("Trying to read '%s' as a phylip tree file..." % fName)
     flob.seek(0, 0)
     theseTrees = []
-
-    # We need to import nextTok.
-    if var.nexus_doFastNextTok:
-        from p4.nexustoken2 import nextTok
-    else:
-        from p4.nexustoken import nextTok
 
     while 1:
         savedPosition = flob.tell()

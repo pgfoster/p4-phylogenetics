@@ -4,7 +4,7 @@ import array
 import p4.func
 from p4.var import var
 from p4.alignment import Alignment
-# from nexustoken import * # nextTok() et al
+from p4.nexustoken import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd, safeNextTok
 from p4.nexussets import NexusSets
 from p4.sequencelist import Sequence
 from p4.p4exceptions import P4Error
@@ -79,15 +79,6 @@ class Nexus:
         else:
             gm = ['Nexus.readNexusFile()']
 
-        # We need to import nextTok.
-        # print 'var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok
-            from p4.nexustoken2 import checkLineLengths
-            checkLineLengths(flob)
-        else:
-            from p4.nexustoken import nextTok
-
         # Go to the beginning and check if it starts with '#NEXUS'
         flob.seek(0)
         # print "Nexus.readNexusFile()  about to nextTok() a.  "
@@ -103,10 +94,6 @@ class Nexus:
             gm.append("Got first token: %s" % tok)
             gm.append("Hmmm..., this doesn't appear to be a nexus file. ")
             gm.append("The first token is not '#NEXUS'.")
-            # -1 is the signal to func._tryToReadNexusFile()
-            # that it is not a nexus file.  It should be non-fatal.
-            # No, I changed my mind-- it should raise an error.
-            # return -1
             raise P4Error(gm)
         while 1:
             # print "Nexus.readNexusFile()  about to nextTok() b"
@@ -168,12 +155,6 @@ class Nexus:
             gm = ['Nexus.readBlock()']
         # We start here having read the tok "begin".  So get the next
         # token to find out what kind of block.
-
-        # We need to import nextTok.
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd
-        else:
-            from p4.nexustoken import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd
 
         tok = nextTok(flob)
         if not tok:
@@ -272,11 +253,6 @@ class Nexus:
             print("    var.nexus_getP4CommandComments = %s" % var.nexus_getP4CommandComments)
             print("    var.nexus_getWeightCommandComments = %s" % var.nexus_getWeightCommandComments)
             print("    var.nexus_getAllCommandComments = %s" % var.nexus_getAllCommandComments)
-
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, nexusSkipPastNextSemiColon, safeNextTok
-        else:
-            from p4.nexustoken import nextTok, nexusSkipPastNextSemiColon, safeNextTok
 
         # We have read the word 'trees' in 'begin trees;', but have
         # not read the semicolon yet.  So the first thing to do is ...
@@ -417,15 +393,8 @@ class Nexus:
 
         translationHash = {}
 
-        # We need to import safeNextTok.
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import safeNextTok
-        else:
-            from p4.nexustoken import safeNextTok
-
         while 1:
-            keyTok = p4.func.nexusUnquoteName(
-                safeNextTok(flob, 'Nexus: readTranslateCommand'))
+            keyTok = p4.func.nexusUnquoteName(safeNextTok(flob, 'Nexus: readTranslateCommand'))
             # print "x got keyTok '%s'" % keyTok
             if keyTok == None or keyTok == ';':
                 break
@@ -767,11 +736,6 @@ class NexusData:
         else:
             gm = ['NexusData.readTaxaBlock()']
 
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, nexusSkipPastNextSemiColon
-        else:
-            from p4.nexustoken import nextTok, nexusSkipPastNextSemiColon
-
         # to get to the end of 'begin taxa maybe with other stuff;'
         nexusSkipPastNextSemiColon(flob)
         commandName = nextTok(flob)
@@ -829,10 +793,6 @@ class NexusData:
             gm = ['NexusData.readDataBlock() from file %s' % flob.name]
         else:
             gm = ['NexusData.readDataBlock()']
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, nexusSkipPastNextSemiColon
-        else:
-            from p4.nexustoken import nextTok, nexusSkipPastNextSemiColon
 
         nexusSkipPastNextSemiColon(flob)
         notImplemented = [
@@ -905,11 +865,6 @@ class NexusData:
                 blockType, command, sub)]
 
         # print "parseSubcommandEqualsArg sub=%s, command=%s" % (sub,command)
-
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, safeNextTok
-        else:
-            from p4.nexustoken import nextTok, safeNextTok
 
         tok = nextTok(flob)
         if tok:
@@ -1101,10 +1056,6 @@ class NexusData:
             gm = ['NexusData.readTaxlabelsCommand() from file %s' % flob.name]
         else:
             gm = ['NexusData.readTaxlabelsCommand()']
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok
-        else:
-            from p4.nexustoken import nextTok
 
         tok = nextTok(flob)
         while tok and tok != ';':
@@ -1130,10 +1081,6 @@ class NexusData:
             gm = ['NexusData.readDimensionsCommand() from file %s' % flob.name]
         else:
             gm = ['NexusData.readDimensionsCommand()']
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok
-        else:
-            from p4.nexustoken import nextTok
 
         sub = nextTok(flob)  # get subcommand
         if sub:
@@ -1202,10 +1149,6 @@ class NexusData:
             gm = ['NexusData.readFormatCommand() from file %s' % flob.name]
         else:
             gm = ['NexusData.readFormatCommand()']
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok
-        else:
-            from p4.nexustoken import nextTok
 
         notImplemented = ['respectcase',
                           'labels', 'nolabels', 'transpose', 'items', 'statesformat',
@@ -1286,10 +1229,6 @@ class NexusData:
         else:
             gm = ['NexusData.readInterleaveMatrix()']
         dbug = 0
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok
-        else:
-            from p4.nexustoken import nextTok
 
         if dbug:
             print("Nexus: readInterleaveMatrix here, blockType = %s" % blockType)
@@ -1355,10 +1294,6 @@ class NexusData:
                   flob.name]
         else:
             gm = ['NexusData.readNonInterleaveMatrix()']
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok
-        else:
-            from p4.nexustoken import nextTok
 
         tok = p4.func.nexusUnquoteName(nextTok(flob))
         tokens = []

@@ -5,7 +5,6 @@ import string
 import array
 import copy
 from p4.var import var
-# Don't bother with NexusToken2, cuz sets blocks are small
 from p4.nexustoken import nexusSkipPastNextSemiColon, safeNextTok
 import p4.func
 from p4.p4exceptions import P4Error
@@ -239,9 +238,6 @@ class NexusSets(object):
         gm = ['NexusSets._continueReadingFromNexusFile()']
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
-        if 0:
-            print(gm[0])
-            print('    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok)
         nexusSkipPastNextSemiColon(flob)
         commandName = safeNextTok(flob, gm[0])
         lowCommandName = commandName.lower()

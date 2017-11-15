@@ -84,8 +84,6 @@ class TreeFileLite(object):
             raise P4Error(gm)
 
     def getTree(self, treeNum):
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         tLine = self.tLines[treeNum]
         if self.verbose >= 3:
             print(tLine)
@@ -96,7 +94,6 @@ class TreeFileLite(object):
             t.setPreAndPostOrder()
         else:
             t.parseNexus(f, translationHash=self.translationHash)
-        var.nexus_doFastNextTok = savedDoFastNextTok
         return t
 
     def _readTreeFile(self):
@@ -109,10 +106,6 @@ class TreeFileLite(object):
             raise P4Error(gm)
         fLines = f.readlines()
         f.close()
-
-        # We cant use doFastNextTok
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
 
         # If it is not a nexus file, it must be a phylip file, so we
         # are done.
@@ -183,7 +176,6 @@ class TreeFileLite(object):
             nx = Nexus()
             self.translationHash = nx.readTranslateCommand(translateFlob)
             # print self.translationHash
-        var.nexus_doFastNextTok = savedDoFastNextTok
 
         while not aLine.startswith("tree ") and not aLine.startswith("TREE "):
             lNum += 1

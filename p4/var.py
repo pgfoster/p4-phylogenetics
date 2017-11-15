@@ -250,11 +250,6 @@ class Var(object):
             [0], numpy.int32)            # all [&...]
         self._nexus_getLineEndingsAsTokens = numpy.array([0], numpy.int32)
 
-        # nextTok in C, from NexusToken2.  Does not work for CStrings.
-        # This week it is turned off, for python3 compatibility.
-        # The speedup is only up to about 2x, so I'm not sure it is worth the bother.
-        self.nexus_doFastNextTok = False
-
         self.rMatrixProteinSpecs = ['cpREV', 'd78', 'jtt', 'mtREV24', 'mtmam',
                                     'wag', 'rtRev', 'tmjtt94', 'tmlg99', 'lg',
                                     'blosum62', 'hivb', 'mtart', 'mtzoa',
@@ -320,8 +315,6 @@ class Var(object):
         # self._nexus_getWeightCommandComments = 1         # all [&w ...]
         # self._nexus_getAllCommandComments = 0            # all [&...]
         # self._nexus_getLineEndingsAsTokens = 0
-        # # nextTok in C, from NexusToken2.  Does not work for CStrings.
-        # self.nexus_doFastNextTok = False
         # self._rMatrixNormalizeTo1 = 1
         self._interactiveHelper = None
         self._excepthookEditor = None

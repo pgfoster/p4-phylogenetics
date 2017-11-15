@@ -8,9 +8,7 @@ from p4.node import Node, NodePart, NodeBranchPart
 from p4.trees import Trees
 from p4.nexus import Nexus, NexusData
 from p4.p4exceptions import P4Error
-#from p4.nexustoken import nextTok,safeNextTok,nexusSkipPastNextSemiColon
-import p4.nexustoken   # needed for cStrings
-# import p4.nexustoken2  # Faster, in c
+from p4.nexustoken import nextTok, safeNextTok, nexusSkipPastNextSemiColon
 import p4.func
 from p4.var import var
 
@@ -208,18 +206,18 @@ def _getModelInfo(theComment):
     flob = io.BytesIO(theComment)
     flob.seek(1, 0)  # past the [
 
-    tok = p4.nexustoken.nextTok(flob)
+    tok = nextTok(flob)
     if not tok or tok != '&&p4':
         print("a got tok=%s" % tok)
         flob.close()
         return  # not an error, just the wrong kind of comment
-    tok = p4.nexustoken.nextTok(flob)
+    tok = nextTok(flob)
     if not tok or tok != 'models':
         print("b got tok=%s" % tok)
         flob.close()
         gm.append("Expecting 'models'.  Got %s" % tok)
         raise P4Error(gm)
-    tok = p4.nexustoken.nextTok(flob)
+    tok = nextTok(flob)
     if tok[0] != 'p':
         gm.append("Expecting 'pN'.  Got %s" % tok)
         raise P4Error(gm)
@@ -239,7 +237,7 @@ def _getModelInfo(theComment):
         gm.append("Failed to parse model comment.")
         raise P4Error(gm)
 
-    tok = p4.nexustoken.safeNextTok(flob)
+    tok = safeNextTok(flob)
     while 1:
         # print "top of loop, tok = %s" % tok
         if tok == ']':
@@ -263,7 +261,7 @@ def _getModelInfo(theComment):
         else:
             gm.append("Bad token %s")
             raise P4Error(gm)
-        tok = p4.nexustoken.safeNextTok(flob)
+        tok = safeNextTok(flob)
 
     # theModelInfo.dump()
     return theModelInfo
@@ -461,13 +459,6 @@ something like this::
         f = open(fName)
 
         # print 'TreePartitions._readPhylipTreeFile().
-        # var.nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, safeNextTok, nexusSkipPastNextSemiColon
-            from p4.nexustoken2 import checkLineLengths
-            checkLineLengths(f)
-        else:
-            from p4.nexustoken import nextTok, safeNextTok, nexusSkipPastNextSemiColon
 
         # Skip over trees
         if skip:
@@ -500,16 +491,6 @@ something like this::
         gm = ['TreePartitions._readNexusFile()']
 
         f = open(fName)
-
-        # print 'TreePartitions._readNexusFile().  var.nexus_doFastNextTok=%s'
-        # % var.nexus_doFastNextTok
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, safeNextTok, nexusSkipPastNextSemiColon
-            from p4.nexustoken2 import checkLineLengths
-            checkLineLengths(f)
-        else:
-            from p4.nexustoken import nextTok, safeNextTok, nexusSkipPastNextSemiColon
-
         nf = Nexus()  # provides nf.readBlock(), nf.readTranslateCommand()
 
         # Read the #nexus

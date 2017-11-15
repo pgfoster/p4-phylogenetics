@@ -173,8 +173,6 @@ class PosteriorSamples(object):
         f.close()
 
         # Get the translate command
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         lNum = 0
         aLine = fLines[0].strip()
         translateLines = []
@@ -192,7 +190,6 @@ class PosteriorSamples(object):
         nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
         # print self.translationHash
-        var.nexus_doFastNextTok = savedDoFastNextTok
 
         # Get the models definition, if it exists.  Move to the first tree
         # line.
@@ -252,8 +249,6 @@ class PosteriorSamples(object):
                 print("The file '%s' cannot be found." % fName)
 
     def _getP4SampleTree(self, sampNum):
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
             print(tLine)
@@ -261,7 +256,6 @@ class PosteriorSamples(object):
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)
-        var.nexus_doFastNextTok = savedDoFastNextTok
         t.taxNames = self.tree.taxNames
 
         for n in t.iterLeavesNoRoot():
@@ -360,8 +354,6 @@ class PosteriorSamples(object):
         f.close()
 
         # Get the translate command
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         lNum = 0
         aLine = fLines[0].strip()
         translateLines = []
@@ -379,7 +371,6 @@ class PosteriorSamples(object):
         nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
         # print self.translationHash
-        var.nexus_doFastNextTok = savedDoFastNextTok
 
         # Get the models definition, if it exists.  Move to the first tree line.
         # MrBayes3.2 uses 'gen', 3.1.2 uses 'rep'.
@@ -431,8 +422,6 @@ class PosteriorSamples(object):
             print("pram line length is %i" % self.nPrams)
 
     def _getMrBayesSampleTree(self, sampNum):
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
             print(tLine)
@@ -440,7 +429,6 @@ class PosteriorSamples(object):
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)  # doModelComments is nParts
-        var.nexus_doFastNextTok = savedDoFastNextTok
         t.taxNames = self.tree.taxNames
 
         for n in t.iterLeavesNoRoot():
@@ -457,8 +445,7 @@ class PosteriorSamples(object):
         splitTName = t.name.split('.')
         tGenNum = int(splitTName[1])
         if tGenNum != pGenNum:
-            raise P4Error(
-                "something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
+            raise P4Error("something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
         if self.verbose >= 2:
             print("(zero-based) sample %i is gen %i" % (sampNum, tGenNum))
 

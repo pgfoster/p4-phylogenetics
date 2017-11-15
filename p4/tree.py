@@ -11,7 +11,7 @@ import glob
 from p4.var import var
 from p4.p4exceptions import P4Error
 from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
-import p4.nexustoken
+from p4.nexustoken import nextTok, safeNextTok
 from p4.distancematrix import DistanceMatrix
 
 import numpy
@@ -401,12 +401,6 @@ class Tree(object):
         if 0:
             print('Tree.parseNexus() translationHash = %s' % translationHash)
             print('    doModelComments = %s (nParts)' % doModelComments)
-            print('    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok)
-
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, safeNextTok
-        else:
-            from p4.nexustoken import nextTok, safeNextTok
 
         tok = safeNextTok(flob, 'Tree.parseNexus()')
         # print 'parseNexus() tok = %s' % tok
@@ -464,8 +458,6 @@ class Tree(object):
             print('var.nexus_getAllCommandComments = %s' % var.nexus_getAllCommandComments)
             print("Got comment '%s', checking if it is a 'weight' comment." % tok)
         gm = ["Tree.getWeightCommandComment()"]
-        # python, not c, so I can use BytesIO
-        from p4.nexustoken import nextTok, safeNextTok
         cFlob = io.BytesIO(tok)
         cFlob.seek(1)  # The [
         cTok = nextTok(cFlob)
@@ -535,7 +527,6 @@ class Tree(object):
         This is stack-based, and does not use recursion.
         """
 
-        # print 'parseNewick here. var.nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
         # print 'parseNewick here. doModelComments=%s' % doModelComments
         # print "parseNewick()  translationHash=%s, self.taxNames=%s" %
         # (translationHash, self.taxNames)
@@ -559,11 +550,6 @@ class Tree(object):
         isAfterComma = 0
         parenNestLevel = 0
         lastPopped = None
-
-        if var.nexus_doFastNextTok:
-            from p4.nexustoken2 import nextTok, safeNextTok
-        else:
-            from p4.nexustoken import nextTok, safeNextTok
 
         tok = nextTok(flob)
         if not tok:
@@ -917,7 +903,7 @@ class Tree(object):
                     # print 'got comment %s, node %i' % (tok, n.nodeNum)
                     cFlob = io.BytesIO(tok)
                     cFlob.seek(2)
-                    tok2 = p4.nexustoken.safeNextTok(cFlob)
+                    tok2 = safeNextTok(cFlob)
                     while 1:
                         if tok2 == ']':
                             break
@@ -939,7 +925,7 @@ class Tree(object):
                         else:
                             gm.append('Bad command comment %s' % tok)
                             raise P4Error(gm)
-                        tok2 = p4.nexustoken.safeNextTok(cFlob)
+                        tok2 = safeNextTok(cFlob)
                 elif 0:
                     # Ugly hack for RAxML trees with bootstrap
                     # supports in square brackets after the br len, on
@@ -995,53 +981,15 @@ class Tree(object):
                 gm.append("I can't make sense of the token '%s'" % tok)
                 if len(tok) == 1:
                     if tok[0] in var.punctuation:
-                        gm.append(
-                            "The token is in var.punctuation. If you don't think it should")
-                        gm.append(
-                            "be, you can modify what p4 thinks that punctuation is.")
-                        if var.nexus_doFastNextTok:
-                            gm.append(
-                                "But to do that you can't use nexus_doFastNextToken, so you ")
-                            gm.append("need to turn that off, temporarily.  ")
-                            gm.append(
-                                "(var.nexus_doFastNextTok is currently on.)")
-                            gm.append("So you might do this:")
-                            gm.append("var.nexus_doFastNextTok = False ")
-                            gm.append(
-                                "var.punctuation = var.phylip_punctuation")
-                            gm.append(
-                                "(or use your own definition -- see Var.py)")
-                            gm.append("read('yourWackyTreeFile.phy')")
-                            gm.append("That might work.")
-                        else:
-                            gm.append(
-                                "(Doing that does not work if nexus_doFastNextToken is turned on,")
-                            gm.append(
-                                "but var.nexus_doFastNextTok is currently off.)")
-                            gm.append("So you might do this:")
-                            gm.append(
-                                "var.punctuation = var.phylip_punctuation")
-                            gm.append(
-                                "(or use your own definition -- see Var.py)")
-                            gm.append("read('yourWackyTreeFile.phy')")
-                            gm.append("That might work.")
+                        gm.append("The token is in var.punctuation. If you don't think it should")
+                        gm.append("be, you can modify what p4 thinks that punctuation is.")
+                        gm.append("So you might do this:")
+                        gm.append("var.punctuation = var.phylip_punctuation")
+                        gm.append("(or use your own definition -- see var.py)")
+                        gm.append("read('yourWackyTreeFile.phy')")
+                        gm.append("That might work.")
                     if tok[0] not in var.punctuation:
-                        gm.append(
-                            "The token is not in your current var.punctuation.")
-                        if var.nexus_doFastNextTok:
-                            gm.append(
-                                "var.nexus_doFastNextTok is currently on.")
-                            gm.append(
-                                "It uses a hard-wired list of punctuation, and so you may need to ")
-                            gm.append(
-                                "need to turn var.nexus_doFastNextTok off, temporarily.  ")
-                            gm.append("So you might do this:")
-                            gm.append("var.nexus_doFastNextTok = False ")
-                            gm.append("read('yourWackyTreeFile.phy')")
-                            gm.append("That might work.")
-                        else:
-                            gm.append(
-                                "var.nexus_doFastNextTok is currently off.")
+                        gm.append("The token is not in your current var.punctuation.")
 
                 #gm.append("tok[0] is '%s'" % tok[0])
                 raise P4Error(gm)
