@@ -31,14 +31,14 @@ import numpy
 from p4.pnumbers import Numbers
 import p4.version
 
-# From http://python3porting.com/problems.html#bytes-strings-and-unicode
-if sys.version_info < (3,):
-    def b(x):
-        return x
-else:
-    import codecs
-    def b(x):
-        return codecs.latin_1_encode(x)[0]
+# # From http://python3porting.com/problems.html#bytes-strings-and-unicode
+# if sys.version_info < (3,):
+#     def b(x):
+#         return x
+# else:
+#     import codecs
+#     def b(x):
+#         return codecs.latin_1_encode(x)[0]
 
 # # Py2/3 compatibility
 # try:
@@ -108,7 +108,7 @@ def nexusUnquoteName(theName):
 
     if theName[0] == "'":
         if theName[-1] != "'":
-            gm = ['func.nexusUnquotName()']
+            gm = ['func.nexusUnquoteName()']
             gm.append('the name is %s' % theName)
             gm.append("First char is a single quote, but last char is not.")
             raise P4Error(gm)
