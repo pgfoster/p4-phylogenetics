@@ -426,6 +426,7 @@ class Tree(object):
         # weight comment.
         savedPos = flob.tell()
         while 1:
+            beforeSafeNextTokPosn = flob.tell()
             tok = safeNextTok(flob, gm[0])
             # print "parseNexus: tok after '=' is '%s'" % tok
 
@@ -434,7 +435,7 @@ class Tree(object):
             if tok[0] == '[':
                 self.getWeightCommandComment(tok)
             elif tok == '(':
-                flob.seek(-1, 1)
+                flob.seek(beforeSafeNextTokPosn)
                 self.parseNewick(flob, translationHash, doModelComments)
                 # self._initFinish()
                 break

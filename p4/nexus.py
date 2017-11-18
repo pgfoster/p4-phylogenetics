@@ -8,6 +8,7 @@ from p4.nexustoken import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBloc
 from p4.nexussets import NexusSets
 from p4.sequencelist import Sequence
 from p4.p4exceptions import P4Error
+from p4.tree import Tree
 
 # Some definitions from the MadSwofMad Syst Biol Nexus format paper (MSM97).
 #
@@ -234,7 +235,6 @@ class Nexus:
             nexusSkipPastBlockEnd(flob)
 
     def readTreesBlock(self, flob):
-        from tree import Tree
         if hasattr(flob, 'name'):
             gm = ['Nexus.readTreesBlock() from file %s' % flob.name]
         else:

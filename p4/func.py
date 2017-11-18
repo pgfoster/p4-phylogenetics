@@ -385,9 +385,12 @@ def read(stuff):
                 print("    Maybe it was a mis-specified file name?")
                 print("    (You can turn off this warning by turning var.warnReadNoFile off.)\n")
             if sys.version_info < (3,):
-                flob = io.BytesIO(stuff)
-            else:
-                flob = io.StringIO(stuff)
+                stuff = unicode(stuff)
+            # if sys.version_info < (3,):
+            #     flob = io.BytesIO(stuff)
+            # else:
+            #     flob = io.StringIO(stuff)
+            flob = io.StringIO(stuff)
 
             _decideFromContent('<input string>', flob)
             #_decideFromContent(stuff, flob)
