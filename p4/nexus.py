@@ -509,17 +509,14 @@ class NexusData:
                                     "Equate key '%s' is one of the character symbols.  Bad." % k)
                                 raise P4Error(gm)
                             if self.equates.has_key(k):
-                                gm.append(
-                                    "Equates are currently %s" % self.equates)
-                                gm.append(
-                                    "Equate key '%s' from the format command is already in the equates." % k)
+                                gm.append("Equates are currently %s" % self.equates)
+                                gm.append("Equate key '%s' from the format command is already in the equates." % k)
                                 raise P4Error(gm)
                             for c in v:
                                 if c not in self.symbols:
                                     gm.append("Equate %s:%s" % (k, v))
                                     gm.append("%s is not in symbols." % c)
-                                    raise P4Error(
-                                        gm, 'nexus_equateIsNotInSymbols')
+                                    raise P4Error(gm, 'nexus_equateIsNotInSymbols')
                             self.equates[k] = v
                 elif self.dataType == 'protein':
                     if self.formatCommandSymbols:

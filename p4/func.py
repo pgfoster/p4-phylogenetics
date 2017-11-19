@@ -411,6 +411,9 @@ def readFile(fName):
         gm.append("Can't open %s.  Are you sure you have the right name?" % fName)
         raise P4Error(gm)
 
+    #print(flob, type(flob))
+    #print(dir(flob))
+
     # See if there is an informative suffix on the file name
     # If there is a suffix, but the file cannot be read,
     # it is a serious error, and death follows.
@@ -572,6 +575,8 @@ def _decideFromContent(fName, flob):
 
         # print "got firstChar = %s" % firstChar
         flob.seek(0)
+        if var.verboseRead:
+            print("Guessing that '%s' is a nexus or gde file..." % fName)
         if firstChar in ['[', '#']:
             # it might be a nexus file
             if var.verboseRead:
@@ -586,47 +591,25 @@ def _decideFromContent(fName, flob):
             if ret:
                 return
 
-        # If we are here then it isn't a nexus or gde file.
-        # Last alternative: its assumed to be a python script
-        try:
-            # get it, for a possible error message below, while the flob is
-            # still open
-            theString = flob.getvalue()
-        except AttributeError:
-            theString = None
-        flob.close()
+        # If we are here then it isn't a nexus or gde file.  Previously I then
+        # tried to read it as a python script, even though it does not end in
+        # '.py'.  Probably a bad idea.  So just give up.
+
         if var.verboseRead:
-            # print "As a last resort, guessing that '%s' is a python file..."
-            # % fName
-            print("Trying to read '%s' as a python file..." % fName)
-        try:
-            import __main__
-            exec(theString, __main__.__dict__, __main__.__dict__)
-            if fName is not "<input string>":
-                if hasattr(__main__, 'pyFileCount'):
-                    __main__.pyFileCount += 1
-            if var.verboseRead:
-                print("... appears to have succeeded in reading '%s' as a python file..." % fName)
+            print("Giving up on trying to read '%s'." % fName)
 
-        except NameError:
-            if var.verboseRead:
-                print("Failed to read '%s' as a python file..." % fName)
-                print("Giving up on trying to read '%s' at all." % fName)
-
-            # probably a mis-spelled file name
-            if isinstance(flob, (io.BytesIO, io.StringIO)):
-                if theString:
-                    if len(theString) < 100:
-                        gm = [
-                            "Couldn't make sense out of the input '%s'" % theString]
-                    else:
-                        gm = [
-                            "Couldn't make sense out of the input '%s ...'" % theString[100]]
-                gm.append(
-                    "It is not a file name, and I could not make sense out of it otherwise.")
+        if fName == '<input string>':
+            flob.seek(0)
+            first100 = flob.read(100)
+            if first100:
+                gm = ["Couldn't make sense out of the input '%s'" % first100]
             else:
-                gm = ["Couldn't make sense of the input '%s'." % fName]
-            raise P4Error(gm)
+                gm = ["Couldn't make sense out of the input '%s'" % fName]
+            gm.append("It is not a file name, and I could not make sense out of it otherwise.")
+        else:
+            gm = ["Couldn't make sense of the input '%s'." % fName]
+        flob.close()
+        raise P4Error(gm)
 
 
 def _tryToReadNexusFile(fName, flob):
