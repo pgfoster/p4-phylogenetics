@@ -1,2 +1,3 @@
-p4 [a-z]*
-
+p4 [a-y]*
+echo "However, p4 no longer reads python files that do not end in '.py'"
+p4 z
