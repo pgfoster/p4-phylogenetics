@@ -12,6 +12,8 @@ from p4.var import var
 from p4.p4exceptions import P4Error
 from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
 from p4.distancematrix import DistanceMatrix
+from p4.treepicture import TreePicture
+
 
 import numpy
 import p4.pf as pf
@@ -130,7 +132,6 @@ if True:
                 f.write('#NEXUS\n\n')
         else:
             if append:
-                import os
                 if os.path.isfile(fName):
                     try:
                         f = open(fName, 'a')
@@ -386,7 +387,6 @@ if True:
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
 
-        from treepicture import TreePicture
         p = TreePicture(self)
         p.fName = None
         p.width = width
@@ -433,7 +433,7 @@ if True:
                 p.width = 100
 
         # print "p.width =", p.width
-        #import sys; sys.exit()
+        # sys.exit()
 
         # Make sure the names fit.
         if not autoIncreaseWidth:
@@ -533,7 +533,6 @@ if True:
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
 
-        from treepicture import TreePicture
         p = TreePicture(self)
         p.addToBrLen = 0.0
         p.width = width

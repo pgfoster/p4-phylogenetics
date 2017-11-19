@@ -12,6 +12,7 @@ import p4.func
 import re
 import sys
 import array
+import random
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix
@@ -20,6 +21,7 @@ from p4.part import Part
 import numpy
 import numpy.linalg
 from p4.alignment import ExcludeDelete
+from p4.geneticcode import GeneticCode
 
 if True:
     def simpleConstantMask(self, ignoreGapQ=True, invert=False):
@@ -902,7 +904,7 @@ if True:
         sequences site by site as long as there are no gaps or
         ambiguities.  """
 
-        from alignment import Alignment
+        from p4.alignment import Alignment
         dbug = 0
         seqCount = len(self.sequences)
         newAlig = Alignment()
@@ -993,7 +995,6 @@ if True:
                 "This only works with Alignments having only one data partition.")
             raise P4Error(gm)
 
-        import copy
         # although we will be replacing the sequences...
         a = copy.deepcopy(self)
         n = len(self.sequences)
@@ -1004,7 +1005,6 @@ if True:
             one = ['a'] * self.length
             newList.append(one)
         # fill the array with random slices from the sequences
-        import random
         for j in range(self.length):
             r = int(self.length * random.random())
             for i in range(n):
@@ -1023,8 +1023,6 @@ if True:
         the frequencies of character states of one pair of sequences.
         """
 
-        from distancematrix import DistanceMatrix
-        import math
         d = DistanceMatrix()
         d.setDim(len(self.sequences))
         d.names = []
@@ -1177,7 +1175,6 @@ if True:
         If divideByNPositionsCompared is turned off, then the number of
         differences is divided by the length of the alignment.  """
 
-        from distancematrix import DistanceMatrix
         d = DistanceMatrix()
         d.setDim(len(self.sequences))
         d.names = []
@@ -1467,7 +1464,6 @@ if True:
                       (theProteinAlignment.length, (3 * theProteinAlignment.length)))
             raise P4Error(gm)
 
-        from geneticcode import GeneticCode
         gc = GeneticCode(transl_table)
 
         pLen = theProteinAlignment.length
@@ -1573,7 +1569,6 @@ if True:
             s.sequence = ['-'] * a.length
             s.dataType = 'protein'
 
-        from geneticcode import GeneticCode
         gc = GeneticCode(transl_table)
 
         dnaEquates = self.equates.keys()
@@ -1668,8 +1663,7 @@ if True:
 
     def dupe(self):
         """Duplicates self, with no c-pointers.  And no parts"""
-        from copy import deepcopy
-        theDupe = deepcopy(self)
+        theDupe = copy.deepcopy(self)
         for p in theDupe.parts:
            p.alignment = theDupe
            p.cPart = None
@@ -2577,9 +2571,6 @@ if True:
         From share/examples/kosiol_ais.html
         This writes files.
         """
-        #import subprocess
-        import numpy
-        import numpy.linalg
         gm = ["Alignment.writeKosiolAISFiles() "]
         if not tree.model:
             gm.append("Requires a tree with an optimimised model attached.")
