@@ -155,14 +155,14 @@ class TreePicture(object):
                             extras = 0
                             if self.textShowNodeNums:
                                 # 1 for the colon
-                                extras += len(`n.nodeNum`) + 1
+                                extras += len(repr(n.nodeNum)) + 1
                         else:
                             if self.textShowNodeNums:
                                 # So we do over-write a vertical line in text
                                 # draw
                                 extras = 0
                                 # 1 for the colon
-                                extras += len(`n.nodeNum`) + 1
+                                extras += len(repr(n.nodeNum)) + 1
                             else:
                                 # So we do not over-write a vertical line in
                                 # text draw
@@ -579,7 +579,7 @@ class TreePicture(object):
         for n in self.tree.iterInternalsNoRoot():
             theName = ''
             if self.textShowNodeNums:
-                theName = `n.nodeNum`
+                theName = repr(n.nodeNum)
             # print "x %s" % theName
             if self.showInternalNodeNames and n.name:
                 if self.textShowNodeNums:

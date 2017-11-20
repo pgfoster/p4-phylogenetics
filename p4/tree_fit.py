@@ -965,7 +965,6 @@ if True:
             if len(tN) > headWid:
                 headWid = len(tN)
         headWid += 2
-        #headSig = '%-' + `headWid` + 's'
         headSig = '%' + "%i" % (headWid - 2) + 's  '
 
         # Get the all-sequences tail area probs
