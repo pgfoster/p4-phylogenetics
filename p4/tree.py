@@ -682,60 +682,47 @@ class Tree(object):
                 else:
                     # A new terminal node.
                     if tok[0] in string.ascii_letters or tok[0] in ['_']:
-                        if translationHash and translationHash.has_key(tok):
+                        if translationHash and tok in translationHash:
                             # print 'got key %s, val is %s' % (tok,
                             # translationHash[tok])
                             tok = translationHash[tok]
 
                     elif tok[0] in string.digits:
                         if var.nexus_allowAllDigitNames:
-                            if translationHash and translationHash.has_key(tok):
+                            if translationHash and tok in translationHash:
                                 # print 'got key %s, val is %s' % (tok,
                                 # translationHash[tok])
                                 tok = translationHash[tok]
                         else:
                             try:
                                 tok = int(tok)
-                                if translationHash and translationHash.has_key(repr(tok)):
+                                if translationHash and repr(tok) in translationHash:
                                     tok = translationHash[repr(tok)]
-                                elif translationHash and not translationHash.has_key(repr(tok)):
-                                    gm.append(
-                                        "There is a 'translation' for this tree, but the")
-                                    gm.append(
-                                        "number '%i' in the tree description" % tok)
-                                    gm.append(
-                                        'is not included in that translate command.')
+                                elif translationHash and repr(tok) not in translationHash:
+                                    gm.append("There is a 'translation' for this tree, but the")
+                                    gm.append("number '%i' in the tree description" % tok)
+                                    gm.append('is not included in that translate command.')
                                     raise P4Error(gm)
                                 elif self.taxNames:
                                     try:
                                         tok = self.taxNames[tok - 1]
                                     except IndexError:
-                                        gm.append(
-                                            "Can't make sense out of token '%s' for a new terminal node." % tok)
-                                        gm.append(
-                                            'There is no translate command, and the taxNames does not')
-                                        gm.append(
-                                            'have a value for that number.')
+                                        gm.append("Can't make sense out of token '%s' for a new terminal node." % tok)
+                                        gm.append('There is no translate command, and the taxNames does not')
+                                        gm.append('have a value for that number.')
                                         raise P4Error(gm)
                                 else:
-                                    gm.append(
-                                        "We have a taxon name '%s', composed only of numerals." % tok)
+                                    gm.append("We have a taxon name '%s', composed only of numerals." % tok)
                                     gm.append(" ")
-                                    gm.append(
-                                        'The Nexus format allows tree specifications with no')
-                                    gm.append(
-                                        'translate command to use integers to refer to taxa.')
-                                    gm.append(
-                                        'That is possible because in a proper Nexus file the')
-                                    gm.append(
-                                        'taxa are defined before the trees.  P4, however, does')
-                                    gm.append(
-                                        'not require definition of taxa before the trees, and in')
-                                    gm.append(
-                                        'the present case no definition was made.  Deal with it.')
+                                    gm.append('The Nexus format allows tree specifications with no')
+                                    gm.append('translate command to use integers to refer to taxa.')
+                                    gm.append('That is possible because in a proper Nexus file the')
+                                    gm.append('taxa are defined before the trees.  P4, however, does')
+                                    gm.append('not require definition of taxa before the trees, and in')
+                                    gm.append('the present case no definition was made.  Deal with it.')
                                     raise P4Error(gm)
                             except ValueError:
-                                if translationHash and translationHash.has_key(repr(tok)):
+                                if translationHash and repr(tok) in translationHash:
                                     tok = translationHash[repr(tok)]
                                 # else:  # starts with a digit, but it is not an int.
                                 #    gm.append('Problem token %s' % tok)
@@ -2878,7 +2865,7 @@ class Tree(object):
             print("The trees are the same. No tv.")
             return
         # for sk in self.splitKeyHash.keys():
-        #    if not treeB.splitKeyHash.has_key(sk):
+        #    if sk not in treeB.splitKeyHash:
         #        print "self has sk
 
         self.splitKeyHash = {}

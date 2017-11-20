@@ -1924,7 +1924,7 @@ class Mcmc(object):
             # in the polytomy move, we want to pre-compute the logs of
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
-            if self.proposalsHash.has_key('polytomy') and self.tunings.doPolytomyResolutionClassPrior:
+            if 'polytomy' in self.proposalsHash and self.tunings.doPolytomyResolutionClassPrior:
                 p = self.proposalsHash['polytomy']
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
@@ -2073,12 +2073,10 @@ class Mcmc(object):
         # If polytomy is turned on, then it is possible to get a star
         # tree, in which case local will not work.  So if we have both
         # polytomy and local proposals, we should also have brLen.
-        if self.proposalsHash.has_key("polytomy") and self.proposalsHash.has_key("local"):
-            if not self.proposalsHash.has_key('brLen'):
-                gm.append(
-                    "If you have polytomy and local proposals, you should have a brLen proposal as well.")
-                gm.append(
-                    "It can have a low proposal probability, but it needs to be there.")
+        if 'polytomy' in self.proposalsHash and 'local' in self.proposalsHash:
+            if 'brLen' not in self.proposalsHash:
+                gm.append("If you have polytomy and local proposals, you should have a brLen proposal as well.")
+                gm.append("It can have a low proposal probability, but it needs to be there.")
                 gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
                 raise P4Error(gm)
 
@@ -2335,7 +2333,7 @@ class Mcmc(object):
                         raise P4Error(gm)
                 # print "   Mcmc.run(). finished a gen on chain %i" % (chNum)
                 for pr in abortableProposals:
-                    if self.proposalsHash.has_key(pr):
+                    if pr in self.proposalsHash:
                         self.proposalsHash[pr].doAbort = False
 
             # Do swap, if there is more than 1 chain.

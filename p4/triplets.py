@@ -86,9 +86,9 @@ class Component(object):
             self.dict[k] = 1
 
     def contains(self, triplet):
-        if self.dict.has_key(triplet[0]):
+        if triplet[0] in self.dict:
             return True
-        if self.dict.has_key(triplet[1]):
+        if triplet[1] in self.dict:
             return True
         return False
 

@@ -547,10 +547,10 @@ class LeafSupport(object):
             raise P4Error(gm)
         group = []
         for i in list:
-            if self.taxa2IndexDict.has_key(i):
+            if i in self.taxa2IndexDict:
                 # print 'Taxname: %s, %s' % (i, self.taxa2IndexDict[i])
                 group.append(self.taxa2IndexDict[i])
-            elif self.index2TaxaDict.has_key(i):
+            elif i in self.index2TaxaDict:
                 #        print 'Index: %s, %s' % (self.index2TaxaDict[i], i)
                 group.append(i)
             else:
@@ -574,10 +574,10 @@ class LeafSupport(object):
             raise P4Error(gm)
         taxSet = []
         for i in list:
-            if self.taxa2IndexDict.has_key(i):
+            if i in self.taxa2IndexDict:
                 #        print 'Taxname: %s, %s' % (i, self.taxa2IndexDict[i])
                 taxSet.append(self.taxa2IndexDict[i])
-            elif self.index2TaxaDict.has_key(i):
+            elif i in self.index2TaxaDict:
                 #        print 'Index: %s, %s' % (self.index2TaxaDict[i], i)
                 taxSet.append(i)
             else:
@@ -600,10 +600,10 @@ class LeafSupport(object):
             raise P4Error(gm)
         clade = []
         for i in list:
-            if self.taxa2IndexDict.has_key(i):
+            if i in self.taxa2IndexDict:
                 #        print 'Taxname: %s, %s' % (i, self.taxa2IndexDict[i])
                 clade.append(i)
-            elif self.index2TaxaDict.has_key(i):
+            elif i in self.index2TaxaDict:
                 #        print 'Index: %s, %s' % (self.index2TaxaDict[i], i)
                 clade.append(self.index2TaxaDict[i])
             else:
@@ -666,7 +666,7 @@ class LeafSupport(object):
                             taxa[1] = random.randint(index + 1, noTaxnames - 1)
                         taxa.sort()
                         tuple += (self.bitkeys[taxa[0]], self.bitkeys[taxa[1]])
-                        if not quartetDict.has_key(tuple):
+                        if tuple not in quartetDict:
                             quartetDict[tuple] = 1
                             self.sortedQuartets.append(tuple)
                             i += 1
@@ -689,7 +689,7 @@ class LeafSupport(object):
                         taxa.sort()
                         tuple += (self.bitkeys[taxa[0]],
                                   self.bitkeys[taxa[1]], self.bitkeys[taxa[2]])
-                        if not quartetDict.has_key(tuple):
+                        if tuple not in quartetDict:
                             self.sortedQuartets.append(tuple)
                             i += 1
 
@@ -915,7 +915,7 @@ class LeafSupport(object):
 
     def updateDicts(self, sortedQuartet, quartet, quartetType, weight, taxa2index):
 
-        #        if self.sorted2QuartetType.has_key(sortedQuartet):
+        #        if sortedQuartet in self.sorted2QuartetType:
         #            print self.sorted2QuartetType[sortedQuartet]
         #        else:
         #            print 'Sorted quartet not present'
@@ -923,8 +923,8 @@ class LeafSupport(object):
         #        print quartet
         #        print quartetType
 
-        if self.sorted2QuartetType.has_key(sortedQuartet):
-            if self.sorted2QuartetType[sortedQuartet].has_key(quartetType):
+        if sortedQuartet in self.sorted2QuartetType:
+            if quartetType in self.sorted2QuartetType[sortedQuartet]:
                 #                print '   1'
                 self.sorted2QuartetType[sortedQuartet][quartetType] = self.sorted2QuartetType[
                     sortedQuartet][quartetType] + weight
@@ -990,7 +990,7 @@ class LeafSupport(object):
                 cladeStripper.reset()
                 for clade in cladeStripper.getCladesFromTree(t):
                     if len(clade) > 3:
-                        if cladeDict.has_key(clade):
+                        if clade in cladeDict:
                             cladeDict[clade] = cladeDict[clade] + weight
                         else:
                             cladeDict[clade] = weight
@@ -1043,7 +1043,7 @@ class LeafSupport(object):
         if len(self.clades) > 0:
             for clade in self.clades:
                 hits = 0.0
-                if cladeDict.has_key(clade):
+                if clade in cladeDict:
                     hits = (cladeDict[clade] / float(self.sumOfWeights)) * 100
                 translatedClade = ()
                 for name in clade:
@@ -1172,7 +1172,7 @@ class LeafSupport(object):
                     for taxon in sortedQuartet:
                         if taxon >= 0:
                             taxa = self.bitkey2Index[taxon]
-                            if scoreDict.has_key(taxa):
+                            if taxa in scoreDict:
                                 list = scoreDict[taxa]
                                 scoreDict[taxa] = [
                                     list[0] + max, list[1] + diff, list[2] + ent, list[3] + 1]
@@ -1212,7 +1212,7 @@ class LeafSupport(object):
                     for taxon in sortedQuartet:
                         if taxon >= 0:
                             taxa = self.bitkey2Index[taxon]
-                            if scoreDict.has_key(taxa):
+                            if taxa in scoreDict:
                                 list = scoreDict[taxa]
                                 scoreDict[taxa] = [
                                     list[0] + max, list[1] + diff, list[2] + ent, list[3] + 1]
@@ -1307,7 +1307,7 @@ class LeafSupport(object):
                 for taxon in sortedQuartet:
                     if taxon >= 0:
                         taxa = self.bitkey2Index[taxon]
-                        if scoreDict.has_key(taxa):
+                        if taxa in scoreDict:
                             list = scoreDict[taxa]
                             scoreDict[taxa] = [
                                 list[0] + max, list[1] + diff, list[2] + ent, list[3] + 1]
@@ -1332,7 +1332,7 @@ class LeafSupport(object):
 
                 for taxa in sortedQuartet:
                     if taxa >= 0:
-                        if scoreDict.has_key(taxa):
+                        if taxa in scoreDict:
                             list = scoreDict[taxa]
                             scoreDict[taxa] = [
                                 list[0] + max, list[1] + diff, list[2] + ent, list[3] + 1]
@@ -1652,7 +1652,7 @@ class LeafSupport(object):
             #            print qW
             weight += qW[1]
             if len(qW[0]) > 1:
-                if quartetTypes.has_key(qW[0]):
+                if qW[0] in quartetTypes:
                     quartetTypes[qW[0]] = quartetTypes[qW[0]] + qW[1]
                 else:
                     quartetTypes[qW[0]] = qW[1]

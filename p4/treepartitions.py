@@ -723,7 +723,7 @@ something like this::
             # case we get it from self.splitsHash, or we have to
             # make a new one.
 
-            if self.splitsHash.has_key(theSKey):
+            if theSKey in self.splitsHash:
                 theSplit = self.splitsHash[theSKey]
             else:
                 theSplit = Split()
@@ -747,7 +747,7 @@ something like this::
                     if 1 & n.br.rawSplitKey:
                         theSplit.count += theWeight
 
-                    if self.biSplitsHash.has_key(theSKey):
+                    if theSKey in self.biSplitsHash:
                         theBiSplit = self.biSplitsHash[theSKey]
                     else:
                         theBiSplit = Split()
@@ -1202,7 +1202,7 @@ something like this::
             theKey = s.key
             prop1 = s.proportion
 
-            if otherTP.splitsHash.has_key(theKey):
+            if theKey in otherTP.splitsHash:
                 prop2 = otherTP.splitsHash[theKey].proportion
             else:
                 prop2 = 0.0
@@ -1229,7 +1229,7 @@ something like this::
                 if theStarCount == 1 or theStarCount == self.nTax - 1:
                     continue
             theKey = s.key
-            if not self.splitsHash.has_key(theKey):
+            if theKey not in self.splitsHash:
                 prop1 = 0.0
                 prop2 = s.proportion
                 if bothMustMeetMinimum:
@@ -1590,7 +1590,7 @@ something like this::
                 # get the contribution of the root splits from the
                 # count from the biRootHash.
                 biRootCountContribution = 0.0
-                if self.biSplitsHash.has_key(n.br.split.key):
+                if n.br.split.key in self.biSplitsHash:
                     biRootCountContribution = self.biSplitsHash[
                         n.br.split.key].count
                 theCount = n.br.split.count - biRootCountContribution
@@ -1611,7 +1611,7 @@ something like this::
         # Get rootCount and biRootCount
         if self.isBiRoot:
             for n in conTree.iterNodesNoRoot():
-                if self.biSplitsHash.has_key(n.br.split.key):
+                if n.br.split.key in self.biSplitsHash:
                     n.br.biRootCount = self.biSplitsHash[n.br.split.key].count
                 else:
                     n.br.biRootCount = 0.0
@@ -1818,9 +1818,8 @@ something like this::
                     for n in conTree.iterNodesNoRoot():
                         n.br.textDrawSymbol = var.modelSymbols[
                             n.parts[pNum].compNum]
-                        if not modelKeyHash.has_key(n.parts[pNum].compNum):
-                            modelKeyHash[
-                                n.parts[pNum].compNum] = n.br.textDrawSymbol
+                        if n.parts[pNum].compNum not in modelKeyHash:
+                            modelKeyHash[n.parts[pNum].compNum] = n.br.textDrawSymbol
                     print()
                     conTree.draw()
                     print("\nThe drawing above shows majority comp numbers in partition %i" % pNum)
@@ -1834,7 +1833,7 @@ something like this::
                     for n in conTree.iterNodesNoRoot():
                         n.br.textDrawSymbol = var.modelSymbols[
                             n.br.parts[pNum].rMatrixNum]
-                        if not modelKeyHash.has_key(n.br.parts[pNum].rMatrixNum):
+                        if n.br.parts[pNum].rMatrixNum not in modelKeyHash:
                             modelKeyHash[
                                 n.br.parts[pNum].rMatrixNum] = n.br.textDrawSymbol
                     print()

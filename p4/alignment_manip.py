@@ -169,7 +169,7 @@ if True:
                         if aChar in self.symbols:
                             symbolsSlice[nSymbolChars] = aChar
                             nSymbolChars += 1
-                        elif self.equates.has_key(aChar):
+                        elif aChar in self.equates:
                             equatesSlice[nEquateChars] = aChar
                             nEquateChars += 1
 
@@ -1483,7 +1483,7 @@ if True:
                 elif theCodon.count('-'):
                     print("    position %4i, codon '%s' is incomplete" % (j, theCodon))
                     crimes += 1
-                # elif gc.code.has_key(theCodon):
+                # elif theCodon in gc.code:
                 #     if gc.code[theCodon] != s2.sequence[j]:
                 #         print "    position %4i, codon '%s' is '%s', should be '%s'" % (
                 #             j, theCodon, s2.sequence[j], gc.code[theCodon])
@@ -2111,7 +2111,7 @@ if True:
                     hits += hitsAtThisPos
                     nPos += 1
             if showDistribution:
-                if distro.has_key(hitsAtThisPos):
+                if hitsAtThisPos in distro:
                     distro[hitsAtThisPos] += 1
                 else:
                     distro[hitsAtThisPos] = 1

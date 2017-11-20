@@ -300,8 +300,7 @@ class SequenceList(object):
     def makeSequenceForNameDict(self):
         self.sequenceForNameDict = {}
         for s in self.sequences:
-            assert not self.sequenceForNameDict.has_key(
-                s.name), "duped name %s" % s.name
+            assert s.name not in self.sequenceForNameDict, "duped name %s" % s.name
             self.sequenceForNameDict[s.name] = s
 
     def _readFastaMakeSeq(self, splHeadLine, sLineList):
@@ -888,11 +887,10 @@ class SequenceList(object):
             gm.append("The dictionary file '%s' can't be found." % dictFName)
             raise P4Error(gm)
         for s in self.sequences:
-            if p4_renameForPhylip_dict.has_key(s.name):
+            if s.name in p4_renameForPhylip_dict:
                 s.name = p4_renameForPhylip_dict[s.name]
             else:
-                gm.append(
-                    "The dictionary does not contain a key for '%s'." % s.name)
+                gm.append("The dictionary does not contain a key for '%s'." % s.name)
                 raise P4Error(gm)
         del(__main__.p4_renameForPhylip_dict)
         del(__main__.p4_renameForPhylip_originalNames)

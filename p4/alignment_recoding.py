@@ -122,7 +122,7 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
             # Determine the corresponding amino-acid.
             if codon == '---':
                 aa = '-'
-            elif code.has_key(codon):
+            elif codon in code:
                 aa = code[codon]
             elif 'n' in codon:
                 # This is a simplification. Some "degenerate" codons
@@ -134,7 +134,7 @@ def getDegenerateSitesMask(self, transl_table=1, code=None, all_3rd_positions=Fa
                 gm.append("%s" % str(code))
                 raise P4Error(gm)
             # Record the codon used for the aa.
-            if aas_codons.has_key(aa):
+            if aa in aas_codons:
                 aas_codons[aa].append(codon)
             else:
                 aas_codons[aa] = [codon]
@@ -268,7 +268,7 @@ def pseudoTranslate(self, transl_table=1, out_type="standard", code=None):
         pseudoProtSeq = ali.sequences[i].sequence
         for j in range(ali.length):
             theCodon = dnaSeq[(j * codelength):((j+1) * codelength)]
-            if code.has_key(theCodon):
+            if theCodon in code:
                 pseudoProtSeq[j] = code[theCodon]
             elif theCodon == '-' * codelength:
                 # full indel
@@ -640,13 +640,13 @@ def degenerate(self, code="Standard", positions=[1, 2, 3], restrict_to=[], ignor
     aas_codons = {}
     for codon in code.keys():
         aa = code[codon]
-        if not sub_code.has_key(codon):
+        if codon not in sub_code:
             sub_code[codon] = aa # sub_aa will be the same as aa
         sub_aa = sub_code[codon]
         # Only consider codons that are compatible with the restriction rule, if there is one.
         if (len(restrict_to) == 0 or aa.lower() in restrict_to) and not (aa.lower() in ignored_aas) :
-            #if aas_codons.has_key(aa):
-            if aas_codons.has_key(sub_aa):
+            #if aa in aas_codons:
+            if sub_aa in aas_codons:
                 #aas_codons[aa].append(codon)
                 aas_codons[sub_aa].append(codon)
             else:
@@ -699,7 +699,7 @@ def recodeRY(self, positions=[1, 2, 3]):
             # codon_position is defined in code_utils.py
             if codon_position(pos + 1) in positions:
                 letter = seq.sequence[pos]
-                if not recode_table.has_key(letter):
+                if letter not in recode_table:
                     # nuc2val, R and Y are defined in code_utils.py
                     val = nuc2val[letter]
                     if (val & R) and (val & Y):

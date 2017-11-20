@@ -508,7 +508,7 @@ class NexusData:
                                 gm.append(
                                     "Equate key '%s' is one of the character symbols.  Bad." % k)
                                 raise P4Error(gm)
-                            if self.equates.has_key(k):
+                            if k in self.equates:
                                 gm.append("Equates are currently %s" % self.equates)
                                 gm.append("Equate key '%s' from the format command is already in the equates." % k)
                                 raise P4Error(gm)
@@ -538,7 +538,7 @@ class NexusData:
                                 gm.append(
                                     "Equate key '%s' is one of the character symbols.  Bad." % k)
                                 raise P4Error(gm)
-                            if self.equates.has_key(k):
+                            if k in self.equates:
                                 gm.append(
                                     "Equates are currently %s" % self.equates)
                                 gm.append(
@@ -580,7 +580,7 @@ class NexusData:
                                 gm.append(
                                     "Equate key '%s' is one of the character symbols.  Bad." % k)
                                 raise P4Error(gm)
-                            if self.equates.has_key(k):
+                            if k in self.equates:
                                 gm.append(
                                     "Equates are currently %s" % self.equates)
                                 gm.append(

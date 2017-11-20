@@ -1295,14 +1295,11 @@ if True:
                 if not n.isLeaf:
                     theNodeSplitString = p4.func.getSplitStringFromKey(
                         n.br.splitKey, self.nTax)
-                    if theHash.has_key(theNodeSplitString):
+                    if theNodeSplitString in theHash:
                         if hasattr(n.br, 'support') and n.br.support is not None:
-                            gm.append(
-                                "Node %i already has a br.support." % n.nodeNum)
-                            gm.append(
-                                "I am refusing to clobber it with the split support.")
-                            gm.append(
-                                "Either fix the tree or fix this method.")
+                            gm.append("Node %i already has a br.support." % n.nodeNum)
+                            gm.append("I am refusing to clobber it with the split support.")
+                            gm.append("Either fix the tree or fix this method.")
                             raise P4Error(gm)
                         n.br.support = float(theHash[theNodeSplitString])
         return theHash
@@ -1385,11 +1382,10 @@ if True:
             raise P4Error(gm)
         for n in self.iterNodes():
             if n.isLeaf:
-                if p4_renameForPhylip_dict.has_key(n.name):
+                if n.name in p4_renameForPhylip_dict:
                     n.name = p4_renameForPhylip_dict[n.name]
                 else:
-                    gm.append(
-                        "The dictionary does not contain a key for '%s'." % n.name)
+                    gm.append("The dictionary does not contain a key for '%s'." % n.name)
                     raise P4Error(gm)
         if p4_renameForPhylip_originalNames:
             self.taxNames = p4_renameForPhylip_originalNames

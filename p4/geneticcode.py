@@ -177,7 +177,7 @@ class GeneticCode:
             theCodon = theCodon.lower()
             theAA = AAs[i].lower()
             self.code[theCodon] = theAA
-            if self.codonsForAA.has_key(theAA):
+            if theAA in self.codonsForAA:
                 self.codonsForAA[theAA].append(theCodon)
             else:
                 self.codonsForAA[theAA] = [theCodon]
