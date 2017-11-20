@@ -10,7 +10,6 @@ import math
 import string
 import re
 import sys
-import array
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix

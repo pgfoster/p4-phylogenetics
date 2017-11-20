@@ -12,7 +12,6 @@ import glob
 import time
 import pickle
 import random
-import array
 import inspect
 import datetime
 import subprocess
@@ -1338,10 +1337,8 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
 
         # addNodeBetweenNodes() requires t.preOrder.
         if 1:
-            t.preOrder = numpy.array(
-                [var.NO_ORDER] * len(t.nodes), numpy.int32)
-            t.postOrder = numpy.array(
-                [var.NO_ORDER] * len(t.nodes), numpy.int32)
+            t.preOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
+            t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
             if len(t.nodes) > 1:
                 t.setPreAndPostOrder()
         nodeNum = t.addNodeBetweenNodes(n, n.parent)
@@ -1920,7 +1917,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
     # print "char list is: %s" % nexusCharListString
     cList = nexusCharListString.split()
     # print "cList is %s" % cList
-    mask = array.array('c', maskLength * '0')
+    mask = ['0'] * maskLength
     for c in cList:        # eg 6-10\2
         first = None       # the first item eg 6
         second = None      # the second item eg 10
@@ -2000,7 +1997,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
                 mask[i] = '1'
             elif mask[i] == '1':
                 mask[i] = '0'
-    return mask.tostring()
+    return ''.join(mask)
 
 
 def polar2square(angleLenList):

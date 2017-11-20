@@ -1,6 +1,5 @@
 from __future__ import print_function
 import string
-import array
 import p4.func
 from p4.var import var
 from p4.alignment import Alignment
@@ -1358,10 +1357,6 @@ class NexusData:
             gm.append("can't have matchchars in the first sequences")
             raise P4Error(gm)
         haveToDoIt = False
-        # I can't remember why I had to do this next bit, so I am turning it off.
-        # if len(self.equates):
-        #    haveToDoIt = True # due to equates      Why is this?
-        # else:    # see if there are any matchchars
 
         for aSeq in self.sequences[1:]:
             if self.nexus_matchcar in aSeq:
@@ -1370,7 +1365,7 @@ class NexusData:
         if haveToDoIt:
             tempSeqs = []
             for aSeq in self.sequences:
-                tempSeqs.append(array.array('c', aSeq))
+                tempSeqs.append(list(aSeq))
             for aSeq in tempSeqs[1:]:
                 for j in range(len(aSeq)):
                     if aSeq[j] == self.nexus_matchchar:
@@ -1378,7 +1373,7 @@ class NexusData:
             # put them back into strings
             self.sequences = []
             for aSeq in tempSeqs:
-                self.sequences.append(aSeq.tostring())
+                self.sequences.append(''.join(aSeq))
 
     def alignment(self):
         gm = ['NexusData.alignment()']

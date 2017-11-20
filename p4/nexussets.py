@@ -2,7 +2,6 @@ from __future__ import print_function
 import os
 import sys
 import string
-import array
 import copy
 from p4.var import var
 from p4.nexustoken import nexusSkipPastNextSemiColon, safeNextTok
@@ -574,7 +573,7 @@ class TaxOrCharSet(object):
         while tokNum < len(self.tokens):
             tok = self.tokens[tokNum]
             # print "Considering tok[%i]  '%s'" % (tokNum, tok)
-            if isinstance(tok, string):
+            if isinstance(tok, str):
                 lowTok = tok.lower()
             else:
                 lowTok = None
@@ -740,7 +739,7 @@ class TaxOrCharSet(object):
                 existingSetNames = self.nexusSets.taxSetLowNames
                 existingSets = self.nexusSets.taxSets
                 theTriplets = self.numberTriplets
-            mask = array.array('c', thisMaskLen * '0')
+            mask = ['0'] * thisMaskLen
 
             for aTriplet in theTriplets:
                 if 0:
@@ -814,9 +813,7 @@ class TaxOrCharSet(object):
                             mask[spot] = '1'
                 # print "            finished incorporating triplet %s into
                 # '%s' mask." % (aTriplet, self.name)
-            mask = mask.tostring()
-            # print "Got char set '%s' mask '%s'" % (self.name, mask)
-            self.mask = mask
+            self.mask = ''.join(mask)
 
     def invertMask(self):
         """Change zeros to ones, and non-zeros to zero."""
@@ -1433,7 +1430,7 @@ class CharPartition(object):
                 print("Got aSubset (%s) triplets %s" % (aSubset.name, aSubset.triplets))
                 # sys.exit()
 
-            aSubset.mask = array.array('c', self.nexusSets.aligNChar * '0')
+            aSubset.mask = ['0'] * self.nexusSets.aligNChar
 
             for aTriplet in aSubset.triplets:
                 # print "setSubsetMasks()  Looking at triplet '%s'" % aTriplet
@@ -1481,13 +1478,10 @@ class CharPartition(object):
                         if first > 0 and first <= self.nexusSets.aligNChar:
                             aSubset.mask[first - 1] = '1'
                         else:
-                            gm.append(
-                                "CharPartition '%s' definition" % self.name)
+                            gm.append("CharPartition '%s' definition" % self.name)
                             gm.append("Subset '%s' definition" % aSubset.name)
-                            gm.append(
-                                "Charset definition element '%s' is out of range" % first)
-                            gm.append("(aligNChar = %i)" %
-                                      self.nexusSets.aligNChar)
+                            gm.append("Charset definition element '%s' is out of range" % first)
+                            gm.append("(aligNChar = %i)" % self.nexusSets.aligNChar)
                             raise P4Error(gm)
                     elif lowFirst == 'remainder':
                         # print "Got first == remainder"
@@ -1501,20 +1495,15 @@ class CharPartition(object):
                                     if ss.mask[j] == '1':
                                         aSubset.mask[j] = '0'
                             else:
-                                gm.append(
-                                    "CharPartition '%s' definition" % self.name)
-                                gm.append("Subset '%s' definition" %
-                                          aSubset.name)
-                                gm.append(
-                                    "When implementing 'remainder' charset")
-                                gm.append(
-                                    "Found that subset '%s' had no mask" % ss)
+                                gm.append("CharPartition '%s' definition" % self.name)
+                                gm.append("Subset '%s' definition" % aSubset.name)
+                                gm.append("When implementing 'remainder' charset")
+                                gm.append("Found that subset '%s' had no mask" % ss)
                                 raise P4Error(gm)
                     else:
                         gm.append("CharPartition '%s' definition" % self.name)
                         gm.append("Subset '%s' definition" % aSubset.name)
-                        gm.append(
-                            "Charset definition element '%s' is not understood" % first)
+                        gm.append("Charset definition element '%s' is not understood" % first)
                         raise P4Error(gm)
 
                 elif first and second:  # its a range
@@ -1523,8 +1512,7 @@ class CharPartition(object):
                     except ValueError:
                         gm.append("CharPartition '%s' definition" % self.name)
                         gm.append("Subset '%s' definition" % aSubset.name)
-                        gm.append(
-                            "Can't parse definition element '%s'" % first)
+                        gm.append("Can't parse definition element '%s'" % first)
                         raise P4Error(gm)
                     if second == '.':
                         fin = len(aSubset.mask)
@@ -1535,29 +1523,24 @@ class CharPartition(object):
                             gm.append(
                                 "CharPartition '%s' definition" % self.name)
                             gm.append("Subset '%s' definition" % aSubset.name)
-                            gm.append(
-                                "Can't parse definition element '%s'" % second)
+                            gm.append("Can't parse definition element '%s'" % second)
                             raise P4Error(gm)
                     if third:
                         try:
                             bystep = int(third)
                         except ValueError:
-                            gm.append(
-                                "CharPartition '%s' definition" % self.name)
+                            gm.append("CharPartition '%s' definition" % self.name)
                             gm.append("Subset '%s' definition" % aSubset.name)
-                            gm.append(
-                                "Can't parse definition element '%s'" % third)
+                            gm.append("Can't parse definition element '%s'" % third)
                         for spot in range(start - 1, fin, bystep):
                             aSubset.mask[spot] = '1'
                     else:
                         for spot in range(start - 1, fin):
                             aSubset.mask[spot] = '1'
-            aSubset.mask = aSubset.mask.tostring()
-            # print "Got char subset '%s' mask '%s'" % (aSubset.name,
-            # aSubset.mask)
+            aSubset.mask = ''.join(aSubset.mask)
+            # print "Got char subset '%s' mask '%s'" % (aSubset.name, aSubset.mask)
             if aSubset.mask.count('1') == 0:
-                gm.append(
-                    "The mask for charPartitionSubset '%s' is empty." % aSubset.name)
+                gm.append("The mask for charPartitionSubset '%s' is empty." % aSubset.name)
                 raise P4Error(gm)
 
     def checkForOverlaps(self):
@@ -1570,12 +1553,9 @@ class CharPartition(object):
                     sum += 1
             if sum > 1:
                 gm.append("Char partition '%s'" % self.name)
-                gm.append(
-                    "The problem is that there are overlapping subsets in this")
-                gm.append(
-                    "charpartition.  The same position is in more than one subset.")
-                gm.append(
-                    "Zero-based position %i, one-based position %i." % (i, i + 1))
+                gm.append("The problem is that there are overlapping subsets in this")
+                gm.append("charpartition.  The same position is in more than one subset.")
+                gm.append("Zero-based position %i, one-based position %i." % (i, i + 1))
                 raise P4Error(gm)
             if sum < 1:
                 unspanned = 1
@@ -1607,10 +1587,9 @@ class CharPartition(object):
         if not self.nexusSets.aligNChar:
             self.nexusSets.aligNChar = self.theNexusSets.aligNChar
         self.setSubsetMasks()
-        import array
-        m = array.array('c', self.nexusSets.aligNChar * '0')
+        m = ['0'] * self.nexusSets.aligNChar 
         for i in range(self.nexusSets.aligNChar):
             for aSubset in self.subsets:
                 if aSubset.mask[i] == '1':
                     m[i] = '1'
-        return m.tostring()
+        return ''.join(m)

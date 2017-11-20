@@ -11,7 +11,6 @@ import string
 import p4.func
 import re
 import sys
-import array
 import random
 from p4.nexussets import CharSet
 import subprocess
@@ -55,7 +54,7 @@ if True:
 
         """
         nTaxRange = range(self.nTax)
-        mask = array.array('c', self.length * '0')
+        mask = ['0'] * self.length
         for seqPos in range(self.length):
             theSlice = self.sequenceSlice(seqPos)
             # print("%2i: %s" % (seqPos, theSlice))
@@ -102,8 +101,7 @@ if True:
                 elif mask[seqPos] == '1':
                     mask[seqPos] = '0'
 
-        # print("mask = %s" %  mask.tostring())
-        return mask.tostring()
+        return ''.join(mask)
 
     def constantMask(self, invert=None):
         """Returns a mask string with 1 at constant sites, and 0 otherwise.
@@ -139,7 +137,7 @@ if True:
         # and fast are tried first.  Only if there are ambiguities
         # (equates) does it get time-consuming.
 
-        mask = array.array('c', self.length * '0')
+        mask = ['0'] * self.length
         for seqPos in range(self.length):
             theSlice = self.sequenceSlice(seqPos)
             # print("%2i: %s" % (seqPos, theSlice))
@@ -293,14 +291,12 @@ if True:
                 elif mask[seqPos] == '1':
                     mask[seqPos] = '0'
 
-        # print("mask = %s" %  mask.tostring())
-        return mask.tostring()
+        return ''.join(mask)
 
     def gappedMask(self, invert=None):
         """Returns a mask string with 1 at positions with any gaps, and 0 otherwise."""
 
-        import array
-        mask = array.array('c', self.length * '0')
+        mask = ['0'] * self.length
         for i in range(self.length):
             theSlice = self.sequenceSlice(i)
             # if theSlice.count('-') == len(self.sequences):
@@ -314,7 +310,7 @@ if True:
                 elif mask[i] == '1':
                     mask[i] = '0'
 
-        return mask.tostring()
+        return ''.join(mask)
 
     def getLikelihoodTopologyInformativeSitesMask(self):
         """Make and return a mask for those sites that are likelihood informative about the topology.
@@ -658,8 +654,7 @@ if True:
             gm.append("Masks must be the same length as the alignment.")
             raise P4Error(gm)
         l = self.length
-        import array
-        orMask = array.array('c', self.length * '0')
+        orMask = ['0'] * self.length
         for i in range(l):
             # if maskA[i] == '1' and maskB[i] == '1':
             #    orMask[i] = '1'
@@ -675,7 +670,7 @@ if True:
                 raise P4Error(gm)
             if iA or iB:
                 orMask[i] = '1'
-        return orMask.tostring()
+        return ''.join(orMask)
 
     def andMasks(self, maskA, maskB):
         """Given two masks, this logically and's the string chars.
@@ -697,25 +692,17 @@ if True:
         if len(maskA) != self.length or len(maskB) != self.length:
             gm.append("Masks must be the same length as the alignment.")
             raise P4Error(gm)
-        l = self.length
-        import array
-        andMask = array.array('c', self.length * '0')
-        for i in range(l):
+
+        andMask = ['0'] * self.length
+        for i in range(self.length):
             # if maskA[i] == '1' and maskB[i] == '1':
             #    orMask[i] = '1'
-            try:
-                iA = int(maskA[i])
-                iB = int(maskB[i])
-            except ValueError:
-                gm.append(
-                    "All mask characters must be convertable to integers")
-                raise P4Error(gm)
             if iA not in [0, 1] or iB not in [0, 1]:
                 gm.append("All mask characters must be zero or 1")
                 raise P4Error(gm)
             if iA and iB:
                 andMask[i] = '1'
-        return andMask.tostring()
+        return ''.join(andMask)
 
     def sequenceSlice(self, pos):
         """Returns a list composed of the characters from the alignment at position pos.
