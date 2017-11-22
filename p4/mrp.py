@@ -1,13 +1,13 @@
 from __future__ import print_function
 # Matrix representation / parsimony.
 
-from tree import Tree
-from alignment import Alignment
+from p4.tree import Tree
+from p4.alignment import Alignment
 from p4.p4exceptions import P4Error
 import p4.func
-from nexussets import CharSet
-from node import Node
-from treepartitions import TreePartitions
+from p4.nexussets import CharSet
+from p4.node import Node
+from p4.treepartitions import TreePartitions
 
 
 "See also Alignment.mrpSlice()"

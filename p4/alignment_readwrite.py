@@ -1,6 +1,6 @@
 from __future__ import print_function
 from p4.sequencelist import SequenceList, Sequence
-from p4.nexussets import NexusSets
+from p4.nexussets import NexusSets, CharSet
 from p4.p4exceptions import P4Error
 import string
 import copy
@@ -1029,7 +1029,6 @@ if True:
         f.write('end;\n\n')
 
         if self.nexusSets:
-            from nexussets import NexusSets
             # print "self.nexusSets = %s" % self.nexusSets
             if self.excludeDelete:
                 if self.length < self.excludeDelete.length:
@@ -1469,10 +1468,8 @@ if True:
 
         if 1:
             if len(maskList):
-                from nexussets import NexusSets
                 self.nexusSets = NexusSets()
             for s in maskList:
-                from nexussets import CharSet
                 c = CharSet()
                 c.nexusSets = self.nexusSets
                 c.nChar = self.length

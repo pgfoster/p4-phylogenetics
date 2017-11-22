@@ -2,8 +2,8 @@ from __future__ import print_function
 import sys
 import csv
 import random
-from tree import Tree
-from func import read
+from p4.tree import Tree
+from p4.func import read
 from p4.var import var
 from p4.p4exceptions import P4Error
 from p4.reducedstrictconsensus import Intersection, TreeBuilderFromSplits

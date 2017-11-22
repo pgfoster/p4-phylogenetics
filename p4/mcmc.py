@@ -68,7 +68,7 @@ class McmcTuningsPart(object):
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
-        if item in self.__dict__.keys():
+        if item in self.__dict__:
             if not isinstance(val, float):
                 gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
                 gm.append('Tunings must be floats.')
@@ -118,7 +118,7 @@ class McmcTunings(object):
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
-        if item in self.__dict__.keys() and item not in ['nParts', 'parts']:
+        if item in self.__dict__ and item not in ['nParts', 'parts']:
             # Here is where I should do the sanity checking of the new vals.
             if item == 'brLenPriorType':
                 assert val in ['exponential', 'uniform']
@@ -493,7 +493,7 @@ class McmcProposalProbs(dict):
         stuff.append("  To change it, do eg ")
         stuff.append("    yourMcmc.prob.comp = 0.0 # turns comp proposals off")
         stuff.append("  Current settings:")
-        theKeys = self.__dict__.keys()
+        theKeys = list(self.__dict__.keys())
         theKeys.sort()
         for k in theKeys:
             stuff.append("        %30s: %s" % (k, getattr(self, k)))

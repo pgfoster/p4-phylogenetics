@@ -1823,7 +1823,7 @@ something like this::
                     print()
                     conTree.draw()
                     print("\nThe drawing above shows majority comp numbers in partition %i" % pNum)
-                    kk = modelKeyHash.keys()
+                    kk = list(modelKeyHash.keys())
                     kk.sort()
                     for k in kk:
                         print("    comp %2i - %s" % (k, modelKeyHash[k]))
@@ -1839,7 +1839,7 @@ something like this::
                     print()
                     conTree.draw()
                     print("\nThe drawing above shows majority rMatrix numbers in partition %i" % pNum)
-                    kk = modelKeyHash.keys()
+                    kk = list(modelKeyHash.keys())
                     kk.sort()
                     for k in kk:
                         print("    rMatrix %2i - %s" % (k, modelKeyHash[k]))

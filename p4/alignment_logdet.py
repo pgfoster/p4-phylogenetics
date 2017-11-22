@@ -284,7 +284,7 @@ if True:
 
         # Equates
         if self.equates:
-            self.equateSymbols = self.equates.keys()
+            self.equateSymbols = list(self.equates)
             self.equateSymbols.sort()
 
             # Make equatesArray

@@ -380,8 +380,10 @@ if True:
                 if thisVal < var.PIVEC_MIN:
                     print(gm[0])
                     print("    Specifying a comp of zero for a character is not allowed.")
-                    print("    Re-setting to %g" % var.PIVEC_MIN)
-                    val[i] = var.PIVEC_MIN
+                    print("    The minimum is %g" % var.PIVEC_MIN)
+                    myVal = (1.5 + random.random()) * var.PIVEC_MIN
+                    print("    Re-setting to %g" % myVal)
+                    val[i] = myVal
                     needsNormalizing = 1
 
             if needsNormalizing:
@@ -617,9 +619,9 @@ if True:
         # assign val
         dim = self.model.parts[partNum].dim
         if var.rMatrixNormalizeTo1:
-            goodLen = (((dim * dim) - dim) / 2)
+            goodLen = int((((dim * dim) - dim) / 2))
         else:
-            goodLen = (((dim * dim) - dim) / 2) - 1
+            goodLen = int((((dim * dim) - dim) / 2) - 1)
 
         v = None
         if spec == 'specified':
@@ -634,14 +636,11 @@ if True:
                         goodLen, len(val)))
                     raise P4Error(gm)
                 else:
-                    gm.append(
-                        "Bad length for arg val.  Length %i, should be %i" % (len(val), goodLen))
+                    gm.append("Bad length for arg val.  Length %i, should be %i" % (len(val), goodLen))
                     raise P4Error(gm)
             else:
-                gm.append(
-                    "spec is 'specified', but there are no specified rMatrix values.")
-                gm.append(
-                    "Specify rMatrix values by eg val=[2.0, 3.0, 4.0, 5.0,6.0]")
+                gm.append("spec is 'specified', but there are no specified rMatrix values.")
+                gm.append("Specify rMatrix values by eg val=[2.0, 3.0, 4.0, 5.0,6.0]")
                 raise P4Error(gm)
         elif spec == 'ones':
             v = numpy.array([1.0] * goodLen)
@@ -651,8 +650,7 @@ if True:
             try:
                 v = float(val)
             except (ValueError, TypeError):
-                gm.append(
-                    "Kappa ('val' arg) should be a float.  Setting to 2.0")
+                gm.append("Kappa ('val' arg) should be a float.  Setting to 2.0")
                 v = 2.0
             if v < var.KAPPA_MIN:
                 gm.append("Kappa is too small.   Setting to %f" %
@@ -668,8 +666,7 @@ if True:
                     partNum, self.data.parts[partNum].dataType))
                 raise P4Error(gm)
             if free:
-                gm.append(
-                    'The rMatrix should not be free if it is an empirical protein matrix.')
+                gm.append('The rMatrix should not be free if it is an empirical protein matrix.')
                 raise P4Error(gm)
 
         mt.val = v  # type numpy.ndarray, or None for protein
@@ -687,11 +684,9 @@ if True:
 
         # check if there is an nGammaCat > 1:
         if self.model.parts[partNum].nGammaCat == 1:
-            gm.append(
-                "For this part (%s), the number of nGammaCat has been set to 1." % partNum)
+            gm.append("For this part (%s), the number of nGammaCat has been set to 1." % partNum)
             gm.append("So gdasrv won't work.")
-            gm.append(
-                "You can set the nGammaCat with yourTree.setNGammaCat(partNum=x, nGammaCat=y)")
+            gm.append("You can set the nGammaCat with yourTree.setNGammaCat(partNum=x, nGammaCat=y)")
             raise P4Error(gm)
 
         # check val

@@ -478,8 +478,7 @@ class Alignment(SequenceList):
         final comp.
         """
 
-        gm = [
-            'Alignment.composition(sequenceNumberList=%s).' % sequenceNumberList]
+        gm = ['Alignment.composition(sequenceNumberList=%s).' % sequenceNumberList]
         dbug = 0
 
         # symbolFreq and equateFreq are hashes for the raw counts
@@ -488,8 +487,7 @@ class Alignment(SequenceList):
             symbolFreq[symb] = 0.0
         if self.equates:
             equateFreq = {}
-            equatesKeys = self.equates.keys()
-            for equate in equatesKeys:
+            for equate in self.equates:
                 equateFreq[equate] = 0.0
         hasEquates = 0
 
@@ -500,8 +498,7 @@ class Alignment(SequenceList):
                 gm.append("The sequenceNumberList should be a list, ok?")
                 raise P4Error(gm)
             if len(sequenceNumberList) == 0:
-                gm.append(
-                    "The sequenceNumberList should have something in it, ok?")
+                gm.append("The sequenceNumberList should have something in it, ok?")
                 raise P4Error(gm)
         else:
             sequenceNumberList = range(len(self.sequences))
@@ -533,7 +530,7 @@ class Alignment(SequenceList):
                 #symbolFreq[symb] = symbolFreq[symb] + float(seq.sequence.count(symb))
                 symbolFreq[symb] = float(seq.sequence.count(symb))
             if self.equates:
-                for equate in equatesKeys:
+                for equate in self.equates:
                     # equateFreq[equate] = equateFreq[equate] + float(seq.sequence.count(equate))
                     equateFreq[equate] = float(seq.sequence.count(equate))
                     if equateFreq[equate]:
@@ -554,7 +551,7 @@ class Alignment(SequenceList):
                 for symb in self.symbols:
                     symbSum[symb] = symbolFreq[symb]
                 if hasEquates:
-                    for equate in equatesKeys:
+                    for equate in self.equates:
                         if equateFreq[equate]:
                             factor = 0.0
                             for symb in self.equates[equate]:
@@ -1134,7 +1131,7 @@ class Alignment(SequenceList):
             print("  symbols are '%s'" % self.symbols)
         if self.equates:
             print("  equates")
-            theKeys = self.equates.keys()
+            theKeys = list(self.equates.keys())
             theKeys.sort()
             for k in theKeys:
                 print("%20s  %-30s" % (k, self.equates[k]))

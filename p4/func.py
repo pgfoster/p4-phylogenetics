@@ -1110,7 +1110,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
     # Make a random list of indices for the taxNames
     if seed != None:  # it might be 0
         random.seed(seed)
-    indcs = range(nTax)
+    indcs = list(range(nTax))
     random.shuffle(indcs)
 
     # Instantiate the tree, and add a root node
@@ -2627,14 +2627,14 @@ def sortListOfObjectsOnAttribute(aListOfObjects, attributeString):
 
     def pairing(anObject, a=attributeString):
         return (getattr(anObject, a), anObject)
-    paired = map(pairing, aListOfObjects)
+    paired = [pairing(ob) for ob in aListOfObjects]
     # print paired
     # 'paired' is a list of 2-element tuples, (thingToSortOn, theOriginalObject)
     paired.sort()
 
     def stripit(pair):
         return pair[1]
-    return map(stripit, paired)
+    return [stripit(pr) for pr in paired]
 
 
 def sortListOfObjectsOn2Attributes(aListOfObjects, attributeString1, attributeString2):
@@ -2642,13 +2642,13 @@ def sortListOfObjectsOn2Attributes(aListOfObjects, attributeString1, attributeSt
 
     def tripling(anObject, a=attributeString1, b=attributeString2):
         return (getattr(anObject, a), getattr(anObject, b), anObject)
-    tripled = map(tripling, aListOfObjects)
+    tripled = [tripling(ob) for ob in aListOfObjects]
     # 'tripled' is a list of 3-element tuples, (thingToSortOn, secondThingToSortOn, theOriginalObject)
     tripled.sort()
 
     def stripit(triple):
         return triple[2]
-    return map(stripit, tripled)
+    return [stripit(tr) for tr in tripled]
 
 
 def sortListOfListsOnListElementNumber(aListOfLists, elementNumber):
@@ -2656,15 +2656,14 @@ def sortListOfListsOnListElementNumber(aListOfLists, elementNumber):
 
     def pairing(aList, e=elementNumber):
         return (aList[e], aList)
-    paired = map(pairing, aListOfLists)
+    paired = [pairing(aList) for aList in aListOfLists]
     # 'paired' is a list of 2-element tuples, (thingToSortOn, theOriginalElement)
     # print "paired = ", paired
     paired.sort()
 
     def stripit(pair):
         return pair[1]
-    return map(stripit, paired)
-
+    return [stripit(pr) for pr in paired]
 
 def readAndPop(stuff):
     """Read in simple stuff, pop the single object from var lists, and return it.
@@ -2793,7 +2792,7 @@ def gsl_meanVariance(seq, mean=None, variance=None):
 
     """
 
-    if isinstance(sec, numpy.ndarray):
+    if isinstance(seq, numpy.ndarray):
         mySeq = seq
     else:
         mySeq = numpy.array(seq, numpy.float)

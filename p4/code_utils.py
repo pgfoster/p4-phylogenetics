@@ -857,7 +857,7 @@ def recode_sequence(sequence, converter, positions=None, code="Standard"):
     # Build the recoded version of the sequence.
     new_seq = ""
     # Loop over the codons (triplets, if subst_size == 3).
-    for i in range(len(sequence) / subst_size):
+    for i in range(len(sequence) // subst_size):
         try:
             # Make a Codon instance (to convert it afterwards).
             codon = Codon(sequence[(subst_size * i):(subst_size * (i+1))], code)

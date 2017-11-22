@@ -28,7 +28,7 @@ if True:
                 del(p)
         self.parts = []
         if self.equates:
-            eqSymb = self.equates.keys()
+            eqSymb = list(self.equates.keys())
             eqSymb.sort()
             eqSymb = ''.join(eqSymb)
         else:

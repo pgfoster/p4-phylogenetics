@@ -725,7 +725,7 @@ class Trees(object):
 
         nTrees = len(self.trees)
         for t in self.trees:
-            t.siteLikes = map(math.log, t.siteLikes)
+            t.siteLikes = [math.log(sl) for sl in t.siteLikes]
         nChar = len(self.trees[0].siteLikes)
 
         theSeed = 0

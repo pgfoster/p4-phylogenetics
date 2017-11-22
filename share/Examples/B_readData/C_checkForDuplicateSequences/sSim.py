@@ -1,5 +1,5 @@
 nTax = 10
-taxNames = list(string.uppercase[:nTax])
+taxNames = list(string.ascii_uppercase[:nTax])
 a = func.newEmptyAlignment(dataType='dna', taxNames=taxNames, length=96)
 d = Data([a])
 t = func.randomTree(taxNames=taxNames)

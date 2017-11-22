@@ -357,7 +357,7 @@ if True:
         assert self.nTax > 2
         mask = ['0'] * len(self)
         if self.equates:
-            equateKeys = self.equates.keys()
+            equateKeys = list(self.equates)
         else:
             equateKeys = []
         counts = [0] * self.dim  # re-zero every loop
@@ -952,7 +952,7 @@ if True:
     def hasGapsOrAmbiguities(self):
         """Asks whether self has any gaps or ambiguities."""
 
-        ambigs = self.equates.keys()
+        ambigs = list(self.equates.keys())
         ambigs.append('-')
         ambigs = ''.join(ambigs)
         # print("got ambigs = '%s'" % ambigs)
@@ -1558,9 +1558,8 @@ if True:
 
         gc = GeneticCode(transl_table)
 
-        dnaEquates = self.equates.keys()
-        # print dnaEquates  # ['b', 'd', 'h', 'k', 'm', 'n', 's', 'r', 'w',
-        # 'v', 'y']
+        # dnaEquates = self.equates.keys()
+        # print dnaEquates  # ['b', 'd', 'h', 'k', 'm', 'n', 's', 'r', 'w', 'v', 'y']
 
         for i in range(len(self.sequences)):
             dnaSeq = self.sequences[i].sequence
@@ -2105,7 +2104,7 @@ if True:
             # print pos, hits
         #print(hits, nPos)
         if showDistribution:
-            kk = distro.keys()
+            kk = list(distro.keys())
             kk.sort()
             theMin = kk[0]
             theMax = kk[-1]

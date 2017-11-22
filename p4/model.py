@@ -238,10 +238,10 @@ class ModelPart(object):
                     omt.val[0] = smt.val[0]
                 else:
                     if var.rMatrixNormalizeTo1:
-                        for i in range(((sp.dim * sp.dim) - sp.dim) / 2):
+                        for i in range(((sp.dim * sp.dim) - sp.dim) // 2):
                             omt.val[i] = smt.val[i]
                     else:
-                        for i in range((((sp.dim * sp.dim) - sp.dim) / 2) - 1):
+                        for i in range((((sp.dim * sp.dim) - sp.dim) // 2) - 1):
                             omt.val[i] = smt.val[i]
                 if sp.isHet:
                     omt.nNodes = smt.nNodes
@@ -673,17 +673,17 @@ class Model(object):
     def allocCStuff(self):
         complaintHead = '\nModel.allocCStuff()'
         if 0:
-            print("nParts = %s" % self.nParts)
-            print("doRelRates = %s" % self.doRelRates)
-            print("relRatesAreFree = %s" % self.relRatesAreFree)
-            print("nFreePrams = %i" % self.nFreePrams)
-            print("isHet = %s" % self.isHet)
+            print("nParts = %s %s" % (self.nParts, type(self.nParts)))
+            print("doRelRates = %s %s" % (self.doRelRates, type(self.doRelRates)))
+            print("relRatesAreFree = %s %s" % (self.relRatesAreFree, type(self.relRatesAreFree)))
+            print("nFreePrams = %s  %s" % (self.nFreePrams, type(self.nFreePrams)))                 # a float ?!
+            print("isHet = %s %s" % (self.isHet, type(self.isHet)))
+            print("_rMatrixNormaizeTo1 = %s %s" % (var._rMatrixNormalizeTo1, type(var._rMatrixNormalizeTo1)))
         if self.cModel:
             gm = [complaintHead]
-            gm.append(
-                "About to alloc cModel, but cModel already exists.(%s)" % self.cModel)
+            gm.append("About to alloc cModel, but cModel already exists.(%s)" % self.cModel)
             raise P4Error(gm)
-        self.cModel = pf.p4_newModel(self.nParts, self.doRelRates, self.relRatesAreFree, self.nFreePrams, self.isHet,
+        self.cModel = pf.p4_newModel(self.nParts, self.doRelRates, self.relRatesAreFree, int(self.nFreePrams), self.isHet,
                                      var._rMatrixNormalizeTo1)
         # print "                                          ==== new cModel %s"
         # % self.cModel
@@ -955,8 +955,7 @@ class Model(object):
                             isBad = 1
                             break
                     else:
-                        # for i in range((((sp.dim * sp.dim) - sp.dim) / 2) -
-                        # 1):
+                        # for i in range((((sp.dim * sp.dim) - sp.dim) // 2) - 1):
                         for i in range(len(smt.val)):
                             if math.fabs(smt.val[i] - omt.val[i]) > epsilon1:
                                 isBad = 1

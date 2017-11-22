@@ -1317,7 +1317,7 @@ class STMcmcTunings(object):
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
-        if item in self.__dict__.keys():
+        if item in self.__dict__:
             # Here is where I should do the sanity checking of the new vals.  Some day.
             # print "    Setting tuning '%s' to %s" % (item, val)
             if item == 'spaQPriorType':
@@ -1398,12 +1398,11 @@ class STMcmcProposalProbs(dict):
             raise P4Error(gm)
 
     def reprString(self):
-        stuff = [
-            "\nUser-settable relative proposal probabilities, from yourStMcmc.prob"]
+        stuff = ["\nUser-settable relative proposal probabilities, from yourStMcmc.prob"]
         stuff.append("  To change it, do eg ")
         stuff.append("    yourSTMcmc.prob.spaQ_uniform = 0.0 # turns spaQ_uniform proposals off")
         stuff.append("  Current settings:")
-        theKeys = self.__dict__.keys()
+        theKeys = list(self.__dict__.keys())
         theKeys.sort()
         for k in theKeys:
             stuff.append("        %20s: %s" % (k, getattr(self, k)))
