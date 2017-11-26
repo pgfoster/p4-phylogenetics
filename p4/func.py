@@ -402,16 +402,17 @@ def readFile(fName):
     """If its a data or tree file, read it.  If its python code, exec it."""
 
     gm = ['func.readFile(%s)' % fName]
+    # print(gm)
 
     # I should check if the file is a text file, an executable, or whatever.
     try:
-        flob = open(fName, "U")  # Universal line endings.
+        flob = open(fName)
     except IOError:
         gm.append("Can't open %s.  Are you sure you have the right name?" % fName)
         raise P4Error(gm)
 
-    #print(flob, type(flob))
-    #print(dir(flob))
+    # print(flob, type(flob), flob.name)
+    # print(dir(flob))
 
     # See if there is an informative suffix on the file name
     # If there is a suffix, but the file cannot be read,
@@ -419,14 +420,28 @@ def readFile(fName):
     result = re.search('(.+)\.(.+)', fName)
     if result:
         #baseName = result.group(1)
-        # print "got result.group(2) = %s" % result.group(2)
+        # print("got result.group(2) = %s" % result.group(2))
         suffix = result.group(2).lower()
-        # print "readFile: got suffix '%s'" % suffix
+        #print("readFile: got suffix '%s'" % suffix)
         if suffix == 'py':
             flob.close()
             import __main__
-            #print "__main__.__dict__ is %s" % __main__.__dict__
-            exec(open(fName).read(), __main__.__dict__,  __main__.__dict__)
+            # print("__main__.__dict__ is %s" % __main__.__dict__)
+            
+            #execfile(fName, __main__.__dict__,  __main__.__dict__)
+            #exec(open(fName).read(), __main__.__dict__,  __main__.__dict__)
+            #exec(flob.read(), __main__.__dict__,  __main__.__dict__)
+
+            # The following is better than simple exec(open(fName).read())
+            # because in the event of a traceback the former (below) knows the
+            # file name, but the simple version does not.  As explained on
+            # stackoverflow, "(The compile call isn't strictly needed, but it
+            # associates the filename with the code object making debugging a
+            # little easier.)"
+            with open(fName) as f:
+                myCode = compile(f.read(), fName, 'exec')
+                exec(myCode,  __main__.__dict__,  __main__.__dict__)
+
             if hasattr(__main__, 'pyFileCount'):
                 __main__.pyFileCount += 1
             return
@@ -2383,7 +2398,12 @@ def recipes(writeToFile=var.recipesWriteToFile):
     for recNum in range(len(recipesList)):
         rec = recipesList[recNum]
         print("%s.  %s" % (string.ascii_uppercase[recNum], rec[0]))
-    ret = raw_input('Tell me a letter: ')
+
+    if sys.version_info < (3,):
+        ret = raw_input('Tell me a letter: ')
+    else:
+        ret = input('Tell me a letter: ')
+    
     # print "Got %s" % ret
     if ret == '':
         return
@@ -2396,8 +2416,11 @@ def recipes(writeToFile=var.recipesWriteToFile):
     # print "Got recNum %i" % recNum
 
     if writeToFile:
-        ret = raw_input(
-            'Write it to file name [default %s] :' % recipesList[recNum][1])
+        if sys.version_info < (3,):
+            ret = raw_input('Write it to file name [default %s] :' % recipesList[recNum][1])
+        else:
+            ret = input('Write it to file name [default %s] :' % recipesList[recNum][1])
+
         if ret == '':
             theFName = recipesList[recNum][1]
         else:
@@ -2444,7 +2467,11 @@ and the documentation in the directory
 
 """ % (installation.p4ScriptPath, installation.p4LibDir, installation.p4DocDir))
 
-    ret = raw_input('Ok to do this? [y/n]')
+    if sys.version_info < (3,):
+        ret = raw_input('Ok to do this? [y/n]')
+    else:
+        ret = input('Ok to do this? [y/n]')
+
     ret = ret.lower()
     if ret not in ['y', 'yes']:
         return

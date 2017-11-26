@@ -1938,44 +1938,41 @@ class Mcmc(object):
         gm = ['Mcmc._setOutputTreeFile()']
 
         # Write the preamble for the trees outfile.
-        self.treeFile = open(self.treeFileName, 'w')
-        self.treeFile.write('#nexus\n\n')
-        self.treeFile.write('begin taxa;\n')
-        self.treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
-        self.treeFile.write('  taxlabels')
+        treeFile = open(self.treeFileName, 'w')
+        treeFile.write('#nexus\n\n')
+        treeFile.write('begin taxa;\n')
+        treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
+        treeFile.write('  taxlabels')
         for tN in self.tree.taxNames:
-            self.treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
-        self.treeFile.write(';\nend;\n\n')
+            treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
+        treeFile.write(';\nend;\n\n')
 
-        self.treeFile.write('begin trees;\n')
+        treeFile.write('begin trees;\n')
         self.translationHash = {}
         i = 1
         for tName in self.tree.taxNames:
             self.translationHash[tName] = i
             i += 1
 
-        self.treeFile.write('  translate\n')
+        treeFile.write('  translate\n')
         for i in range(self.tree.nTax - 1):
-            self.treeFile.write('    %3i %s,\n' % (
+            treeFile.write('    %3i %s,\n' % (
                 i + 1, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[i])))
-        self.treeFile.write('    %3i %s\n' % (
+        treeFile.write('    %3i %s\n' % (
             self.tree.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
-        self.treeFile.write('  ;\n')
+        treeFile.write('  ;\n')
 
         # write the models comment
         if self.tree.model.isHet:
             if (not self.tree.model.parts[0].ndch2) or (self.tree.model.parts[0].ndch2 and self.tree.model.parts[0].ndch2_writeComps):
-                self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
+                treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
                 for pNum in range(self.tree.model.nParts):
-                    self.treeFile.write(
-                        ' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
-                    self.treeFile.write(
-                        ' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
-                    self.treeFile.write(
-                        ' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
-                self.treeFile.write(']\n')
-        self.treeFile.write('  [Tree numbers are gen+1]\n')
-        self.treeFile.close()
+                    treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
+                    treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
+                    treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
+                treeFile.write(']\n')
+        treeFile.write('  [Tree numbers are gen+1]\n')
+        treeFile.close()
 
         if 0:
             self.prob.dump()
@@ -2014,8 +2011,7 @@ class Mcmc(object):
             if nGensToDo % self.checkPointInterval == 0:
                 pass
             else:
-                gm.append(
-                    "With the current settings, the last generation won't be on a checkPointInterval.")
+                gm.append("With the current settings, the last generation won't be on a checkPointInterval.")
                 gm.append("self.gen+1=%i, nGensToDo=%i, checkPointInterval=%i" % ((self.gen + 1),
                                                                                   nGensToDo, self.checkPointInterval))
                 raise P4Error(gm)
@@ -2024,8 +2020,7 @@ class Mcmc(object):
             if self.checkPointInterval % self.sampleInterval == 0:
                 pass
             else:
-                gm.append(
-                    "The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
+                gm.append("The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
 
@@ -2080,32 +2075,17 @@ class Mcmc(object):
                 gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
                 raise P4Error(gm)
 
-        # # Are we using rjComp in any model partitions?
-        # rjCompParts = [mp.rjComp for mp in self.chains[
-        #     coldChainNum].curTree.model.parts]  # True and False
-        # rjCompPartNums = [pNum for pNum in range(
-        #     self.chains[coldChainNum].curTree.model.nParts) if rjCompParts[pNum]]
-        # # print rjCompParts
-        # # print rjCompPartNums
-
-        # # Are we using rjRMatrix in any model partitions?
-        # rjRMatrixParts = [mp.rjRMatrix for mp in self.chains[
-        #     coldChainNum].curTree.model.parts]  # True and False
-        # rjRMatrixPartNums = [pNum for pNum in range(
-        #     self.chains[coldChainNum].curTree.model.nParts) if rjRMatrixParts[pNum]]
-        # # print rjRMatrixParts
-        # # print rjRMatrixPartNums
-        # # print self.chains[0].curTree.model.parts[1].rjRMatrix_k
 
         if self.gen > -1:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
-            f2 = open(self.treeFileName, 'a+')
+            f2 = open(self.treeFileName, 'r+b')
+            # print(f2, type(f2), f2.tell())   # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
             pos = -1
             while 1:
                 f2.seek(pos, 2)
                 c = f2.read(1)
-                if c == ';':
+                if c == b';':
                     break
                 pos -= 1
             # print "pos now %i" % pos
@@ -2113,9 +2093,8 @@ class Mcmc(object):
             f2.seek(pos, 2)
             c = f2.read(4)
             # print "got c = '%s'" % c
-            if c != "end;":
-                gm.append(
-                    "Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
+            if c != b"end;":
+                gm.append("Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
                 raise P4Error(gm)
             else:
                 f2.seek(pos, 2)
@@ -2162,51 +2141,6 @@ class Mcmc(object):
                     self.chains[0].curTree.model.writeHypersHeaderLine(hypersFile)
                     hypersFile.close()
 
-            # if 0 and rjCompPartNums:
-            #     rjKFile = open(self.rjKFileName, 'w')
-            #     rjKFile.write(
-            #         "# k_comp_max, a constant, is the number of comp vectors in a part in total\n")
-            #     rjKFile.write(
-            #         "#             (both in the pool and not in the pool).\n")
-            #     rjKFile.write(
-            #         "# ck, aka ModelPart.rjComp_k, is the number of comp vectors in the 'pool' (for each part)\n")
-            #     rjKFile.write(
-            #         "# k_0 for comps (ck0 below) is the number of comp vectors on the tree (for each part)\n")
-            #     rjKFile.write("#\n")
-            #     for pNum in rjCompPartNums:
-            #         rjKFile.write("# part%i: " % pNum)
-            #         rjKFile.write(" k_comp_max = %i\n" % self.chains[
-            #                       coldChainNum].curTree.model.parts[pNum].nComps)
-            #     rjKFile.write("#\n")
-
-            # if 0 and rjRMatrixPartNums:
-            #     if not rjCompPartNums:
-            #         rjKFile = open(self.rjKFileName, 'w')
-            #     rjKFile.write(
-            #         "# k_rMatrix_max, a constant, is the number of rMatrices in a part in total\n")
-            #     rjKFile.write(
-            #         "#             (both in the pool and not in the pool).\n")
-            #     rjKFile.write(
-            #         "# rk, aka ModelPart.rjRMatrix_k, is the number of rMatrices in the 'pool' (for each part)\n")
-            #     rjKFile.write(
-            #         "# k_0 for rMatrices (rk0 below) is the number of rMatrices on the tree (for each part)\n")
-            #     rjKFile.write("#\n")
-            #     for pNum in rjRMatrixPartNums:
-            #         rjKFile.write("# part%i: " % pNum)
-            #         rjKFile.write(" k_rMatrix_max = %i\n" % self.chains[
-            #                       coldChainNum].curTree.model.parts[pNum].nRMatrices)
-            #     rjKFile.write("#\n")
-
-            # if 0 and rjCompPartNums or rjRMatrixPartNums:
-            #     rjKFile.write("# %10s " % 'genPlus1')
-            #     for pNum in rjCompPartNums:
-            #         rjKFile.write("%7s " % 'p%i_ck' % pNum)
-            #         rjKFile.write("%8s " % 'p%i_ck0' % pNum)
-            #     for pNum in rjRMatrixPartNums:
-            #         rjKFile.write("%7s " % 'p%i_rk' % pNum)
-            #         rjKFile.write("%8s " % 'p%i_rk0' % pNum)
-            #     rjKFile.write("\n")
-            #     rjKFile.close()
 
         if verbose:
             print("Sampling every %i." % self.sampleInterval)
@@ -2472,63 +2406,6 @@ class Mcmc(object):
                                                                       doMcmcCommandComments=self.tree.model.isHet)
                     treeFile.close()
 
-                if 0 and rjCompPartNums:  # we made rjCompPartNums above
-                    rjKFile = open(self.rjKFileName, 'a')
-                    rjKFile.write("%12i " % (self.gen + 1))
-                    for pNum in rjCompPartNums:
-                        mp = self.chains[
-                            coldChainNum].curTree.model.parts[pNum]
-                        assert mp.rjComp
-                        # k is the number of comp vectors in the pool
-                        # k_0 is the number of comp vectors on the tree
-                        # k_max is the number of comp vectors in total
-                        # mp.rjComp_k is the number of comp vectors in the pool
-                        k = 0
-                        k_0 = 0
-                        for cNum in range(mp.nComps):
-                            theComp = mp.comps[cNum]
-                            if theComp.nNodes:
-                                k_0 += 1
-                            if theComp.rj_isInPool:
-                                k += 1
-                        assert k == mp.rjComp_k
-                        rjKFile.write("%6i " % k)
-                        rjKFile.write("%7i " % k_0)
-                    if not rjRMatrixPartNums:
-                        rjKFile.write("\n")
-                        rjKFile.close()
-
-                if 0 and rjRMatrixPartNums:  # we made rjRMatrixPartNums above
-                    if not rjCompPartNums:
-                        rjKFile = open(self.rjKFileName, 'a')
-                        rjKFile.write("%12i " % (self.gen + 1))
-                    for pNum in rjRMatrixPartNums:
-                        # print "doing pNum %i" % pNum
-                        mp = self.chains[
-                            coldChainNum].curTree.model.parts[pNum]
-                        assert mp.rjRMatrix
-                        # k is the number of rMatrices in the pool
-                        # k_0 is the number of rMatrices on the tree
-                        # k_max is the number of rMatrices in total
-                        # mp.rjRMatrix_k is the number of comp vectors in the
-                        # pool
-                        k = 0
-                        k_0 = 0
-                        for rNum in range(mp.nRMatrices):
-                            theRMatrix = mp.rMatrices[rNum]
-                            if theRMatrix.nNodes:
-                                k_0 += 1
-                            if theRMatrix.rj_isInPool:
-                                k += 1
-                        if k != mp.rjRMatrix_k:
-                            gm.append("k=%i, mp.rjRMatrix_k=%i" %
-                                      (k, mp.rjRMatrix_k))
-                            raise P4Error(gm)
-                        rjKFile.write("%6i " % k)
-                        rjKFile.write("%7i " % k_0)
-                    rjKFile.write("\n")
-                    rjKFile.close()
-
                 if self.writePrams:
                     pramsFile = open(self.pramsFileName, 'a')
                     #pramsFile.write("%12i " % (self.gen + 1))
@@ -2676,6 +2553,8 @@ class Mcmc(object):
         treeFile.write('end;\n\n')
         treeFile.close()
 
+
+
     def _doTimeCheck(self, nGensToDo, firstGen, genInterval):
         """Time check 
 
@@ -2782,6 +2661,9 @@ class Mcmc(object):
             ch = self.chains[chNum]
             ch.curTree.data = None
             ch.propTree.data = None
+        
+        
+
 
         theCopy = copy.deepcopy(self)
 

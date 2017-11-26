@@ -2524,7 +2524,11 @@ class QuartetJoining(object):
     def pause(self):
         if self.verbose >= 3:
             p4.func.setTerminalColour('blue')
-            raw_input("Hit return to continue ...")
+            if sys.version_info < (3,):
+                raw_input("Hit return to continue ...")
+            else:
+                input("Hit return to continue ...")
+
             print("=" * 90)
             p4.func.unsetTerminalColour()
         else:
