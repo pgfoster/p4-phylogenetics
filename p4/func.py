@@ -2561,7 +2561,7 @@ def spaceDelimitedToTabDelimited(fName, outFName=None):
     else:
         oFName = "%s.tabbed" % fName
 
-    f = open(fName, "U")  # Universal line endings.
+    f = open(fName)
     ll = f.readlines()
     f.close()
 

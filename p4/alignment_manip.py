@@ -1918,11 +1918,10 @@ if True:
         outputMaskFileName = fastaFileName + "-gbMask"
 
         try:
-            fh = open(outputTextFileName, 'rU')
+            fh = open(outputTextFileName, 'r')
         except IOError:
-            gm.append("\tUnable to read output from GBlocks")
-            gm.append(
-                "\tCheck that Gblocks is in your $PATH or set 'pathToGBlocks'")
+            gm.append("Unable to read output from GBlocks")
+            gm.append("Check that Gblocks is in your $PATH or set 'pathToGBlocks'")
             os.remove(fastaFileName)
             raise P4Error(gm)
 
@@ -1943,8 +1942,7 @@ if True:
         # make sure its the Gblocks line
         aLine = fLines[spot].rstrip()
         if not aLine.endswith("Gblocks"):
-            gm.append(
-                "Something wrong with reading the mask file.  No Gblocks line.")
+            gm.append("Something wrong with reading the mask file.  No Gblocks line.")
             raise P4Error(gm)
 
         # collect lines until the end of the fLines

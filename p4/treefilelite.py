@@ -100,7 +100,7 @@ class TreeFileLite(object):
         gm = ["TreeFileLite._readTreeFile()"]
         # Read in the trees
         try:
-            f = open(self.fName, "U")
+            f = open(self.fName)
         except IOError:
             gm.append("Can't find tree file '%s'" % self.fName)
             raise P4Error(gm)
