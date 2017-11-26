@@ -20,7 +20,12 @@ from p4.alignment import Part
 import random
 
 if True:
-    def _setData(self, theData):
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, theData):
         """Sets self.data, and self.nParts"""
 
         # Two cases.  Either
@@ -30,7 +35,7 @@ if True:
         #     a.  Has a model.  So just check for compatibility.
         #     b.  Has no model, so has never seen a data before.
 
-        complaintHead = '\nTree._setData()'
+        complaintHead = 'Tree.data (property setter)'
         if self.name:
             complaintHead += ", tree '%s'" % self.name
         if self.fName:
@@ -197,10 +202,13 @@ if True:
                 if n.isLeaf:
                     n.seqNum = self.taxNames.index(n.name)
 
-    data = property(lambda self: self._data, _setData)
+    @property
+    def model(self):
+        return self._model
 
-    def _setModel(self, theModel):
-        gm = ['Tree._setModel()']
+    @model.setter
+    def model(self, theModel):
+        gm = ['Tree.model (property setter)']
         # print gm[0]
         # print "    Got '%s'" % theModel
         if isinstance(theModel, Model) or theModel == None:
@@ -211,23 +219,19 @@ if True:
                 "Don't set the model to anything other than 'None' or a Model, ok?  ")
             gm.append("(And generally the user only sets it to None.)  ")
             raise P4Error(gm)
-        # if theModel and self._model:  # Why do I do this?
-        #    gm.append("The tree already has a model object; I am refusing to clobber it.")
-        #    gm.append("Perhaps use a (perhaps duplicate) tree with no model.")
-        #    raise P4Error(gm)
         if self.model or self.data:
             self.deleteCStuff()
             # print 'Tree._setModel()  finished deleteCStuff()'
         self._model = theModel
 
-    def _delModel(self):
-        gm = ['Tree._delModel()']
+    @model.deleter
+    def model(self):
+        gm = ['Tree.model']
         gm.append("Caught an attempt to delete self.model, but")
         gm.append("self.model is a property, so you shouldn't delete it.")
         gm.append("But you can set it to None if you like.")
         raise P4Error(gm)
 
-    model = property(lambda self: self._model, _setModel, _delModel)
 
     def _checkModelThing(self, partNum, symbol, complaintHead):
         gm = [complaintHead]

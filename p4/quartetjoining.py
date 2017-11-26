@@ -315,8 +315,13 @@ class QuartetJoining(object):
         # print "Got %i input trees." % len(self.trees)
         # print "There are %i taxa in all the input trees." % len(self.taxa)
 
-    nTrees = property(lambda self: len(self.trees))
-    nTax = property(lambda self: len(self.taxNames))
+    @property
+    def nTrees(self):
+        return len(self.trees)
+
+    @property
+    def nTax(self):
+        return len(self.taxNames)
 
     def dump(self, fName=None):
         """Dump info and options about self."""

@@ -58,7 +58,12 @@ class Numbers(object):
         if inThing:
             self.read(inThing, col, skip)
 
-    def _setBinSize(self, binSize):
+    @property
+    def binSize(self):
+        return self._binSize
+
+    @binSize.setter
+    def binSize(self, binSize):
         try:
             theBinSize = float(binSize)
         except (ValueError, TypeError):
@@ -67,10 +72,9 @@ class Numbers(object):
             raise P4Error("Arg binSize, if set, should be a positive float.")
         self._binSize = theBinSize
 
-    def _delBinSize(self):
+    @binSize.deleter
+    def binSize(self):
         self._binSize = None
-
-    binSize = property(lambda self: self._binSize, _setBinSize, _delBinSize)
 
     def read(self, inThing, col=0, skip=0):
         """Slurp in some more numbers.

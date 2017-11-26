@@ -81,7 +81,9 @@ class Trees(object):
         self.data = None
         self.writeBranchLengths = True
 
-    nTax = property(lambda self: len(self.taxNames))
+    @property
+    def nTax(self):
+        return len(self.taxNames)
 
     def setTaxNames(self, theTaxNames=None):
         """Sets and checks taxNames for self and all trees in self.

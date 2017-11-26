@@ -270,17 +270,29 @@ class Tree(object):
     # Properties: taxNames, nTax, nInternalNodes
     #########################################################
 
-    def _setTaxNames(self, theTaxNames):
-        gm = ['Tree._setTaxNames()']
+    @property
+    def taxNames(self):
+        return self._taxNames
+
+    @taxNames.setter
+    def taxNames(self, theTaxNames):
+        gm = ['Tree.taxNames']
         if not isinstance(theTaxNames, list):
             gm.append("You can only set property 'taxNames' to a list.")
             gm.append("Got attempt to set to '%s'" % theTaxNames)
             raise P4Error(gm)
         self._taxNames = theTaxNames
-        # and not var.allowTreesWithDifferingTaxonSets:  # Peter commented out
-        # until it is sorted. Why is it here?
         if theTaxNames:
             self.checkTaxNames()
+    
+    @taxNames.deleter
+    def taxNames(self):
+        gm = ['Tree.taxNames']
+        gm.append("    Caught an attempt to delete self.taxNames, but")
+        gm.append("self.taxNames is a property, so you can't delete it.")
+        gm.append("But you can set it to an empty list if you like.")
+        raise P4Error(gm)
+
 
     def _setTaxNamesFromLeaves(self):
         tax = []
@@ -296,16 +308,6 @@ class Tree(object):
         self._taxNames = tax
         if self._taxNames:
             self.checkTaxNames()
-
-    def _delTaxNames(self):
-        gm = ['Tree._delTaxNames()']
-        gm.append("    Caught an attempt to delete self.taxNames, but")
-        gm.append("self.taxNames is a property, so you can't delete it.")
-        gm.append("But you can set it to an empty list if you like.")
-        raise P4Error(gm)
-
-    taxNames = property(
-        lambda self: self._taxNames, _setTaxNames, _delTaxNames)
 
     def _getNTax(self):
         # We can't rely on len(self.taxNames), cuz it might not exist.

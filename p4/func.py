@@ -2642,11 +2642,14 @@ unsetTerminalColor = unsetTerminalColour
 
 
 def _sumOfSquares(seq):
-    """Pure Python, using reduce."""
+    """Pure Python.  Converts to floats, returns a float."""
 
-    def addSq(x, y):
-        return float(x) + (float(y) * float(y))
-    return reduce(addSq, seq, 0)
+    if not seq:
+        return 0.0
+    mySum = 0.0
+    for it in seq:
+        mySum += (float(it) * float(it))
+    return mySum
 
 
 def sortListOfObjectsOnAttribute(aListOfObjects, attributeString):

@@ -338,13 +338,17 @@ class Alignment(SequenceList):
         self.parts = []
         self.excludeDelete = None  # An ExcludeDelete object
 
-    # Properties
-    #: A property -- the number of sequences
-    nTax = property(lambda self: len(self.sequences))
-    #: A synonym for Alignment.length
-    nChar = property(lambda self: self.length)
-    #: A property -- the number of equates
-    nEquates = property(lambda self: len(self.equates))
+    @property
+    def nTax(self):
+        return len(self.sequences)
+
+    @property
+    def nChar(self):
+        return self.length
+
+    @property
+    def nEquates(self):
+        return len(self.equates)
 
     def _getTaxNames(self):
         theTaxNames = []

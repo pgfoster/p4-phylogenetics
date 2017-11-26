@@ -149,10 +149,17 @@ class ModelPart(object):
         self.ndch2_globalComp = None
         self.ndch2_writeComps = True
         
+    @property
+    def nComps(self):
+        return len(self.comps)
 
-    nComps = property(lambda self: len(self.comps))
-    nRMatrices = property(lambda self: len(self.rMatrices))
-    nGdasrvs = property(lambda self: len(self.gdasrvs))
+    @property
+    def nRMatrices(self):
+        return len(self.rMatrices)
+
+    @property
+    def nGdasrvs(self):
+        return len(self.gdasrvs)
 
     def setCStuff(self, theModel):
         gm = ['ModelPart.setCStuff()']
@@ -313,7 +320,9 @@ class Model(object):
             mp.num = i
             self.parts.append(mp)
 
-    nParts = property(lambda self: len(self.parts))
+    @property
+    def nParts(self):
+        return len(self.parts)
 
     def __del__(self, freeModel=pf.p4_freeModel):
         if self.cModel:
