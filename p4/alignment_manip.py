@@ -1298,7 +1298,7 @@ if True:
         else:
             self.symbols = '123456'
 
-    def recodeProteinIntoGroups(self, groups, firstLetter=False):
+    def recodeProteinIntoGroups(self, groups, firstLetter=False, startAtZero=False):
         """Recode protein data into user-specified groups, in place.
 
         A generalization of :meth:`p4.alignment.Alignment.recodeDayhoff`
@@ -1311,7 +1311,10 @@ if True:
         It does not make a new alignment-- it does the re-coding 'in-place'.
 
         If arg *firstLetter* is set, then the character is recoded as the
-        first letter of its group rather than as a number. 
+        first letter of its group rather than as a number.
+
+        If arg *startAtZero* groups will be coded with number beginning with
+        zero, else beginning with 1.
         """
 
         gm = ['Alignment.recodeProteinIntoGroups()']
@@ -1331,7 +1334,10 @@ if True:
         for s in theseSymbols:
             assert s in self.symbols
             assert theseSymbols.count(s) == 1
-        numeralSymbols = ['%i' % (i + 1) for i in range(nGroups)]
+        if startAtZero:
+            numeralSymbols = ['%i' % i for i in range(nGroups)]
+        else:
+            numeralSymbols = ['%i' % (i + 1) for i in range(nGroups)]
         firstLetters = [gr[0] for gr in myGroups]
 
         for s in self.sequences:
