@@ -1214,7 +1214,7 @@ if True:
                 d.matrix[j][i] = fDiffs
         return d
 
-    def recodeDayhoff(self, firstLetter=False, ambigsBecomeGaps=True):
+    def recodeDayhoff(self, firstLetter=False, ambigsBecomeGaps=True, startAtZero=False):
         """Recode protein data into Dayhoff groups, in place.
 
         1.  c
@@ -1233,6 +1233,7 @@ if True:
         recoded as h rather than as 4.
 
         If ambigsBecomeGaps is True, 'b', 'z', and 'j' are coded as gaps.
+        If startAtZero is True number coding begins with zero, else 1.
         """
 
         gm = ['Alignment.recodeDayhoff()']
@@ -1295,6 +1296,8 @@ if True:
         self.dim = 6
         if firstLetter:
             self.symbols = 'csnhmf'
+        elif startAtZero:
+            self.symbols = '012345'
         else:
             self.symbols = '123456'
 
