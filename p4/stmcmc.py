@@ -2400,12 +2400,12 @@ class STMcmc(object):
         if self.gen > -1:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
-            f2 = open(self.treeFileName, 'a+')
+            f2 = open(self.treeFileName, 'r+b')
             pos = -1
             while 1:
                 f2.seek(pos, 2)
                 c = f2.read(1)
-                if c == ';':
+                if c == b';':
                     break
                 pos -= 1
             # print "pos now %i" % pos
@@ -2413,9 +2413,8 @@ class STMcmc(object):
             f2.seek(pos, 2)
             c = f2.read(4)
             # print "got c = '%s'" % c
-            if c != "end;":
-                gm.append(
-                    "Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
+            if c != b"end;":
+                gm.append("Stmcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
                 raise P4Error(gm)
             else:
                 f2.seek(pos, 2)
@@ -2424,7 +2423,7 @@ class STMcmc(object):
 
             if verbose:
                 print()
-                print("Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen))
+                print("Re-starting the STMCMC run %i from gen=%i" % (self.runNum, self.gen))
                 print("Set to do %i more generations." % nGensToDo)
                 # if self.writePrams:
                 #    if self.chains[0].curTree.model.nFreePrams == 0:
