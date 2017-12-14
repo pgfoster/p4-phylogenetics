@@ -383,19 +383,18 @@ def read(stuff):
                 print("    So I am assuming that it is to be taken as a string.")
                 print("    Maybe it was a mis-specified file name?")
                 print("    (You can turn off this warning by turning var.warnReadNoFile off.)\n")
-            if sys.version_info < (3,):
-                stuff = unicode(stuff)
-            # if sys.version_info < (3,):
-            #     flob = io.BytesIO(stuff)
-            # else:
-            #     flob = io.StringIO(stuff)
-            flob = io.StringIO(stuff)
 
+            if 0:
+                if sys.version_info < (3,):
+                    stuff = unicode(stuff)
+                    flob = io.StringIO(stuff)
+            if 1:
+                if sys.version_info < (3,):
+                    flob = io.BytesIO(stuff)
+                else:
+                    flob = io.StringIO(stuff)
+            
             _decideFromContent('<input string>', flob)
-            #_decideFromContent(stuff, flob)
-            # if var.verboseRead:
-            # print "(You can turn off these messages by turning
-            # var.verboseRead off.)\n"
 
 
 def readFile(fName):
@@ -460,7 +459,7 @@ def readFile(fName):
                 gm.append("Failed to read supposed gde file '%s'" % fName)
                 raise P4Error(gm)
             return
-        elif suffix in ['pir', 'nbrf']:  # new, july 2010
+        elif suffix in ['pir', 'nbrf']:  
             ret = _tryToReadPirFile(fName, flob)
             if not ret:
                 gm.append("Failed to read supposed pir file '%s'" % fName)
@@ -556,7 +555,7 @@ def _decideFromContent(fName, flob):
             if ret:
                 return
 
-        else:  # Maybe its a phylip file?
+        else:  # Maybe it is a phylip file?
             if var.verboseRead:
                 print("Guessing that '%s' is a phylip file..." % fName)
             # either data or trees
