@@ -9,3 +9,4 @@
 
 p4 sMcmc.py
 p4 sExamineSims.py
+rm -f mcmc*
