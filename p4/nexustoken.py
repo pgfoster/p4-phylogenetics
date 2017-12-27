@@ -143,6 +143,7 @@ def _handleComment(flob, c0):
         return None
     elif c in ['&']:  # , '\\']:
         if var.nexus_getAllCommandComments:
+            # print("_handleComment(), var.nexus_getAllCommandComments is set")
             return _getComment(flob, localPieces)
         c2 = flob.read(1)
         if not c2:

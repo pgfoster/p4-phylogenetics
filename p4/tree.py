@@ -403,6 +403,7 @@ class Tree(object):
         if 0:
             print('Tree.parseNexus() translationHash = %s' % translationHash)
             print('    doModelComments = %s (nParts)' % doModelComments)
+            print('    flob type is %s' % type(flob))
 
         tok = safeNextTok(flob, 'Tree.parseNexus()')
         # print 'parseNexus() tok = %s' % tok
@@ -429,8 +430,9 @@ class Tree(object):
         savedPos = flob.tell()
         while 1:
             beforeSafeNextTokPosn = flob.tell()
-            tok = safeNextTok(flob, gm[0])
-            # print "parseNexus: tok after '=' is '%s'" % tok
+            tok = safeNextTok(flob, gm[0])          # skips [&U] if there is one
+            # print("parseNexus: tok after '=' is '%s'.  Before pos %i, after pos %i" % (
+            #     tok, beforeSafeNextTokPosn, flob.tell()))
 
             # This next bit will only happen if either var.nexus_getWeightCommandComments
             # or var nexus_getAllCommandComments is set.
@@ -438,6 +440,7 @@ class Tree(object):
                 self.getWeightCommandComment(tok)
             elif tok == '(':
                 flob.seek(beforeSafeNextTokPosn)
+                # print("wxy var.nexus_getAllCommandComments is %s" % var.nexus_getAllCommandComments)
                 self.parseNewick(flob, translationHash, doModelComments)
                 # self._initFinish()
                 break
@@ -530,9 +533,11 @@ class Tree(object):
         This is stack-based, and does not use recursion.
         """
 
-        # print 'parseNewick here. doModelComments=%s' % doModelComments
-        # print "parseNewick()  translationHash=%s, self.taxNames=%s" %
-        # (translationHash, self.taxNames)
+        if 0:
+            print('parseNewick here. doModelComments=%s' % doModelComments)
+            print("    translationHash=%s, self.taxNames=%s" % (translationHash, self.taxNames))
+            print("    flob type is %s, pos is %i" % (type(flob), flob.tell()))
+            print("wyy var.nexus_getAllCommandComments is %s" % var.nexus_getAllCommandComments)
 
         if self.name:
             gm = ["Tree.parseNewick(), tree '%s'" % self.name]
@@ -543,7 +548,7 @@ class Tree(object):
             self.fName = flob.name
             gm[0] += ", File %s" % self.fName
 
-        if doModelComments:
+        if 0 and doModelComments:   # For the RAxML ugly hack, below?  Or why?
             # restore at end
             savedP4Nexus_getAllCommandComments = var.nexus_getAllCommandComments
             var.nexus_getAllCommandComments = 1
@@ -554,7 +559,9 @@ class Tree(object):
         parenNestLevel = 0
         lastPopped = None
 
+        
         tok = nextTok(flob)
+        # print("xx Got tok %s" % tok)
         if not tok:
             return
         isQuotedTok = False
@@ -564,7 +571,7 @@ class Tree(object):
         # tree.
         tok = p4.func.nexusUnquoteName(tok)
         while tok != ';':
-            # print "top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0])
+            # print("top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0]))
 
             if tok == '(':
                 # print "Got '(': new node (%i)." % len(self.nodes)
@@ -1038,7 +1045,7 @@ class Tree(object):
         # self.draw()
         #self.dump(tree=0, node=1, treeModel=0)
 
-        if doModelComments:
+        if 0 and doModelComments:
             # restore the value of var.nexus_getAllCommandComments, which was
             # saved above.
             var.nexus_getAllCommandComments = savedP4Nexus_getAllCommandComments

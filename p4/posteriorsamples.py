@@ -287,8 +287,7 @@ class PosteriorSamples(object):
                 gdasrvNum = 0
                 for desc in self.pramsProfile[pNum]:
                     if desc[0] == 'relRate':
-                        t.model.parts[pNum].relRate = float(
-                            splitPLine[splIndx])
+                        t.model.parts[pNum].relRate = float(splitPLine[splIndx])
                         splIndx += 1
                     elif desc[0] == 'comp':
                         vv = []
