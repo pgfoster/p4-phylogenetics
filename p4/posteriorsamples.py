@@ -9,7 +9,7 @@ import string
 import io
 import copy
 import math
-
+import sys
 
 class PosteriorSamples(object):
 
@@ -186,10 +186,18 @@ class PosteriorSamples(object):
             lNum += 1
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
-        translateFlob = io.BytesIO(' '.join(translateLines))
+        
+        #translateFlob = io.StringIO(' '.join(translateLines))
+
+        if 1:
+            if sys.version_info < (3,):
+                translateFlob = io.BytesIO(' '.join(translateLines))
+            else:
+                translateFlob = io.StringIO(' '.join(translateLines))
+
         nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
-        # print self.translationHash
+        #print(self.translationHash)
 
         # Get the models definition, if it exists.  Move to the first tree
         # line.
@@ -252,7 +260,14 @@ class PosteriorSamples(object):
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
             print(tLine)
-        f = io.BytesIO(tLine)
+
+        if 1:
+            if sys.version_info < (3,):
+                f = io.BytesIO(tLine)
+            else:
+                f = io.StringIO(tLine)
+
+
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)
@@ -366,7 +381,13 @@ class PosteriorSamples(object):
             lNum += 1
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
-        translateFlob = io.BytesIO(' '.join(translateLines))
+
+        if 1:
+            if sys.version_info < (3,):
+                translateFlob = io.BytesIO(' '.join(translateLines))
+            else:
+                translateFlob = io.StringIO(' '.join(translateLines))
+
         nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
         # print self.translationHash
@@ -424,7 +445,11 @@ class PosteriorSamples(object):
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
             print(tLine)
-        f = io.BytesIO(tLine)
+        if 1:
+            if sys.version_info < (3,):
+                f = io.BytesIO(tLine)
+            else:
+                f = io.StringIO(tLine)
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)  # doModelComments is nParts

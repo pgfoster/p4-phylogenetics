@@ -830,28 +830,23 @@ class Tree(object):
                     theExp = c
                     c = flob.read(1)
                     if not c:
-                        gm.append(
-                            'Trying to deal with a branch length, possibly in scientific notation.')
-                        gm.append(
-                            "Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
+                        gm.append('Trying to deal with a branch length, possibly in scientific notation.')
+                        gm.append("Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
                         raise P4Error(gm)
                     if c not in string.digits:
-                        gm.append(
-                            "Trying to deal with a branch length, possibly in scientific notation.")
-                        gm.append("Got '%s%s' after the colon." %
-                                  (theNum, theExp))
+                        gm.append("Trying to deal with a branch length, possibly in scientific notation.")
+                        gm.append("Got '%s%s' after the colon." % (theNum, theExp))
                         gm.append('Expecting one or more digits.')
                         gm.append("Got '%s'" % c)
                         raise P4Error(gm)
                     theExp += c
                     # So we got one good digit.  Are there any more?
                     while 1:
+                        positionBeforeRead = flob.tell()
                         c = flob.read(1)
                         if not c:
-                            gm.append(
-                                'Trying to deal with a branch length, possibly in scientific notation.')
-                            gm.append(
-                                "Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
+                            gm.append('Trying to deal with a branch length, possibly in scientific notation.')
+                            gm.append("Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
                             raise P4Error(gm)
                         # We got something.  If its a digit, add it to
                         # theExp.  If its anything else, back up one
@@ -859,7 +854,7 @@ class Tree(object):
                         if c in string.digits:
                             theExp += c
                         else:
-                            flob.seek(-1, 1)
+                            flob.seek(positionBeforeRead)
                             break
                     # print "  At this point, theNum='%s' and theExp='%s'" %
                     # (theNum, theExp)
@@ -873,22 +868,16 @@ class Tree(object):
                             # % (theBrLen, theNum, theExp)
                             stack[-1].br.len = theBrLen
                         except ValueError:
-                            gm.append(
-                                'Trying to deal with a branch length, possibly in scientific notation.')
+                            gm.append('Trying to deal with a branch length, possibly in scientific notation.')
                             gm.append("It didn't work, tho.")
-                            gm.append(
-                                "Got these after colon: '%s' and '%s'" % (theNum, theExp))
-                            gm.append(
-                                'And they could not be converted to an exponential float.')
+                            gm.append("Got these after colon: '%s' and '%s'" % (theNum, theExp))
+                            gm.append('And they could not be converted to an exponential float.')
                             raise P4Error(gm)
                     except ValueError:
-                        gm.append(
-                            'Trying to deal with a branch length, possibly in scientific notation.')
+                        gm.append('Trying to deal with a branch length, possibly in scientific notation.')
                         gm.append("It didn't work, tho.")
-                        gm.append(
-                            "Got these after colon: '%s' and '%s'." % (theNum, theExp))
-                        gm.append(
-                            'And the latter does not appear to be an int.')
+                        gm.append("Got these after colon: '%s' and '%s'." % (theNum, theExp))
+                        gm.append('And the latter does not appear to be an int.')
                         raise P4Error(gm)
 
             elif tok[0] == '[':
