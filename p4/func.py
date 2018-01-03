@@ -2654,31 +2654,45 @@ def _sumOfSquares(seq):
 def sortListOfObjectsOnAttribute(aListOfObjects, attributeString):
     """Returns a new sorted list."""
 
-    def pairing(anObject, a=attributeString):
-        return (getattr(anObject, a), anObject)
-    paired = [pairing(ob) for ob in aListOfObjects]
-    # print paired
-    # 'paired' is a list of 2-element tuples, (thingToSortOn, theOriginalObject)
-    paired.sort()
+    # Repaired for py3. 
 
-    def stripit(pair):
-        return pair[1]
-    return [stripit(pr) for pr in paired]
+    # In the original (that worked with py2 all these years) used pairs, where,
+    # 'paired' was a list of 2-element tuples, (thingToSortOn, theOriginalObject)
+
+    # The problem in py3 is in tie scores in thingToSortOn, where sort() will
+    # then attempt to compare objects, and that will generally fail, cuz objA <
+    # objB (in Py3) will throw a
+    # TypeError: '<' not supported between instances of 'Foo' and 'Foo'
+
+    # So I simply add a third element, the indx in the middle, that allows
+    # reliable sorting when there is a tie score at the first position.
+
+    def tripling(anObject, indx, a=attributeString):
+        return (getattr(anObject, a), indx, anObject)
+    triplets = []
+    for indx, ob in enumerate(aListOfObjects):
+        triplets.append(tripling(ob, indx, a=attributeString))
+    #print(triplets)
+    triplets.sort()
+    def stripit(aTriplet):
+        return aTriplet[2]
+    return [stripit(tr) for tr in triplets]
 
 
 def sortListOfObjectsOn2Attributes(aListOfObjects, attributeString1, attributeString2):
     """Returns a new sorted list."""
 
-    def tripling(anObject, a=attributeString1, b=attributeString2):
-        return (getattr(anObject, a), getattr(anObject, b), anObject)
-    tripled = [tripling(ob) for ob in aListOfObjects]
-    # 'tripled' is a list of 3-element tuples, (thingToSortOn, secondThingToSortOn, theOriginalObject)
-    tripled.sort()
-
-    def stripit(triple):
-        return triple[2]
-    return [stripit(tr) for tr in tripled]
-
+    # Fixed for py3 as in sortListOfObjectsOnAttribute, adding a 4th element
+    def quadding(anObject, indx, a=attributeString1, b=attributeString2):
+        return (getattr(anObject, a), getattr(anObject, b), indx, anObject)
+    quads = []
+    for indx, ob in  enumerate(aListOfObjects):
+        quads.append(quadding(ob, indx, a=attributeString1, b=attributeString2))
+    #print(quads)
+    quads.sort()
+    def stripit(quad):
+        return quad[3]
+    return [stripit(qu) for qu in quads]
 
 def sortListOfListsOnListElementNumber(aListOfLists, elementNumber):
     """Returns a new sorted list."""
