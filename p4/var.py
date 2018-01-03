@@ -206,8 +206,6 @@ class Var(object):
 
         self.SAME = 0
         self.DIFFERENT = 1
-        self.OK = 0
-        self.NOT_OK = 1
 
         # The python that shiped with MacOS was usually old and was
         # not built with readline.  Thats ok, 'cuz it was easy enough
