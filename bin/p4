@@ -93,6 +93,19 @@ from p4 import *
 var.argvAfterDoubleDash = argvAfterDoubleDash
 del(argvAfterDoubleDash)
 
+# We want to check that py3 is not importing p3rlcompleter before bothering with
+# reading files
+if var.interactiveHelper == 'p3rlcompleter':
+    if sys.version_info >= (3,):
+        if forceExitAtEnd or (exitAtEnd and pyFileCount):
+            pass
+        else:
+            print("var.interactiveHelper is set to 'p3rlcompleter',")
+            print("but it does not work in Python 3.  Maybe try setting")
+            print("var.interactiveHelper = 'ipython'?")
+            sys.exit()
+
+
 if len(theFileList):
     #var.nexus_doFastNextTok = True
     for f in theFileList:
@@ -143,6 +156,7 @@ if 1:
 if var.interactiveHelper:
     # print "Going interactive, with helper %s" % var.interactiveHelper
     if var.interactiveHelper == 'p3rlcompleter':
+        assert sys.version_info < (3,), "p3rlcompleter does not work with py3 -- try ipython"
         import p4.interactive.p3rlcompleter
     elif var.interactiveHelper == 'bpython':
         from bpython.curtsies import main
