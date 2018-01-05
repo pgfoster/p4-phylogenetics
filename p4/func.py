@@ -1019,30 +1019,24 @@ p.foster@nhm.ac.uk""")
     print('')
     print("(Control-d to quit.)\n")
 
-def splash2(outFile="splash2"):
+def splash2(outFile=None, verbose=True):
     """Another splash, showing things like version, git hash, and date
 
-    It gets printed to a file, unless you set arg outFile to None or to
-    sys.stdout.
+    If verbose is set, it gets printed to sys.stdout.
 
-    The outFile is appended to, not overwritten.
+    If you set an outFile, it will also be appended to that file.
+
+    It also returns the info as a list of strings.
     """
 
-    fh = sys.stdout
-    if not outFile:
-        pass
-    elif  outFile == sys.stdout:
-        pass
-    else:
-        print("Appending splash2 info to file %s" % outFile) 
-        fh = open(outFile, "a")
+    # Collect all the info in a list of strings
+    stuff = []
 
     # Stolen from Cymon.  Thanks!
-    print("\nSummary from func.splash2()", file=fh)
-    print("%16s: %s" % ("P4 version", p4.version.versionString), file=fh)
+    stuff.append("\nSummary from func.splash2()")
+    stuff.append("%16s: %s" % ("P4 version", p4.version.versionString))
     lp = os.path.dirname(inspect.getfile(p4))
-    print("%16s: %s" % ("Library path", lp), file=fh)
-    #lp = "/Users/peter/C"
+    stuff.append("%16s: %s" % ("Library path", lp))
 
     # Get git version.
     if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
@@ -1053,24 +1047,32 @@ def splash2(outFile="splash2"):
             ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
             #ret = ret.strip()    # get rid of newline, needed for rev-parse
             ret = ret[1:-1]       # get rid of quotes, needed for log
-            print("%16s: %s" % ("git hash", ret), file=fh)
+            stuff.append("%16s: %s" % ("git hash", ret))
 
         except subprocess.CalledProcessError:
             #print("%16s: %s" % ("git hash", "Not a git repo?"))
             pass
     else:
-        print("%16s: %s" % ("git hash", "Not a git repo"), file=fh)
+        stuff.append("%16s: %s" % ("git hash", "Not a git repo"))
 
 
-    print("%16s: %s" % ("Python version", ".".join([str(i) for i in sys.version_info[:-2]])), file=fh)
-    #print("%16s: %s" % ("Date" , datetime.datetime.now().strftime("%d/%m/%Y")), file=fh)
-    print("%16s: %s" % ("Today's date" , datetime.datetime.now().strftime("%Y-%m-%d")), file=fh)  # iso 8601 see https://xkcd.com/1179/
+    stuff.append("%16s: %s" % ("Python version", ".".join([str(i) for i in sys.version_info[:-2]])))
+    #print("%16s: %s" % ("Date" , datetime.datetime.now().strftime("%d/%m/%Y")))
+    stuff.append("%16s: %s" % ("Today's date" , datetime.datetime.now().strftime("%Y-%m-%d")))  # iso 8601 see https://xkcd.com/1179/
     host = os.uname()[1].split('.')[0]
-    print("%16s: %s" % ("Host", host), file=fh)
-    print("\n", file=fh)
-    # sys.stdout.flush()
-    fh.close()
+    stuff.append("%16s: %s" % ("Host", host))
+    #stuff.append("\n")
 
+    if outFile:
+        print("Appending splash2 info to file %s" % outFile) 
+        fh = open(outFile, "a")
+        for aLine in stuff:
+            print(aLine, file=fh)
+        fh.close()
+    if verbose:
+        for aLine in stuff:
+            print(aLine)
+    return stuff
 
 
 def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None):
@@ -2302,6 +2304,8 @@ def unPickleMcmc(runNum, theData, verbose=True):
         ch.curTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
         ch.propTree.data = theData
         ch.propTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
+
+    m._setLogger()
 
     return m
 
