@@ -16,6 +16,7 @@ from p4.treepartitions import TreePartitions
 from p4.constraints import Constraints
 import datetime
 import numpy
+import logging
 
 # for proposal probs
 fudgeFactor = {}
@@ -160,37 +161,37 @@ class McmcTunings(object):
         theSig = "%s%22s"
         aLine = theSig % (spacer, 'part-specific tunings')
         for pNum in range(self.nParts):
-            aLine += " %10s" % pNum
+            aLine += " %14s" % pNum
         lst.append(aLine)
 
         aLine = theSig % (spacer, '')
         for pNum in range(self.nParts):
-            aLine += " %10s" % '------'
+            aLine += " %14s" % '------'
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'comp')
         for pNum in range(self.nParts):
-            aLine += " %10.3f" % self.parts[pNum].comp
+            aLine += " %14.3f" % self.parts[pNum].comp
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'compDir')
         for pNum in range(self.nParts):
-            aLine += " %10.3f" % self.parts[pNum].compDir
+            aLine += " %14.3f" % self.parts[pNum].compDir
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'allCompsDir')
         for pNum in range(self.nParts):
-            aLine += " %10.3f" % self.parts[pNum].allCompsDir
+            aLine += " %14.3f" % self.parts[pNum].allCompsDir
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'ndch2_leafCompsDir')
         for pNum in range(self.nParts):
-            aLine += " %10.3f" % self.parts[pNum].ndch2_leafCompsDir
+            aLine += " %14.3f" % self.parts[pNum].ndch2_leafCompsDir
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'ndch2_internalCompsDir')
         for pNum in range(self.nParts):
-            aLine += " %10.3f" % self.parts[pNum].ndch2_internalCompsDir
+            aLine += " %14.3f" % self.parts[pNum].ndch2_internalCompsDir
         lst.append(aLine)
 
         #aLine = theSig % (spacer, 'rjComp')
@@ -200,17 +201,17 @@ class McmcTunings(object):
 
         aLine = theSig % (spacer, 'rMatrix')
         for pNum in range(self.nParts):
-            aLine += " %10.3f" % self.parts[pNum].rMatrix
+            aLine += " %14.3f" % self.parts[pNum].rMatrix
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'rMatrixDir')
         for pNum in range(self.nParts):
-            aLine += " %10.3f" % self.parts[pNum].rMatrixDir
+            aLine += " %14.3f" % self.parts[pNum].rMatrixDir
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'twoP')
         for pNum in range(self.nParts):
-            aLine += " %10.3f" % self.parts[pNum].twoP
+            aLine += " %14.3f" % self.parts[pNum].twoP
         lst.append(aLine)
 
         #aLine = theSig % (spacer, 'rjRMatrix')
@@ -221,12 +222,12 @@ class McmcTunings(object):
         aLine = theSig % (spacer, 'gdasrv')
         for pNum in range(self.nParts):
             #aLine += " %10s" % self.parts[pNum].gdasrv
-            aLine += " %10.3f" % self.parts[pNum].gdasrv
+            aLine += " %14.3f" % self.parts[pNum].gdasrv
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'pInvar')
         for pNum in range(self.nParts):
-            aLine += " %10s" % self.parts[pNum].pInvar
+            aLine += " %14s" % self.parts[pNum].pInvar
         lst.append(aLine)
 
         #aLine = theSig % (spacer, 'gdasrvPriorLambda')
@@ -236,12 +237,12 @@ class McmcTunings(object):
 
         aLine = theSig % (spacer, 'compLocation')
         for pNum in range(self.nParts):
-            aLine += " %10.2f" % self.parts[pNum].compLocation
+            aLine += " %14.2f" % self.parts[pNum].compLocation
         lst.append(aLine)
 
         aLine = theSig % (spacer, 'rMatrixLocation')
         for pNum in range(self.nParts):
-            aLine += " %10.2f" % self.parts[pNum].rMatrixLocation
+            aLine += " %14.2f" % self.parts[pNum].rMatrixLocation
         lst.append(aLine)
 
         if advice:
@@ -737,20 +738,17 @@ class Mcmc(object):
         if aTree and aTree.model and aTree.data:
             pass
         else:
-            gm.append(
-                "The tree that you feed to this class should have a model and data attached.")
+            gm.append("The tree that you feed to this class should have a model and data attached.")
             raise P4Error(gm)
 
         if 1:
             if 1:
                 if aTree.root.getNChildren() != 3 or not aTree.isFullyBifurcating():
-                    gm.append(
-                        "Mcmc is not implemented for bifurcating roots, or trees that are not fully bifurcating.")
+                    gm.append("Mcmc is not implemented for bifurcating roots, or trees that are not fully bifurcating.")
                     raise P4Error(gm)
             else:
                 if aTree.root.getNChildren() < 3:
-                    gm.append(
-                        "Mcmc is not implemented for roots that have less than 3 children.")
+                    gm.append("Mcmc is not implemented for roots that have less than 3 children.")
                     raise P4Error(gm)
 
         if 0:  # Muck with polytomies
@@ -774,11 +772,9 @@ class Mcmc(object):
             for sk in self.constraints.constraints:
                 if sk not in mySplitKeys:
                     # self.tree.draw()
-                    gm.append('Constraint %s' %
-                              p4.func.getSplitStringFromKey(sk, self.tree.nTax))
+                    gm.append('Constraint %s' % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                     gm.append('is not in the starting tree.')
-                    gm.append(
-                        'Maybe you want to make a randomTree with constraints?')
+                    gm.append('Maybe you want to make a randomTree with constraints?')
                     raise P4Error(gm)
 
         try:
@@ -814,6 +810,8 @@ class Mcmc(object):
             raise P4Error(gm)
         self.runNum = runNum
 
+        self._setLogger()
+
         # Check that we are not going to over-write good stuff
         ff = os.listdir(os.getcwd())
         hasPickle = False
@@ -823,14 +821,10 @@ class Mcmc(object):
                 break
         if hasPickle:
             gm.append("runNum is set to %i" % self.runNum)
-            gm.append(
-                "There is at least one mcmc_checkPoint_%i.xxx file in this directory." % self.runNum)
-            gm.append(
-                "This is a new Mcmc, and I am refusing to over-write exisiting files.")
-            gm.append(
-                "Maybe you want to re-start from the latest mcmc_checkPoint_%i file?" % self.runNum)
-            gm.append(
-                "Otherwise, get rid of the existing mcmc_xxx_%i.xxx files and start again." % self.runNum)
+            gm.append("There is at least one mcmc_checkPoint_%i.xxx file in this directory." % self.runNum)
+            gm.append("This is a new Mcmc, and I am refusing to over-write exisiting files.")
+            gm.append("Maybe you want to re-start from the latest mcmc_checkPoint_%i file?" % self.runNum)
+            gm.append("Otherwise, get rid of the existing mcmc_xxx_%i.xxx files and start again." % self.runNum)
             raise P4Error(gm)
 
         if var.strictRunNumberChecking:
@@ -1122,129 +1116,18 @@ class Mcmc(object):
         #self.heatingHackProposalNames = ['local', 'eTBR']
         
 
-        # # Are we using rjComp in any model partitions?
-        # # True and False
-        # rjCompParts = [mp.rjComp for mp in self.tree.model.parts]
-        # rjCompPartNums = [
-        #     pNum for pNum in range(self.tree.model.nParts) if rjCompParts[pNum]]
-        # # print rjCompParts
-        # # print rjCompPartNums
-        # if rjCompPartNums:
-        #     if verbose:
-        #         print("\nInitiating rjComp...")
-        #         print("Turning on proposal for rjComp.")
-
-        #     for pNum in rjCompPartNums:
-        #         mp = self.tree.model.parts[pNum]
-        #         # Do some checking
-        #         if mp.nComps <= 1:
-        #             gm.append("rjComp is turned on for part %i, but there are %i comps.  Too few." % (
-        #                 pNum, mp.nComps))
-        #             gm.append("You will want to add more comps.")
-        #             raise P4Error(gm)
-        #         elif mp.nComps > len(self.tree.nodes):
-        #             gm.append("rjComp is turned on for part %i, but there are %i comps.  Too many." % (
-        #                 pNum, mp.nComps))
-        #             gm.append(
-        #                 "That is more than the number of nodes in the tree.")
-        #             raise P4Error(gm)
-
-        #         self.prob.rjComp = 1.0
-
-        #         # Calculate the initial pool size, setting rjComp_k
-        #         mp.rjComp_k = 0
-        #         for comp in mp.comps:
-        #             if comp.nNodes:
-        #                 mp.rjComp_k += 1
-        #                 comp.rj_isInPool = True   # False by default
-
-        #         if verbose:
-        #             print("Part %i: nComps %i, pool size (rjComp_k) %i" % (pNum, mp.nComps, mp.rjComp_k))
-
-        #         # This stuff below applies when
-        #         # rjCompUniformAllocationPrior is not on, meaning it
-        #         # uses the hierarchical allocation prior.
-
-        #         # This next calc of rj_f depends on
-        #         # self.tree.setModelThingsNNodes() having been done, above.
-        #         mySum = float(len(self.tree.nodes))
-        #         for comp in mp.comps:
-        #             if comp.nNodes:
-        #                 comp.rj_f = comp.nNodes / mySum
-        #         # for comp in mp.comps:
-        #         #    print comp.num, comp.nNodes, comp.rj_f
-
-        # # Are we using rjRMatrix in any model partitions?
-        # # True and False
-        # rjRMatrixParts = [mp.rjRMatrix for mp in self.tree.model.parts]
-        # rjRMatrixPartNums = [
-        #     pNum for pNum in range(self.tree.model.nParts) if rjRMatrixParts[pNum]]
-        # # print rjRMatrixParts
-        # # print rjRMatrixPartNums
-        # if rjRMatrixPartNums:
-        #     if verbose:
-        #         print("\nInitiating rjRMatrix...")
-        #         print("Turning on proposal for rjRMatrix.")
-
-        #     for pNum in rjRMatrixPartNums:
-        #         mp = self.tree.model.parts[pNum]
-        #         # Do some checking
-        #         if mp.nRMatrices <= 1:
-        #             gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too few." % (
-        #                 pNum, mp.nRMatrices))
-        #             gm.append("You will want to add more rMatrices.")
-        #             raise P4Error(gm)
-        #         elif mp.nRMatrices > (len(self.tree.nodes) - 1):
-        #             gm.append("rjRMatrix is turned on for part %i, but there are %i rMatrices.  Too many." % (
-        #                 pNum, mp.nRMatrices))
-        #             gm.append(
-        #                 "That is more than the number of branches in the tree.")
-        #             raise P4Error(gm)
-
-        #         self.prob.rjRMatrix = 1.0
-
-        #         # Calculate the initial pool size, setting rjRMatrix_k
-        #         mp.rjRMatrix_k = 0
-        #         for rMatrix in mp.rMatrices:
-        #             if rMatrix.nNodes:
-        #                 mp.rjRMatrix_k += 1
-        #                 rMatrix.rj_isInPool = True   # False by default
-
-        #         if verbose:
-        #             print("Part %i: nRMatrices %i, pool size (rjRMatrix_k) %i" % (pNum, mp.nRMatrices, mp.rjRMatrix_k))
-
-        #         # This stuff below applies when
-        #         # rjRMatrixUniformAllocationPrior is not on, meaning it
-        #         # uses the hierarchical allocation prior.
-
-        #         # This next calc of rj_f depends on
-        #         # self.tree.setModelThingsNNodes() having been done, above.
-        #         mySum = float(len(self.tree.nodes) - 1.)
-        #         for rMatrix in mp.rMatrices:
-        #             if rMatrix.nNodes:
-        #                 rMatrix.rj_f = rMatrix.nNodes / mySum
-        #         # for rMatrix in mp.rMatrices:
-        #         #    print rMatrix.num, rMatrix.nNodes, rMatrix.rj_f
-
-
-        # # Are we doing cmd1 in any model partitions?
-        # cmd1Parts = [mp.cmd1 for mp in self.tree.model.parts]  # True and False
-        # # empty if there are none that do cmd1
-        # cmd1PartNums = [
-        #     pNum for pNum in range(self.tree.model.nParts) if cmd1Parts[pNum]]
-        # if cmd1PartNums:
-        #     if verbose:
-        #         print("\nInitiating cmd1 ...")
-        #         print("Turning on proposals for cmd1")
-        #     self.prob.cmd1_compDir = 1.0
-        #     self.prob.cmd1_comp0Dir = 1.0
-        #     self.prob.cmd1_allCompDir = 1.0
-        #     self.prob.cmd1_alpha = 1.0
-        #     for pNum in cmd1PartNums:
-        #         mp = self.tree.model.parts[pNum]
-        #         mp.cmd1_pi0 = [1.0 / mp.dim] * mp.dim
-
-                
+    def _setLogger(self):
+        myLogFileName = "mcmc_log_%i" % self.runNum
+        # if os.path.isfile(myLogFileName):
+        #     gm.append("Log file '%s' exists, and I am refusing to over-write it.  Deal with it." % myLogFileName)
+        #     raise P4Error(gm)
+        self.logger = logging.getLogger()
+        handler = logging.FileHandler(myLogFileName, mode='a')
+        formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='[%Y-%m-%d %H:%M]')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
+        
 
     def _makeProposals(self):
         """Make proposals for the mcmc."""
@@ -2075,7 +1958,9 @@ class Mcmc(object):
                 gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
                 raise P4Error(gm)
 
-
+        splash = p4.func.splash2(verbose=True)
+        for aLine in splash:
+            self.logger.info(aLine)
         if self.gen > -1:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
@@ -2101,6 +1986,7 @@ class Mcmc(object):
                 f2.truncate()
             f2.close()
 
+            self.logger.info("Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen))
             if verbose:
                 print()
                 print("Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen))
@@ -2113,6 +1999,7 @@ class Mcmc(object):
 
             self.startMinusOne = self.gen
         else:
+            self.logger.info("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %.2f" % (self.nChains, self.tunings.chainTemp))
@@ -2326,7 +2213,8 @@ class Mcmc(object):
                         if thisAccepted > self.swapTuner.accHi:   # acceptance too high; temperature too low
                             oldTemp = self.tunings.chainTemp
                             self.tunings.chainTemp *= self.swapTuner.factorHi
-                            #print("swap accepted %.2f, increase temp from %.3f to %.3f" % (thisAccepted, oldTemp, self.tunings.chainTemp))
+                            self.logger.info("SwapTuner: gen %i, swap accepted %.2f, increase temp from %.3f to %.3f" % (
+                                self.gen, thisAccepted, oldTemp, self.tunings.chainTemp))
                             self.swapTuner.swaps01 = []
                         elif thisAccepted < self.swapTuner.accLo:  # acceptance too low; temperature too high
                             oldTemp = self.tunings.chainTemp
@@ -2334,7 +2222,8 @@ class Mcmc(object):
                                 self.tunings.chainTemp /= self.swapTuner.factorB
                             else:
                                 self.tunings.chainTemp /= self.swapTuner.factorC
-                            #print("swap accepted %.3f, decrease temp from %.3f to %.3f" % (thisAccepted, oldTemp, self.tunings.chainTemp))
+                            self.logger.info("SwapTuner: gen %i, swap accepted %.3f, decrease temp from %.3f to %.3f" % (
+                                self.gen, thisAccepted, oldTemp, self.tunings.chainTemp))
                             self.swapTuner.swaps01 = []
                         
                         
@@ -2651,9 +2540,11 @@ class Mcmc(object):
         #self.chains[0].curTree.calcLogLike(verbose=True, resetEmpiricalComps=False)
 
         # Make a copy of self, but with no cStuff.
-        # But we don't want to copy data.  So detach it.
+        # But we don't want to copy data or logger.  So detach them.
         savedData = self.tree.data
         self.tree.data = None
+        savedLogger = self.logger
+        self.logger = None
         if self.simulate:
             savedSimData = self.simTree.data
             self.simTree.data = None
@@ -2667,8 +2558,9 @@ class Mcmc(object):
 
         theCopy = copy.deepcopy(self)
 
-        # Re-attach data to self.
+        # Re-attach data and logger to self.
         self.tree.data = savedData
+        self.logger = savedLogger
         self.tree.calcLogLike(verbose=False, resetEmpiricalComps=False)
         if self.simulate:
             self.simTree.data = savedSimData
