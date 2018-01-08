@@ -49,23 +49,17 @@ class McmcTuningsPart(object):
         object.__setattr__(self, 'allCompsDir', 500.)
         object.__setattr__(self, 'ndch2_leafCompsDir', 200.)
         object.__setattr__(self, 'ndch2_internalCompsDir', 100.)
-        #object.__setattr__(self, 'rjComp', 200.)
-        # rMatrix with sliders longer changed depending on the dim (ie size of rMatrix)
+        # rMatrix with sliders no longer changed depending on the dim (ie size of rMatrix)
         object.__setattr__(self, 'rMatrix', 0.3)
         # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
         object.__setattr__(self, 'rMatrixDir', 200.)
         object.__setattr__(self, 'twoP', 50.)
-        #object.__setattr__(self, 'rjRMatrix', 300.)
         object.__setattr__(self, 'gdasrv', 2.0 * math.log(1.5))  # 0.811
         #object.__setattr__(self, 'gdasrv', 2.0 * math.log(2.0))
         #object.__setattr__(self, 'gdasrvPriorLambda', 0.5)
         object.__setattr__(self, 'pInvar', 0.5)
         object.__setattr__(self, 'compLocation', 0.0)
         object.__setattr__(self, 'rMatrixLocation', 0.0)
-        #object.__setattr__(self, 'cmd1_p', 100.0)
-        #object.__setattr__(self, 'cmd1_s', 100.0)
-        #object.__setattr__(self, 'cmd1_lna', 100.0)
-        #object.__setattr__(self, 'cmd1_lnt', 100.0)
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
@@ -517,7 +511,7 @@ class Proposal(object):
         self.pNum = -1
         self.mtNum = -1
         self.weight = 1.0
-        #self.tuning = None
+        #self.tuning = None  # a property
         self.nProposals = [0] * self.nChains
         self.nAcceptances = [0] * self.nChains
         self.accepted = 0
