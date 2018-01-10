@@ -1733,8 +1733,9 @@ class Chain(object):
     def proposeCompWithSlider(self, theProposal):
         gm = ['Chain.proposeCompWithSlider()']
 
-        mt = self.propTree.model.parts[
-            theProposal.pNum].comps[theProposal.mtNum]
+        nComps = self.propTree.model.parts[theProposal.pNum].nComps
+        mtNum = random.randrange(0, stop=nComps)
+        mt = self.propTree.model.parts[theProposal.pNum].comps[mtNum]
         dim = self.propTree.model.parts[theProposal.pNum].dim
 
         # mt.val is a list, not a numpy array
@@ -1795,8 +1796,9 @@ class Chain(object):
     def proposeCompWithDirichlet(self, theProposal):
         gm = ['Chain.proposeCompWithDirichlet()']
 
-        mt = self.propTree.model.parts[
-            theProposal.pNum].comps[theProposal.mtNum]
+        nComps = self.propTree.model.parts[theProposal.pNum].nComps
+        mtNum = random.randrange(0, stop=nComps)
+        mt = self.propTree.model.parts[theProposal.pNum].comps[mtNum]
         dim = self.propTree.model.parts[theProposal.pNum].dim
 
         # mt.val is a list of floats, not a numpy.ndarray
@@ -2324,12 +2326,13 @@ class Chain(object):
     def proposeRMatrixWithSlider(self, theProposal):
 
         # print "rMatrix proposal. the tuning is %s" % theProposal.tuning
+        nRMatrices = self.propTree.model.parts[theProposal.pNum].nRMatrices
+        mtNum = random.randrange(0, stop=nRMatrices)
+        
 
         assert var.rMatrixNormalizeTo1
-        mtCur = self.curTree.model.parts[
-            theProposal.pNum].rMatrices[theProposal.mtNum]
-        mtProp = self.propTree.model.parts[
-            theProposal.pNum].rMatrices[theProposal.mtNum]
+        mtCur = self.curTree.model.parts[theProposal.pNum].rMatrices[mtNum]
+        mtProp = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
         if mtProp.spec == '2p':
             # For 2p, its actually a Dirichlet, not a slider.  All this is
             # stolen from MrBayes, where the default tuning is 50.  In
@@ -2366,8 +2369,7 @@ class Chain(object):
             self.logProposalRatio = x - y
 
         else:  # specified, ones, eg gtr
-            mt = self.propTree.model.parts[
-                theProposal.pNum].rMatrices[theProposal.mtNum]
+            mt = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
 
             # mt.val is a numpy array
             assert isinstance(mt.val, numpy.ndarray)
@@ -2428,10 +2430,10 @@ class Chain(object):
         # print "rMatrix proposal. the tuning is %s" % theProposal.tuning
 
         assert var.rMatrixNormalizeTo1
-        mtCur = self.curTree.model.parts[
-            theProposal.pNum].rMatrices[theProposal.mtNum]
-        mtProp = self.propTree.model.parts[
-            theProposal.pNum].rMatrices[theProposal.mtNum]
+        nRMatrices = self.propTree.model.parts[theProposal.pNum].nRMatrices
+        mtNum = random.randrange(0, stop=nRMatrices)
+        mtCur = self.curTree.model.parts[theProposal.pNum].rMatrices[mtNum]
+        mtProp = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
         if mtProp.spec == '2p':
 
             # This is derived from MrBayes, where the default tuning is 50.  In
@@ -2473,8 +2475,7 @@ class Chain(object):
 
 
         else:  # specified, ones, eg gtr
-            mt = self.propTree.model.parts[
-                theProposal.pNum].rMatrices[theProposal.mtNum]
+            mt = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
 
             # mt.val is a numpy array
             assert isinstance(mt.val, numpy.ndarray)
@@ -2498,8 +2499,7 @@ class Chain(object):
             reverseLnPdf = spDist.logpdf(mt.val)
             self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
-            mtProp = self.propTree.model.parts[
-                theProposal.pNum].rMatrices[theProposal.mtNum]
+            mtProp = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
             for i,val in enumerate(newVal):
                 mtProp.val[i] = val
 
@@ -2935,8 +2935,8 @@ class Chain(object):
         # This is a multiplier proposal.
 
         gm = ["Chain.proposeGdasrv()"]
-        mt = self.propTree.model.parts[
-            theProposal.pNum].gdasrvs[theProposal.mtNum]
+        assert self.propTree.model.parts[theProposal.pNum].nGdasrvs == 1
+        mt = self.propTree.model.parts[theProposal.pNum].gdasrvs[0]
 
         # We can't have alpha less than about 1.e-16, or DiscreteGamma hangs.
         # But that is moot, as var.GAMMA_SHAPE_MIN is much bigger
@@ -2948,8 +2948,7 @@ class Chain(object):
         # mt.val is a numpy.ndarray type, an array with 1 element.
         assert isinstance(mt.val, numpy.ndarray)
         oldVal = mt.val
-        newVal = oldVal * \
-            math.exp(theProposal.tuning * (random.random() - 0.5))
+        newVal = oldVal * math.exp(theProposal.tuning * (random.random() - 0.5))
 
         isGood = False
         while not isGood:
@@ -3159,8 +3158,6 @@ class Chain(object):
     def proposeCmd1CompDir(self, theProposal):
         gm = ['Chain.proposeCmd1CompDir()']
 
-        # print gm[0], theProposal.pNum, theProposal.mtNum
-
         mp = self.propTree.model.parts[theProposal.pNum]
 
         # The proposal mtNum is -1, meaning do all, or any
@@ -3198,8 +3195,6 @@ class Chain(object):
 
     def proposeCmd1Comp0Dir(self, theProposal):
         gm = ['Chain.proposeCmd1Comp0Dir()']
-
-        # print gm[0], theProposal.pNum, theProposal.mtNum
 
         mp = self.propTree.model.parts[theProposal.pNum]
 
@@ -3329,8 +3324,6 @@ class Chain(object):
         MIN = 1.
         MAX = 1000.
 
-        # print gm[0], theProposal.pNum, theProposal.mtNum
-
         mp = self.propTree.model.parts[theProposal.pNum]
 
         # The proposal mtNum is -1, meaning do all, or any
@@ -3422,8 +3415,6 @@ class Chain(object):
         mpProp = self.propTree.model.parts[theProposal.pNum]
 
         assert not mpCur.ndch2, "allCompsDir proposal is not for ndch2"
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
 
         # Make proposals, accumulate log proposal ratios in the same loop
         self.logProposalRatio = 0.0
@@ -3452,9 +3443,6 @@ class Chain(object):
         mpCur = self.curTree.model.parts[theProposal.pNum]
         mpProp = self.propTree.model.parts[theProposal.pNum]
         assert mpCur.ndch2
-
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
 
         # Does this work for polytomies?  With that in mind, I iterate over
         # nodes rather than comps.
@@ -3496,9 +3484,6 @@ class Chain(object):
         mpCur = self.curTree.model.parts[theProposal.pNum]
         mpProp = self.propTree.model.parts[theProposal.pNum]
         assert mpCur.ndch2
-
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
 
         # Does this work for polytomies?  With that in mind, I iterate over
         # nodes rather than comps.
