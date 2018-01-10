@@ -522,8 +522,10 @@ class Proposal(object):
         self.nAborts = [0] * self.nChains
 
     def dump(self):
-        print("proposal name=%-10s pNum=%2i, mtNum=%2i, weight=%5.1f, tuning=%7.2f" % (
+        print("proposal name=%-10s pNum=%2s, mtNum=%2s, weight=%s, tuning=%s" % (
             '%s,' % self.name, self.pNum, self.mtNum, self.weight, self.tuning))
+        #print("proposal name=%-10s pNum=%2i, mtNum=%2i, weight=%5.1f, tuning=%7.2f" % (
+        #    '%s,' % self.name, self.pNum, self.mtNum, self.weight, self.tuning))
         print("    nProposals   by temperature:  %s" % self.nProposals)
         print("    nAcceptances by temperature:  %s" % self.nAcceptances)
 
@@ -1148,7 +1150,6 @@ class Mcmc(object):
         # needs to be proposed nearly as often as local, so I upweight
         # local using a fudgeFactor.  So the weight will be
         # p.weight = self.prob.local * len(self.tree.nodes) * fudgeFactor['local']
-
         # brLen
         if self.prob.brLen:
             p = Proposal(self)
@@ -1232,7 +1233,7 @@ class Mcmc(object):
             # comp
             if self.prob.comp:
                 for mtNum in range(mp.nComps):
-                    if mp.comps[mtNum].free and not mp.cmd1:
+                    if mp.comps[mtNum].free:
                         p = Proposal(self)
                         p.name = 'comp'
                         p.weight = self.prob.comp * (mp.dim - 1)
@@ -1244,7 +1245,7 @@ class Mcmc(object):
             # compDir
             if self.prob.compDir:
                 for mtNum in range(mp.nComps):
-                    if mp.comps[mtNum].free and not mp.cmd1:
+                    if mp.comps[mtNum].free:
                         p = Proposal(self)
                         p.name = 'compDir'
                         p.weight = self.prob.compDir * (mp.dim - 1)
@@ -1415,33 +1416,6 @@ class Mcmc(object):
                     p.pNum = pNum
                     self.proposals.append(p)
 
-            # # cmd1 stuff
-            # if 0 and mp.cmd1:
-            #     p = Proposal(self)
-            #     p.name = 'cmd1_compDir'
-            #     p.weight = self.prob.cmd1_compDir * (mp.dim - 1)
-            #     p.pNum = pNum
-            #     self.proposals.append(p)
-
-            #     p = Proposal(self)
-            #     p.name = 'cmd1_comp0Dir'
-            #     p.weight = self.prob.cmd1_comp0Dir * (mp.dim - 1)
-            #     p.pNum = pNum
-            #     self.proposals.append(p)
-
-            # if 1 and mp.cmd1:
-            #     p = Proposal(self)
-            #     p.name = 'cmd1_allCompDir'
-            #     p.weight = self.prob.cmd1_allCompDir * \
-            #         (mp.dim - 1) * len(self.tree.nodes)
-            #     p.pNum = pNum
-            #     self.proposals.append(p)
-
-            #     p = Proposal(self)
-            #     p.name = 'cmd1_alpha'
-            #     p.weight = self.prob.cmd1_alpha
-            #     p.pNum = pNum
-            #     self.proposals.append(p)
 
         if not self.proposals:
             gm.append("No proposals?")
@@ -1942,15 +1916,15 @@ class Mcmc(object):
 
         coldChainNum = 0
 
-        # If polytomy is turned on, then it is possible to get a star
-        # tree, in which case local will not work.  So if we have both
-        # polytomy and local proposals, we should also have brLen.
-        if 'polytomy' in self.proposalsHash and 'local' in self.proposalsHash:
-            if 'brLen' not in self.proposalsHash:
-                gm.append("If you have polytomy and local proposals, you should have a brLen proposal as well.")
-                gm.append("It can have a low proposal probability, but it needs to be there.")
-                gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
-                raise P4Error(gm)
+        # # If polytomy is turned on, then it is possible to get a star
+        # # tree, in which case local will not work.  So if we have both
+        # # polytomy and local proposals, we should also have brLen.
+        # if 'polytomy' in self.proposalsHash and 'local' in self.proposalsHash:
+        #     if 'brLen' not in self.proposalsHash:
+        #         gm.append("If you have polytomy and local proposals, you should have a brLen proposal as well.")
+        #         gm.append("It can have a low proposal probability, but it needs to be there.")
+        #         gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
+        #         raise P4Error(gm)
 
         splash = p4.func.splash2(verbose=True)
         for aLine in splash:
@@ -2048,6 +2022,7 @@ class Mcmc(object):
 
         for gNum in range(nGensToDo):
             self.gen += 1
+
             # Do an initial time estimate based on 100 gens
             if nGensToDo > 100 and self.gen - firstGen == 100:
                 diff_secs = time.time() - realTimeStart
@@ -2084,15 +2059,7 @@ class Mcmc(object):
                             # Can't do root3 on a star tree.
                             if self.chains[chNum].curTree.nInternalNodes == 1:
                                 gotIt = False
-                        # elif aProposal.name in ['comp', 'compDir']:
-                        #     # If we do RJ on this part, make sure the comp is
-                        #     # actually in the RJ pool.
-                        #     mp = self.chains[chNum].curTree.model.parts[
-                        #         aProposal.pNum]
-                        #     if mp.rjComp:
-                        #         mt = mp.comps[aProposal.mtNum]
-                        #         if not mt.rj_isInPool:
-                        #             gotIt = False
+
                         elif aProposal.name in ['rMatrix']:
                             # If we do RJ on this part, make sure the rMatrix
                             # is actually in the RJ pool.
@@ -2114,11 +2081,9 @@ class Mcmc(object):
                                     gotIt = False
                         safety += 1
                         if safety > 1000:
-                            gm.append(
-                                "Could not find a proposal after %i attempts." % safety)
+                            gm.append("Could not find a proposal after %i attempts." % safety)
                             gm.append("Possibly a programming error.")
-                            gm.append(
-                                "Or possibly it is just a pathologically frustrating Mcmc.")
+                            gm.append("Or possibly it is just a pathologically frustrating Mcmc.")
                             raise P4Error(gm)
 
                     # if gNum % 2:
