@@ -37,352 +37,402 @@ fudgeFactor['ndch2comp'] = 0.2
 fudgeFactor['ndch2alpha'] = 0.04
 
 
-
 class McmcTuningsPart(object):
 
     def __init__(self, partNum):
-        object.__setattr__(self, 'num', partNum)
-        # It is no longer changed depending on the dim
-        object.__setattr__(self, 'comp', 0.3)
-        # This would depend on the dim; this is done in Mcmc.__init__()
-        object.__setattr__(self, 'compDir', 100.)
-        object.__setattr__(self, 'allCompsDir', 500.)
-        object.__setattr__(self, 'ndch2_leafCompsDir', 200.)
-        object.__setattr__(self, 'ndch2_internalCompsDir', 100.)
-        # rMatrix with sliders no longer changed depending on the dim (ie size of rMatrix)
-        object.__setattr__(self, 'rMatrix', 0.3)
-        # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
-        object.__setattr__(self, 'rMatrixDir', 200.)
-        object.__setattr__(self, 'twoP', 50.)
-        object.__setattr__(self, 'gdasrv', 2.0 * math.log(1.5))  # 0.811
-        #object.__setattr__(self, 'gdasrv', 2.0 * math.log(2.0))
-        #object.__setattr__(self, 'gdasrvPriorLambda', 0.5)
-        object.__setattr__(self, 'pInvar', 0.5)
-        object.__setattr__(self, 'compLocation', 0.0)
-        object.__setattr__(self, 'rMatrixLocation', 0.0)
 
-    def __setattr__(self, item, val):
-        # print "Got request to set %s to %s" % (item, val)
-        if item in self.__dict__:
-            if not isinstance(val, float):
-                gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
-                gm.append('Tunings must be floats.')
-                raise P4Error(gm)
-            # Sanity checking goes here.
-            if item in ['comp', 'rMatrix']:
-                if val > var.mcmcMaxCompAndRMatrixTuning:
-                    gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" %
-                          self.num]
-                    gm.append("Maximum tuning for '%s' is %s.  Got attempt to set it to %s" % (
-                        item, var.mcmcMaxCompAndRMatrixTuning, val))
-                    raise P4Error(gm)
-            # print "    Part %i, setting tuning of '%s' to %s" % (self.num,
-            # item, val)
-            object.__setattr__(self, item, val)
-        else:
-            gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
-            gm.append("    Can't set tuning '%s'-- no such tuning." % item)
-            raise P4Error(gm)
+        self.num = partNum
+        self.default = {}
+        # It is no longer changed depending on the dim
+        self.default['comp'] = 0.3
+        # This would depend on the dim; this is done in Mcmc.__init__()
+        self.default['compDir'] = 100.
+        self.default['allCompsDir'] = 500.
+        self.default['ndch2_leafCompsDir'] = 200.
+        self.default['ndch2_internalCompsDir'] = 100.
+        # rMatrix with sliders no longer changed depending on the dim (ie size of rMatrix)
+        self.default['rMatrix'] = 0.3
+        # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
+        self.default['rMatrixDir'] = 200.
+        self.default['twoP'] = 50.
+        self.default['gdasrv'] = 2.0 * math.log(1.5)  # 0.811
+        self.default['pInvar'] = 0.5
+        self.default['compLocation'] = 0.0
+        self.default['rMatrixLocation'] = 0.0
+
 
 
 class McmcTunings(object):
 
     def __init__(self, nParts):
-        object.__setattr__(self, 'nParts', nParts)
-        object.__setattr__(self, 'parts', [])
+        self.nParts = nParts
+        self.parts = []
         for pNum in range(nParts):
             self.parts.append(McmcTuningsPart(pNum))
-        object.__setattr__(self, 'chainTemp', 0.15)  # was 0.2
-        object.__setattr__(self, 'relRate', 0.5)
+        self.default = {}
+        self.default['relRate'] = 0.5
         # This next tuning is set so that by default the brLens go up or down
         # maximum 10%, ie from 0.909 to 1.1
-        object.__setattr__(self, 'local', 2.0 * math.log(1.1))  # 0.1906
-        #object.__setattr__(self, 'local', 100.)
-        object.__setattr__(self, 'brLen', 2.0 * math.log(2.0))  # 1.386
-        # Crux has  2.0 * math.log(1.6) as default
-        object.__setattr__(self, 'etbrLambda', 2.0 * math.log(1.6))
-        object.__setattr__(self, 'etbrPExt', 0.8)
-        object.__setattr__(self, 'brLenPriorLambda', 10.0)
-        object.__setattr__(self, 'brLenPriorLambdaForInternals', 1000.0)
-        object.__setattr__(self, 'doInternalBrLenPrior', False)
-        object.__setattr__(self, 'doPolytomyResolutionClassPrior', False)
-        object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
-        object.__setattr__(self, 'brLenPriorType', 'exponential')
-        #object.__setattr__(self, 'treeScale', 2.0 * math.log(1.1))
-        object.__setattr__(self, 'allBrLens', 2.0 * math.log(1.02))
+        self.default['local'] = 2.0 * math.log(1.1)  # 0.1906
+        self.default['brLen'] = 2.0 * math.log(2.0)  # 1.386
+        # Crux has  2.0 * math.log(1.6) as self.default
+        self.default['etbrLambda'] = 2.0 * math.log(1.6)
+        self.default['etbrPExt'] = 0.8
+        self.default['brLenPriorLambda'] = 10.0
+        self.default['brLenPriorLambdaForInternals'] = 1000.0
+        self.default['doInternalBrLenPrior'] = False
+        self.default['doPolytomyResolutionClassPrior'] = False
+        self.default['polytomyPriorLogBigC'] = 0.0
+        self.default['brLenPriorType'] = 'exponential'
+        self.default['allBrLens'] = 2.0 * math.log(1.02)
 
-    def __setattr__(self, item, val):
-        # print "Got request to set %s to %s" % (item, val)
-        if item in self.__dict__ and item not in ['nParts', 'parts']:
-            # Here is where I should do the sanity checking of the new vals.
-            if item == 'brLenPriorType':
-                assert val in ['exponential', 'uniform']
 
-            # print "    Setting tuning '%s' to %s" % (item, val)
-            object.__setattr__(self, item, val)
-        else:
-            print(self.dump())
-            gm = ["\nMcmcTunings.__setattr__()"]
-            gm.append("Can't set tuning '%s'-- no such tuning." % item)
-            raise P4Error(gm)
 
-    def reprString(self, advice=True):
-        lst = ["\nMcmc.tunings:  nParts=%s" % self.nParts]
-        spacer = ' ' * 4
+# class McmcTuningsPart(object):
 
-        lst.append("%s%15s: %s" % (spacer, 'chainTemp', self.chainTemp))
-        lst.append("%s%15s: %7.5f" % (spacer, 'local', self.local))
-        lst.append("%s%15s: %5.3f" % (spacer, 'brLen', self.brLen))
-        lst.append("%s%15s: %s" % (spacer, 'brLenPriorType', self.brLenPriorType))
-        lst.append("%s%15s: %5.3f" % (spacer, 'etbrPExt', self.etbrPExt))
-        lst.append("%s%15s: %5.3f" % (spacer, 'etbrLambda', self.etbrLambda))
-        lst.append("%s%15s: %.3f" % (spacer, 'relRate', self.relRate))
-        lst.append("%s%15s: %.3f" % (spacer, 'allBrLens', self.allBrLens))
-        lst.append("%s%15s: %5.3f" % (spacer, 'brLenPriorLambda', self.brLenPriorLambda))
-        #lst.append("%s%30s: %s" % (spacer, 'doPolytomyResolutionClassPrior', self.doPolytomyResolutionClassPrior))
-        #lst.append("%s%30s: %5.3f" % (spacer, 'polytomyPriorLogBigC', self.polytomyPriorLogBigC))
+#     def __init__(self, partNum):
+#         object.__setattr__(self, 'num', partNum)
+#         # It is no longer changed depending on the dim
+#         object.__setattr__(self, 'comp', 0.3)
+#         # This would depend on the dim; this is done in Mcmc.__init__()
+#         object.__setattr__(self, 'compDir', 100.)
+#         object.__setattr__(self, 'allCompsDir', 500.)
+#         object.__setattr__(self, 'ndch2_leafCompsDir', 200.)
+#         object.__setattr__(self, 'ndch2_internalCompsDir', 100.)
+#         # rMatrix with sliders no longer changed depending on the dim (ie size of rMatrix)
+#         object.__setattr__(self, 'rMatrix', 0.3)
+#         # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
+#         object.__setattr__(self, 'rMatrixDir', 200.)
+#         object.__setattr__(self, 'twoP', 50.)
+#         object.__setattr__(self, 'gdasrv', 2.0 * math.log(1.5))  # 0.811
+#         #object.__setattr__(self, 'gdasrv', 2.0 * math.log(2.0))
+#         #object.__setattr__(self, 'gdasrvPriorLambda', 0.5)
+#         object.__setattr__(self, 'pInvar', 0.5)
+#         object.__setattr__(self, 'compLocation', 0.0)
+#         object.__setattr__(self, 'rMatrixLocation', 0.0)
 
-        lst.append("")
+#     def __setattr__(self, item, val):
+#         # print "Got request to set %s to %s" % (item, val)
+#         if item in self.__dict__:
+#             if not isinstance(val, float):
+#                 gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
+#                 gm.append('Tunings must be floats.')
+#                 raise P4Error(gm)
+#             # Sanity checking goes here.
+#             if item in ['comp', 'rMatrix']:
+#                 if val > var.mcmcMaxCompAndRMatrixTuning:
+#                     gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" %
+#                           self.num]
+#                     gm.append("Maximum tuning for '%s' is %s.  Got attempt to set it to %s" % (
+#                         item, var.mcmcMaxCompAndRMatrixTuning, val))
+#                     raise P4Error(gm)
+#             # print "    Part %i, setting tuning of '%s' to %s" % (self.num,
+#             # item, val)
+#             object.__setattr__(self, item, val)
+#         else:
+#             gm = ["\nMcmcTuningsPart.__setattr__()  Part %i" % self.num]
+#             gm.append("    Can't set tuning '%s'-- no such tuning." % item)
+#             raise P4Error(gm)
 
-        theSig = "%s%22s"
-        aLine = theSig % (spacer, 'part-specific tunings')
-        for pNum in range(self.nParts):
-            aLine += " %14s" % pNum
-        lst.append(aLine)
 
-        aLine = theSig % (spacer, '')
-        for pNum in range(self.nParts):
-            aLine += " %14s" % '------'
-        lst.append(aLine)
+# class McmcTunings(object):
 
-        aLine = theSig % (spacer, 'comp')
-        for pNum in range(self.nParts):
-            aLine += " %14.3f" % self.parts[pNum].comp
-        lst.append(aLine)
+#     def __init__(self, nParts):
+#         object.__setattr__(self, 'nParts', nParts)
+#         object.__setattr__(self, 'parts', [])
+#         for pNum in range(nParts):
+#             self.parts.append(McmcTuningsPart(pNum))
+#         object.__setattr__(self, 'chainTemp', 0.15)  # was 0.2
+#         object.__setattr__(self, 'relRate', 0.5)
+#         # This next tuning is set so that by default the brLens go up or down
+#         # maximum 10%, ie from 0.909 to 1.1
+#         object.__setattr__(self, 'local', 2.0 * math.log(1.1))  # 0.1906
+#         #object.__setattr__(self, 'local', 100.)
+#         object.__setattr__(self, 'brLen', 2.0 * math.log(2.0))  # 1.386
+#         # Crux has  2.0 * math.log(1.6) as default
+#         object.__setattr__(self, 'etbrLambda', 2.0 * math.log(1.6))
+#         object.__setattr__(self, 'etbrPExt', 0.8)
+#         object.__setattr__(self, 'brLenPriorLambda', 10.0)
+#         object.__setattr__(self, 'brLenPriorLambdaForInternals', 1000.0)
+#         object.__setattr__(self, 'doInternalBrLenPrior', False)
+#         object.__setattr__(self, 'doPolytomyResolutionClassPrior', False)
+#         object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
+#         object.__setattr__(self, 'brLenPriorType', 'exponential')
+#         #object.__setattr__(self, 'treeScale', 2.0 * math.log(1.1))
+#         object.__setattr__(self, 'allBrLens', 2.0 * math.log(1.02))
 
-        aLine = theSig % (spacer, 'compDir')
-        for pNum in range(self.nParts):
-            aLine += " %14.3f" % self.parts[pNum].compDir
-        lst.append(aLine)
+#     def __setattr__(self, item, val):
+#         # print "Got request to set %s to %s" % (item, val)
+#         if item in self.__dict__ and item not in ['nParts', 'parts']:
+#             # Here is where I should do the sanity checking of the new vals.
+#             if item == 'brLenPriorType':
+#                 assert val in ['exponential', 'uniform']
 
-        aLine = theSig % (spacer, 'allCompsDir')
-        for pNum in range(self.nParts):
-            aLine += " %14.3f" % self.parts[pNum].allCompsDir
-        lst.append(aLine)
+#             # print "    Setting tuning '%s' to %s" % (item, val)
+#             object.__setattr__(self, item, val)
+#         else:
+#             print(self.dump())
+#             gm = ["\nMcmcTunings.__setattr__()"]
+#             gm.append("Can't set tuning '%s'-- no such tuning." % item)
+#             raise P4Error(gm)
 
-        aLine = theSig % (spacer, 'ndch2_leafCompsDir')
-        for pNum in range(self.nParts):
-            aLine += " %14.3f" % self.parts[pNum].ndch2_leafCompsDir
-        lst.append(aLine)
+#     def reprString(self, advice=True):
+#         lst = ["\nMcmc.tunings:  nParts=%s" % self.nParts]
+#         spacer = ' ' * 4
 
-        aLine = theSig % (spacer, 'ndch2_internalCompsDir')
-        for pNum in range(self.nParts):
-            aLine += " %14.3f" % self.parts[pNum].ndch2_internalCompsDir
-        lst.append(aLine)
+#         lst.append("%s%15s: %s" % (spacer, 'chainTemp', self.chainTemp))
+#         lst.append("%s%15s: %7.5f" % (spacer, 'local', self.local))
+#         lst.append("%s%15s: %5.3f" % (spacer, 'brLen', self.brLen))
+#         lst.append("%s%15s: %s" % (spacer, 'brLenPriorType', self.brLenPriorType))
+#         lst.append("%s%15s: %5.3f" % (spacer, 'etbrPExt', self.etbrPExt))
+#         lst.append("%s%15s: %5.3f" % (spacer, 'etbrLambda', self.etbrLambda))
+#         lst.append("%s%15s: %.3f" % (spacer, 'relRate', self.relRate))
+#         lst.append("%s%15s: %.3f" % (spacer, 'allBrLens', self.allBrLens))
+#         lst.append("%s%15s: %5.3f" % (spacer, 'brLenPriorLambda', self.brLenPriorLambda))
+#         #lst.append("%s%30s: %s" % (spacer, 'doPolytomyResolutionClassPrior', self.doPolytomyResolutionClassPrior))
+#         #lst.append("%s%30s: %5.3f" % (spacer, 'polytomyPriorLogBigC', self.polytomyPriorLogBigC))
 
-        aLine = theSig % (spacer, 'rMatrix')
-        for pNum in range(self.nParts):
-            aLine += " %14.3f" % self.parts[pNum].rMatrix
-        lst.append(aLine)
+#         lst.append("")
 
-        aLine = theSig % (spacer, 'rMatrixDir')
-        for pNum in range(self.nParts):
-            aLine += " %14.3f" % self.parts[pNum].rMatrixDir
-        lst.append(aLine)
+#         theSig = "%s%22s"
+#         aLine = theSig % (spacer, 'part-specific tunings')
+#         for pNum in range(self.nParts):
+#             aLine += " %14s" % pNum
+#         lst.append(aLine)
 
-        aLine = theSig % (spacer, 'twoP')
-        for pNum in range(self.nParts):
-            aLine += " %14.3f" % self.parts[pNum].twoP
-        lst.append(aLine)
+#         aLine = theSig % (spacer, '')
+#         for pNum in range(self.nParts):
+#             aLine += " %14s" % '------'
+#         lst.append(aLine)
 
-        aLine = theSig % (spacer, 'gdasrv')
-        for pNum in range(self.nParts):
-            #aLine += " %10s" % self.parts[pNum].gdasrv
-            aLine += " %14.3f" % self.parts[pNum].gdasrv
-        lst.append(aLine)
+#         aLine = theSig % (spacer, 'comp')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.3f" % self.parts[pNum].comp
+#         lst.append(aLine)
 
-        aLine = theSig % (spacer, 'pInvar')
-        for pNum in range(self.nParts):
-            aLine += " %14s" % self.parts[pNum].pInvar
-        lst.append(aLine)
+#         aLine = theSig % (spacer, 'compDir')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.3f" % self.parts[pNum].compDir
+#         lst.append(aLine)
 
-        aLine = theSig % (spacer, 'compLocation')
-        for pNum in range(self.nParts):
-            aLine += " %14.2f" % self.parts[pNum].compLocation
-        lst.append(aLine)
+#         aLine = theSig % (spacer, 'allCompsDir')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.3f" % self.parts[pNum].allCompsDir
+#         lst.append(aLine)
 
-        aLine = theSig % (spacer, 'rMatrixLocation')
-        for pNum in range(self.nParts):
-            aLine += " %14.2f" % self.parts[pNum].rMatrixLocation
-        lst.append(aLine)
+#         aLine = theSig % (spacer, 'ndch2_leafCompsDir')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.3f" % self.parts[pNum].ndch2_leafCompsDir
+#         lst.append(aLine)
 
-        if advice:
-            lst.append("\n  To change these settings, do eg")
-            lst.append("    yourMcmc.tunings.chainTemp = 0.15")
-            lst.append("  or")
-            lst.append("    yourMcmc.tunings.parts[0].comp = 0.5")
+#         aLine = theSig % (spacer, 'ndch2_internalCompsDir')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.3f" % self.parts[pNum].ndch2_internalCompsDir
+#         lst.append(aLine)
 
-        return '\n'.join(lst)
+#         aLine = theSig % (spacer, 'rMatrix')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.3f" % self.parts[pNum].rMatrix
+#         lst.append(aLine)
 
-    def dump(self, advice=True):
-        print(self.reprString(advice))
+#         aLine = theSig % (spacer, 'rMatrixDir')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.3f" % self.parts[pNum].rMatrixDir
+#         lst.append(aLine)
 
-    def __repr__(self):
-        return self.reprString()
+#         aLine = theSig % (spacer, 'twoP')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.3f" % self.parts[pNum].twoP
+#         lst.append(aLine)
+
+#         aLine = theSig % (spacer, 'gdasrv')
+#         for pNum in range(self.nParts):
+#             #aLine += " %10s" % self.parts[pNum].gdasrv
+#             aLine += " %14.3f" % self.parts[pNum].gdasrv
+#         lst.append(aLine)
+
+#         aLine = theSig % (spacer, 'pInvar')
+#         for pNum in range(self.nParts):
+#             aLine += " %14s" % self.parts[pNum].pInvar
+#         lst.append(aLine)
+
+#         aLine = theSig % (spacer, 'compLocation')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.2f" % self.parts[pNum].compLocation
+#         lst.append(aLine)
+
+#         aLine = theSig % (spacer, 'rMatrixLocation')
+#         for pNum in range(self.nParts):
+#             aLine += " %14.2f" % self.parts[pNum].rMatrixLocation
+#         lst.append(aLine)
+
+#         if advice:
+#             lst.append("\n  To change these settings, do eg")
+#             lst.append("    yourMcmc.tunings.chainTemp = 0.15")
+#             lst.append("  or")
+#             lst.append("    yourMcmc.tunings.parts[0].comp = 0.5")
+
+#         return '\n'.join(lst)
+
+#     def dump(self, advice=True):
+#         print(self.reprString(advice))
+
+#     def __repr__(self):
+#         return self.reprString()
 
 # McmcTuningsUsage is used only by autoTune().  It is used to allow
 # autoTune() to be able to get proposals easily.  So for example
 # mcmc.tuningsUsage.local is set to a Proposal object for local.
 
 
-class McmcTuningsUsagePart(object):
+# class McmcTuningsUsagePart(object):
 
-    def __init__(self, partNum):
-        object.__setattr__(self, 'num', partNum)
-        object.__setattr__(self, 'comp', [])
-        object.__setattr__(self, 'compDir', [])
-        object.__setattr__(self, 'allCompsDir', [])
-        object.__setattr__(self, 'ndch2_leafCompsDir', [])
-        object.__setattr__(self, 'ndch2_internalCompsDir', [])
-        object.__setattr__(self, 'rMatrix', [])
-        object.__setattr__(self, 'rMatrixDir', [])
-        object.__setattr__(self, 'gdasrv', [])
-        object.__setattr__(self, 'pInvar', None)
-        object.__setattr__(self, 'compLocation', None)
-        object.__setattr__(self, 'rMatrixLocation', None)
+#     def __init__(self, partNum):
+#         object.__setattr__(self, 'num', partNum)
+#         object.__setattr__(self, 'comp', [])
+#         object.__setattr__(self, 'compDir', [])
+#         object.__setattr__(self, 'allCompsDir', [])
+#         object.__setattr__(self, 'ndch2_leafCompsDir', [])
+#         object.__setattr__(self, 'ndch2_internalCompsDir', [])
+#         object.__setattr__(self, 'rMatrix', [])
+#         object.__setattr__(self, 'rMatrixDir', [])
+#         object.__setattr__(self, 'gdasrv', [])
+#         object.__setattr__(self, 'pInvar', None)
+#         object.__setattr__(self, 'compLocation', None)
+#         object.__setattr__(self, 'rMatrixLocation', None)
 
-    def __setattr__(self, item, val):
-        gm = ["\nMcmcTuningsUsagePart.__setattr__()  Part %i" % self.num]
-        gm.append("Can't set-- its not allowed.")
-        raise P4Error(gm)
+#     def __setattr__(self, item, val):
+#         gm = ["\nMcmcTuningsUsagePart.__setattr__()  Part %i" % self.num]
+#         gm.append("Can't set-- its not allowed.")
+#         raise P4Error(gm)
 
 
-class McmcTuningsUsage(object):
+# class McmcTuningsUsage(object):
 
-    """This class associates tunings with proposals."""
+#     """This class associates tunings with proposals."""
 
-    def __init__(self, nParts):
-        object.__setattr__(self, 'nParts', nParts)
-        object.__setattr__(self, 'parts', [])
-        for pNum in range(nParts):
-            self.parts.append(McmcTuningsUsagePart(pNum))
-        #object.__setattr__(self, 'chainTemp', None)
-        object.__setattr__(self, 'allBrLens', None)
-        object.__setattr__(self, 'brLen', None)
-        #object.__setattr__(self, 'eTBR', None)
-        object.__setattr__(self, 'local', None)
-        #object.__setattr__(self, 'polytomy', None)
-        object.__setattr__(self, 'relRate', None)
-        # root3 has no tuning
-        #object.__setattr__(self, 'treeScale', None)
+#     def __init__(self, nParts):
+#         object.__setattr__(self, 'nParts', nParts)
+#         object.__setattr__(self, 'parts', [])
+#         for pNum in range(nParts):
+#             self.parts.append(McmcTuningsUsagePart(pNum))
+#         #object.__setattr__(self, 'chainTemp', None)
+#         object.__setattr__(self, 'allBrLens', None)
+#         object.__setattr__(self, 'brLen', None)
+#         #object.__setattr__(self, 'eTBR', None)
+#         object.__setattr__(self, 'local', None)
+#         #object.__setattr__(self, 'polytomy', None)
+#         object.__setattr__(self, 'relRate', None)
+#         # root3 has no tuning
+#         #object.__setattr__(self, 'treeScale', None)
 
-    def __setattr__(self, item, val):
-        gm = ["\nMcmcTuningsUsage.__setattr__()"]
-        gm.append("Can't set-- its not allowed.")
-        raise P4Error(gm)
+#     def __setattr__(self, item, val):
+#         gm = ["\nMcmcTuningsUsage.__setattr__()"]
+#         gm.append("Can't set-- its not allowed.")
+#         raise P4Error(gm)
 
-    def reprString(self):
-        nTunings = 0
-        lst = ["\nMcmc.tuningsUsage:  nParts=%s" % self.nParts]
-        lst.append("Number of proposals used with the various tunings.")
-        spacer = ' ' * 4
-        #spacer2 = ' ' * 22
-        #lst.append("%s%15s: %s" % (spacer, 'chainTemp', self.chainTemp))
+#     def reprString(self):
+#         nTunings = 0
+#         lst = ["\nMcmc.tuningsUsage:  nParts=%s" % self.nParts]
+#         lst.append("Number of proposals used with the various tunings.")
+#         spacer = ' ' * 4
+#         #spacer2 = ' ' * 22
+#         #lst.append("%s%15s: %s" % (spacer, 'chainTemp', self.chainTemp))
 
-        if self.brLen:
-            nTunings += 1
-            lst.append("%s%15s: 1" % (spacer, 'brLen'))
-        else:
-            lst.append("%s%15s: None" % (spacer, 'brLen'))
+#         if self.brLen:
+#             nTunings += 1
+#             lst.append("%s%15s: 1" % (spacer, 'brLen'))
+#         else:
+#             lst.append("%s%15s: None" % (spacer, 'brLen'))
 
-        if self.allBrLens:
-            nTunings += 1
-            lst.append("%s%15s: 1" % (spacer, 'allBrLens'))
-        else:
-            lst.append("%s%15s: None" % (spacer, 'allBrLens'))
+#         if self.allBrLens:
+#             nTunings += 1
+#             lst.append("%s%15s: 1" % (spacer, 'allBrLens'))
+#         else:
+#             lst.append("%s%15s: None" % (spacer, 'allBrLens'))
 
-        if self.local:
-            nTunings += 1
-            lst.append("%s%15s: 1" % (spacer, 'local'))
-        else:
-            lst.append("%s%15s: None" % (spacer, 'local'))
+#         if self.local:
+#             nTunings += 1
+#             lst.append("%s%15s: 1" % (spacer, 'local'))
+#         else:
+#             lst.append("%s%15s: None" % (spacer, 'local'))
 
-        # if self.polytomy:
-        #    nTunings += 1
-        #    lst.append("%s%15s: 1" % (spacer, 'polytomy'))
-        # else:
-        #    lst.append("%s%15s: None" % (spacer, 'polytomy'))
+#         # if self.polytomy:
+#         #    nTunings += 1
+#         #    lst.append("%s%15s: 1" % (spacer, 'polytomy'))
+#         # else:
+#         #    lst.append("%s%15s: None" % (spacer, 'polytomy'))
 
-        if self.relRate:
-            nTunings += 1
-            lst.append("%s%15s: 1" % (spacer, 'relRate'))
-        else:
-            lst.append("%s%15s: None" % (spacer, 'relRate'))
+#         if self.relRate:
+#             nTunings += 1
+#             lst.append("%s%15s: 1" % (spacer, 'relRate'))
+#         else:
+#             lst.append("%s%15s: None" % (spacer, 'relRate'))
 
-        # if self.treeScale:
-        #     nTunings += 1
-        #     lst.append("%s%15s: 1" % (spacer, 'treeScale'))
-        # else:
-        #     lst.append("%s%15s: None" % (spacer, 'treeScale'))
-        lst.append("")
+#         # if self.treeScale:
+#         #     nTunings += 1
+#         #     lst.append("%s%15s: 1" % (spacer, 'treeScale'))
+#         # else:
+#         #     lst.append("%s%15s: None" % (spacer, 'treeScale'))
+#         lst.append("")
 
-        theSig = "%s%15s"
-        sig2 = "%s%22s: %i"
-        lst.append(theSig % (spacer, 'part-specific tunings'))
-        lst.append(theSig % (spacer, '---------------------'))
+#         theSig = "%s%15s"
+#         sig2 = "%s%22s: %i"
+#         lst.append(theSig % (spacer, 'part-specific tunings'))
+#         lst.append(theSig % (spacer, '---------------------'))
 
-        for pNum in range(self.nParts):
-            lst.append(theSig % (spacer, 'part %i    ' % pNum))
-            lst.append(sig2 % (spacer, 'comp', len(self.parts[pNum].comp)))
-            lst.append(sig2 %
-                       (spacer, 'compDir', len(self.parts[pNum].compDir)))
-            lst.append(sig2 %
-                       (spacer, 'allCompsDir', len(self.parts[pNum].allCompsDir)))
-            lst.append(sig2 %
-                       (spacer, 'ndch2_leafCompsDir', len(self.parts[pNum].ndch2_leafCompsDir)))
-            lst.append(sig2 %
-                       (spacer, 'ndch2_internalCompsDir', len(self.parts[pNum].ndch2_internalCompsDir)))
-            lst.append(sig2 %
-                       (spacer, 'rMatrix', len(self.parts[pNum].rMatrix)))
-            lst.append(sig2 %
-                       (spacer, 'rMatrixDir', len(self.parts[pNum].rMatrixDir)))
-            lst.append(sig2 % (spacer, 'gdasrv', len(self.parts[pNum].gdasrv)))
-            if len(self.parts[pNum].comp):
-                nTunings += 1
-            if len(self.parts[pNum].rMatrix):
-                nTunings += 1
-            if len(self.parts[pNum].gdasrv):
-                nTunings += 1
-            if self.parts[pNum].pInvar:
-                lst.append(sig2 % (spacer, 'pInvar', 1))
-                nTunings += 1
-            else:
-                lst.append(sig2 % (spacer, 'pInvar', 0))
+#         for pNum in range(self.nParts):
+#             lst.append(theSig % (spacer, 'part %i    ' % pNum))
+#             lst.append(sig2 % (spacer, 'comp', len(self.parts[pNum].comp)))
+#             lst.append(sig2 %
+#                        (spacer, 'compDir', len(self.parts[pNum].compDir)))
+#             lst.append(sig2 %
+#                        (spacer, 'allCompsDir', len(self.parts[pNum].allCompsDir)))
+#             lst.append(sig2 %
+#                        (spacer, 'ndch2_leafCompsDir', len(self.parts[pNum].ndch2_leafCompsDir)))
+#             lst.append(sig2 %
+#                        (spacer, 'ndch2_internalCompsDir', len(self.parts[pNum].ndch2_internalCompsDir)))
+#             lst.append(sig2 %
+#                        (spacer, 'rMatrix', len(self.parts[pNum].rMatrix)))
+#             lst.append(sig2 %
+#                        (spacer, 'rMatrixDir', len(self.parts[pNum].rMatrixDir)))
+#             lst.append(sig2 % (spacer, 'gdasrv', len(self.parts[pNum].gdasrv)))
+#             if len(self.parts[pNum].comp):
+#                 nTunings += 1
+#             if len(self.parts[pNum].rMatrix):
+#                 nTunings += 1
+#             if len(self.parts[pNum].gdasrv):
+#                 nTunings += 1
+#             if self.parts[pNum].pInvar:
+#                 lst.append(sig2 % (spacer, 'pInvar', 1))
+#                 nTunings += 1
+#             else:
+#                 lst.append(sig2 % (spacer, 'pInvar', 0))
 
-            # if self.parts[pNum].compLocation:
-            if len(self.parts[pNum].comp) > 1:
-                lst.append(sig2 % (spacer, 'compLocation', 1))
-                nTunings += 1
-            else:
-                lst.append(sig2 % (spacer, 'compLocation', 0))
+#             # if self.parts[pNum].compLocation:
+#             if len(self.parts[pNum].comp) > 1:
+#                 lst.append(sig2 % (spacer, 'compLocation', 1))
+#                 nTunings += 1
+#             else:
+#                 lst.append(sig2 % (spacer, 'compLocation', 0))
 
-            # if self.parts[pNum].rMatrixLocation:
-            if len(self.parts[pNum].rMatrix) > 1:
-                lst.append(sig2 % (spacer, 'rMatrixLocation', 1))
-                nTunings += 1
-            else:
-                lst.append(sig2 % (spacer, 'rMatrixLocation', 0))
+#             # if self.parts[pNum].rMatrixLocation:
+#             if len(self.parts[pNum].rMatrix) > 1:
+#                 lst.append(sig2 % (spacer, 'rMatrixLocation', 1))
+#                 nTunings += 1
+#             else:
+#                 lst.append(sig2 % (spacer, 'rMatrixLocation', 0))
 
-        lst.append(
-            "There are %i tunings for the model (not including the chainTemp tuning, if it exists)." % nTunings)
+#         lst.append(
+#             "There are %i tunings for the model (not including the chainTemp tuning, if it exists)." % nTunings)
 
-        return '\n'.join(lst)
+#         return '\n'.join(lst)
 
-    def dump(self):
-        print(self.reprString())
+#     def dump(self):
+#         print(self.reprString())
 
-    def __repr__(self):
-        return self.reprString()
+#     def __repr__(self):
+#         return self.reprString()
 
 
 class McmcProposalProbs(dict):
@@ -427,7 +477,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'root3', 0.0)
         object.__setattr__(self, 'compLocation', 0.0)
         object.__setattr__(self, 'rMatrixLocation', 0.0)
-        object.__setattr__(self, 'gdasrvLocation', 0.0)
+        #object.__setattr__(self, 'gdasrvLocation', 0.0)
         object.__setattr__(self, 'relRate', 1.0)
 
     def __setattr__(self, item, val):
@@ -474,67 +524,146 @@ class Proposal(object):
     def __init__(self, theMcmc=None):
         self.name = None
         self.variant = 'gtr'  # only for rMatrix.  2p or gtr
-        self.mcmc = theMcmc
+        #self.mcmc = theMcmc
         self.nChains = theMcmc.nChains
         self.pNum = -1
         #self.mtNum = -1
         self.weight = 1.0
-        #self.tuning = None  # a property
-        self.nProposals = [0] * self.nChains
-        self.nAcceptances = [0] * self.nChains
+        self.tuning = None  
+        self.nProposals = [0] * theMcmc.nChains
+        self.nAcceptances = [0] * theMcmc.nChains
         self.accepted = 0
         self.topologyChanged = 0
-        self.nTopologyChangeAttempts = [0] * self.nChains
-        self.nTopologyChanges = [0] * self.nChains
+        self.nTopologyChangeAttempts = [0] * theMcmc.nChains
+        self.nTopologyChanges = [0] * theMcmc.nChains
         self.doAbort = False
-        self.nAborts = [0] * self.nChains
+        self.nAborts = [0] * theMcmc.nChains
 
     def dump(self):
         print("proposal name=%-10s pNum=%2s, weight=%s, tuning=%s" % (
             '%s,' % self.name, self.pNum, self.weight, self.tuning))
         #print("proposal name=%-10s pNum=%2i, weight=%5.1f, tuning=%7.2f" % (
         #    '%s,' % self.name, self.pNum, self.weight, self.tuning))
-        print("    nProposals   by temperature:  %s" % self.nProposals)
-        print("    nAcceptances by temperature:  %s" % self.nAcceptances)
+        #print("    nProposals   by temperature:  %s" % self.nProposals)
+        #print("    nAcceptances by temperature:  %s" % self.nAcceptances)
 
-    # Some tunings are part-specific, and so are associated with the proposals.
-    def _getTuning(self):
-        if self.name in ['relRate', 'local', 'brLen', 'treeScale', 'allBrLens']:
-            # print "getting tuning for %s, returning %f" % (self.name,
-            # getattr(self.mcmc.tunings, self.name))
-            return getattr(self.mcmc.tunings, self.name)
-        elif self.name in ['eTBR']:
-            return getattr(self.mcmc.tunings, 'etbrLambda')
-        elif self.name in ['comp', 'compDir', 'allCompsDir', 
-                           'ndch2_leafCompsDir', 'ndch2_internalCompsDir',
-                           'rjComp', 'rMatrix', 
-                           'rMatrixDir', 'rjRMatrix', 'gdasrv', 'pInvar']:
-            # print "getting tuning for %s, partNum %i, returning %f" % (
-            #    self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum], self.name))
-            # the variant attribute is new, and can mess up reading older
-            # pickles.
-            if self.name in ['rMatrix', 'rMatrixDir'] and self.variant == '2p':
-                return getattr(self.mcmc.tunings.parts[self.pNum], 'twoP')
+    # # Some tunings are part-specific, and so are associated with the proposals.
+    # def _getTuning(self):
+    #     if self.name in ['relRate', 'local', 'brLen', 'treeScale', 'allBrLens']:
+    #         # print "getting tuning for %s, returning %f" % (self.name,
+    #         # getattr(self.mcmc.tunings, self.name))
+    #         return getattr(self.mcmc.tunings, self.name)
+    #     elif self.name in ['eTBR']:
+    #         return getattr(self.mcmc.tunings, 'etbrLambda')
+    #     elif self.name in ['comp', 'compDir', 'allCompsDir', 
+    #                        'ndch2_leafCompsDir', 'ndch2_internalCompsDir',
+    #                        'rjComp', 'rMatrix', 
+    #                        'rMatrixDir', 'rjRMatrix', 'gdasrv', 'pInvar']:
+    #         # print "getting tuning for %s, partNum %i, returning %f" % (
+    #         #    self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum], self.name))
+    #         # the variant attribute is new, and can mess up reading older
+    #         # pickles.
+    #         if self.name in ['rMatrix', 'rMatrixDir'] and self.variant == '2p':
+    #             return getattr(self.mcmc.tunings.parts[self.pNum], 'twoP')
+    #         else:
+    #             return getattr(self.mcmc.tunings.parts[self.pNum], self.name)
+    #     elif self.name in ['compLocation', 'rMatrixLocation']:
+    #         # print "getting tuning for %s, partNum %i, returning %f" % (
+    #         # self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum],
+    #         # self.name))
+    #         if hasattr(self.mcmc.tunings.parts[self.pNum], self.name):
+    #             return getattr(self.mcmc.tunings.parts[self.pNum], self.name)
+    #         else:
+    #             return None
+    #     else:
+    #         return None
+
+    # def _setTuning(self, whatever):
+    #     raise P4Error("Can't set tuning this way.")
+
+    # def _delTuning(self):
+    #     raise P4Error("Can't del tuning.")
+
+    # tuning = property(_getTuning, _setTuning, _delTuning)
+
+class Proposals(object):
+    def __init__(self):
+        self.proposals = []
+        self.proposalsDict = {}
+        self.propWeights = []
+        self.cumPropWeights = []
+        self.totalPropWeights = 0.0
+        self.intended = None
+
+    def summary(self):
+        print("There are %i proposals" % len(self.proposals))
+        for p in self.proposals:
+            print("proposal name=%-10s pNum=%2s, weight=%s, tuning=%s" % (
+                '%s,' % p.name, p.pNum, p.weight, p.tuning))
+            
+    def calculateWeights(self):
+        gm = ["Proposals.calculateWeights()"]
+        self.propWeights = []
+        for p in self.proposals:
+            #print("%s: %s" % (p.name, p.weight))
+            self.propWeights.append(p.weight)
+        #print(self.propWeights)
+        self.cumPropWeights = [self.propWeights[0]]
+        for i in range(len(self.propWeights))[1:]:
+            self.cumPropWeights.append(
+                self.cumPropWeights[i - 1] + self.propWeights[i])
+        self.totalPropWeights = sum(self.propWeights)
+        if self.totalPropWeights < 1e-9:
+            gm.append("No proposal weights?")
+            raise P4Error(gm)
+        self.intended = self.propWeights[:]
+        for i in range(len(self.intended)):
+            self.intended[i] /= self.totalPropWeights
+        if math.fabs(sum(self.intended) - 1.0 > 1e-14):
+            raise P4Error("bad sum of intended proposal probs. %s" % sum(self.intended))
+        #print(self.intended)
+
+    def chooseProposal(self):
+        theRan = random.uniform(0.0, self.totalPropWeights)
+        for i in range(len(self.cumPropWeights)):
+            if theRan < self.cumPropWeights[i]:
+                break
+        return self.proposals[i]
+        
+
+    def writeProposalIntendedProbs(self):
+        """Tabulate the intended proposal probabilities"""
+
+        spacer = ' ' * 4
+        print("\nIntended proposal probabilities (%)")
+        print("There are %i proposals" % len(self.proposals))
+        print("%2s %11s %30s %5s %12s" % ('', 'intended(%)', 'proposal', 'part', 'tuning'))
+        for i in range(len(self.proposals)):
+            print("%2i" % i, end=' ')
+            p = self.proposals[i]
+            print("   %6.2f    " % (100. * self.intended[i]), end=' ')
+
+            print(" %27s" % p.name, end=' ')
+
+            if p.pNum != -1:
+                print(" %3i " % p.pNum, end=' ')
             else:
-                return getattr(self.mcmc.tunings.parts[self.pNum], self.name)
-        elif self.name in ['compLocation', 'rMatrixLocation']:
-            # print "getting tuning for %s, partNum %i, returning %f" % (
-            # self.name, self.pNum, getattr(self.mcmc.tunings.parts[self.pNum],
-            # self.name))
-            if hasattr(self.mcmc.tunings.parts[self.pNum], self.name):
-                return getattr(self.mcmc.tunings.parts[self.pNum], self.name)
+                print("   - ", end=' ')
+
+            if p.tuning == None:
+                print(" %12s "% '    -   ', end=' ')
             else:
-                return None
-        else:
-            return None
+                if p.tuning < 0.1:
+                    print(" %12.4g" % p.tuning, end=' ')
+                elif p.tuning < 1.0:
+                    print(" %12.4f" % p.tuning, end=' ')
+                elif p.tuning < 10.0:
+                    print(" %12.3f" % p.tuning, end=' ')
+                else:
+                    print(" %12s " % p.tuning, end=' ')
+            print()
 
-    def _setTuning(self, whatever):
-        raise P4Error("Can't set tuning this way.")
 
-    def _delTuning(self):
-        raise P4Error("Can't del tuning.")
-
-    tuning = property(_getTuning, _setTuning, _delTuning)
 
 class SwapTuner(object):
     """Continuous tuning for swap temperature"""
@@ -753,6 +882,7 @@ class Mcmc(object):
         self.chains = []
         self.gen = -1
         self.startMinusOne = -1
+        self.chainTemp = 0.15
 
         for n in self.tree.iterNodesNoRoot():
             if n.br.len < var.BRLEN_MIN:
@@ -814,11 +944,12 @@ class Mcmc(object):
         self.sampleInterval = sampleInterval
         self.checkPointInterval = checkPointInterval
 
-        self.proposals = []
-        self.proposalsHash = {}
-        self.propWeights = []
-        self.cumPropWeights = []
-        self.totalPropWeights = 0.0
+        # self.proposals = []
+        # self.proposalsHash = {}
+        # self.propWeights = []
+        # self.cumPropWeights = []
+        # self.totalPropWeights = 0.0
+        self.props = Proposals()
 
         self.treePartitions = None
         self.likesFileName = "mcmc_likes_%i" % runNum
@@ -886,10 +1017,10 @@ class Mcmc(object):
             tf.close()
             #self.tunings.dump()
         else:
-            self.tunings = McmcTunings(self.tree.model.nParts)
+            self._tunings = McmcTunings(self.tree.model.nParts)
 
         # tuningsUsage is only used by autoTune()
-        self.tuningsUsage = McmcTuningsUsage(self.tree.model.nParts)
+        # self.tuningsUsage = McmcTuningsUsage(self.tree.model.nParts)
         self.prob = McmcProposalProbs()
 
         # Tuning hack --- for old dirichlet proposals
@@ -949,14 +1080,14 @@ class Mcmc(object):
         # Two new tunings --- compDir and rMatrixDir, seem to depend on the dim.
         # And now allCompsDir
         if 1 and not tuningsFileName:
-            for pNum in range(self.tunings.nParts):
+            for pNum in range(self._tunings.nParts):
                 theDim = self.tree.model.parts[pNum].dim
                 nRates = ((theDim * theDim) - theDim) / 2
-                self.tunings.parts[pNum].compDir = 50. * theDim
-                self.tunings.parts[pNum].allCompsDir = 100. * theDim
-                self.tunings.parts[pNum].ndch2_leafCompsDir = 2000. * theDim
-                self.tunings.parts[pNum].ndch2_internalCompsDir = 500. * theDim
-                self.tunings.parts[pNum].rMatrixDir = 50. * nRates
+                self._tunings.parts[pNum].default['compDir'] = 50. * theDim
+                self._tunings.parts[pNum].default['allCompsDir'] = 100. * theDim
+                self._tunings.parts[pNum].default['ndch2_leafCompsDir'] = 2000. * theDim
+                self._tunings.parts[pNum].default['ndch2_internalCompsDir'] = 500. * theDim
+                self._tunings.parts[pNum].default['rMatrixDir'] = 50. * nRates
             
 
 
@@ -1098,7 +1229,7 @@ class Mcmc(object):
         gm = ['Mcmc._makeProposals()']
 
         # The weight determines how often proposals are made.  The
-        # weight is the product of 3 things:
+        # weight is the product of 4 things:
         #
         #    1.  User-settable self.prob.something.  Its going to be
         #        1.0 by default, if it is on.
@@ -1109,7 +1240,11 @@ class Mcmc(object):
         #        would have a complexity of 3, and a protein
         #        composition would have a complexity of 19.
         #
-        #    3.  A fudge factor.  Arbitrary witchcraft.
+        #    3.  In the NDCH or NDRH model, the number of comps or rMatrices in
+        #        the partition.  So two comps doubles the weight compared to one
+        #        comp.
+        #
+        #    4.  A fudge factor.  Arbitrary witchcraft.
         #
         # So for example, for the 'local' proposal, the inherent
         # complexity is the number of nodes in the tree.  That is the
@@ -1121,55 +1256,58 @@ class Mcmc(object):
         if self.prob.brLen:
             p = Proposal(self)
             p.name = 'brLen'
+            p.tuning = self._tunings.default[p.name]
+            p.brLenPriorType = self._tunings.default['brLenPriorType']
+            p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
             p.weight = self.prob.brLen * \
                 (len(self.tree.nodes) - 1) * fudgeFactor['brLen']
-            self.proposals.append(p)
-            object.__setattr__(self.tuningsUsage, 'brLen', p)
+            self.props.proposals.append(p)
 
         # allBrLens
         if self.prob.allBrLens:
             p = Proposal(self)
             p.name = 'allBrLens'
+            p.tuning = self._tunings.default[p.name]
+            p.brLenPriorType = self._tunings.default['brLenPriorType']
+            p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
             p.weight = self.prob.allBrLens * \
                 (len(self.tree.nodes) - 1) * fudgeFactor['allBrLens']
-            self.proposals.append(p)
-            object.__setattr__(self.tuningsUsage, 'allBrLens', p)
+            self.props.proposals.append(p)
 
         # eTBR
         if self.prob.eTBR:
             p = Proposal(self)
             p.name = 'eTBR'
+            p.etbrLambda = self._tunings.default['etbrLambda']
+            p.etbrPExt = self._tunings.default['etbrPExt']
+            p.brLenPriorType = self._tunings.default['brLenPriorType']
+            p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
             p.weight = self.prob.eTBR * \
                 (len(self.tree.nodes) - 1) * fudgeFactor['eTBR']
-            self.proposals.append(p)
-            #object.__setattr__(self.tuningsUsage, 'eTBR', p)
+            self.props.proposals.append(p)
 
         # local
         if self.prob.local:
             p = Proposal(self)
             p.name = 'local'
+            p.tuning = self._tunings.default[p.name]
+            p.brLenPriorType = self._tunings.default['brLenPriorType']
+            p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
             p.weight = self.prob.local * \
                 (len(self.tree.nodes) - 1) * fudgeFactor['local']
-            self.proposals.append(p)
-            object.__setattr__(self.tuningsUsage, 'local', p)
-
-        # # treeScale
-        # if self.prob.treeScale:
-        #     p = Proposal(self)
-        #     p.name = 'treeScale'
-        #     p.weight = self.prob.treeScale * \
-        #         (len(self.tree.nodes) - 1) * fudgeFactor['treeScale']
-        #     self.proposals.append(p)
-        #     object.__setattr__(self.tuningsUsage, 'treeScale', p)
+            self.props.proposals.append(p)
 
         # polytomy
         if self.prob.polytomy:
             p = Proposal(self)
             p.name = 'polytomy'
+            p.brLenPriorType = self._tunings.default['brLenPriorType']
+            p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
+            p.doPolytomyResolutionClassPrior = self._tunings.default['doPolytomyResolutionClassPrior']
+            p.polytomyPriorLogBigC = self._tunings.default['polytomyPriorLogBigC']
             p.weight = self.prob.polytomy * \
                 (len(self.tree.nodes) - 1) * fudgeFactor['polytomy']
-            self.proposals.append(p)
-            #object.__setattr__(self.tuningsUsage, 'polytomy', p)
+            self.props.proposals.append(p)
 
         # root3
         if self.prob.root3:
@@ -1180,7 +1318,7 @@ class Mcmc(object):
             else:
                 p.weight = self.prob.root3 * \
                     (len(self.tree.taxNames) - 3) * fudgeFactor['root3']
-            self.proposals.append(p)
+            self.props.proposals.append(p)
 
         # relRate
         if self.prob.relRate:
@@ -1189,9 +1327,9 @@ class Mcmc(object):
             if self.tree.model.doRelRates and self.tree.model.relRatesAreFree:
                 p = Proposal(self)
                 p.name = 'relRate'
+                p.tuning = self._tunings.default[p.name]
                 p.weight = self.prob.relRate * self.tree.model.nParts
-                self.proposals.append(p)
-                object.__setattr__(self.tuningsUsage, 'relRate', p)
+                self.props.proposals.append(p)
 
         # comp, rMatrix, gdasrv, pInvar, modelThingLocations ...
         for pNum in range(self.tree.model.nParts):
@@ -1204,10 +1342,10 @@ class Mcmc(object):
                         assert mp.comps[mtNum].free
                     p = Proposal(self)
                     p.name = 'comp'
+                    p.tuning = self._tunings.parts[pNum].default[p.name]
                     p.weight = self.prob.comp * (mp.dim - 1) * mp.nComps
                     p.pNum = pNum
-                    self.proposals.append(p)
-                    self.tuningsUsage.parts[pNum].comp.append(p)
+                    self.props.proposals.append(p)
 
             # compDir
             if self.prob.compDir:
@@ -1216,10 +1354,10 @@ class Mcmc(object):
                         assert mp.comps[mtNum].free
                     p = Proposal(self)
                     p.name = 'compDir'
+                    p.tuning = self._tunings.parts[pNum].default[p.name]
                     p.weight = self.prob.compDir * (mp.dim - 1) * mp.nComps
                     p.pNum = pNum
-                    self.proposals.append(p)
-                    self.tuningsUsage.parts[pNum].compDir.append(p)
+                    self.props.proposals.append(p)
 
             # allCompsDir
             if self.prob.allCompsDir:
@@ -1228,10 +1366,10 @@ class Mcmc(object):
                         assert mp.comps[mtNum].free
                     p = Proposal(self)
                     p.name = 'allCompsDir'
+                    p.tuning = self._tunings.parts[pNum].default[p.name]
                     p.weight = self.prob.allCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['allCompsDir']
                     p.pNum = pNum
-                    self.proposals.append(p)
-                    self.tuningsUsage.parts[pNum].allCompsDir.append(p)
+                    self.props.proposals.append(p)
 
             # ndch2_leafCompsDir
             if self.prob.ndch2_leafCompsDir:
@@ -1239,10 +1377,10 @@ class Mcmc(object):
                     assert mp.comps[mtNum].free
                 p = Proposal(self)
                 p.name = 'ndch2_leafCompsDir'
+                p.tuning = self._tunings.parts[pNum].default[p.name]
                 p.weight = self.prob.ndch2_leafCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
                 p.pNum = pNum
-                self.proposals.append(p)
-                self.tuningsUsage.parts[pNum].ndch2_leafCompsDir.append(p)
+                self.props.proposals.append(p)
 
             # ndch2_internalCompsDir
             if self.prob.ndch2_internalCompsDir:
@@ -1250,28 +1388,28 @@ class Mcmc(object):
                     assert mp.comps[mtNum].free
                 p = Proposal(self)
                 p.name = 'ndch2_internalCompsDir'
+                p.tuning = self._tunings.parts[pNum].default[p.name]
                 p.weight = self.prob.ndch2_internalCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
                 p.pNum = pNum
-                self.proposals.append(p)
-                self.tuningsUsage.parts[pNum].ndch2_internalCompsDir.append(p)
+                self.props.proposals.append(p)
 
             # ndch2_leafCompsDirAlpha
             if self.prob.ndch2_leafCompsDirAlpha:
                 p = Proposal(self)
                 p.name = 'ndch2_leafCompsDirAlpha'
+                p.tuning = self._tunings.parts[pNum].default[p.name]
                 p.weight = self.prob.ndch2_leafCompsDirAlpha * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
                 p.pNum = pNum
-                self.proposals.append(p)
-                #self.tuningsUsage.parts[pNum].allCompsDir.append(p)
+                self.props.proposals.append(p)
 
             # ndch2_internalCompsDirAlpha
             if self.prob.ndch2_internalCompsDirAlpha:
                 p = Proposal(self)
                 p.name = 'ndch2_internalCompsDirAlpha'
+                p.tuning = self._tunings.parts[pNum].default[p.name]
                 p.weight = self.prob.ndch2_internalCompsDirAlpha * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
                 p.pNum = pNum
-                self.proposals.append(p)
-                #self.tuningsUsage.parts[pNum].allCompsDir.append(p)
+                self.props.proposals.append(p)
 
             # rMatrix
             if self.prob.rMatrix:
@@ -1283,12 +1421,13 @@ class Mcmc(object):
                     if mp.rMatrices[mtNum].spec == '2p':
                         p.weight = self.prob.rMatrix
                         p.variant = '2p'
+                        p.tuning = self._tunings.parts[pNum].default['twoP']
                     else:
+                        p.tuning = self._tunings.parts[pNum].default[p.name]
                         p.weight = self.prob.rMatrix * mp.nRMatrices * \
                             (((mp.dim * mp.dim) - mp.dim) / 2)
                     p.pNum = pNum
-                    self.proposals.append(p)
-                    self.tuningsUsage.parts[pNum].rMatrix.append(p)
+                    self.props.proposals.append(p)
 
             # rMatrixDir
             if self.prob.rMatrixDir:
@@ -1300,12 +1439,13 @@ class Mcmc(object):
                     if mp.rMatrices[mtNum].spec == '2p':
                         p.weight = self.prob.rMatrixDir
                         p.variant = '2p'
+                        p.tuning = self._tunings.parts[pNum].default['twoP']
                     else:
+                        p.tuning = self._tunings.parts[pNum].default[p.name]
                         p.weight = self.prob.rMatrixDir * mp.nRMatrices * \
                             (((mp.dim * mp.dim) - mp.dim) / 2)
                     p.pNum = pNum
-                    self.proposals.append(p)
-                    self.tuningsUsage.parts[pNum].rMatrixDir.append(p)
+                    self.props.proposals.append(p)
 
             # gdasrv
             if self.prob.gdasrv:
@@ -1313,77 +1453,67 @@ class Mcmc(object):
                     assert mp.nGdasrvs == 1
                     p = Proposal(self)
                     p.name = 'gdasrv'
+                    p.tuning = self._tunings.parts[pNum].default[p.name]
                     p.weight = self.prob.gdasrv
                     p.pNum = pNum
-                    self.proposals.append(p)
-                    self.tuningsUsage.parts[pNum].gdasrv.append(p)
+                    self.props.proposals.append(p)
 
             # pInvar
             if self.prob.pInvar:
                 if mp.pInvar.free:
                     p = Proposal(self)
                     p.name = 'pInvar'
+                    p.tuning = self._tunings.parts[pNum].default[p.name]
                     p.weight = self.prob.pInvar
                     p.pNum = pNum
-                    self.proposals.append(p)
-                    object.__setattr__(self.tuningsUsage.parts[pNum], 'pInvar', p)
+                    self.props.proposals.append(p)
 
             # compLocation
             if self.prob.compLocation:
                 if mp.nComps > 1 and not mp.cmd1:
                     p = Proposal(self)
                     p.name = 'compLocation'
+                    p.tuning = self._tunings.parts[pNum].default[p.name]
                     p.weight = self.prob.compLocation * mp.nComps * len(self.tree.nodes) * \
                         fudgeFactor['compLocation']
                     p.pNum = pNum
-                    self.proposals.append(p)
+                    self.props.proposals.append(p)
 
             # rMatrixLocation
             if self.prob.rMatrixLocation:
                 if mp.nRMatrices > 1:
                     p = Proposal(self)
                     p.name = 'rMatrixLocation'
+                    p.tuning = self._tunings.parts[pNum].default[p.name]
                     p.weight = self.prob.rMatrixLocation * mp.nRMatrices * (len(self.tree.nodes) - 1) * \
                         fudgeFactor['rMatrixLocation']
                     p.pNum = pNum
-                    self.proposals.append(p)
+                    self.props.proposals.append(p)
 
-            # gdasrvLocation
-            if self.prob.gdasrvLocation:
-                if mp.nGdasrvs > 1:
-                    p = Proposal(self)
-                    p.name = 'gdasrvLocation'
-                    p.weight = self.prob.gdasrvLocation * mp.nGdasrvs * (len(self.tree.nodes) - 1) * \
-                        fudgeFactor['gdasrvLocation']
-                    p.pNum = pNum
-                    self.proposals.append(p)
+            # # gdasrvLocation
+            # if self.prob.gdasrvLocation:
+            #     if mp.nGdasrvs > 1:
+            #         p = Proposal(self)
+            #         p.name = 'gdasrvLocation'
+            #         p.weight = self.prob.gdasrvLocation * mp.nGdasrvs * (len(self.tree.nodes) - 1) * \
+            #             fudgeFactor['gdasrvLocation']
+            #         p.pNum = pNum
+            #         self.props.proposals.append(p)
 
 
-        if not self.proposals:
+        if not self.props.proposals:
             gm.append("No proposals?")
             raise P4Error(gm)
-        self.propWeights = []
-        for p in self.proposals:
-            # print "%s: %s" % (p.name, p.weight)
-            self.propWeights.append(p.weight)
-        # print self.propWeights
-        self.cumPropWeights = [self.propWeights[0]]
-        for i in range(len(self.propWeights))[1:]:
-            self.cumPropWeights.append(
-                self.cumPropWeights[i - 1] + self.propWeights[i])
-        self.totalPropWeights = sum(self.propWeights)
-        if self.totalPropWeights < 1e-9:
-            gm.append("No proposal weights?")
-            raise P4Error(gm)
-        for p in self.proposals:
-            self.proposalsHash[p.name] = p
+        for p in self.props.proposals:
+            self.props.proposalsDict[p.name] = p
+        self.props.calculateWeights()
 
     def _refreshProposalProbsAndTunings(self):
         """Adjust proposals after a restart."""
 
         gm = ['Mcmc._refreshProposalProbsAndTunings()']
 
-        for p in self.proposals:
+        for p in self.props.proposals:
             # brLen
             if p.name == 'brLen':
                 p.weight = self.prob.brLen * \
@@ -1429,12 +1559,12 @@ class Mcmc(object):
             # comp
             if p.name == 'comp':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.comp * float(mp.dim - 1)
+                p.weight = self.prob.comp * float(mp.dim - 1) * mp.nComps
 
             # compDir
             if p.name == 'compDir':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.compDir * float(mp.dim - 1)
+                p.weight = self.prob.compDir * float(mp.dim - 1) * mp.nComps
 
             # allCompsDir
             if p.name == 'allCompsDir':
@@ -1461,17 +1591,13 @@ class Mcmc(object):
                 mp = self.tree.model.parts[p.pNum]
                 p.weight = self.prob.ndch2_internalCompsDirAlpha * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
 
-            # # rjComp
-            # if p.name == 'rjComp':
-            #     p.weight = self.prob.rjComp * fudgeFactor['rjComp']
-
             # rMatrix
             if p.name == 'rMatrix':
                 mp = self.tree.model.parts[p.pNum]
                 if mp.rMatrices[0].spec == '2p':
                     p.weight = self.prob.rMatrix
                 else:
-                    p.weight = self.prob.rMatrix * \
+                    p.weight = self.prob.rMatrix * mp.nRMatrices * \
                         ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
 
             # rMatrixDir
@@ -1480,12 +1606,8 @@ class Mcmc(object):
                 if mp.rMatrices[0].spec == '2p':
                     p.weight = self.prob.rMatrixDir
                 else:
-                    p.weight = self.prob.rMatrixDir * \
+                    p.weight = self.prob.rMatrixDir * mp.nRMatrices * \
                         ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
-
-            # # rjRMatrix
-            # if p.name == 'rjRMatrix':
-            #     p.weight = self.prob.rjRMatrix * fudgeFactor['rjRMatrix']
 
             # gdasrv
             if p.name == 'gdasrv':
@@ -1513,11 +1635,9 @@ class Mcmc(object):
                 p.weight = self.prob.gdasrvLocation * mp.nGdasrvs * (len(self.tree.nodes) - 1) * \
                     fudgeFactor['gdasrvLocation']
 
-            if p.name.startswith('cmd1_'):
-                raise P4Error("fix me!")
 
         self.propWeights = []
-        for p in self.proposals:
+        for p in self.props.proposals:
             self.propWeights.append(p.weight)
         self.cumPropWeights = [self.propWeights[0]]
         for i in range(len(self.propWeights))[1:]:
@@ -1541,7 +1661,7 @@ class Mcmc(object):
             print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
                 self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
             print("%s %30s %5s %10s %13s%8s" % (spacer, 'proposal', 'part', 'nProposals', 'acceptance(%)', 'tuning'))
-            for p in self.proposals:
+            for p in self.props.proposals:
                 print("%s" % spacer, end=' ')
                 print("%30s" % p.name, end=' ')
                 if p.pNum != -1:
@@ -1565,18 +1685,13 @@ class Mcmc(object):
 
             # Tabulate topology changes for 'local', if any were attempted.
             doTopol = 0
-            p = None
-            try:
-                p = self.proposalsHash['local']
-            except KeyError:
-                pass
+            p = self.props.proposalsDict.get('local')
             if p:
                 for tNum in range(self.nChains):
                     if p.nTopologyChangeAttempts[tNum]:
                         doTopol = 1
                         break
                 if doTopol:
-                    p = self.proposalsHash['local']
                     print("'Local' proposal-- attempted topology changes")
                     print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
                     for tNum in range(self.nChains):
@@ -1594,18 +1709,13 @@ class Mcmc(object):
 
             # do the same for eTBR
             doTopol = 0
-            p = None
-            try:
-                p = self.proposalsHash['eTBR']
-            except KeyError:
-                pass
+            p = self.props.proposalsDict.get('eTBR')
             if p:
                 for tNum in range(self.nChains):
                     if p.nTopologyChangeAttempts[tNum]:
                         doTopol = 1
                         break
                 if doTopol:
-                    p = self.proposalsHash['eTBR']
                     print("'eTBR' proposal-- attempted topology changes")
                     print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
                     for tNum in range(self.nChains):
@@ -1622,11 +1732,7 @@ class Mcmc(object):
                     print("%stopology changes in any of the chains." % spacer)
 
             # Check for aborts.
-            p = None
-            try:
-                p = self.proposalsHash['local']
-            except KeyError:
-                pass
+            p = self.props.proposalsDict.get('local')
             if p:
                 if hasattr(p, 'nAborts'):
                     if p.nAborts[0]:
@@ -1637,11 +1743,8 @@ class Mcmc(object):
                     else:
                         print("The 'local' proposal had no aborts (either due to brLen proposals")
                         print("too big or too small, or due to violated constraints).")
-            p = None
-            try:
-                p = self.proposalsHash['eTBR']
-            except KeyError:
-                pass
+
+            p = self.props.proposalsDict.get('eTBR')
             if p:
                 if hasattr(p, 'nAborts'):
                     if p.nAborts[0]:
@@ -1653,14 +1756,11 @@ class Mcmc(object):
                             print("The 'eTBR' proposal had no aborts (due to violated constraints).")
 
             for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-                p = None
-                try:
-                    p = self.proposalsHash[pN]
-                except KeyError:
-                    pass
+                p = self.props.proposalsDict.get(pN)
                 if p:
                     if hasattr(p, 'nAborts'):
                         print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+
 
     def writeSwapMatrix(self):
         print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
@@ -1668,7 +1768,7 @@ class Mcmc(object):
         print("    Swaps are presented as a square matrix, nChains * nChains.")
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
-        print("    The current tunings.chainTemp is %5.3f\n" % self.tunings.chainTemp)
+        print("    The current chainTemp is %5.3f\n" % self.chainTemp)
         print(" " * 10, end=' ')
         for i in range(self.nChains):
             print("%7i" % i, end=' ')
@@ -1706,15 +1806,15 @@ class Mcmc(object):
                 # Temperature.  Set this way to start, but it changes.
                 aChain.tempNum = chNum
                 self.chains.append(aChain)
-        if not self.proposals:
+        if not self.props.proposals:
             self._makeProposals()
 
             # If we are going to be doing the resolution class prior
             # in the polytomy move, we want to pre-compute the logs of
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
-            if 'polytomy' in self.proposalsHash and self.tunings.doPolytomyResolutionClassPrior:
-                p = self.proposalsHash['polytomy']
+            p = self.props.proposalsDict.get('polytomy')
+            if p and p.doPolytomyResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
@@ -1813,7 +1913,7 @@ class Mcmc(object):
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
 
-        if self.proposals:
+        if self.props.proposals:
             # Its either a re-start, or it has been thru autoTune().
             # I can tell the difference by self.gen, which is -1 after
             # autoTune()
@@ -1849,7 +1949,7 @@ class Mcmc(object):
             if self.simulate:
                 self._writeSimFileHeader(self.tree)
         if verbose:
-            self.writeProposalIntendedProbs()
+            self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
 
         coldChainNum = 0
@@ -1868,10 +1968,12 @@ class Mcmc(object):
         for aLine in splash:
             self.logger.info(aLine)
         if self.gen > -1:
+
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
             f2 = open(self.treeFileName, 'r+b')
-            # print(f2, type(f2), f2.tell())   # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
+            # print(f2, type(f2), f2.tell())   
+            # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
             pos = -1
             while 1:
                 f2.seek(pos, 2)
@@ -1908,7 +2010,7 @@ class Mcmc(object):
             self.logger.info("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
             if verbose:
                 if self.nChains > 1:
-                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %.2f" % (self.nChains, self.tunings.chainTemp))
+                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %.2f" % (self.nChains, self.chainTemp))
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 print("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
@@ -1976,6 +2078,9 @@ class Mcmc(object):
             # doAborts all turned off.
 
             for chNum in range(self.nChains):
+                aProposal = self.props.chooseProposal()
+
+            for chNum in range(self.nChains):
                 failure = True
                 nAttempts = 0
                 while failure:
@@ -1983,16 +2088,15 @@ class Mcmc(object):
                     gotIt = False
                     safety = 0
                     while not gotIt:
-                        theRan = random.uniform(0.0, self.totalPropWeights)
-                        for i in range(len(self.cumPropWeights)):
-                            if theRan < self.cumPropWeights[i]:
-                                break
-                        aProposal = self.proposals[i]
+                        aProposal = self.props.chooseProposal()
                         gotIt = True
+
                         if aProposal.name == 'local':
                             # Can't do local on a star tree.
                             if self.chains[chNum].curTree.nInternalNodes == 1:
-                                aProposal = self.proposalsHash['brLen']
+                                #aProposal = self.proposalsHash['brLen']
+                                gotIt = False
+
                         elif aProposal.name == 'root3':
                             # Can't do root3 on a star tree.
                             if self.chains[chNum].curTree.nInternalNodes == 1:
@@ -2029,9 +2133,10 @@ class Mcmc(object):
                             "Was not able to do a successful generation after %i attempts." % nAttempts)
                         raise P4Error(gm)
                 # print "   Mcmc.run(). finished a gen on chain %i" % (chNum)
-                for pr in abortableProposals:
-                    if pr in self.proposalsHash:
-                        self.proposalsHash[pr].doAbort = False
+                for prNm in abortableProposals:
+                    ret = self.props.proposalsDict.get(prNm)
+                    if ret:
+                        ret.doAbort = False
 
             # Do swap, if there is more than 1 chain.
             if self.nChains == 1:
@@ -2053,13 +2158,13 @@ class Mcmc(object):
                     thisCh2Temp = chain1.tempNum
                     
 
-                lnR = (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))
+                lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
                         ) * chain2.curTree.logLike
-                lnR += (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))
+                lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
                         ) * chain1.curTree.logLike
-                lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))
+                lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
                         ) * chain1.curTree.logLike
-                lnR -= (1.0 / (1.0 + (self.tunings.chainTemp * chain2.tempNum))
+                lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
                         ) * chain2.curTree.logLike
 
                 if lnR < -100.0:
@@ -2087,19 +2192,19 @@ class Mcmc(object):
                         
                         
                         if thisAccepted > self.swapTuner.accHi:   # acceptance too high; temperature too low
-                            oldTemp = self.tunings.chainTemp
-                            self.tunings.chainTemp *= self.swapTuner.factorHi
+                            oldTemp = self.chainTemp
+                            self.chainTemp *= self.swapTuner.factorHi
                             self.logger.info("SwapTuner: gen %i, swap accepted %.2f, increase temp from %.3f to %.3f" % (
-                                self.gen, thisAccepted, oldTemp, self.tunings.chainTemp))
+                                self.gen, thisAccepted, oldTemp, self.chainTemp))
                             self.swapTuner.swaps01 = []
                         elif thisAccepted < self.swapTuner.accLo:  # acceptance too low; temperature too high
-                            oldTemp = self.tunings.chainTemp
+                            oldTemp = self.chainTemp
                             if thisAccepted > self.swapTuner.accB:
-                                self.tunings.chainTemp /= self.swapTuner.factorB
+                                self.chainTemp /= self.swapTuner.factorB
                             else:
-                                self.tunings.chainTemp /= self.swapTuner.factorC
+                                self.chainTemp /= self.swapTuner.factorC
                             self.logger.info("SwapTuner: gen %i, swap accepted %.3f, decrease temp from %.3f to %.3f" % (
-                                self.gen, thisAccepted, oldTemp, self.tunings.chainTemp))
+                                self.gen, thisAccepted, oldTemp, self.chainTemp))
                             self.swapTuner.swaps01 = []
                         
                         
@@ -2254,7 +2359,7 @@ class Mcmc(object):
                     # Start the tree partitions over.
                     self.treePartitions = None
                     # Zero the proposal counts
-                    for p in self.proposals:
+                    for p in self.props.proposals:
                         p.nProposals = [0] * self.nChains
                         p.nAcceptances = [0] * self.nChains
                         p.nTopologyChangeAttempts = [0] * self.nChains
@@ -2646,12 +2751,12 @@ class Mcmc(object):
                         self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
 
                     lnR = (
-                        1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
-                    lnR += (1.0 / (1.0 + (self.tunings.chainTemp *
+                        1.0 / (1.0 + (self.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
+                    lnR += (1.0 / (1.0 + (self.chainTemp *
                                           chain2.tempNum))) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.tunings.chainTemp *
+                    lnR -= (1.0 / (1.0 + (self.chainTemp *
                                           chain1.tempNum))) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.tunings.chainTemp *
+                    lnR -= (1.0 / (1.0 + (self.chainTemp *
                                           chain2.tempNum))) * chain2.curTree.logLike
 
                     if lnR < -100.0:
@@ -3399,11 +3504,11 @@ class Mcmc(object):
                 #     isOK = False
                 #     if verbose:
                 #         self.writeSwapMatrix()
-                #         print("    Current chainTemp is %5.3f; too low" % self.tunings.chainTemp)
-                #     self.tunings.chainTemp *= 1.3333
+                #         print("    Current chainTemp is %5.3f; too low" % self.chainTemp)
+                #     self.chainTemp *= 1.3333
                 #     if verbose:
                 #         print("    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal)
-                #         print("      -> raising the chainTemp by one third, to %5.3f" % self.tunings.chainTemp)
+                #         print("      -> raising the chainTemp by one third, to %5.3f" % self.chainTemp)
                 #     needsToBeTuned = True
                 # elif meanDiagonal < 0.5:  # maybe too high
                 #     accepted = float(
@@ -3414,20 +3519,20 @@ class Mcmc(object):
                 #         isOK = False
                 #         if verbose:
                 #             self.writeSwapMatrix()
-                #             print("    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp)
+                #             print("    Current chainTemp is %5.3f; too high" % self.chainTemp)
                 #             print("    Mean of acceptances on the diagonal is %5.3f" % meanDiagonal)
                 #         if meanDiagonal > 0.25:
-                #             self.tunings.chainTemp /= 1.3333
+                #             self.chainTemp /= 1.3333
                 #             if verbose:
-                #                 print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp)
+                #                 print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.chainTemp)
                 #         elif meanDiagonal > 0.1:
-                #             self.tunings.chainTemp /= 2.0
+                #             self.chainTemp /= 2.0
                 #             if verbose:
-                #                 print("      -> lowering the chainTemp by half, to %5.3f" % self.tunings.chainTemp)
+                #                 print("      -> lowering the chainTemp by half, to %5.3f" % self.chainTemp)
                 #         else:
-                #             self.tunings.chainTemp /= 3.0
+                #             self.chainTemp /= 3.0
                 #             if verbose:
-                #                 print("      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp)
+                #                 print("      -> dividing the chainTemp by 3, to %5.3f" % self.chainTemp)
 
                 #         needsToBeTuned = True
                 myAccepted = float(self.swapMatrix[1][0]) / float(self.swapMatrix[0][1])
@@ -3436,30 +3541,30 @@ class Mcmc(object):
                     isOK = False
                     if verbose:
                         self.writeSwapMatrix()
-                        print("    Current chainTemp is %5.3f; too low" % self.tunings.chainTemp)
-                    self.tunings.chainTemp *= 1.3333
+                        print("    Current chainTemp is %5.3f; too low" % self.chainTemp)
+                    self.chainTemp *= 1.3333
                     if verbose:
                         print("    Acceptance of chain 0 with chain 1 is is %5.3f" % myAccepted)
-                        print("      -> raising the chainTemp by one third, to %5.3f" % self.tunings.chainTemp)
+                        print("      -> raising the chainTemp by one third, to %5.3f" % self.chainTemp)
                     needsToBeTuned = True
                 elif myAccepted < 0.01:  # temperature too high
                     isOK = False
                     if verbose:
                         self.writeSwapMatrix()
-                        print("    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp)
+                        print("    Current chainTemp is %5.3f; too high" % self.chainTemp)
                         print("    Acceptance of chain 0 with chain 1 is %5.3f" % myAccepted)
                     if myAccepted > 0.005:
-                        self.tunings.chainTemp /= 1.3333
+                        self.chainTemp /= 1.3333
                         if verbose:
-                            print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp)
+                            print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.chainTemp)
                     elif myAccepted > 0.001:
-                        self.tunings.chainTemp /= 2.0
+                        self.chainTemp /= 2.0
                         if verbose:
-                            print("      -> lowering the chainTemp by half, to %5.3f" % self.tunings.chainTemp)
+                            print("      -> lowering the chainTemp by half, to %5.3f" % self.chainTemp)
                     else:
-                        self.tunings.chainTemp /= 3.0
+                        self.chainTemp /= 3.0
                         if verbose:
-                            print("      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp)
+                            print("      -> dividing the chainTemp by 3, to %5.3f" % self.chainTemp)
 
                     needsToBeTuned = True
                         
@@ -3549,21 +3654,16 @@ class Mcmc(object):
         See also Mcmc.writeProposalAcceptances().
         """
 
-        nProposals = len(self.proposals)
+        nProposals = len(self.props.proposals)
         if not nProposals:
             print("Mcmc.writeProposalProbs().  No proposals (yet?).")
             return
-        #intended = self.propWeights[:]
-        # for i in range(len(intended)):
-        #    intended[i] /= self.totalPropWeights
-        # if math.fabs(sum(intended) - 1.0 > 1e-15):
-        #    raise P4Error("bad sum of intended proposal probs. %s" % sum(intended))
 
         nAttained = [0] * nProposals
         nAccepted = [0] * nProposals
         for i in range(nProposals):
-            nAttained[i] = self.proposals[i].nProposals[0]
-            nAccepted[i] = self.proposals[i].nAcceptances[0]
+            nAttained[i] = self.props.proposals[i].nProposals[0]
+            nAccepted[i] = self.props.proposals[i].nAcceptances[0]
         sumAttained = float(sum(nAttained))  # should be zero or nGen
         if not sumAttained:
             print("Mcmc.writeProposalProbs().  No proposals have been made.")
@@ -3575,8 +3675,7 @@ class Mcmc(object):
         for i in range(len(nAttained)):
             probAttained.append(100.0 * float(nAttained[i]) / sumAttained)
         if math.fabs(sum(probAttained) - 100.0 > 1e-13):
-            raise P4Error(
-                "bad sum of attained proposal probs. %s" % sum(probAttained))
+            raise P4Error("bad sum of attained proposal probs. %s" % sum(probAttained))
 
         if not makeDict:
             spacer = ' ' * 4
@@ -3584,12 +3683,15 @@ class Mcmc(object):
             # print "There are %i proposals" % len(self.proposals)
             print("For %i gens, from gens %i to %i, inclusive." % (
                 (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-            print("%2s %11s %11s  %11s %10s %18s %5s" % ('', 'nProposals', 'proposed(%)',
-                                                             'accepted(%)', 'tuning', 'proposal', 'part'))
-            for i in range(len(self.proposals)):
+            print("%2s %11s %11s %11s  %11s %10s %18s %5s" % ('', 'nProposals', 
+                                                         'intended(%)', 'proposed(%)',
+                                                         'accepted(%)', 'tuning', 
+                                                         'proposal', 'part'))
+            for i in range(len(self.props.proposals)):
                 print("%2i" % i, end=' ')
-                p = self.proposals[i]
-                print("   %7i " % self.proposals[i].nProposals[0], end=' ')
+                p = self.props.proposals[i]
+                print("   %7i " % self.props.proposals[i].nProposals[0], end=' ')
+                print("   %5.1f   " % (100.0 * self.props.intended[i]), end=' ')
                 print("   %5.1f    " % probAttained[i], end=' ')
                 if nAttained[i]:
                     print("   %5.1f   " % (100.0 * float(nAccepted[i]) / float(nAttained[i])), end=' ')
@@ -3609,14 +3711,14 @@ class Mcmc(object):
                 print()
         else:
             rd = {}
-            for i in range(len(self.proposals)):
-                p = self.proposals[i]
+            for i in range(len(self.props.proposals)):
+                p = self.props.proposals[i]
                 if p.pNum != -1:
                     pname = p.name + "_%i" % p.pNum
                 else:
                     pname = p.name
                 rd[pname] = []
-                rd[pname].append(self.proposals[i].nProposals[0])
+                rd[pname].append(p.nProposals[0])
                 rd[pname].append(probAttained[i])
                 if nAttained[i]:
                     rd[pname].append((100.0 * float(nAccepted[i]) / float(nAttained[i])))
@@ -3630,43 +3732,4 @@ class Mcmc(object):
                     rd[pname].append(p.tuning)
             return rd
 
-    def writeProposalIntendedProbs(self):
-        """Tabulate the intended proposal probabilities.
-        """
 
-        nProposals = len(self.proposals)
-        if not nProposals:
-            print("Mcmc.writeProposalIntendedProbs().  No proposals (yet?).")
-            return
-        intended = self.propWeights[:]
-        for i in range(len(intended)):
-            intended[i] /= self.totalPropWeights
-        if math.fabs(sum(intended) - 1.0 > 1e-14):
-            raise P4Error("bad sum of intended proposal probs. %s" % sum(intended))
-
-        spacer = ' ' * 4
-        print("\nIntended proposal probabilities (%)")
-        # print "There are %i proposals" % len(self.proposals)
-        print("%2s %11s %30s %5s %12s" % ('', 'intended(%)', 'proposal', 'part', 'tuning'))
-        for i in range(len(self.proposals)):
-            print("%2i" % i, end=' ')
-            p = self.proposals[i]
-            print("   %6.2f    " % (100. * intended[i]), end=' ')
-
-            print(" %27s" % p.name, end=' ')
-
-            if p.pNum != -1:
-                print(" %3i " % p.pNum, end=' ')
-            else:
-                print("   - ", end=' ')
-
-            if p.tuning == None:
-                print(" %12s "% '    -   ', end=' ')
-            else:
-                if p.tuning < 0.1:
-                    print(" %12.4g" % p.tuning, end=' ')
-                elif p.tuning < 1.0:
-                    print(" %12.4f" % p.tuning, end=' ')
-                else:
-                    print(" %12s " % p.tuning, end=' ')
-            print()

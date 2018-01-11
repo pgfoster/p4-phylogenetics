@@ -222,7 +222,7 @@ class Chain(object):
             #logLikeRatio = 0.0
 
             if self.mcmc.nChains > 1:
-                heatBeta = 1.0 / (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
+                heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
                 logLikeRatio *= heatBeta
                 self.logPriorRatio *= heatBeta
 
@@ -905,11 +905,14 @@ class Chain(object):
         #logLikeRatio = 0.0
 
         if self.mcmc.nChains > 1:
-            heatBeta = 1.0 / (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
+            heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
             logLikeRatio *= heatBeta
-            # print "logPriorRatio is %s, heatBeta is %s" %
-            # (self.logPriorRatio, heatBeta)
-            self.logPriorRatio *= heatBeta
+            try:
+                self.logPriorRatio *= heatBeta
+            except TypeError:
+                gm.append("logPriorRatio is %s, heatBeta is %s" % (self.logPriorRatio, heatBeta))
+                gm.append("proposal name %s" % theProposal.name)
+                raise P4Error(gm)
 
         # Experimental Heating hack
         if self.mcmc.doHeatingHack: # and theProposal.name in self.mcmc.heatingHackProposalNames:
@@ -918,8 +921,8 @@ class Chain(object):
             self.logPriorRatio *= heatFactor
 
         theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
-        if theProposal.name in ['rjComp', 'rjRMatrix']:
-            theSum += self.logJacobian
+        # if theProposal.name in ['rjComp', 'rjRMatrix']:
+        #     theSum += self.logJacobian
 
         # if theProposal.name in ['ndch2_leafCompsDir']:
         #     print("%20s: %10.2f %10.2f %10.2f %10.2f" % (theProposal.name, logLikeRatio,
@@ -2143,36 +2146,15 @@ class Chain(object):
         gm = ["Chain.proposeCompLocation()"]
         mp = self.propTree.model.parts[theProposal.pNum]
         #nMT = self.propTree.model.parts[theProposal.pNum].nComps
-        if mp.rjComp:
-            pool = [c for c in mp.comps if c.rj_isInPool]
-            # We need at least 2 comps, because one of them will be the
-            # current comp for the node chosen below, and we need at least
-            # one other to change to.
-            if len(pool) < 2:
-                theProposal.doAbort = True
-                return True
-        validNodeNums = [
-            n for n in self.propTree.preOrder if n != var.NO_ORDER]
+        validNodeNums = [n for n in self.propTree.preOrder if n != var.NO_ORDER]
         validNodes = [self.propTree.nodes[n] for n in validNodeNums]
-        if mp.rjComp:
-            validNodes = [n for n in validNodes if (
-                mp.comps[n.parts[theProposal.pNum].compNum].rj_isInPool)]
-        else:
-            validNodes = [n for n in validNodes if (
-                mp.comps[n.parts[theProposal.pNum].compNum].nNodes > 1)]
+        validNodes = [n for n in validNodes if (mp.comps[n.parts[theProposal.pNum].compNum].nNodes > 1)]
         if not validNodes:
             theProposal.doAbort = True
             return True
         theNode = random.choice(validNodes)
         currentNum = theNode.parts[theProposal.pNum].compNum
-        if mp.rjComp:
-            validCompNumbers = [c.num for c in pool if c.num is not currentNum]
-            if not validCompNumbers:
-                theProposal.doAbort = True
-                return True
-        else:
-            validCompNumbers = [
-                c.num for c in mp.comps if c.num is not currentNum]
+        validCompNumbers = [c.num for c in mp.comps if c.num is not currentNum]
         #proposedNum = currentNum
         # while proposedNum == currentNum:
         #    proposedNum = random.randrange(nMT)
