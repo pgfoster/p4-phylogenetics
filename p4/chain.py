@@ -954,114 +954,6 @@ class Chain(object):
 
         # doAborts means that it was not a valid generation,
         # neither accepted or rejected.  Give up, by returning True.
-        checkRj = False
-
-        if checkRj:
-            # Check rj stuff
-            pNum = 0
-            for mtNum in range(self.curTree.model.parts[pNum].nComps):
-                c = self.curTree.model.parts[pNum].comps[mtNum]
-                thisNNodes = 0
-                for n in self.curTree.iterNodes():
-                    if n.parts[pNum].compNum == c.num:
-                        thisNNodes += 1
-                if c.nNodes != thisNNodes:
-                    gm.append(
-                        "curTree  comp.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                    raise P4Error(gm)
-            for mtNum in range(self.propTree.model.parts[pNum].nComps):
-                c = self.propTree.model.parts[pNum].comps[mtNum]
-                thisNNodes = 0
-                for n in self.propTree.iterNodes():
-                    if n.parts[pNum].compNum == c.num:
-                        thisNNodes += 1
-                if c.nNodes != thisNNodes:
-                    gm.append(
-                        "propTree  comp.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                    raise P4Error(gm)
-            this_k = 0
-            for mtNum in range(self.curTree.model.parts[pNum].nComps):
-                c = self.curTree.model.parts[pNum].comps[mtNum]
-                if c.rj_isInPool:
-                    this_k += 1
-            if self.curTree.model.parts[pNum].rjComp_k != this_k:
-                gm.append("curTree. rjComp_k=%i, this_k=%i" %
-                          (self.curTree.model.parts[pNum].rjComp_k, this_k))
-                raise P4Error(gm)
-            this_k = 0
-            for mtNum in range(self.propTree.model.parts[pNum].nComps):
-                c = self.propTree.model.parts[pNum].comps[mtNum]
-                if c.rj_isInPool:
-                    this_k += 1
-            if self.propTree.model.parts[pNum].rjComp_k != this_k:
-                gm.append("propTree rjComp_k=%i, this_k=%i" %
-                          (self.propTree.model.parts[pNum].rjComp_k, this_k))
-                raise P4Error(gm)
-
-        # Same for rjRMatrix
-        checkRjR = False
-
-        if checkRjR:
-            # Check rjRMatrix stuff
-            for pNum in range(self.curTree.model.nParts):
-                if self.curTree.model.parts[pNum].nRMatrices > 1:
-                    thisK0_cur = 0
-                    for mtNum in range(self.curTree.model.parts[pNum].nRMatrices):
-                        c = self.curTree.model.parts[pNum].rMatrices[mtNum]
-                        thisNNodes = 0
-                        for n in self.curTree.iterNodesNoRoot():
-                            if n.br.parts[pNum].rMatrixNum == c.num:
-                                thisNNodes += 1
-                        if c.nNodes != thisNNodes:
-                            gm.append(
-                                "curTree  rMatrix.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                            raise P4Error(gm)
-                        if c.nNodes:
-                            thisK0_cur += 1
-                    thisK0_prop = 0
-                    for mtNum in range(self.propTree.model.parts[pNum].nRMatrices):
-                        c = self.propTree.model.parts[pNum].rMatrices[mtNum]
-                        thisNNodes = 0
-                        for n in self.propTree.iterNodesNoRoot():
-                            if n.br.parts[pNum].rMatrixNum == c.num:
-                                thisNNodes += 1
-                        if c.nNodes != thisNNodes:
-                            gm.append(
-                                "propTree  rMatrix.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                            raise P4Error(gm)
-                        if c.nNodes:
-                            thisK0_prop += 1
-                    if thisK0_cur != thisK0_prop:
-                        gm.append("part %i, checkRjR: thisK0_cur %i, thisK0_prop %i" % (
-                            pNum, thisK0_cur, thisK0_prop))
-                        raise P4Error(gm)
-                    this_k_cur = 0
-                    for mtNum in range(self.curTree.model.parts[pNum].nRMatrices):
-                        c = self.curTree.model.parts[pNum].rMatrices[mtNum]
-                        if c.rj_isInPool:
-                            this_k_cur += 1
-                    if self.curTree.model.parts[pNum].rjRMatrix_k != this_k_cur:
-                        gm.append("curTree. rjRMatrix_k=%i, this_k=%i" % (
-                            self.curTree.model.parts[pNum].rjRMatrix_k, this_k_cur))
-                        raise P4Error(gm)
-                    this_k_prop = 0
-                    for mtNum in range(self.propTree.model.parts[pNum].nRMatrices):
-                        c = self.propTree.model.parts[pNum].rMatrices[mtNum]
-                        if c.rj_isInPool:
-                            this_k_prop += 1
-                    if self.propTree.model.parts[pNum].rjRMatrix_k != this_k_prop:
-                        gm.append("propTree rjRMatrix_k=%i, this_k=%i" % (
-                            self.propTree.model.parts[pNum].rjRMatrix_k, this_k_prop))
-                        raise P4Error(gm)
-
-                    if this_k_cur != this_k_prop:
-                        gm.append("part %i, checkRjR: this_k_cur %i, this_k_prop %i" % (
-                            pNum, this_k_cur, this_k_prop))
-                        raise P4Error(gm)
-                    if thisK0_cur > this_k_cur:
-                        gm.append("part %i, checkRjR: thisK0_cur %i, this_k_cur %i" % (
-                            pNum, thisK0_cur, this_k_cur))
-                        raise P4Error(gm)
 
         if 0:
             ret = self.verifyIdentityOfTwoTreesInChain(
@@ -1241,9 +1133,11 @@ class Chain(object):
         #    print("-------------- (gen %5i, %20s) acceptMove = %s" % (self.mcmc.gen, aProposal.name, acceptMove))
 
         aProposal.nProposals[self.tempNum] += 1
+        aProposal.tnNSamples[self.tempNum] += 1
         if acceptMove:
             aProposal.accepted = True
             aProposal.nAcceptances[self.tempNum] += 1
+            aProposal.tnNAccepts[self.tempNum] += 1
             if aProposal.name in ['local', 'eTBR']:
                 if aProposal.topologyChanged:
                     # print "zzz topologyChanged"
@@ -1597,109 +1491,7 @@ class Chain(object):
             if 0 and self.mcmc.gen in gNums:
                 self.propTree.calcLogLike()
 
-        if checkRj:
-            # Check rj stuff
-            pNum = 0
-            for mtNum in range(self.curTree.model.parts[pNum].nComps):
-                c = self.curTree.model.parts[pNum].comps[mtNum]
-                thisNNodes = 0
-                for n in self.curTree.iterNodes():
-                    if n.parts[pNum].compNum == c.num:
-                        thisNNodes += 1
-                if c.nNodes != thisNNodes:
-                    gm.append(
-                        "curTree  comp.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                    raise P4Error(gm)
-            for mtNum in range(self.propTree.model.parts[pNum].nComps):
-                c = self.propTree.model.parts[pNum].comps[mtNum]
-                thisNNodes = 0
-                for n in self.propTree.iterNodes():
-                    if n.parts[pNum].compNum == c.num:
-                        thisNNodes += 1
-                if c.nNodes != thisNNodes:
-                    gm.append(
-                        "propTree  comp.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                    raise P4Error(gm)
-            this_k = 0
-            for mtNum in range(self.curTree.model.parts[pNum].nComps):
-                c = self.curTree.model.parts[pNum].comps[mtNum]
-                if c.rj_isInPool:
-                    this_k += 1
-            if self.curTree.model.parts[pNum].rjComp_k != this_k:
-                gm.append("curTree. rjComp_k=%i, this_k=%i" %
-                          (self.curTree.model.parts[pNum].rjComp_k, this_k))
-                raise P4Error(gm)
-            this_k = 0
-            for mtNum in range(self.propTree.model.parts[pNum].nComps):
-                c = self.propTree.model.parts[pNum].comps[mtNum]
-                if c.rj_isInPool:
-                    this_k += 1
-            if self.propTree.model.parts[pNum].rjComp_k != this_k:
-                gm.append("propTree rjComp_k=%i, this_k=%i" %
-                          (self.propTree.model.parts[pNum].rjComp_k, this_k))
-                raise P4Error(gm)
 
-        if checkRjR:
-            # Check rjRMatrix stuff
-            for pNum in range(self.curTree.model.nParts):
-                if self.curTree.model.parts[pNum].nRMatrices > 1:
-                    thisK0_cur = 0
-                    for mtNum in range(self.curTree.model.parts[pNum].nRMatrices):
-                        c = self.curTree.model.parts[pNum].rMatrices[mtNum]
-                        thisNNodes = 0
-                        for n in self.curTree.iterNodesNoRoot():
-                            if n.br.parts[pNum].rMatrixNum == c.num:
-                                thisNNodes += 1
-                        if c.nNodes != thisNNodes:
-                            gm.append(
-                                "curTree  rMatrix.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                            raise P4Error(gm)
-                        if c.nNodes:
-                            thisK0_cur += 1
-                    thisK0_prop = 0
-                    for mtNum in range(self.propTree.model.parts[pNum].nRMatrices):
-                        c = self.propTree.model.parts[pNum].rMatrices[mtNum]
-                        thisNNodes = 0
-                        for n in self.propTree.iterNodesNoRoot():
-                            if n.br.parts[pNum].rMatrixNum == c.num:
-                                thisNNodes += 1
-                        if c.nNodes != thisNNodes:
-                            gm.append(
-                                "propTree  rMatrix.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                            raise P4Error(gm)
-                        if c.nNodes:
-                            thisK0_prop += 1
-                    if thisK0_cur != thisK0_prop:
-                        gm.append("part %i, checkRjR: thisK0_cur %i, thisK0_prop %i" % (
-                            pNum, thisK0_cur, thisK0_prop))
-                        raise P4Error(gm)
-                    this_k_cur = 0
-                    for mtNum in range(self.curTree.model.parts[pNum].nRMatrices):
-                        c = self.curTree.model.parts[pNum].rMatrices[mtNum]
-                        if c.rj_isInPool:
-                            this_k_cur += 1
-                    if self.curTree.model.parts[pNum].rjRMatrix_k != this_k_cur:
-                        gm.append("curTree. rjRMatrix_k=%i, this_k=%i" % (
-                            self.curTree.model.parts[pNum].rjRMatrix_k, this_k_cur))
-                        raise P4Error(gm)
-                    this_k_prop = 0
-                    for mtNum in range(self.propTree.model.parts[pNum].nRMatrices):
-                        c = self.propTree.model.parts[pNum].rMatrices[mtNum]
-                        if c.rj_isInPool:
-                            this_k_prop += 1
-                    if self.propTree.model.parts[pNum].rjRMatrix_k != this_k_prop:
-                        gm.append("propTree rjRMatrix_k=%i, this_k=%i" % (
-                            self.propTree.model.parts[pNum].rjRMatrix_k, this_k_prop))
-                        raise P4Error(gm)
-
-                    if this_k_cur != this_k_prop:
-                        gm.append("part %i, checkRjR: this_k_cur %i, this_k_prop %i" % (
-                            pNum, this_k_cur, this_k_prop))
-                        raise P4Error(gm)
-                    if thisK0_cur > this_k_cur:
-                        gm.append("part %i, checkRjR: thisK0_cur %i, this_k_cur %i" % (
-                            pNum, thisK0_cur, this_k_cur))
-                        raise P4Error(gm)
 
     def verifyIdentityOfTwoTreesInChain(self, doSplitKeys=False):
         #gm = ['Chain.verifyIdentityOfTwoTreesInChain()']
@@ -1808,7 +1600,7 @@ class Chain(object):
         # print(type(mt.val), type(mt.val[0]))
 
         # The tuning is the Dirichlet alpha.
-        # print theProposal.tuning
+        # print theProposal.tuning[self.tempNum]
 
         # This method previously used p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
@@ -1818,7 +1610,7 @@ class Chain(object):
         #    mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
         # Now it uses scipy.
         mtVal = numpy.array(mt.val)
-        myProposer = scipy.stats.dirichlet(theProposal.tuning * mtVal)
+        myProposer = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * mtVal)
         newVal = myProposer.rvs(size=1)[0]
         while  newVal.min() < var.PIVEC_MIN:
             for i in range(dim):
@@ -1854,7 +1646,7 @@ class Chain(object):
         # We can re-use myProposer to get the log pdf
         forwardLnPdf = myProposer.logpdf(newVal)
         # Another dirichlet distribution for the reverse
-        spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
+        spDist = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * newVal)
         reverseLnPdf = spDist.logpdf(mtVal)
         self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
@@ -1990,7 +1782,7 @@ class Chain(object):
             oldVal = numpy.array([0.0, 0.0])
             oldVal[0] = mtCur.val[0] / (mtCur.val[0] + 1.0)
             oldVal[1] = 1.0 - oldVal[0]
-            myProposer = scipy.stats.dirichlet(theProposal.tuning * oldVal)
+            myProposer = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * oldVal)
             newVal = myProposer.rvs(size=1)[0]
 
             safety = 0
@@ -2013,7 +1805,7 @@ class Chain(object):
             # We can re-use myProposer to get the log pdf
             forwardLnPdf = myProposer.logpdf(newVal)
             # Another dirichlet distribution for the reverse
-            spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
+            spDist = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * newVal)
             reverseLnPdf = spDist.logpdf(oldVal)
             self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
@@ -2023,7 +1815,7 @@ class Chain(object):
 
             # mt.val is a numpy array
             assert isinstance(mt.val, numpy.ndarray)
-            myProposer = scipy.stats.dirichlet(theProposal.tuning * mt.val)
+            myProposer = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * mt.val)
 
             safety = 0
             newVal = myProposer.rvs(size=1)[0]
@@ -2039,7 +1831,7 @@ class Chain(object):
             # We can re-use myProposer to get the log pdf
             forwardLnPdf = myProposer.logpdf(newVal)
             # Another dirichlet distribution for the reverse
-            spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
+            spDist = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * newVal)
             reverseLnPdf = spDist.logpdf(mt.val)
             self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
@@ -2068,7 +1860,7 @@ class Chain(object):
         # mt.val is a numpy.ndarray type, an array with 1 element.
         assert isinstance(mt.val, numpy.ndarray)
         oldVal = mt.val
-        newVal = oldVal * math.exp(theProposal.tuning * (random.random() - 0.5))
+        newVal = oldVal * math.exp(theProposal.tuning[self.tempNum] * (random.random() - 0.5))
 
         isGood = False
         while not isGood:
@@ -2094,7 +1886,7 @@ class Chain(object):
         mt = self.propTree.model.parts[theProposal.pNum].pInvar
 
         # Slider proposal
-        mt.val += (random.random() - 0.5) * theProposal.tuning
+        mt.val += (random.random() - 0.5) * theProposal.tuning[self.tempNum]
 
         # Linear reflect
         isGood = False
@@ -2113,7 +1905,7 @@ class Chain(object):
     def proposeRelRate(self, theProposal):
         for pNum in range(self.propTree.model.nParts):
             mp = self.propTree.model.parts[pNum]
-            ran = (random.random() - 0.5) * theProposal.tuning
+            ran = (random.random() - 0.5) * theProposal.tuning[self.tempNum]
             mp.relRate += ran
             isGood = False
             # while (mp.relRate < var.RELRATE_MIN) or (mp.relRate >
@@ -2169,7 +1961,10 @@ class Chain(object):
         theNode.parts[theProposal.pNum].compNum = proposedNum
         self.logProposalRatio = 0.0
         #self.logPriorRatio = 0.0
-        self.logPriorRatio = theProposal.tuning
+        if theProposal.tuning:
+            self.logPriorRatio = theProposal.tuning[self.tempNum]  # hack alert!
+        else:
+            self.logPriorRatio = 0.0
 
     def proposeRMatrixLocation(self, theProposal):
         #gm = ["proposeRMatrixLocation()"]
@@ -2224,8 +2019,10 @@ class Chain(object):
             proposedNum].nNodes += 1
         theNode.br.parts[theProposal.pNum].rMatrixNum = proposedNum
         self.logProposalRatio = 0.0
-        #self.logPriorRatio = 0.0
-        self.logPriorRatio = theProposal.tuning
+        if theProposal.tuning:
+            self.logPriorRatio = theProposal.tuning[self.tempNum]  # hack alert!
+        else:
+            self.logPriorRatio = 0.0
 
     def proposeGdasrvLocation(self, theProposal):
         #gm = ["proposeGdasrvLocation()"]
@@ -2271,7 +2068,7 @@ class Chain(object):
             mtCur = mpCur.comps[cNum]
             mtProp = mpProp.comps[cNum]
             # Result of the proposal goes into mtProp.val
-            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
             while  mtProp.val.min() < var.PIVEC_MIN:
                 for i in range(mpCur.dim):
                     if mtProp.val[i] < var.PIVEC_MIN:
@@ -2279,8 +2076,10 @@ class Chain(object):
                 thisSum = mtProp.val.sum()
                 mtProp.val /= thisSum
 
-            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
-            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
         # prior ratio
@@ -2305,7 +2104,7 @@ class Chain(object):
             mtProp = mpProp.comps[mtNum]
 
             # Make proposals. Result of the proposal goes into mtProp.val
-            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
             while  mtProp.val.min() < var.PIVEC_MIN:
                 for i in range(mpCur.dim):
                     if mtProp.val[i] < var.PIVEC_MIN:
@@ -2314,8 +2113,10 @@ class Chain(object):
                 mtProp.val /= thisSum
 
             # log proposal ratios
-            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
-            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
@@ -2351,7 +2152,7 @@ class Chain(object):
             mtProp = mpProp.comps[mtNum]
 
             # Make proposals. Result of the proposal goes into mtProp.val
-            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
             while  mtProp.val.min() < var.PIVEC_MIN:
                 for i in range(mpCur.dim):
                     if mtProp.val[i] < var.PIVEC_MIN:
@@ -2360,8 +2161,10 @@ class Chain(object):
                 mtProp.val /= thisSum
 
             # log proposal ratios
-            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
-            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
@@ -2405,8 +2208,8 @@ class Chain(object):
 
         if 1: 
             # Multiplier proposal
-            #myTuning = 2.0 * math.log(3.0)
-            myTuning = 2.0 * math.log(1.2)
+            #myTuning = 2.0 * math.log(1.2)
+            myTuning = theProposal.tuning[self.tempNum]
             oldVal = mpCur.ndch2_leafAlpha
             newVal = oldVal * math.exp((random.random() - 0.5) * myTuning)
 
@@ -2471,7 +2274,8 @@ class Chain(object):
 
         if 1: 
             # Multiplier proposal
-            myTuning = 2.0 * math.log(3.0)
+            # myTuning = 2.0 * math.log(3.0)
+            myTuning = theProposal.tuning[self.tempNum]
             oldVal = mpCur.ndch2_internalAlpha
             newVal = oldVal * math.exp((random.random() - 0.5) * myTuning)
 

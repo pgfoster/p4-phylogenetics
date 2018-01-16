@@ -1033,7 +1033,7 @@ def splash2(outFile=None, verbose=True):
     stuff = []
 
     # Stolen from Cymon.  Thanks!
-    stuff.append("\nSummary from func.splash2()")
+    #stuff.append("\nSummary from func.splash2()")
     stuff.append("%16s: %s" % ("P4 version", p4.version.versionString))
     lp = os.path.dirname(inspect.getfile(p4))
     stuff.append("%16s: %s" % ("Library path", lp))

@@ -16,7 +16,8 @@ if True:
         if len(internalsNoRoot):
             newRoot = random.choice(internalsNoRoot)
             self.propTree.reRoot(
-                newRoot, moveInternalName=False, fixRawSplitKeys=self.mcmc.constraints)
+                newRoot, moveInternalName=False, 
+                fixRawSplitKeys=self.mcmc.constraints)
         else:
             print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
         self.logProposalRatio = 0.0
@@ -36,7 +37,7 @@ if True:
 
         if 1:  # "Multiplier" proposal
             newBrLen = oldBrLen * \
-                math.exp(theProposal.tuning * (random.random() - 0.5))
+                math.exp(theProposal.tuning[self.tempNum] * (random.random() - 0.5))
 
             # Logarithmic reflect if needed
             while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
@@ -48,7 +49,7 @@ if True:
             self.logProposalRatio = math.log(newBrLen / oldBrLen)
 
         else:  # Sliding window.
-            newBrLen = oldBrLen + (theProposal.tuning * (random.random() - 0.5))
+            newBrLen = oldBrLen + (theProposal.tuning[self.tempNum] * (random.random() - 0.5))
             #newBrLen = oldBrLen + (2.0 * (random.random() - 0.5))
 
             # Linear reflect if needed
@@ -115,7 +116,7 @@ if True:
                 oldBrLen = n.br.len
 
                 # sliding window
-                newBrLen = oldBrLen + (theProposal.tuning * (random.random() - 0.5))
+                newBrLen = oldBrLen + (theProposal.tuning[self.tempNum] * (random.random() - 0.5))
 
                 # Linear reflect if needed
                 while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
@@ -131,43 +132,6 @@ if True:
                 else:
                     pass # log prior remains zero for uniform prior
 
-
-    # def proposeTreeScale(self, theProposal):
-    #     gm = ['Chain.proposeTreeScale']
-    #     pTree = self.propTree
-    #     nBranches = 0
-    #     oldTreeLen = 0.0
-    #     for n in pTree.iterNodesNoRoot():
-    #         nBranches += 1
-    #         oldTreeLen += n.br.len
-    #     # newTreeLen = oldTreeLen *  math.exp(theProposal.tuning * (random.random() - 0.5))
-    #     newTreeLen = oldTreeLen + (theProposal.tuning * (random.random() - 0.5))
-    #     forwardScaler = newTreeLen/oldTreeLen
-    #     #reverseScaler = oldTreeLen/newTreeLen
-
-    #     self.logPriorRatio = 0.0
-    #     for n in pTree.iterNodesNoRoot():
-    #         oldBrLen = n.br.len
-    #         newBrLen = oldBrLen * forwardScaler
-
-    #         # Linear reflect if needed
-    #         while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
-    #             if newBrLen < var.BRLEN_MIN:
-    #                 newBrLen = (var.BRLEN_MIN - newBrLen) + var.BRLEN_MIN
-    #             elif newBrLen > var.BRLEN_MAX:
-    #                 newBrLen = var.BRLEN_MAX - (newBrLen - var.BRLEN_MAX)
-
-    #         n.br.len = newBrLen
-
-    #         # no need to bother with this next line, because all branches change
-    #         #n.br.lenChanged = True
-    #         if theProposal.brLenPriorType == 'exponential':
-    #             self.logPriorRatio += theProposal.brLenPriorLambda * \
-    #                                   (oldBrLen - n.br.len)
-    #         else:
-    #             pass # remains zero
-
-    #     self.logProposalRatio = 0.0 # nBranches * (math.log(newTreeLen) - math.log(oldTreeLen))
             
 
     def proposeLocal(self, theProposal):  # from BAMBE and MrBayes.
@@ -366,7 +330,7 @@ if True:
         x = u.br.len
         y = x + v.br.len
         # by default, 0.909 to 1.1
-        newMRatio = math.exp(theProposal.tuning * (random.random() - 0.5))
+        newMRatio = math.exp(theProposal.tuning[self.tempNum] * (random.random() - 0.5))
         newM = m * newMRatio
 
         # Hopefully these checks will not be needed forever.
