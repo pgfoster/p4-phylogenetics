@@ -343,14 +343,57 @@ class SwapTuner(object):
     """Continuous tuning for swap temperature"""
 
     def __init__(self, sampleSize):
+        assert sampleSize >= 100
         self.sampleSize = sampleSize
-        self.swaps01 = []
-        self.accHi = 0.1    # 10% acceptance
-        self.factorHi = 1.333  # Factor if acceptance is > accHi
-        self.accLo = 0.02
-        self.accVeryLo = 0.005
-        self.factorLo = 1.333   # if acceptance is > accVeryLo, but < accLo
-        self.factorVeryLo = 1.5     # if acceptance is < accVeryLo
+        self.swaps01_nAttempts = 0
+        self.swaps01_nSwaps = 0
+
+        self.tnAccVeryHi = 0.18
+        self.tnAccHi = 0.12
+        self.tnAccLo = 0.04
+        self.tnAccVeryLo = 0.01
+        self.tnFactorVeryHi = 1.4
+        self.tnFactorHi = 1.1
+        self.tnFactorLo = 0.9
+        self.tnFactorVeryLo = 0.5
+        self.tnFactorZero = 0.3
+
+
+    def tune(self, theMcmc):
+        assert self.swaps01_nAttempts >= self.sampleSize
+        acc = self.swaps01_nSwaps / self.swaps01_nAttempts 
+        #print("SwapTuner.tune() nSwaps %i, nAttemps %i, acc %s" % (
+        #    self.swaps01_nSwaps, self.swaps01_nAttempts, acc))
+        doMessage = False
+        direction = None
+        if acc > self.tnAccHi:
+            oldTn = theMcmc.chainTemp
+            if acc > self.tnAccVeryHi:
+                theMcmc.chainTemp *= self.tnFactorVeryHi
+            else:
+                theMcmc.chainTemp *= self.tnFactorHi
+            doMessage = True
+            direction = 'Increase'
+        elif acc < self.tnAccLo:
+            oldTn = theMcmc.chainTemp
+            if acc == 0.0:   # no swaps at all
+                theMcmc.chainTemp *= self.tnFactorZero
+            elif acc < self.tnAccVeryLo:
+                theMcmc.chainTemp *= self.tnFactorVeryLo
+            else:
+                theMcmc.chainTemp *= self.tnFactorLo
+            doMessage = True
+            direction = 'Decrease'
+        self.swaps01_nAttempts = 0
+        self.swaps01_nSwaps = 0
+        if doMessage:
+            message = "%s tune  gen=%i acceptance=%.3f " % ('chainTemp', theMcmc.gen, acc)
+            message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
+            message += "%s chainTemp from %g to %g" % (direction, oldTn, theMcmc.chainTemp)
+            #print(message)
+            theMcmc.logger.info(message)
+
+
 
 class Mcmc(object):
 
@@ -363,12 +406,10 @@ class Mcmc(object):
                   The number of chains in the MCMCMC, default 4
 
     runNum
-                  You may want to do more than one 'run' in the same
-                  directory, to facilitate convergence testing
-                  (another idea stolen from MrBayes, so thanks to the
-                  authors).  The first runNum would be 0, and samples,
-                  likelihoods, and checkPoints are written to files
-                  with that number.
+                  You may want to do more than one 'run' in the same directory,
+                  to facilitate convergence testing.  The first runNum would be
+                  0, and samples, likelihoods, and checkPoints are written to
+                  files with that number.
 
     sampleInterval
                   Interval at which the cold chain is sampled,
@@ -495,6 +536,7 @@ class Mcmc(object):
         for n in t.iterInternalsNoRoot():
             n.name = '%.0f' % (100. * n.br.support)
         t.writeNexus('cons.nex')
+
     """
 
     def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, swapTuner=200):
@@ -2034,32 +2076,12 @@ class Mcmc(object):
 
                 # for continuous temperature tuning with self.swapTuner
                 if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
+                    self.swapTuner.swaps01_nAttempts += 1
                     if acceptSwap:
-                        self.swapTuner.swaps01.append(1.0)
-                    else:
-                        self.swapTuner.swaps01.append(0.0)
-                    if len(self.swapTuner.swaps01) >= self.swapTuner.sampleSize:
-                        thisSum = sum(self.swapTuner.swaps01)
-                        thisAccepted = thisSum / self.swapTuner.sampleSize
-                        
-                        
-                        if thisAccepted > self.swapTuner.accHi:   # acceptance too high; temperature too low
-                            oldTemp = self.chainTemp
-                            self.chainTemp *= self.swapTuner.factorHi
-                            self.logger.info("SwapTuner: gen %i, swap accepted %.2f, increase temp from %.3f to %.3f" % (
-                                self.gen, thisAccepted, oldTemp, self.chainTemp))
-                            self.swapTuner.swaps01 = []
-                        elif thisAccepted < self.swapTuner.accLo:  # acceptance too low; temperature too high
-                            oldTemp = self.chainTemp
-                            if thisAccepted > self.swapTuner.accVeryLo:
-                                self.chainTemp /= self.swapTuner.factorLo
-                            else:
-                                self.chainTemp /= self.swapTuner.factorVeryLo
-                            self.logger.info("SwapTuner: gen %i, swap accepted %.3f, decrease temp from %.3f to %.3f" % (
-                                self.gen, thisAccepted, oldTemp, self.chainTemp))
-                            self.swapTuner.swaps01 = []
-                        
-                        
+                        self.swapTuner.swaps01_nSwaps += 1
+                    if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
+                        self.swapTuner.tune(self)
+                        # tune() zeros nAttempts and nSwaps counters
 
                 if acceptSwap:
                     # Use the lower triangle of swapMatrix to keep track of
