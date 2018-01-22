@@ -353,10 +353,10 @@ class SwapTuner(object):
         self.tnAccLo = 0.04
         self.tnAccVeryLo = 0.01
         self.tnFactorVeryHi = 1.4
-        self.tnFactorHi = 1.1
+        self.tnFactorHi = 1.2
         self.tnFactorLo = 0.9
-        self.tnFactorVeryLo = 0.5
-        self.tnFactorZero = 0.3
+        self.tnFactorVeryLo = 0.6
+        self.tnFactorZero = 0.4
 
 
     def tune(self, theMcmc):
@@ -539,7 +539,7 @@ class Mcmc(object):
 
     """
 
-    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, swapTuner=200):
+    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, swapTuner=250):
         gm = ['Mcmc.__init__()']
 
         self.verbose = verbose
