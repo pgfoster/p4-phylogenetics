@@ -662,7 +662,7 @@ class SequenceList(object):
 
         """
 
-        from alignment import Alignment
+        from p4.alignment import Alignment
         a = Alignment()
         a.fName = self.fName
         import copy
