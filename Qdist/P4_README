@@ -22,6 +22,9 @@ Homebrew, or if you installed python-dev.
 On my mac, I have python from Homebrew, and I installed boost-python from
 homebrew as well.  That worked.
 
+On my mac, using homebrew, to get it to work for Python 3, I had to install it
+with "--with-python3", ie "brew install --with-python3 boost-python"
+ 
 Now for scqdist, the sub-cubic quartet distance code from the clever
 and helpful folks at BIRC at Aarhus.
 
@@ -58,20 +61,19 @@ usually ok)
 
 On Ubuntu, I needed to add #include <cstddef> near the top of Tree.hpp.
 
-On my mac, with Python and boost-python from Homebrew, I did not need to modify
-setup.py --- it just worked.
+If it works, you will get a module, scqdist.so (if Python2; a more complex name
+if Python3)), which you can put in your Python path (a good and obvious place
+would be in the p4 python lib directory).  Make sure that you can import it.
 
-If it works, you will get a module, scqdist.so, which you can put in your Python
-path (a good and obvious place would be in the p4 python lib directory).  Make
-sure that you can import it.
-
-If it does not work, you may need to adjust your setup.py.  You may
-need to remove the atlas lib from the list (I needed to do that on
-Ubuntu), or you may need to uncomment and adjust the include_dirs and
-library_dirs.  You may need to change "cblas" to "blas" (I needed to
-do that on Ubuntu).  Try again until you get a working scqdist.so that
-loads without error (ie in Python or p4, do "import scqdist" in that
-directory), and then move that into your Python path.
+If it does not work, you may need to adjust your setup.py.  You may need to
+remove the atlas lib from the list (I needed to do that on Ubuntu), or you may
+need to comment/uncomment and adjust the include_dirs and library_dirs.  You may
+need to change "cblas" to "blas" (I needed to do that on Ubuntu).  If you are
+using Python 3, the boost-python libs will need to be for Python 3 ---
+boost-python3 on my mac, and boost_python-py34 on my old 16.04 LTS ubuntu box.
+Try again until you get a working scqdist.so that loads without error (ie in
+Python or p4, do "import scqdist" in that directory), and then move that into
+your Python path.
 
 Use it like this ---
 # tsA and tsB are two newick trees as Python strings.
