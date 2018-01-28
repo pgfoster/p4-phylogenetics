@@ -54,7 +54,7 @@ and that worked.
 Based on the main.cpp in the qdist src, I have made a file
 scqdistmodule.cpp, to make a Python module.  Do this ---
 
-python setup.py build_ext --inplace
+python3 setup.py build_ext --inplace
 
 and pay attention to any error messages as they fly by.  (Warnings are
 usually ok)
