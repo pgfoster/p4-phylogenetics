@@ -1,5 +1,5 @@
 nTax = 11
-taxNames = list(string.uppercase[:nTax])
+taxNames = list(string.ascii_uppercase[:nTax])
 a = func.newEmptyAlignment(dataType='dna', taxNames=taxNames, length=200)
 d = Data([a])
 

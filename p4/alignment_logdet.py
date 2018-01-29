@@ -10,8 +10,6 @@ import string
 import p4.func
 import re
 import sys
-import array
-import types
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix
@@ -286,7 +284,7 @@ if True:
 
         # Equates
         if self.equates:
-            self.equateSymbols = self.equates.keys()
+            self.equateSymbols = list(self.equates)
             self.equateSymbols.sort()
 
             # Make equatesArray
@@ -1134,7 +1132,7 @@ if True:
                                 % (nUndefinedLogDets, biggest))
             else:
                 dMessage.append("There were no undefined log dets.")
-        d.message = string.join(dMessage, '\n    ')
+        d.message = '\n    '.join(dMessage)
 
         return d
 

@@ -1,13 +1,13 @@
 from __future__ import print_function
 import string
-import array
 import p4.func
 from p4.var import var
 from p4.alignment import Alignment
-# from nexustoken import * # nextTok() et al
+from p4.nexustoken import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd, safeNextTok
 from p4.nexussets import NexusSets
 from p4.sequencelist import Sequence
 from p4.p4exceptions import P4Error
+from p4.tree import Tree
 
 # Some definitions from the MadSwofMad Syst Biol Nexus format paper (MSM97).
 #
@@ -79,15 +79,6 @@ class Nexus:
         else:
             gm = ['Nexus.readNexusFile()']
 
-        # We need to import nextTok.
-        # print 'var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok
-            from nexustoken2 import checkLineLengths
-            checkLineLengths(flob)
-        else:
-            from nexustoken import nextTok
-
         # Go to the beginning and check if it starts with '#NEXUS'
         flob.seek(0)
         # print "Nexus.readNexusFile()  about to nextTok() a.  "
@@ -95,7 +86,7 @@ class Nexus:
         # print 'xyz tok = %s' % tok
         # sys.exit()
         if tok:
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
         else:
             gm.append("Can't find the first token.  Is it an empty file?!?")
             raise P4Error(gm)
@@ -103,10 +94,6 @@ class Nexus:
             gm.append("Got first token: %s" % tok)
             gm.append("Hmmm..., this doesn't appear to be a nexus file. ")
             gm.append("The first token is not '#NEXUS'.")
-            # -1 is the signal to func._tryToReadNexusFile()
-            # that it is not a nexus file.  It should be non-fatal.
-            # No, I changed my mind-- it should raise an error.
-            # return -1
             raise P4Error(gm)
         while 1:
             # print "Nexus.readNexusFile()  about to nextTok() b"
@@ -114,7 +101,7 @@ class Nexus:
             # print "readNexusFile: got '%s'" % tok
             if not tok:
                 break
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             if lowTok == 'begin':
                 self.readBlock(flob)
                 # We may have enough for an Alignment by now.
@@ -169,17 +156,11 @@ class Nexus:
         # We start here having read the tok "begin".  So get the next
         # token to find out what kind of block.
 
-        # We need to import nextTok.
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd
-        else:
-            from nexustoken import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd
-
         tok = nextTok(flob)
         if not tok:
             gm.append("Failed to get block type.  Premature end of file?")
             raise P4Error(gm)
-        blockType = string.lower(tok)
+        blockType = tok.lower()
         if var.verboseRead:
             print("    Entering '%s' block..." % tok)
 
@@ -253,7 +234,6 @@ class Nexus:
             nexusSkipPastBlockEnd(flob)
 
     def readTreesBlock(self, flob):
-        from tree import Tree
         if hasattr(flob, 'name'):
             gm = ['Nexus.readTreesBlock() from file %s' % flob.name]
         else:
@@ -273,17 +253,12 @@ class Nexus:
             print("    var.nexus_getWeightCommandComments = %s" % var.nexus_getWeightCommandComments)
             print("    var.nexus_getAllCommandComments = %s" % var.nexus_getAllCommandComments)
 
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, nexusSkipPastNextSemiColon, safeNextTok
-        else:
-            from nexustoken import nextTok, nexusSkipPastNextSemiColon, safeNextTok
-
         # We have read the word 'trees' in 'begin trees;', but have
         # not read the semicolon yet.  So the first thing to do is ...
         nexusSkipPastNextSemiColon(flob)
         commandName = nextTok(flob)
         if commandName:
-            lowCommandName = string.lower(commandName)
+            lowCommandName = commandName.lower()
         else:
             gm.append("Expecting a tree definition")
             raise P4Error(gm)
@@ -328,7 +303,7 @@ class Nexus:
                                 elif ret == 2:
                                     doMcmcModelComments = 1
                         else:
-                            lowTok = string.lower(tok)
+                            lowTok = tok.lower()
                     lowCommandName = lowTok
                     var.nexus_getP4CommandComments = savedState
                     if var.doTreeReadMcmcModelUsageComments and not theModelInfo:
@@ -369,7 +344,7 @@ class Nexus:
                     gm.append(
                         "(You can force reading of UTREE commands with var.nexus_allowUTREE.)")
                     raise P4Error(gm)
-            elif lowCommandName[0] not in string.lowercase:
+            elif lowCommandName[0] not in string.ascii_lowercase:
                 gm.append("Got spurious '%s' (...exiting)" % commandName)
                 raise P4Error(gm)
             else:
@@ -378,7 +353,7 @@ class Nexus:
                 nexusSkipPastNextSemiColon(flob)
             commandName = nextTok(flob)
             if commandName:
-                lowCommandName = string.lower(commandName)
+                lowCommandName = commandName.lower()
             else:
                 gm.append(
                     "Expecting a trees block command (eg 'tree'), or 'end'")
@@ -417,15 +392,8 @@ class Nexus:
 
         translationHash = {}
 
-        # We need to import safeNextTok.
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import safeNextTok
-        else:
-            from nexustoken import safeNextTok
-
         while 1:
-            keyTok = p4.func.nexusUnquoteName(
-                safeNextTok(flob, 'Nexus: readTranslateCommand'))
+            keyTok = p4.func.nexusUnquoteName(safeNextTok(flob, 'Nexus: readTranslateCommand'))
             # print "x got keyTok '%s'" % keyTok
             if keyTok == None or keyTok == ';':
                 break
@@ -539,18 +507,15 @@ class NexusData:
                                 gm.append(
                                     "Equate key '%s' is one of the character symbols.  Bad." % k)
                                 raise P4Error(gm)
-                            if self.equates.has_key(k):
-                                gm.append(
-                                    "Equates are currently %s" % self.equates)
-                                gm.append(
-                                    "Equate key '%s' from the format command is already in the equates." % k)
+                            if k in self.equates:
+                                gm.append("Equates are currently %s" % self.equates)
+                                gm.append("Equate key '%s' from the format command is already in the equates." % k)
                                 raise P4Error(gm)
                             for c in v:
                                 if c not in self.symbols:
                                     gm.append("Equate %s:%s" % (k, v))
                                     gm.append("%s is not in symbols." % c)
-                                    raise P4Error(
-                                        gm, 'nexus_equateIsNotInSymbols')
+                                    raise P4Error(gm, 'nexus_equateIsNotInSymbols')
                             self.equates[k] = v
                 elif self.dataType == 'protein':
                     if self.formatCommandSymbols:
@@ -572,7 +537,7 @@ class NexusData:
                                 gm.append(
                                     "Equate key '%s' is one of the character symbols.  Bad." % k)
                                 raise P4Error(gm)
-                            if self.equates.has_key(k):
+                            if k in self.equates:
                                 gm.append(
                                     "Equates are currently %s" % self.equates)
                                 gm.append(
@@ -614,7 +579,7 @@ class NexusData:
                                 gm.append(
                                     "Equate key '%s' is one of the character symbols.  Bad." % k)
                                 raise P4Error(gm)
-                            if self.equates.has_key(k):
+                            if k in self.equates:
                                 gm.append(
                                     "Equates are currently %s" % self.equates)
                                 gm.append(
@@ -709,7 +674,7 @@ class NexusData:
                 # put the sequences in lowercase
                 if self.nTax:
                     for i in range(self.nTax):
-                        self.sequences[i] = string.lower(self.sequences[i])
+                        self.sequences[i] = self.sequences[i].lower()
 
                 # Ask whether any of the charsUsedSoFar is represented more
                 # than once in that string.
@@ -767,16 +732,11 @@ class NexusData:
         else:
             gm = ['NexusData.readTaxaBlock()']
 
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, nexusSkipPastNextSemiColon
-        else:
-            from nexustoken import nextTok, nexusSkipPastNextSemiColon
-
         # to get to the end of 'begin taxa maybe with other stuff;'
         nexusSkipPastNextSemiColon(flob)
         commandName = nextTok(flob)
         if commandName:
-            lowCommandName = string.lower(commandName)
+            lowCommandName = commandName.lower()
         else:
             gm.append("Failed to read any commands.")
             raise P4Error(gm)
@@ -812,7 +772,7 @@ class NexusData:
 
             commandName = nextTok(flob)
             if commandName:
-                lowCommandName = string.lower(commandName)
+                lowCommandName = commandName.lower()
             else:
                 gm.append("Premature end of file.")
                 raise P4Error(gm)
@@ -829,10 +789,6 @@ class NexusData:
             gm = ['NexusData.readDataBlock() from file %s' % flob.name]
         else:
             gm = ['NexusData.readDataBlock()']
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, nexusSkipPastNextSemiColon
-        else:
-            from nexustoken import nextTok, nexusSkipPastNextSemiColon
 
         nexusSkipPastNextSemiColon(flob)
         notImplemented = [
@@ -840,7 +796,7 @@ class NexusData:
         # implemented: dimensions, format,  matrix, and thats all.
         commandName = nextTok(flob)
         if commandName:
-            lowCommandName = string.lower(commandName)
+            lowCommandName = commandName.lower()
         else:
             return
         hasDoneDimensionsCommand = None
@@ -881,7 +837,7 @@ class NexusData:
                 gm.append("%s block command '%s' is not implemented" %
                           (blockType, commandName))
                 raise P4Error(gm, 'nexus_commandNotImplemented')
-            elif lowCommandName[0] not in string.lowercase:
+            elif lowCommandName[0] not in string.ascii_lowercase:
                 gm.append("Got spurious '%s' (...exiting)" % commandName)
                 raise P4Error(gm)
             else:
@@ -890,7 +846,7 @@ class NexusData:
                 nexusSkipPastNextSemiColon(flob)
             commandName = nextTok(flob)
             if commandName:
-                lowCommandName = string.lower(commandName)
+                lowCommandName = commandName.lower()
             else:
                 return
 
@@ -905,11 +861,6 @@ class NexusData:
                 blockType, command, sub)]
 
         # print "parseSubcommandEqualsArg sub=%s, command=%s" % (sub,command)
-
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok
-        else:
-            from nexustoken import nextTok, safeNextTok
 
         tok = nextTok(flob)
         if tok:
@@ -939,7 +890,7 @@ class NexusData:
                                 "Bad arg for %s block %s subcommand '%s'" % (blockType, command, sub))
                             raise P4Error(gm)
                     elif sub == 'datatype':
-                        lowTok = string.lower(tok)
+                        lowTok = tok.lower()
                         assumedToBeDNA = False
                         if lowTok == 'nucleotide':
                             # assume it is dna
@@ -965,7 +916,7 @@ class NexusData:
                             raise P4Error(gm)
 
                     elif sub == 'gap':
-                        lowTok = string.lower(tok)
+                        lowTok = tok.lower()
                         self.nexus_gap = lowTok
                         # if lowTok != var.nexus_gap:
                         #gm.append("%s block format subcommand '%s': " % (blockType, sub))
@@ -973,7 +924,7 @@ class NexusData:
                         #gm.append("Deal with it.  (exiting...)")
                         #raise P4Error(gm)
                     elif sub == 'missing':
-                        lowTok = string.lower(tok)
+                        lowTok = tok.lower()
                         self.nexus_missing = lowTok
                         # if lowTok != '?':
                         #    gm.append("%s block format subcommand '%s': " % (blockType, sub))
@@ -981,7 +932,7 @@ class NexusData:
                         #    gm.append("Deal with it.  (exiting...)")
                         #    raise P4Error(gm)
                     elif sub == 'matchchar':
-                        lowTok = string.lower(tok)
+                        lowTok = tok.lower()
                         self.nexus_matchchar = lowTok
                         # if lowTok != '.':
                         #    gm.append("%s block 'format' subcommand '%s': " % (blockType, sub))
@@ -1025,22 +976,22 @@ class NexusData:
                                             flob, 'format subcommand equate')
                                         # print "got tok '%s'" % tok
                                         while tok != '}':
-                                            bList.append(string.lower(tok))
+                                            bList.append(tok.lower())
                                             tok = safeNextTok(
                                                 flob, 'format subcommand equate')
                                             # print "got tok '%s'" % tok
-                                        b = string.join(bList, '')
+                                        b = ''.join(bList)
                                     elif b == '(':
                                         bList = []
                                         tok = safeNextTok(
                                             flob, 'format subcommand equate')
                                         # print "got tok '%s'" % tok
                                         while tok != ')':
-                                            bList.append(string.lower(tok))
+                                            bList.append(tok.lower())
                                             tok = safeNextTok(
                                                 flob, 'format subcommand equate')
                                             # print "got tok '%s'" % tok
-                                        b = string.join(bList, '')
+                                        b = ''.join(bList)
                                     # print "Got b %s" % b
                                     self.formatCommandEquates[a] = b.lower()
                                     # print "got equate %s = %s" % (a, b)
@@ -1060,10 +1011,10 @@ class NexusData:
                             symbolsList = []
                             tok = nextTok(flob)
                             while tok != '\"':
-                                symbolsList.append(string.lower(tok))
+                                symbolsList.append(tok.lower())
                                 tok = safeNextTok(
                                     flob, 'format subcommand symbols')
-                            newSymbols = string.join(symbolsList, '')
+                            newSymbols = ''.join(symbolsList)
                             # if len(newSymbols) > 20:
                             #    gm.append("Got %i new symbols.  Rather a lot, yes?" % len(newSymbols))
                             #    gm.append("Got new symbols = %s" % newSymbols)
@@ -1101,10 +1052,6 @@ class NexusData:
             gm = ['NexusData.readTaxlabelsCommand() from file %s' % flob.name]
         else:
             gm = ['NexusData.readTaxlabelsCommand()']
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok
-        else:
-            from nexustoken import nextTok
 
         tok = nextTok(flob)
         while tok and tok != ';':
@@ -1112,7 +1059,7 @@ class NexusData:
             if not p4.func.nexusCheckName(theName):
                 gm.append("Bad nexus name '%s'" % theName)
                 raise P4Error(gm, 'nexus_badName')
-            lowName = string.lower(theName)
+            lowName = theName.lower()
             if lowName in self.lowTaxNames:
                 gm.append("Got duplicated (lowercased) taxname %s" % theName)
                 raise P4Error(gm, 'nexus_duplicatedTaxnames')
@@ -1130,14 +1077,10 @@ class NexusData:
             gm = ['NexusData.readDimensionsCommand() from file %s' % flob.name]
         else:
             gm = ['NexusData.readDimensionsCommand()']
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok
-        else:
-            from nexustoken import nextTok
 
         sub = nextTok(flob)  # get subcommand
         if sub:
-            lowSub = string.lower(sub)
+            lowSub = sub.lower()
         else:
             return
         while lowSub != None and lowSub != ';':
@@ -1176,7 +1119,7 @@ class NexusData:
                                 raise P4Error(gm)
                             sub = nextTok(flob)
                             if sub:
-                                lowSub = string.lower(sub)
+                                lowSub = sub.lower()
                                 continue
                             else:
                                 return
@@ -1185,14 +1128,14 @@ class NexusData:
                                 "%s block dimensions command: spurious '='" % blockType)
                             raise P4Error(gm)
                     else:
-                        lowSub = string.lower(sub)
+                        lowSub = sub.lower()
                         continue
                 else:
                     return
 
             sub = nextTok(flob)
             if sub:
-                lowSub = string.lower(sub)
+                lowSub = sub.lower()
                 continue
             else:
                 return
@@ -1202,17 +1145,13 @@ class NexusData:
             gm = ['NexusData.readFormatCommand() from file %s' % flob.name]
         else:
             gm = ['NexusData.readFormatCommand()']
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok
-        else:
-            from nexustoken import nextTok
 
         notImplemented = ['respectcase',
                           'labels', 'nolabels', 'transpose', 'items', 'statesformat',
                           'tokens', 'notokens']
         sub = nextTok(flob)
         if sub:
-            lowSub = string.lower(sub)
+            lowSub = sub.lower()
         else:
             return
         lastSubcommand = None
@@ -1258,7 +1197,7 @@ class NexusData:
                                 raise P4Error(gm)
                             sub = nextTok(flob)
                             if sub:
-                                lowSub = string.lower(sub)
+                                lowSub = sub.lower()
                                 continue
                             else:
                                 return
@@ -1267,14 +1206,14 @@ class NexusData:
                                 "%s block format command: spurious '='" % blockType)
                             raise P4Error(gm)
                     else:
-                        lowSub = string.lower(sub)
+                        lowSub = sub.lower()
                         continue
                 else:
                     return
 
             sub = nextTok(flob)
             if sub:
-                lowSub = string.lower(sub)
+                lowSub = sub.lower()
                 continue
             else:
                 print("m2 self.symbols=%s" % self.symbols)
@@ -1286,10 +1225,6 @@ class NexusData:
         else:
             gm = ['NexusData.readInterleaveMatrix()']
         dbug = 0
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok
-        else:
-            from nexustoken import nextTok
 
         if dbug:
             print("Nexus: readInterleaveMatrix here, blockType = %s" % blockType)
@@ -1327,7 +1262,7 @@ class NexusData:
                         gm.append("Name mismatch: %s does not match (previous) %s" %
                                   (self.taxNames[sn], tokens[0]))
                         raise P4Error(gm)
-                self.sequences[sn].append(string.join(tokens[1:], ''))
+                self.sequences[sn].append(''.join(tokens[1:]))
                 # print "%s: %s" % (tokens[0], self.sequences[sn])
                 tokens = []
                 counter = counter + 1
@@ -1346,7 +1281,7 @@ class NexusData:
                 #    print "       tokensLength is now %i" % len(tokens)
             tok = p4.func.nexusUnquoteName(nextTok(flob))
         for i in range(self.nTax):
-            self.sequences[i] = string.join(self.sequences[i], '')
+            self.sequences[i] = ''.join(self.sequences[i])
         var.nexus_getLineEndingsAsTokens = 0  # back to normal
 
     def readNonInterleaveMatrix(self, flob, blockType):
@@ -1355,10 +1290,6 @@ class NexusData:
                   flob.name]
         else:
             gm = ['NexusData.readNonInterleaveMatrix()']
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok
-        else:
-            from nexustoken import nextTok
 
         tok = p4.func.nexusUnquoteName(nextTok(flob))
         tokens = []
@@ -1388,7 +1319,7 @@ class NexusData:
                 tokensLen += len(tok)
                 tokens.append(tok)
                 if tokensLen == self.nChar:
-                    self.sequences.append(string.join(tokens, ''))
+                    self.sequences.append(''.join(tokens))
                     tokens = []
                     tokensLen = 0
                     counter = counter + 1
@@ -1422,23 +1353,19 @@ class NexusData:
             return
         gm = ['NexusData.propagateMatchchars()']
         # are there any matchchars?
-        if string.count(self.sequences[0], self.nexus_matchchar):
+        if self.nexus_matchchar in self.sequences[0]:
             gm.append("can't have matchchars in the first sequences")
             raise P4Error(gm)
         haveToDoIt = False
-        # I can't remember why I had to do this next bit, so I am turning it off.
-        # if len(self.equates):
-        #    haveToDoIt = True # due to equates      Why is this?
-        # else:    # see if there are any matchchars
 
         for aSeq in self.sequences[1:]:
-            if string.count(aSeq, self.nexus_matchchar):
+            if self.nexus_matchcar in aSeq:
                 haveToDoIt = True
                 break
         if haveToDoIt:
             tempSeqs = []
             for aSeq in self.sequences:
-                tempSeqs.append(array.array('c', aSeq))
+                tempSeqs.append(list(aSeq))
             for aSeq in tempSeqs[1:]:
                 for j in range(len(aSeq)):
                     if aSeq[j] == self.nexus_matchchar:
@@ -1446,7 +1373,7 @@ class NexusData:
             # put them back into strings
             self.sequences = []
             for aSeq in tempSeqs:
-                self.sequences.append(aSeq.tostring())
+                self.sequences.append(''.join(aSeq))
 
     def alignment(self):
         gm = ['NexusData.alignment()']

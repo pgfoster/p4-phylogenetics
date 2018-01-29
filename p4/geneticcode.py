@@ -173,10 +173,11 @@ class GeneticCode:
             sys.exit()
 
         for i in range(64):
-            theCodon = string.lower(Base1[i] + Base2[i] + Base3[i])
-            theAA = string.lower(AAs[i])
+            theCodon = Base1[i] + Base2[i] + Base3[i]
+            theCodon = theCodon.lower()
+            theAA = AAs[i].lower()
             self.code[theCodon] = theAA
-            if self.codonsForAA.has_key(theAA):
+            if theAA in self.codonsForAA:
                 self.codonsForAA[theAA].append(theCodon)
             else:
                 self.codonsForAA[theAA] = [theCodon]

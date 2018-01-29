@@ -23,9 +23,6 @@
 #include "p4_treeCopyVerify.h"
 #include "logDet.h"
 
-// #include "nexusToken.h"
-
-
 
 static PyObject *
 pf_newData(PyObject *self, PyObject *args)
@@ -2212,133 +2209,6 @@ pf_p4_copyModelPrams(PyObject *self, PyObject *args)
 }
 
 
-// -----------------------------------
-// ==== nexusToken
-// -----------------------------------
-
-// Off this week, for python3 compatibility.
-// Also, the speedup is not that impressive, only about 60 -- 100 %
-
-#if 0
-
-static PyObject *
-pf_newNexusToken(PyObject *self, PyObject *args)
-{
-    PyArrayObject *oWriteVisibleComments, 
-        *oGetP4CommandComments, 
-        *oGetWeightCommandComments, 
-        *oGetAllCommandComments,
-        *oGetLineEndings,
-        *oMax,
-        *oTokLen,
-        *oTok,
-        *oEmbeddedCommentLen,
-        *oEmbeddedComment,
-        *oSavedCommentLen;
-    //*oSavedComment;      what was this for?
-    nexusToken *nt;
-	
-    if(!PyArg_ParseTuple(args, "OOOOOOOOOOO", 
-                         &oWriteVisibleComments, 
-                         &oGetP4CommandComments, 
-                         &oGetWeightCommandComments, 
-                         &oGetAllCommandComments,
-                         &oGetLineEndings,
-                         &oMax,
-                         &oTokLen,
-                         &oTok,
-                         &oEmbeddedCommentLen,
-                         &oEmbeddedComment,
-                         &oSavedCommentLen)) {
-        printf("Error pf_newNexusToken: couldn't parse tuple\n");
-        return NULL;
-    }
-    nt = (nexusToken *)malloc(sizeof(nexusToken));
-    if(!nt) {
-        printf("failed to malloc nexusToken\n");
-        exit(1);
-    }
-    nt->writeVisibleComments = (int *)oWriteVisibleComments->data;
-    nt->getP4CommandComments = (int *)oGetP4CommandComments->data;
-    nt->getWeightCommandComments = (int *)oGetWeightCommandComments->data;
-    nt->getAllCommandComments = (int *)oGetAllCommandComments->data;
-    nt->getLineEndings = (int *)oGetLineEndings->data;
-    nt->max = (int *)oMax->data;
-    nt->tokLen = (int *)oTokLen->data;
-    nt->tok = (char *)oTok->data;
-    nt->embeddedCommentLen = (int *)oEmbeddedCommentLen->data;
-    nt->embeddedComment = (char *)oEmbeddedComment->data;
-    nt->savedCommentLen = (int *)oSavedCommentLen->data;
-    return Py_BuildValue("l", (long int)nt);
-}
-
-static PyObject *
-pf_nextToken(PyObject *self, PyObject *args)
-{
-    nexusToken    *nt;
-    PyObject      *theFileObject;
-    //int            i;
-	
-    if(!PyArg_ParseTuple(args, "lO", &nt, &theFileObject)) {
-        printf("Error pf_nextToken: couldn't parse tuple\n");
-        return NULL;
-    }
-    //printf("    pf_nextToken(), in pfmodule.c.");  
-    //printf("      nt = %li\n", (long int)nt);
-    //printf("      flags = %i %i %i %i %i\n", nt->writeVisibleComments[0], 
-    //                                         nt->getP4CommandComments[0], 
-    //                                         nt->getWeightCommandComments[0], 
-    //                                         nt->getAllCommandComments[0], nt->getLineEndings[0]);
-    //printf("      max = %i\n", nt->max[0]);
-    //printf("      embeddedCommentLen = %i\n", nt->embeddedCommentLen[0]);
-    //printf("      tokLen = %i\n", nt->tokLen[0]);
-    //printf("      first 10 chars = %c %c %c %c %c %c %c %c %c %c \n", nt->tok[0], nt->tok[1], nt->tok[2], 
-    //                                                                  nt->tok[3], nt->tok[4], nt->tok[5], 
-    //	                                                              nt->tok[6], nt->tok[7], nt->tok[8], 
-    //	                                                              nt->tok[9]);
-    nt->filePtr = PyFile_AsFile(theFileObject);
-    nextTok(nt);
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-static PyObject *
-pf_nexusSkipPastNextSemiColon(PyObject *self, PyObject *args)
-{
-    nexusToken    *nt;
-    PyObject      *theFileObject;
-    //int            i;
-	
-    if(!PyArg_ParseTuple(args, "lO", &nt, &theFileObject)) {
-        printf("Error pf_nexusSkipPastNextSemiColon: couldn't parse tuple\n");
-        return NULL;
-    }
-    nt->filePtr = PyFile_AsFile(theFileObject);
-    nexusSkipPastNextSemiColon(nt);
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-
-static PyObject *
-pf_nexusTokenCheckLineLengths(PyObject *self, PyObject *args)
-{
-    nexusToken    *nt;
-    PyObject      *theFileObject;
-    //int            i;
-	
-    if(!PyArg_ParseTuple(args, "lO", &nt, &theFileObject)) {
-        printf("Error pf_nexusTokenCheckLineLengths: couldn't parse tuple\n");
-        return NULL;
-    }
-    nt->filePtr = PyFile_AsFile(theFileObject);
-    return Py_BuildValue("l", (long int)nexusTokenCheckLineLengths(nt));
-}
-#endif
-
-
-// -----------------------------------
 
 static PyObject *
 pf_zeroNumPyInts(PyObject *self, PyObject *args)
@@ -2777,11 +2647,6 @@ static PyMethodDef pfMethods[] = {
     {"p4_copyCondLikes", pf_p4_copyCondLikes, METH_VARARGS},
     {"p4_copyBigPDecks", pf_p4_copyBigPDecks, METH_VARARGS},
     {"p4_copyModelPrams", pf_p4_copyModelPrams, METH_VARARGS},
-
-    //{"newNexusToken", pf_newNexusToken, METH_VARARGS},
-    //{"nextToken", pf_nextToken, METH_VARARGS},
-    //{"nexusSkipPastNextSemiColon", pf_nexusSkipPastNextSemiColon, METH_VARARGS},
-    //{"nexusTokenCheckLineLengths", pf_nexusTokenCheckLineLengths, METH_VARARGS},
 
     {"zeroNumPyInts", pf_zeroNumPyInts, METH_VARARGS},
     {"logDetFillFxy", pf_logDetFillFxy, METH_VARARGS},

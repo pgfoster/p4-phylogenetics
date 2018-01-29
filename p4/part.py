@@ -47,11 +47,11 @@ class Part:
         if not sequenceNumberList:
             sequenceNumberList = range(self.nTax)
         else:
-            if type(sequenceNumberList) != type([1, 2]):
+            if not isinstance(sequenceNumberList, list):
                 gm.append("The sequenceNumberList should be a list, ok?")
                 raise P4Error(gm)
             for i in sequenceNumberList:
-                if type(i) != type(1):
+                if not isinstance(i, int):
                     gm.append("The sequenceNumberList should be integers, ok?")
                     raise P4Error(gm)
                 if i < 0 or i > self.nTax - 1:

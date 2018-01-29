@@ -119,12 +119,10 @@ class Sequence(object):
                 self.sequence[i] = 'b'
             else:
                 gm = ["Sequence.reverseComplement()"]
-                if c in string.uppercase:
-                    gm.append(
-                        "Got uppercase '%s' How did that happen? -- can only handle lowercase." % c)
+                if c in string.ascii_uppercase:
+                    gm.append("Got uppercase '%s' How did that happen? -- can only handle lowercase." % c)
                 else:
-                    gm.append(
-                        "Sequence.reverseComplement().  Got char '%s' What is it?" % c)
+                    gm.append("Sequence.reverseComplement().  Got char '%s' What is it?" % c)
                 raise P4Error(gm)
 
         self.sequence = ''.join(self.sequence)
@@ -256,7 +254,7 @@ class Sequence(object):
         if prSeq.sequence[-1] == '*':
             prSeq.sequence.pop()
 
-        prSeq.sequence = string.join(prSeq.sequence, '')
+        prSeq.sequence = ''.join(prSeq.sequence)
         return prSeq
 
 
@@ -302,8 +300,7 @@ class SequenceList(object):
     def makeSequenceForNameDict(self):
         self.sequenceForNameDict = {}
         for s in self.sequences:
-            assert not self.sequenceForNameDict.has_key(
-                s.name), "duped name %s" % s.name
+            assert s.name not in self.sequenceForNameDict, "duped name %s" % s.name
             self.sequenceForNameDict[s.name] = s
 
     def _readFastaMakeSeq(self, splHeadLine, sLineList):
@@ -412,7 +409,7 @@ class SequenceList(object):
                 for i in range(len(mySeq.sequence)):
                     if mySeq.sequence[i] == 'u':
                         mySeq.sequence[i] = 't'
-                mySeq.sequence = string.join(mySeq.sequence, '')
+                mySeq.sequence = ''.join(mySeq.sequence)
                 mySeq.dataType = 'dna'
             else:
                 # print "Its protein"
@@ -580,14 +577,14 @@ class SequenceList(object):
             self.sequences.append(seqObj)
 
         # now fix the sequences
-        toLowerTransTable = string.maketrans(
-            string.uppercase[:26], string.lowercase[:26])
+        myZaps = string.digits + string.whitespace + '\0'
         for seqObj in self.sequences:
-            if string.count(seqObj.sequence, '.'):
+            if '.' in seqObj.sequence:
                 gm.append("Dots don't work in a pir file, do they?")
                 raise P4Error(gm)
-            seqObj.sequence = string.translate(seqObj.sequence, toLowerTransTable,
-                                               string.digits + string.whitespace + '\0')
+            seqObj.sequence = seqObj.sequence.lower()
+            seqObj.sequence = re.sub('['+myZaps+']', '', seqObj.sequence)
+            
         if 0:
             for seqObj in self.sequences:
                 print('%20s  %-30s' % ('name', seqObj.name))
@@ -665,7 +662,7 @@ class SequenceList(object):
 
         """
 
-        from alignment import Alignment
+        from p4.alignment import Alignment
         a = Alignment()
         a.fName = self.fName
         import copy
@@ -814,7 +811,7 @@ class SequenceList(object):
             else:
                 snDict[s.name] = 1
         nDupes = 0
-        for k, v in snDict.iteritems():
+        for k, v in snDict.items():
             if v > 1:
                 print("Got %2i copies of sequence name %s" % (v, k))
                 nDupes += 1
@@ -884,17 +881,16 @@ class SequenceList(object):
         gm = ["SequenceLists.restoreNamesFromRenameForPhylip()"]
         if os.path.exists(dictFName):
             import __main__
-            execfile(dictFName, __main__.__dict__,  __main__.__dict__)
+            exec(open(dictFName).read(), __main__.__dict__,  __main__.__dict__)
             from __main__ import p4_renameForPhylip_dict
         else:
             gm.append("The dictionary file '%s' can't be found." % dictFName)
             raise P4Error(gm)
         for s in self.sequences:
-            if p4_renameForPhylip_dict.has_key(s.name):
+            if s.name in p4_renameForPhylip_dict:
                 s.name = p4_renameForPhylip_dict[s.name]
             else:
-                gm.append(
-                    "The dictionary does not contain a key for '%s'." % s.name)
+                gm.append("The dictionary does not contain a key for '%s'." % s.name)
                 raise P4Error(gm)
         del(__main__.p4_renameForPhylip_dict)
         del(__main__.p4_renameForPhylip_originalNames)

@@ -5,7 +5,6 @@ date: 25/08/2016
 import sys
 import copy
 import warnings
-import types
 from itertools import combinations, product
 import operator
 from Bio.Data import CodonTable
@@ -253,12 +252,11 @@ class Code(object):
         self.code['-' * self.codelength] = "-"
 
         for i in range(len(symbols) ** self.codelength):
-            #theCodon = string.lower(Base1[i] + Base2[i] + Base3[i])
             # Generalized version (can deal with any code length):
             theCodon = reduce(operator.add, [Bases[j][i] for j in range(self.codelength)]).lower()
             theAA = AAs[i].lower()
             self.code[theCodon] = theAA
-            if self.codonsForAA.has_key(theAA):
+            if theAA in self.codonsForAA:
                 self.codonsForAA[theAA].append(theCodon)
             else:
                 self.codonsForAA[theAA] = [theCodon]
@@ -305,7 +303,7 @@ class Codon(object):
         # The dictionary starts with the distance to self (0)
         self._distances = {self.id : 0}
         # genetic code according to which the codon should be translated
-        if isinstance(code, types.StringType):
+        if isinstance(code, str):
             self.code = getBiopythonCode(code)
         else:
             msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -401,7 +399,7 @@ class Codon(object):
         if code is None:
             # self.code should be something valid.
             code = self.code
-        elif isinstance(code, types.StringType):
+        elif isinstance(code, str):
             code = getBiopythonCode(code)
         else:
             msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -423,14 +421,14 @@ class Codon(object):
         """This method returns the mutational distance between *self* and *other*.
         It is defined as the minimum number of nucleotide substitutions to transform
         *self* into *other*."""
-        if self._distances.has_key(other.id):
+        if other.id in self._distances:
             # The distance has already been calculated.
             # It should be known also on the other side.
             # other._distances[self.id] = self._distances[other.id]
             msg = "The distances should be symmetrical."
             assert other._distances[self.id] == self._distances[other.id], msg
             #pass
-        elif other._distances.has_key(self.id):
+        elif self.id in other._distances:
             # The distance is not known, but strangely it is known on the other side.
             warnings.warn("It is unexpected that the distance is already known "
                           "on the other side but not on the side of self.\n")
@@ -481,7 +479,7 @@ class MutationGraph(object):
     Non-degenerate codons are neighbours if they differ by only one nucleotide.
     Degenerate codons are sets of non-degenerate codons."""
     def __init__(self, code="Standard"):
-        if isinstance(code, types.StringType):
+        if isinstance(code, str):
             self.code = getBiopythonCode(code)
         else:
             msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -541,7 +539,7 @@ class MutationGraph(object):
                     self.codon_colours[codon] = "violet"
                 else:
                     pass
-            if not self.degen_groups.has_key(aa):
+            if aa not in self.degen_groups:
                 # Create an entry for this amino-acid.
                 # Each codon position has its own four sets of synonymous codons.
                 # The codons are grouped on the basis of the nucleotide they have
@@ -624,7 +622,7 @@ class MutationGraph(object):
     def give_degen(self, codon, pos=1):
         """This method returns the degenerate codon representing the group of codons
         synonymous to *codon* and having the same nucleotide at position *pos* as *codon*."""
-        if not self.cod2degen[pos].has_key(codon):
+        if codon not in self.cod2degen[pos]:
             if len(codon.aas) == 1:
                 aa = list(codon.aas)[0]
             else:
@@ -651,7 +649,7 @@ class MutationGraph(object):
         """This method returns the colour to be associated to the codon *codon*.
         If the codon is not yet recorded in self.codon_colours, its colour is inferred from
         the colours of the degenerate codons already recorded."""
-        if not self.codon_colours.has_key(codon):
+        if codon not in self.codon_colours:
             for cod in self.codon_colours.keys():
                 if codon in cod:
                     self.codon_colours[codon] = self.codon_colours[cod]
@@ -838,7 +836,7 @@ def recode_sequence(sequence, converter, positions=None, code="Standard"):
     By default, all positions are recoded.
     """
     gm = ['p4.code_utils.recode_sequence()']
-    if isinstance(code, types.StringType):
+    if isinstance(code, str):
         code = getBiopythonCode(code)
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -859,7 +857,7 @@ def recode_sequence(sequence, converter, positions=None, code="Standard"):
     # Build the recoded version of the sequence.
     new_seq = ""
     # Loop over the codons (triplets, if subst_size == 3).
-    for i in range(len(sequence) / subst_size):
+    for i in range(len(sequence) // subst_size):
         try:
             # Make a Codon instance (to convert it afterwards).
             codon = Codon(sequence[(subst_size * i):(subst_size * (i+1))], code)
@@ -898,7 +896,7 @@ def codon_usage(sequence, code="Standard"):
     should be the Biopython name of the genetic code under which the sequence is to
     be interpreted. Alternatively, it can be the dictionary giving the
     correspondence between codons and amino-acids."""
-    if isinstance(code, types.StringType):
+    if isinstance(code, str):
         code = getBiopythonCode(code)
     else:
         msg = "code must be a dictionary, or a string naming the code in Biopython."
@@ -921,10 +919,10 @@ def codon_usage(sequence, code="Standard"):
         # Does it really make sense to count the codon for several
         # amino-acids in the codon usage statistics ?
         for aa in codon.aas:
-            if not aa_stats.has_key(aa):
+            if aa not in aa_stats:
                 # Create the entry if it doesn't exist.
                 aa_stats[aa] = {}
-            if aa_stats[aa].has_key(codon):
+            if codon in aa_stats[aa]:
                 aa_stats[aa][codon] += 1
             else:
                 aa_stats[aa][codon] = 1

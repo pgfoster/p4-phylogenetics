@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
 import string
-import types
 import math
 import copy
 import os
@@ -13,6 +12,8 @@ from p4.var import var
 from p4.p4exceptions import P4Error
 from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
 from p4.distancematrix import DistanceMatrix
+from p4.treepicture import TreePicture
+
 
 import numpy
 import p4.pf as pf
@@ -131,7 +132,6 @@ if True:
                 f.write('#NEXUS\n\n')
         else:
             if append:
-                import os
                 if os.path.isfile(fName):
                     try:
                         f = open(fName, 'a')
@@ -316,16 +316,16 @@ if True:
             return "".join(sList)
         elif fName == None:
             print("".join(sList), end='')  # avoid a redundant newling
-        elif type(fName) == type('string'):
+        elif isinstance(fName, str):
             if append:
                 fName2 = open(fName, 'a')
             else:
                 fName2 = open(fName, 'w')
-            fName2.write(string.join(sList, ''))
+            fName2.write(''.join(sList))
     #        fName2.write('\n')
             fName2.close()
         elif hasattr(fName, 'write'):
-            fName.write(string.join(sList, ''))
+            fName.write(''.join(sList))
             # fName.write('\n')
             # Somebody else opened the fName, so somebody else can close it.
         else:
@@ -346,7 +346,7 @@ if True:
                     sList.append(' g%i.%i' %
                                  (pNum, theNode.br.parts[pNum].gdasrvNum))
         sList.append(']')
-        return string.join(sList, '')
+        return ''.join(sList)
 
     def draw(self, showInternalNodeNames=1, addToBrLen=0.2, width=None, showNodeNums=1, partNum=0, model=None):
         """Draw the tree to the screen.
@@ -372,7 +372,7 @@ if True:
                               addToBrLen=addToBrLen, width=width,
                               autoIncreaseWidth=True,
                               showNodeNums=showNodeNums, partNum=partNum, model=model)
-        print(string.join(s, '\n'))
+        print('\n'.join(s))
 
     def textDrawList(self, showInternalNodeNames=1, addToBrLen=0.2, width=None, autoIncreaseWidth=True, showNodeNums=1, partNum=0, model=False):
 
@@ -387,7 +387,6 @@ if True:
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
 
-        from treepicture import TreePicture
         p = TreePicture(self)
         p.fName = None
         p.width = width
@@ -434,7 +433,7 @@ if True:
                 p.width = 100
 
         # print "p.width =", p.width
-        #import sys; sys.exit()
+        # sys.exit()
 
         # Make sure the names fit.
         if not autoIncreaseWidth:
@@ -534,7 +533,6 @@ if True:
         if not self.preAndPostOrderAreValid:
             self.setPreAndPostOrder()
 
-        from treepicture import TreePicture
         p = TreePicture(self)
         p.addToBrLen = 0.0
         p.width = width

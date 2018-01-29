@@ -1,4 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+
+# As of mid-october 2017, homebrew on my mac uses python2.7.14, aliased to python2 
+# BUT NOT aliased to python.  Saying python gives me ancient /usr/bin/python v 2.7.10.
 
 import sys
 import os
@@ -90,6 +93,19 @@ from p4 import *
 var.argvAfterDoubleDash = argvAfterDoubleDash
 del(argvAfterDoubleDash)
 
+# We want to check that py3 is not importing p3rlcompleter before bothering with
+# reading files
+if var.interactiveHelper == 'p3rlcompleter':
+    if sys.version_info >= (3,):
+        if forceExitAtEnd or (exitAtEnd and pyFileCount):
+            pass
+        else:
+            print("var.interactiveHelper is set to 'p3rlcompleter',")
+            print("but it does not work in Python 3.  Maybe try setting")
+            print("var.interactiveHelper = 'ipython'?")
+            sys.exit()
+
+
 if len(theFileList):
     #var.nexus_doFastNextTok = True
     for f in theFileList:
@@ -130,10 +146,8 @@ if 1:
     if os.path.isdir(theDir):
         fName = os.path.join(theDir, 'interactive')
         if os.path.isfile(fName):
-            try:
-                execfile(fName)
-            except:
-                pass
+            #print("reading %s ..." % fName)
+            exec(open(fName).read())
         del(fName)
     del(theDir)
 
@@ -141,6 +155,7 @@ if 1:
 if var.interactiveHelper:
     # print "Going interactive, with helper %s" % var.interactiveHelper
     if var.interactiveHelper == 'p3rlcompleter':
+        assert sys.version_info < (3,), "p3rlcompleter does not work with py3 -- try ipython"
         import p4.interactive.p3rlcompleter
     elif var.interactiveHelper == 'bpython':
         from bpython.curtsies import main

@@ -2,7 +2,7 @@ var.warnReadNoFile = 0
 var.verboseRead = 0
 read('d.nex')
 d = Data()
-taxNames = list(string.uppercase[:5])
+taxNames = list(string.ascii_uppercase[:5])
 read('((A, B), C, (D, E));')
 read('((D, E), B, (C, A));')
 read('((C, E), (B, D), A);')

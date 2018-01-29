@@ -1,6 +1,6 @@
 from __future__ import print_function
 from p4.sequencelist import SequenceList, Sequence
-from p4.nexussets import NexusSets
+from p4.nexussets import NexusSets, CharSet
 from p4.p4exceptions import P4Error
 import string
 import copy
@@ -10,8 +10,6 @@ import string
 import p4.func
 import re
 import sys
-import array
-import types
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix
@@ -89,7 +87,7 @@ if True:
 
         # First, get all the lines in a list.  The headerLine is separate.
         # Blank lines and lines that have no potential characters are ignored.
-        myPotentialChars = string.letters + '?-'
+        myPotentialChars = string.ascii_letters + '?-'
 
         flob.seek(0, 0)
         headerLine = None
@@ -441,8 +439,8 @@ if True:
 
             s = Sequence()
             s.name = theName
-            s.sequence = string.join(theSequenceBits, '')
-            s.sequence = string.lower(s.sequence)
+            s.sequence = ''.join(theSequenceBits)
+            s.sequence = s.sequence.lower()
             self.sequences.append(s)
 
         if len(self.sequences) != nTax:
@@ -517,8 +515,8 @@ if True:
                 print('_readPhylipInterleaved() bad line?: %s' % aLine)
 
         for s in self.sequences:
-            s.sequence = string.join(s.theSequenceBits, '')
-            s.sequence = string.lower(s.sequence)
+            s.sequence = ''.join(s.theSequenceBits)
+            s.sequence = s.sequence.lower()
             del s.theSequenceBits
             del s.seqLenSoFar
 
@@ -582,8 +580,8 @@ if True:
 
             s = Sequence()
             s.name = theName
-            s.sequence = string.join(theSequenceBits, '')
-            s.sequence = string.lower(s.sequence)
+            s.sequence = ''.join(theSequenceBits)
+            s.sequence = s.sequence.lower()
             self.sequences.append(s)
 
         if len(self.sequences) != nTax:
@@ -652,8 +650,8 @@ if True:
                 print('_readPhylipInterleavedStrict() bad line?: %s' % aLine)
 
         for s in self.sequences:
-            s.sequence = string.join(s.theSequenceBits, '')
-            s.sequence = string.lower(s.sequence)
+            s.sequence = ''.join(s.theSequenceBits)
+            s.sequence = s.sequence.lower()
             del s.theSequenceBits
             del s.seqLenSoFar
 
@@ -700,13 +698,13 @@ if True:
         # Do the first cycle:
         while len(aLine) > 1 and aLine[0] not in string.whitespace:
             s = Sequence()
-            splitLine = string.split(aLine)
+            splitLine = aLine.split()
             if len(splitLine) != 2:
                 gm.append("Odd line:\n%s" % aLine)
                 raise P4Error(gm)
             s.name = splitLine[0]
             s.temp = []
-            s.temp.append(string.lower(string.strip(splitLine[1])))
+            s.temp.append(splitLine[1].strip().lower())
             if dbug:
                 print("b got name: %s" % s.name)
                 print("b got a line of sequence:\n          %s" % s.temp)
@@ -737,7 +735,7 @@ if True:
                     if aLine[0] in string.whitespace or len(aLine) <= 1:
                         gm.append("Bad line:\n    %s" % aLine)
                         #raise P4Error(gm)
-                    splitLine = string.split(aLine)
+                    splitLine = aLine.split()
                     if len(splitLine) != 2:
                         gm.append("Odd line:\n%s" % aLine)
                         raise P4Error(gm)
@@ -745,7 +743,7 @@ if True:
                         gm.append(
                             "Problem: existing name %s does not match new name %s" % (s.name, splitLine[0]))
                         raise P4Error(gm)
-                    s.temp.append(string.lower(string.strip(splitLine[1])))
+                    s.temp.append(splitLine[1].strip().lower())
                     if dbug:
                         print("got name: %s" % s.name)
                         print("got a line of sequence:\n          %s" % s.temp)
@@ -757,13 +755,13 @@ if True:
 
         # sys.exit()
 
-        nChar = len(string.join(self.sequences[0].temp, ''))
+        nChar = len(''.join(self.sequences[0].temp))
 
         for s in self.sequences:
             if dbug:
                 print("got name: %s" % s.name)
                 print("got sequence:\n          %s" % s.temp)
-            s.temp = string.join(s.temp, '')
+            s.temp = ''.join(s.temp)
             if len(s.temp) != nChar:
                 gm.append(
                     "Something is wrong with the sequence length of the clustalw file.")
@@ -1031,7 +1029,6 @@ if True:
         f.write('end;\n\n')
 
         if self.nexusSets:
-            from nexussets import NexusSets
             # print "self.nexusSets = %s" % self.nexusSets
             if self.excludeDelete:
                 if self.length < self.excludeDelete.length:
@@ -1283,7 +1280,7 @@ if True:
         sList = []
         maskList = []
         aLine = flob.readline()
-        aLine = string.strip(aLine)
+        aLine = aLine.strip()
         if dbug:
             print(aLine)
         if aLine[0] != '{':
@@ -1294,7 +1291,7 @@ if True:
         while aLine:
             s = Sequence()
             if aLine[0] == '{':
-                aLine = string.strip(flob.readline())
+                aLine = flob.readline().strip()
             else:
                 gm.append("Problem with GDE file at line:\n\t%s" % aLine)
                 raise P4Error(gm)
@@ -1304,8 +1301,8 @@ if True:
                 # space.
                 if dbug:
                     print("got name line: \n%s" % aLine)
-                splitLine = string.split(aLine, '\"')
-                s.name = string.strip(splitLine[1])
+                splitLine = aLine.split('\"')
+                s.name = splitLine[1].strip()
                 # print s.name
                 if not p4.func.nexusCheckName(s.name):
                     gm.append("Bad name '%s'" % s.name)
@@ -1314,11 +1311,11 @@ if True:
                 gm.append(
                     "I was expecting a name line: instead I got line:\n\t%s" % aLine)
                 raise P4Error(gm)
-            aLine = string.strip(flob.readline())
+            aLine = flob.readline().strip()
             if aLine[:4] == 'type':
                 if dbug:
                     print("get type line: \n%s" % aLine)
-                splitLine = string.split(aLine)
+                splitLine = aLine.split()
                 type = splitLine[1][1:-1]
                 # print type
                 if type not in ['DNA', 'PROTEIN', 'MASK', 'TEXT', 'RNA']:
@@ -1351,10 +1348,10 @@ if True:
                 aLine = flob.readline()
                 # print "a Reading line: %s" % aLine
                 if aLine[:6] == 'offset':
-                    aLine = string.strip(aLine)
+                    aLine = aLine.strip()
                     if dbug:
                         print("got offset line: \n%s" % aLine)
-                    splitLine = string.split(aLine)
+                    splitLine = aLine.split()
                     try:
                         offset = int(splitLine[1])
                         if dbug:
@@ -1363,22 +1360,22 @@ if True:
                         gm.append("Bad offset in line '%s'" % aLine)
                         raise P4Error(gm)
                 elif aLine[:8] == 'sequence' and aLine[:11] != 'sequence-ID':
-                    aLine = string.strip(aLine)
+                    aLine = aLine.strip()
                     break
 
             # Now aLine has the first line of the sequence
             if dbug:
                 print("\nGot first line of sequence: %s" % aLine)
             # Get the rest of the sequence.
-            splitLine = string.split(aLine)
+            splitLine = aLine.split()
             thisSeqList = []
             thisSeqList.append(splitLine[1])
-            aLine = string.strip(flob.readline())
+            aLine = flob.readline().strip()
             while aLine[0] != '}':
                 thisSeqList.append(aLine)
-                aLine = string.strip(flob.readline())
+                aLine = flob.readline().strip()
             # print "Got thisSeqList: %s" % thisSeqList
-            s.sequence = (offset * '-') + string.join(thisSeqList, '')[1:-1]
+            s.sequence = (offset * '-') + ''.join(thisSeqList)[1:-1]
             # print "Finished: name:'%s', dataType %s, sequence = '%s'" % (s.name, s.dataType, s.sequence)
             # print "Got last line of group: '%s'" % aLine\
             if s.dataType == 'mask':
@@ -1471,15 +1468,13 @@ if True:
 
         if 1:
             if len(maskList):
-                from nexussets import NexusSets
                 self.nexusSets = NexusSets()
             for s in maskList:
-                from nexussets import CharSet
                 c = CharSet()
                 c.nexusSets = self.nexusSets
                 c.nChar = self.length
                 c.name = s.name
-                c.lowName = string.lower(s.name)
+                c.lowName = s.name.lower()
                 c.format = 'vector'
                 if inverseMasks:
                     s.sequence = list(s.sequence)
@@ -1488,7 +1483,7 @@ if True:
                             s.sequence[i] = '1'
                         else:
                             s.sequence[i] = '0'
-                    s.sequence = string.join(s.sequence, '')
+                    s.sequence = ''.join(s.sequence)
                 c.mask = s.sequence
                 for c1 in self.nexusSets.charSets:
                     if c1.lowName == c.lowName:

@@ -1,4 +1,4 @@
-taxNames = list(string.uppercase[:7])
+taxNames = list(string.ascii_uppercase[:7])
 for i in range(6):
     t = func.randomTree(taxNames)
     t.name = 't%i' % (i + 1)

@@ -274,7 +274,7 @@ class ConcurrentCombineIntersectionDicts(Process):
                 self.weightedNoTrees - weightSoFar)
             for i in completeList:
                 t = i[0] & list[q][0], (i[0] ^ list[q][0]) | i[1] | list[q][1]
-                if dict.has_key(t):
+                if t in dict:
                     if dict[t] < i[2]:
                         dict[t] = i[2]
                 else:
@@ -282,7 +282,7 @@ class ConcurrentCombineIntersectionDicts(Process):
                 if not self.rooted:
                     t = (i[0] ^ list[q][0]) & i[
                         0], (i[0] ^ (~list[q][0] & ((self.bitkeys[-1] << 1) - 1))) | i[0] | list[q][0]
-                    if dict.has_key(t):
+                    if t in dict:
                         if dict[t] < i[2]:
                             dict[t] = i[2]
                     else:
@@ -291,7 +291,7 @@ class ConcurrentCombineIntersectionDicts(Process):
                 print('Thread %s processed %s combinations' % (self.getName(), q + 1))
                 sys.stdout.flush()
 
-        for i, j in dict.iteritems():
+        for i, j in dict.items():
             self.addAndUpdate(long(i[0]), long(i[1]), j, list[q][2])
 
         for q in range(len(list)):
@@ -1109,7 +1109,7 @@ class BuildIntersections(object):
         oldList = smallestList
         added = {}
         for intersection in remainder:
-            if not added.has_key(intersection.right):
+            if intersection.right not in added:
                 temp = []
                 addable = self._addable2List(intersection, oldList)
                 if addable == 2:
@@ -1202,13 +1202,13 @@ class BuildIntersections(object):
                         c.frequency = copy.frequency
 #                    if first:
 #                        first = False
-                    if dict.has_key(c.left):
+                    if c.left in dict:
                         if c.frequency > dict[c.left].frequency:
                             dict[c.left] = c
                     else:
                         dict[c.left] = c
                 else:
-                    if dict.has_key(c.left):
+                    if c.left in dict:
                         if c.frequency > dict[c.left].frequency:
                             dict[c.left] = c
                     else:
@@ -1234,7 +1234,7 @@ class BuildIntersections(object):
             temp.left = (i.left & jointExcluded) ^ i.left
             temp.right = jointExcluded
             if self._popcount(temp.left) > 1:
-                if dict.has_key(temp.left):
+                if temp.left in dict:
                     if dict[temp.left].frequency < temp.frequency:
                         if temp.left == copy.left and temp.frequency >= copy.frequency:
                             add = False
@@ -1384,8 +1384,8 @@ class BuildIntersections(object):
         for d1 in self.dict.keys():
             for k, v in self.dict[d1].items():
                 leafset = d1 | k
-                if leafsets.has_key(leafset):
-                    if leafsets[leafset].has_key(v):
+                if leafset in leafsets:
+                    if v in leafsets[leafset]:
                         leafsets[leafset][v].append((d1, k))
                     else:
                         leafsets[leafset][v] = [(d1, k)]
@@ -1420,7 +1420,7 @@ class BuildIntersections(object):
         freqDict = {}
         for v in dict.keys():
             if dict[v] >= self.cutoff:
-                if freqDict.has_key(dict[v]):
+                if dict[v] in freqDict:
                     freqDict[dict[v]].append(v)
                 else:
                     freqDict[dict[v]] = [v]
@@ -1467,7 +1467,7 @@ class BuildIntersections(object):
     def _sortByLeafSet(self, list):
         leafDict = {}
         for i in list:
-            if leafDict.has_key(i[1]):
+            if i[1] in leafDict:
                 leafDict[i[1]].append(i)
             else:
                 leafDict[i[1]] = [i]
@@ -1579,7 +1579,7 @@ class TreeHandler(object):
             gm.append("No input?")
             raise P4Error(gm)
         # print "inThing = %s, type %s" % (inThing, type(inThing))
-        if type(inThing) == type('string'):
+        if isinstance(inThing, str):
             var.trees = []
             read(inThing)
             if len(var.trees) < 1:
@@ -1588,7 +1588,7 @@ class TreeHandler(object):
                 raise P4Error(gm)
             self.trees = var.trees
 #            self.tfl = TreeFileLite(inThing)
-        elif type(inThing) == type([]):
+        elif isinstance(inThing, list):
             for t in inThing:
                 if not isinstance(t, Tree):
                     gm.append(
@@ -1911,7 +1911,7 @@ class TreeHandler(object):
         for row in csvReader:
             #            print row
             for name in row:
-                if not taxa2bitkey.has_key(name):
+                if name not in taxa2bitkey:
                     print('Taxname not in any tree: ', name)
                     return
             if len(row) > 1:
@@ -1959,7 +1959,7 @@ class TreeHandler(object):
         for row in csvReader:
             #            print row
             for name in row:
-                if not taxa2bitkey.has_key(name):
+                if name not in taxa2bitkey:
                     print('Taxname not in any tree: ', name)
                     return
             if len(row) > 1:
@@ -2106,7 +2106,7 @@ class SemiStrictSuperTree(TreeHandler):
 
         uniqueSet = {}
         for split in compatibleSplits:
-            if not uniqueSet.has_key((split[0], split[1])):
+            if (split[0], split[1]) not in uniqueSet:
                 uniqueSet[(split[0], split[1])] = 1
 
 #        self._isListCompatible(uniqueSet.keys())
@@ -2282,13 +2282,13 @@ class SemiStrictSuperTree(TreeHandler):
                     if self.popcount(list[i][0] | list[i][1]) >= self.popcount(list[j][0] | list[j][1]):
                         #                        list[i][0] = combined
                         #                        list[i][1] = list[i][1] & xor
-                        if includesCombined.has_key(list[i][0]):
+                        if list[i][0] in includesCombined:
                             includesCombined[list[i][0]] = -1
                         includesCombined[combined] = list[i][1] & xor
                     else:
                         #                        list[j][0] = combined
                         #                        list[j][1] = list[j][1] & xor
-                        if includesCombined.has_key(list[j][0]):
+                        if list[j][0] in includesCombined:
                             includesCombined[list[j][0]] = -1
 
                         includesCombined[combined] = list[j][1] & xor
@@ -2345,7 +2345,7 @@ class CompatibleTreePairs(TreeHandler):
                 name = str(row[0])
                 for i in range(startYear, stopYear + 1):
                     if name.rfind(str(i)) >= 0 and name.rfind('SCC') < 0:
-                        if yearDict.has_key(i):
+                        if i in yearDict:
                             added += 1
                             yearDict[i].append([index, row])
                         else:
@@ -2363,7 +2363,7 @@ class CompatibleTreePairs(TreeHandler):
             #            print 'Range: %s, %s ' % (index, index+4)
             studies = []
             for i in range(index, index + 5):
-                if yearDict.has_key(i):
+                if i in yearDict:
                     studies.extend(yearDict[i])
 
 #            for studie in studies:
@@ -2487,11 +2487,11 @@ class CompatibleTreePairs(TreeHandler):
 #        print interGroups.keys()
 
         for index in range(1, len(data)):
-            if interGroups.has_key(data[index][0]):
+            if data[index][0] in interGroups:
                 interGroups[data[index][0]] = index
 #                print 'Inter: %s, %s ' % (data[index][0], index)
             else:
-                if intraGroups.has_key(data[index][0]):
+                if data[index][0] in intraGroups:
                     #                    print 'data[index][0]:', data[index][0]
                     #                    print 'data[index][1]:', data[index][1]
                     #                    print 'intraGroups[data[index][0]]:',intraGroups[data[index][0]]
@@ -2512,15 +2512,13 @@ class CompatibleTreePairs(TreeHandler):
                         if start > 0:
                             substring = data[index][0].partition('SCC')[0]
 #                    print 'Created substring:', substring
-                    if intraGroups.has_key(substring):
+                    if substring in intraGroups:
                         if index < intraGroups[substring][0]:
-                            intraGroups[substring] = [
-                                index, intraGroups[substring][1]]
+                            intraGroups[substring] = [index, intraGroups[substring][1]]
 # print 'Intra1: %s, %s - %s ' % (substring, index,
 # intraGroups[substring][1])
                         elif index > intraGroups[substring][1]:
-                            intraGroups[substring] = [
-                                intraGroups[substring][0], index]
+                            intraGroups[substring] = [intraGroups[substring][0], index]
 # print 'Intra2: %s, %s - %s ' % (substring, intraGroups[substring][0],
 # index )
                     else:
@@ -2790,7 +2788,7 @@ class CompatibleTreePairs(TreeHandler):
 
                             uniqueSet = {}
                             for split in set1:
-                                if not uniqueSet.has_key((split[0], split[1])):
+                                if (split[0], split[1]) not in uniqueSet:
                                     uniqueSet[(split[0], split[1])] = 1
 
                             list = []
@@ -2810,7 +2808,7 @@ class CompatibleTreePairs(TreeHandler):
                             mrc.taxNames = taxnames
                             uniqueSet = {}
                             for split in set2:
-                                if not uniqueSet.has_key((split[0], split[1])):
+                                if (split[0], split[1]) not in uniqueSet:
                                     uniqueSet[(split[0], split[1])] = 1
 
                             list = []
@@ -2978,7 +2976,7 @@ class CompatibleTreePairs(TreeHandler):
         for row in self.reduceRules:
             present = []
             for name in row:
-                if self.taxa2bitkey.has_key(name):
+                if name in self.taxa2bitkey:
                     present.append(name)
 #                else:
 #                    print 'Taxname not in any tree: ', name
@@ -3011,7 +3009,7 @@ class CompatibleTreePairs(TreeHandler):
             self.bitkeys, self.taxNames, internalNames=False)
         uniqueSet = {}
         for split in set1:
-            if not uniqueSet.has_key((split[0], split[1])):
+            if (split[0], split[1]) not in uniqueSet:
                 uniqueSet[(split[0], split[1])] = 1
 
         list = []
@@ -3231,7 +3229,7 @@ class Reduced(TreeHandler):
                 if compatibleSplits[i][0] & compatibleSplits[j][0] != 0 and compatibleSplits[i][0] & (compatibleSplits[j][0] | compatibleSplits[j][1]) == 0 and compatibleSplits[j][0] & (compatibleSplits[i][0] | compatibleSplits[i][1]) == 0:
                     split1 = [compatibleSplits[i][0] & compatibleSplits[j][0], ((compatibleSplits[j][0] | compatibleSplits[
                                                                                 j][1]) | highestbitkey) | ((compatibleSplits[i][0] | compatibleSplits[i][1]) | highestbitkey)]
-                    if split2Parent.has_key((split1[0], split1[1])):
+                    if (split1[0], split1[1]) in split2Parent:
                         split2Parent[(split1[0], split1[1])][i] = 1
                         split2Parent[(split1[0], split1[1])][j] = 1
                     else:
@@ -3323,9 +3321,9 @@ class Reduced(TreeHandler):
                     used[set[j]] = 1
 
                 else:
-                    if not used.has_key(set[i]):
+                    if set[i] not in used:
                         newSet.add(set[i])
-                    if not used.has_key(set[j]):
+                    if set[j] not in used:
                         newSet.add(set[j])
 
 
@@ -3539,7 +3537,7 @@ class Reduced(TreeHandler):
                     left = 0
                     right = 0
                     for i in range(0, len(allTaxa)):
-                        if taxon2bitkey.has_key(allTaxa[i]):
+                        if allTaxa[i] in taxon2bitkey:
                             if taxon2bitkey[allTaxa[i]] & split.left:
                                 left = left ^ allBitkeys[i]
                             elif taxon2bitkey[allTaxa[i]] & split.right:
@@ -3557,7 +3555,7 @@ class Reduced(TreeHandler):
             left = 0
             right = 0
             for i in range(0, len(allTaxa)):
-                if names.has_key(allTaxa[i]):
+                if allTaxa[i] in names:
                     left = left ^ allBitkeys[i]
 
             i = Intersection(left, right, weight)
@@ -3682,7 +3680,7 @@ class Reduced(TreeHandler):
             left = 0
             right = 0
             for i in range(0, len(allTaxa)):
-                if taxon2bitkey.has_key(allTaxa[i]):
+                if allTaxa[i] in taxon2bitkey:
                     left = left ^ allBitkeys[i]
 
             i = Intersection(left, right, weight)
@@ -3698,7 +3696,7 @@ class Reduced(TreeHandler):
                     right = 0
                     for i in range(0, len(allTaxa)):
                         #                        print allTaxa[i]
-                        if taxon2bitkey.has_key(allTaxa[i]):
+                        if allTaxa[i] in taxon2bitkey:
                             #                            print '1'
                             if taxon2bitkey[allTaxa[i]] & split.left:
                                 #                                print '2'

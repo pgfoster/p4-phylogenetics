@@ -1,5 +1,4 @@
 from __future__ import print_function
-from past.builtins import raw_input
 import sys,traceback
 import os
 from p4.var import var
@@ -14,7 +13,10 @@ def invoke_editor(extractedTraceback):
         p4.func.writeInColour("%2i" % teItemNum, colour='red')
         print("  line %4i,  %s" %  (theTeItem[1], theTeItem[0]))
     p4.func.setTerminalColour("blue")
-    ret = raw_input('Tell me a number (or nothing to do nothing): ')
+    if sys.version_info < (3,):
+        ret = raw_input('Tell me a number (or nothing to do nothing): ')
+    else:
+        ret = input('Tell me a number (or nothing to do nothing): ')
     p4.func.unsetTerminalColour()
     #print "Got %s" % ret
     retNum = None

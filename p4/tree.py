@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
 import string
-import types
 import io
 import math
 import copy
@@ -12,7 +11,7 @@ import glob
 from p4.var import var
 from p4.p4exceptions import P4Error
 from p4.node import Node, NodePart, NodeBranch, NodeBranchPart
-import p4.nexustoken
+from p4.nexustoken import nextTok, safeNextTok
 from p4.distancematrix import DistanceMatrix
 
 import numpy
@@ -228,7 +227,7 @@ class Tree(object):
 
     from p4.tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
     from p4.tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, ancestralStateDraw, getSiteLikes, getSiteRates
-    from p4.tree_model import data, model, _setData, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setRjComp, setRjRMatrix, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
+    from p4.tree_model import data, model, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setRjComp, setRjRMatrix, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
     from p4.tree_write import patristicDistanceMatrix, tPickle, writeNexus, write, writePhylip, writeNewick, _getMcmcCommandComment, draw, textDrawList, eps
     from p4.tree_fit import simsForModelFitTests, modelFitTests, compoTestUsingSimulations, bigXSquaredSubM, compStatFromCharFreqs, getEuclideanDistanceFromSelfDataToExpectedComposition
 
@@ -271,17 +270,29 @@ class Tree(object):
     # Properties: taxNames, nTax, nInternalNodes
     #########################################################
 
-    def _setTaxNames(self, theTaxNames):
-        gm = ['Tree._setTaxNames()']
-        if type(theTaxNames) != type([]):
+    @property
+    def taxNames(self):
+        return self._taxNames
+
+    @taxNames.setter
+    def taxNames(self, theTaxNames):
+        gm = ['Tree.taxNames']
+        if not isinstance(theTaxNames, list):
             gm.append("You can only set property 'taxNames' to a list.")
             gm.append("Got attempt to set to '%s'" % theTaxNames)
             raise P4Error(gm)
         self._taxNames = theTaxNames
-        # and not var.allowTreesWithDifferingTaxonSets:  # Peter commented out
-        # until it is sorted. Why is it here?
         if theTaxNames:
             self.checkTaxNames()
+    
+    @taxNames.deleter
+    def taxNames(self):
+        gm = ['Tree.taxNames']
+        gm.append("    Caught an attempt to delete self.taxNames, but")
+        gm.append("self.taxNames is a property, so you can't delete it.")
+        gm.append("But you can set it to an empty list if you like.")
+        raise P4Error(gm)
+
 
     def _setTaxNamesFromLeaves(self):
         tax = []
@@ -297,16 +308,6 @@ class Tree(object):
         self._taxNames = tax
         if self._taxNames:
             self.checkTaxNames()
-
-    def _delTaxNames(self):
-        gm = ['Tree._delTaxNames()']
-        gm.append("    Caught an attempt to delete self.taxNames, but")
-        gm.append("self.taxNames is a property, so you can't delete it.")
-        gm.append("But you can set it to an empty list if you like.")
-        raise P4Error(gm)
-
-    taxNames = property(
-        lambda self: self._taxNames, _setTaxNames, _delTaxNames)
 
     def _getNTax(self):
         # We can't rely on len(self.taxNames), cuz it might not exist.
@@ -402,12 +403,7 @@ class Tree(object):
         if 0:
             print('Tree.parseNexus() translationHash = %s' % translationHash)
             print('    doModelComments = %s (nParts)' % doModelComments)
-            print('    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok)
-
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok
-        else:
-            from p4.nexustoken import nextTok, safeNextTok
+            print('    flob type is %s' % type(flob))
 
         tok = safeNextTok(flob, 'Tree.parseNexus()')
         # print 'parseNexus() tok = %s' % tok
@@ -433,22 +429,25 @@ class Tree(object):
         # weight comment.
         savedPos = flob.tell()
         while 1:
-            tok = safeNextTok(flob, gm[0])
-            # print "parseNexus: tok after '=' is '%s'" % tok
+            beforeSafeNextTokPosn = flob.tell()
+            tok = safeNextTok(flob, gm[0])          # skips [&U] if there is one
+            # print("parseNexus: tok after '=' is '%s'.  Before pos %i, after pos %i" % (
+            #     tok, beforeSafeNextTokPosn, flob.tell()))
 
             # This next bit will only happen if either var.nexus_getWeightCommandComments
             # or var nexus_getAllCommandComments is set.
             if tok[0] == '[':
                 self.getWeightCommandComment(tok)
             elif tok == '(':
-                flob.seek(-1, 1)
+                flob.seek(beforeSafeNextTokPosn)
+                # print("wxy var.nexus_getAllCommandComments is %s" % var.nexus_getAllCommandComments)
                 self.parseNewick(flob, translationHash, doModelComments)
                 # self._initFinish()
                 break
             elif tok == ';':
                 gm.append("Got ';' before any tree description.")
                 raise P4Error(gm)
-            elif tok[0] in string.letters + string.digits + '_' + '\'':
+            elif tok[0] in string.ascii_letters + string.digits + '_' + "'":
                 flob.seek(savedPos, 0)
                 self.parseNewick(flob, translationHash, doModelComments)
                 # self._initFinish()
@@ -465,15 +464,13 @@ class Tree(object):
             print('var.nexus_getAllCommandComments = %s' % var.nexus_getAllCommandComments)
             print("Got comment '%s', checking if it is a 'weight' comment." % tok)
         gm = ["Tree.getWeightCommandComment()"]
-        # python, not c, so I can use BytesIO
-        from p4.nexustoken import nextTok, safeNextTok
         cFlob = io.BytesIO(tok)
         cFlob.seek(1)  # The [
         cTok = nextTok(cFlob)
         if not cTok:
             # print "no cTok -- returning nothing"
             return
-        lowCTok = string.lower(cTok)
+        lowCTok = cTok.lower()
         if lowCTok in ['&r', '&u']:
             # print "got %s -- returning nothing" % cTok
             return
@@ -536,10 +533,11 @@ class Tree(object):
         This is stack-based, and does not use recursion.
         """
 
-        # print 'parseNewick here. var.nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
-        # print 'parseNewick here. doModelComments=%s' % doModelComments
-        # print "parseNewick()  translationHash=%s, self.taxNames=%s" %
-        # (translationHash, self.taxNames)
+        if 0:
+            print('parseNewick here. doModelComments=%s' % doModelComments)
+            print("    translationHash=%s, self.taxNames=%s" % (translationHash, self.taxNames))
+            print("    flob type is %s, pos is %i" % (type(flob), flob.tell()))
+            print("wyy var.nexus_getAllCommandComments is %s" % var.nexus_getAllCommandComments)
 
         if self.name:
             gm = ["Tree.parseNewick(), tree '%s'" % self.name]
@@ -550,7 +548,7 @@ class Tree(object):
             self.fName = flob.name
             gm[0] += ", File %s" % self.fName
 
-        if doModelComments:
+        if 0 and doModelComments:   # For the RAxML ugly hack, below?  Or why?
             # restore at end
             savedP4Nexus_getAllCommandComments = var.nexus_getAllCommandComments
             var.nexus_getAllCommandComments = 1
@@ -561,12 +559,9 @@ class Tree(object):
         parenNestLevel = 0
         lastPopped = None
 
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok
-        else:
-            from p4.nexustoken import nextTok, safeNextTok
-
+        
         tok = nextTok(flob)
+        # print("xx Got tok %s" % tok)
         if not tok:
             return
         isQuotedTok = False
@@ -576,7 +571,7 @@ class Tree(object):
         # tree.
         tok = p4.func.nexusUnquoteName(tok)
         while tok != ';':
-            # print "top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0])
+            # print("top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0]))
 
             if tok == '(':
                 # print "Got '(': new node (%i)." % len(self.nodes)
@@ -647,7 +642,7 @@ class Tree(object):
                     gm.append('Empty stack.  Out of place unparen?')
                     raise P4Error(gm)
 
-            elif tok[0] in string.letters or tok[0] in string.digits or tok[0] in var.nexus_safeChars \
+            elif tok[0] in string.ascii_letters or tok[0] in string.digits or tok[0] in var.nexus_safeChars \
                  or isQuotedTok or tok[0] in [
                     '_', '#', '\\', '/', '"', '(', ')']:
                 # A single-node tree, not ()aName, rather just aName.
@@ -695,61 +690,48 @@ class Tree(object):
 
                 else:
                     # A new terminal node.
-                    if tok[0] in string.letters or tok[0] in ['_']:
-                        if translationHash and translationHash.has_key(tok):
+                    if tok[0] in string.ascii_letters or tok[0] in ['_']:
+                        if translationHash and tok in translationHash:
                             # print 'got key %s, val is %s' % (tok,
                             # translationHash[tok])
                             tok = translationHash[tok]
 
                     elif tok[0] in string.digits:
                         if var.nexus_allowAllDigitNames:
-                            if translationHash and translationHash.has_key(tok):
+                            if translationHash and tok in translationHash:
                                 # print 'got key %s, val is %s' % (tok,
                                 # translationHash[tok])
                                 tok = translationHash[tok]
                         else:
                             try:
                                 tok = int(tok)
-                                if translationHash and translationHash.has_key(repr(tok)):
+                                if translationHash and repr(tok) in translationHash:
                                     tok = translationHash[repr(tok)]
-                                elif translationHash and not translationHash.has_key(repr(tok)):
-                                    gm.append(
-                                        "There is a 'translation' for this tree, but the")
-                                    gm.append(
-                                        "number '%i' in the tree description" % tok)
-                                    gm.append(
-                                        'is not included in that translate command.')
+                                elif translationHash and repr(tok) not in translationHash:
+                                    gm.append("There is a 'translation' for this tree, but the")
+                                    gm.append("number '%i' in the tree description" % tok)
+                                    gm.append('is not included in that translate command.')
                                     raise P4Error(gm)
                                 elif self.taxNames:
                                     try:
                                         tok = self.taxNames[tok - 1]
                                     except IndexError:
-                                        gm.append(
-                                            "Can't make sense out of token '%s' for a new terminal node." % tok)
-                                        gm.append(
-                                            'There is no translate command, and the taxNames does not')
-                                        gm.append(
-                                            'have a value for that number.')
+                                        gm.append("Can't make sense out of token '%s' for a new terminal node." % tok)
+                                        gm.append('There is no translate command, and the taxNames does not')
+                                        gm.append('have a value for that number.')
                                         raise P4Error(gm)
                                 else:
-                                    gm.append(
-                                        "We have a taxon name '%s', composed only of numerals." % tok)
+                                    gm.append("We have a taxon name '%s', composed only of numerals." % tok)
                                     gm.append(" ")
-                                    gm.append(
-                                        'The Nexus format allows tree specifications with no')
-                                    gm.append(
-                                        'translate command to use integers to refer to taxa.')
-                                    gm.append(
-                                        'That is possible because in a proper Nexus file the')
-                                    gm.append(
-                                        'taxa are defined before the trees.  P4, however, does')
-                                    gm.append(
-                                        'not require definition of taxa before the trees, and in')
-                                    gm.append(
-                                        'the present case no definition was made.  Deal with it.')
+                                    gm.append('The Nexus format allows tree specifications with no')
+                                    gm.append('translate command to use integers to refer to taxa.')
+                                    gm.append('That is possible because in a proper Nexus file the')
+                                    gm.append('taxa are defined before the trees.  P4, however, does')
+                                    gm.append('not require definition of taxa before the trees, and in')
+                                    gm.append('the present case no definition was made.  Deal with it.')
                                     raise P4Error(gm)
                             except ValueError:
-                                if translationHash and translationHash.has_key(repr(tok)):
+                                if translationHash and repr(tok) in translationHash:
                                     tok = translationHash[repr(tok)]
                                 # else:  # starts with a digit, but it is not an int.
                                 #    gm.append('Problem token %s' % tok)
@@ -848,28 +830,23 @@ class Tree(object):
                     theExp = c
                     c = flob.read(1)
                     if not c:
-                        gm.append(
-                            'Trying to deal with a branch length, possibly in scientific notation.')
-                        gm.append(
-                            "Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
+                        gm.append('Trying to deal with a branch length, possibly in scientific notation.')
+                        gm.append("Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
                         raise P4Error(gm)
                     if c not in string.digits:
-                        gm.append(
-                            "Trying to deal with a branch length, possibly in scientific notation.")
-                        gm.append("Got '%s%s' after the colon." %
-                                  (theNum, theExp))
+                        gm.append("Trying to deal with a branch length, possibly in scientific notation.")
+                        gm.append("Got '%s%s' after the colon." % (theNum, theExp))
                         gm.append('Expecting one or more digits.')
                         gm.append("Got '%s'" % c)
                         raise P4Error(gm)
                     theExp += c
                     # So we got one good digit.  Are there any more?
                     while 1:
+                        positionBeforeRead = flob.tell()
                         c = flob.read(1)
                         if not c:
-                            gm.append(
-                                'Trying to deal with a branch length, possibly in scientific notation.')
-                            gm.append(
-                                "Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
+                            gm.append('Trying to deal with a branch length, possibly in scientific notation.')
+                            gm.append("Got '%s%s' after the colon, but then nothing." % (theNum, theExp))
                             raise P4Error(gm)
                         # We got something.  If its a digit, add it to
                         # theExp.  If its anything else, back up one
@@ -877,7 +854,7 @@ class Tree(object):
                         if c in string.digits:
                             theExp += c
                         else:
-                            flob.seek(-1, 1)
+                            flob.seek(positionBeforeRead)
                             break
                     # print "  At this point, theNum='%s' and theExp='%s'" %
                     # (theNum, theExp)
@@ -891,22 +868,16 @@ class Tree(object):
                             # % (theBrLen, theNum, theExp)
                             stack[-1].br.len = theBrLen
                         except ValueError:
-                            gm.append(
-                                'Trying to deal with a branch length, possibly in scientific notation.')
+                            gm.append('Trying to deal with a branch length, possibly in scientific notation.')
                             gm.append("It didn't work, tho.")
-                            gm.append(
-                                "Got these after colon: '%s' and '%s'" % (theNum, theExp))
-                            gm.append(
-                                'And they could not be converted to an exponential float.')
+                            gm.append("Got these after colon: '%s' and '%s'" % (theNum, theExp))
+                            gm.append('And they could not be converted to an exponential float.')
                             raise P4Error(gm)
                     except ValueError:
-                        gm.append(
-                            'Trying to deal with a branch length, possibly in scientific notation.')
+                        gm.append('Trying to deal with a branch length, possibly in scientific notation.')
                         gm.append("It didn't work, tho.")
-                        gm.append(
-                            "Got these after colon: '%s' and '%s'." % (theNum, theExp))
-                        gm.append(
-                            'And the latter does not appear to be an int.')
+                        gm.append("Got these after colon: '%s' and '%s'." % (theNum, theExp))
+                        gm.append('And the latter does not appear to be an int.')
                         raise P4Error(gm)
 
             elif tok[0] == '[':
@@ -918,13 +889,13 @@ class Tree(object):
                     # print 'got comment %s, node %i' % (tok, n.nodeNum)
                     cFlob = io.BytesIO(tok)
                     cFlob.seek(2)
-                    tok2 = p4.nexustoken.safeNextTok(cFlob)
+                    tok2 = safeNextTok(cFlob)
                     while 1:
                         if tok2 == ']':
                             break
                         elif tok2[0] in ['c', 'r', 'g']:
                             ending = tok2[1:]
-                            splitEnding = string.split(ending, '.')
+                            splitEnding = ending.split('.')
                             try:
                                 firstNum = int(splitEnding[0])
                                 secondNum = int(splitEnding[1])
@@ -940,7 +911,7 @@ class Tree(object):
                         else:
                             gm.append('Bad command comment %s' % tok)
                             raise P4Error(gm)
-                        tok2 = p4.nexustoken.safeNextTok(cFlob)
+                        tok2 = safeNextTok(cFlob)
                 elif 0:
                     # Ugly hack for RAxML trees with bootstrap
                     # supports in square brackets after the br len, on
@@ -988,8 +959,7 @@ class Tree(object):
                             theVal = False
                         else:
                             theVal = eval(theValString)
-                        assert type(theVal) in [
-                            types.FloatType, types.TupleType, types.BooleanType]
+                        assert isinstance(theVal, (float, tuple, bool))
                         n.__setattr__(theNameString, theVal)
                         i = j + 1
 
@@ -997,53 +967,15 @@ class Tree(object):
                 gm.append("I can't make sense of the token '%s'" % tok)
                 if len(tok) == 1:
                     if tok[0] in var.punctuation:
-                        gm.append(
-                            "The token is in var.punctuation. If you don't think it should")
-                        gm.append(
-                            "be, you can modify what p4 thinks that punctuation is.")
-                        if var.nexus_doFastNextTok:
-                            gm.append(
-                                "But to do that you can't use nexus_doFastNextToken, so you ")
-                            gm.append("need to turn that off, temporarily.  ")
-                            gm.append(
-                                "(var.nexus_doFastNextTok is currently on.)")
-                            gm.append("So you might do this:")
-                            gm.append("var.nexus_doFastNextTok = False ")
-                            gm.append(
-                                "var.punctuation = var.phylip_punctuation")
-                            gm.append(
-                                "(or use your own definition -- see Var.py)")
-                            gm.append("read('yourWackyTreeFile.phy')")
-                            gm.append("That might work.")
-                        else:
-                            gm.append(
-                                "(Doing that does not work if nexus_doFastNextToken is turned on,")
-                            gm.append(
-                                "but var.nexus_doFastNextTok is currently off.)")
-                            gm.append("So you might do this:")
-                            gm.append(
-                                "var.punctuation = var.phylip_punctuation")
-                            gm.append(
-                                "(or use your own definition -- see Var.py)")
-                            gm.append("read('yourWackyTreeFile.phy')")
-                            gm.append("That might work.")
+                        gm.append("The token is in var.punctuation. If you don't think it should")
+                        gm.append("be, you can modify what p4 thinks that punctuation is.")
+                        gm.append("So you might do this:")
+                        gm.append("var.punctuation = var.phylip_punctuation")
+                        gm.append("(or use your own definition -- see var.py)")
+                        gm.append("read('yourWackyTreeFile.phy')")
+                        gm.append("That might work.")
                     if tok[0] not in var.punctuation:
-                        gm.append(
-                            "The token is not in your current var.punctuation.")
-                        if var.nexus_doFastNextTok:
-                            gm.append(
-                                "var.nexus_doFastNextTok is currently on.")
-                            gm.append(
-                                "It uses a hard-wired list of punctuation, and so you may need to ")
-                            gm.append(
-                                "need to turn var.nexus_doFastNextTok off, temporarily.  ")
-                            gm.append("So you might do this:")
-                            gm.append("var.nexus_doFastNextTok = False ")
-                            gm.append("read('yourWackyTreeFile.phy')")
-                            gm.append("That might work.")
-                        else:
-                            gm.append(
-                                "var.nexus_doFastNextTok is currently off.")
+                        gm.append("The token is not in your current var.punctuation.")
 
                 #gm.append("tok[0] is '%s'" % tok[0])
                 raise P4Error(gm)
@@ -1102,7 +1034,7 @@ class Tree(object):
         # self.draw()
         #self.dump(tree=0, node=1, treeModel=0)
 
-        if doModelComments:
+        if 0 and doModelComments:
             # restore the value of var.nexus_getAllCommandComments, which was
             # saved above.
             var.nexus_getAllCommandComments = savedP4Nexus_getAllCommandComments
@@ -1515,7 +1447,7 @@ class Tree(object):
         if self.nexusSets.taxSets:
             # print "%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets))
             # Check that no taxSet name is a taxName
-            lowSelfTaxNames = [string.lower(txName)
+            lowSelfTaxNames = [txName.lower()
                                for txName in self.taxNames]
             for ts in self.nexusSets.taxSets:
                 if ts.lowName in lowSelfTaxNames:
@@ -1717,7 +1649,7 @@ class Tree(object):
         theNode = self.root
         preOrdIndx = 0
         postOrdIndx = 0
-        if type(self.preOrder) == types.NoneType or type(self.postOrder) == types.NoneType or len(self.preOrder) != len(self.nodes) or len(self.postOrder) != len(self.nodes):
+        if self.preOrder is None or self.postOrder is None or len(self.preOrder) != len(self.nodes) or len(self.postOrder) != len(self.nodes):
             self.preOrder = numpy.array(
                 [var.NO_ORDER] * len(self.nodes), numpy.int32)
             self.postOrder = numpy.array(
@@ -2262,7 +2194,7 @@ class Tree(object):
         assert self.nexusSets
         assert self.taxNames
         assert self.nexusSets.taxSets
-        lowArgTaxSetName = string.lower(taxSetName)
+        lowArgTaxSetName = taxSetName.lower()
         theTS = None
         for ts in self.nexusSets.taxSets:
             if ts.lowName == lowArgTaxSetName:
@@ -2910,7 +2842,7 @@ class Tree(object):
 
         If you have nexus taxsets defined, you can show them.
         """
-        from btv import BTV
+        from p4.btv import BTV
         #import os
         #os.environ['PYTHONINSPECT'] = '1'
         BTV(self)
@@ -2930,8 +2862,8 @@ class Tree(object):
         if sd == 0:
             print("The trees are the same. No tv.")
             return
-        # for sk in self.splitKeyHash.iterkeys():
-        #    if not treeB.splitKeyHash.has_key(sk):
+        # for sk in self.splitKeyHash.keys():
+        #    if sk not in treeB.splitKeyHash:
         #        print "self has sk
 
         self.splitKeyHash = {}
@@ -2945,7 +2877,7 @@ class Tree(object):
         selfHasButTreeBDoesnt = self.splitKeySet.difference(treeB.splitKeySet)
         treeBHasButSelfDoesnt = treeB.splitKeySet.difference(self.splitKeySet)
 
-        from btv import TV
+        from p4.btv import TV
         #import os
         #os.environ['PYTHONINSPECT'] = '1'
         TV(self, title='TV self')

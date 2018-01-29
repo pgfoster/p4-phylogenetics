@@ -1,7 +1,7 @@
 var.verboseRead = 0
 var.warnReadNoFile = 0
 func.reseedCRandomizer(os.getpid())
-taxNames = list(string.uppercase[:5])
+taxNames = list(string.ascii_uppercase[:5])
 a = func.newEmptyAlignment(dataType='dna', taxNames=taxNames, length=5000)
 d = Data([a])
 read('((A:0.3, B:0.3):0.1, C:0.4, (D:0.3, E:0.3):0.1);')

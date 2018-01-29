@@ -64,7 +64,7 @@ class Data:
                 # Passed in a single alignment object not a list
                 alignments = [alignments]
             else:
-                if type(alignments) != type([]):
+                if not isinstance(alignments, list):
                     gm.append(
                         "The 'alignments' arg should be a list or a single Alignment object.")
                     raise P4Error(gm)
@@ -473,7 +473,7 @@ class Data:
 
         # check skipTaxNums
         if skipTaxNums != None:
-            if type(skipTaxNums) != type([]):
+            if not isinstance(skipTaxNums, list):
                 gm.append("skipTaxNums should be a list of lists.")
                 raise P4Error(gm)
             if len(skipTaxNums) != self.nParts:
@@ -481,11 +481,11 @@ class Data:
                     "skipTaxNums should be a list of lists, nParts long.")
                 raise P4Error(gm)
             for s in skipTaxNums:
-                if type(s) != type([]):
+                if not isinstance(s, list):
                     gm.append("skipTaxNums should be a list of lists.")
                     raise P4Error(gm)
                 for i in s:
-                    if type(i) != type(1):
+                    if not isinstance(i, int):
                         gm.append(
                             "skipTaxNums inner list items should be tax numbers.")
                         gm.append("Got %s" % i)

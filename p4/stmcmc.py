@@ -13,7 +13,6 @@ import time
 import copy
 import os
 import pickle
-import types
 import glob
 import numpy as np
 from p4.p4exceptions import P4Error
@@ -1318,7 +1317,7 @@ class STMcmcTunings(object):
 
     def __setattr__(self, item, val):
         # print "Got request to set %s to %s" % (item, val)
-        if item in self.__dict__.keys():
+        if item in self.__dict__:
             # Here is where I should do the sanity checking of the new vals.  Some day.
             # print "    Setting tuning '%s' to %s" % (item, val)
             if item == 'spaQPriorType':
@@ -1343,7 +1342,7 @@ class STMcmcTunings(object):
         lst.append("%s%32s: %s" % (spacer, 'polytomyPriorLogBigC', self.polytomyPriorLogBigC))
         lst.append("%s%32s: %s" % (spacer, 'spaQPriorType', self.spaQPriorType))
         lst.append("%s%32s: %s" % (spacer, 'spaQExpPriorLambda', self.spaQExpPriorLambda))
-        return string.join(lst, '\n')
+        return '\n'.join(lst)
 
     def dump(self):
         print(self.reprString())
@@ -1399,16 +1398,15 @@ class STMcmcProposalProbs(dict):
             raise P4Error(gm)
 
     def reprString(self):
-        stuff = [
-            "\nUser-settable relative proposal probabilities, from yourStMcmc.prob"]
+        stuff = ["\nUser-settable relative proposal probabilities, from yourStMcmc.prob"]
         stuff.append("  To change it, do eg ")
         stuff.append("    yourSTMcmc.prob.spaQ_uniform = 0.0 # turns spaQ_uniform proposals off")
         stuff.append("  Current settings:")
-        theKeys = self.__dict__.keys()
+        theKeys = list(self.__dict__.keys())
         theKeys.sort()
         for k in theKeys:
             stuff.append("        %20s: %s" % (k, getattr(self, k)))
-        return string.join(stuff, '\n')
+        return '\n'.join(stuff)
 
     def dump(self):
         print(self.reprString())
@@ -2264,7 +2262,7 @@ class STMcmc(object):
             # in the polytomy move, we want to pre-compute the logs of
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
-            if self.proposalsHash.has_key('polytomy') and self.tunings.doPolytomyResolutionClassPrior:
+            if 'polytomy' in self.proposalsHash and self.tunings.doPolytomyResolutionClassPrior:
                 p = self.proposalsHash['polytomy']
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
@@ -2392,8 +2390,8 @@ class STMcmc(object):
         # If polytomy is turned on, then it is possible to get a star
         # tree, in which case local will not work.  So if we have both
         # polytomy and local proposals, we should also have brLen.
-        # if self.proposalsHash.has_key("polytomy") and self.proposalsHash.has_key("local"):
-        #     if not self.proposalsHash.has_key('brLen'):
+        # if "polytomy" in self.proposalsHash and 'local' in self.proposalsHash:
+        #     if 'brLen' not in self.proposalsHash:
         #         gm.append("If you have polytomy and local proposals, you should have a brLen proposal as well.")
         #         gm.append("It can have a low proposal probability, but it needs to be there.")
         #         gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
@@ -2402,12 +2400,12 @@ class STMcmc(object):
         if self.gen > -1:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
-            f2 = open(self.treeFileName, 'a+')
+            f2 = open(self.treeFileName, 'r+b')
             pos = -1
             while 1:
                 f2.seek(pos, 2)
                 c = f2.read(1)
-                if c == ';':
+                if c == b';':
                     break
                 pos -= 1
             # print "pos now %i" % pos
@@ -2415,9 +2413,8 @@ class STMcmc(object):
             f2.seek(pos, 2)
             c = f2.read(4)
             # print "got c = '%s'" % c
-            if c != "end;":
-                gm.append(
-                    "Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
+            if c != b"end;":
+                gm.append("Stmcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
                 raise P4Error(gm)
             else:
                 f2.seek(pos, 2)
@@ -2426,7 +2423,7 @@ class STMcmc(object):
 
             if verbose:
                 print()
-                print("Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen))
+                print("Re-starting the STMCMC run %i from gen=%i" % (self.runNum, self.gen))
                 print("Set to do %i more generations." % nGensToDo)
                 # if self.writePrams:
                 #    if self.chains[0].curTree.model.nFreePrams == 0:
@@ -2545,7 +2542,7 @@ class STMcmc(object):
                         raise P4Error(gm)
                 # print "   Mcmc.run(). finished a gen on chain %i" % (chNum)
                 for pr in abortableProposals:
-                    if self.proposalsHash.has_key(pr):
+                    if pr in self.proposalsHash:
                         self.proposalsHash[pr].doAbort = False
 
             # Do swap, if there is more than 1 chain.

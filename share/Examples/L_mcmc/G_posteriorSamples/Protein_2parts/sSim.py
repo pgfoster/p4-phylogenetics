@@ -1,5 +1,5 @@
 nTax = 5
-taxNames = list(string.uppercase[:nTax])
+taxNames = list(string.ascii_uppercase[:nTax])
 a = func.newEmptyAlignment(dataType='protein', taxNames=taxNames, length=200)
 b = func.newEmptyAlignment(dataType='protein', taxNames=taxNames, length=133)
 d = Data([a,b])

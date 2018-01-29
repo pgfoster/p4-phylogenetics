@@ -111,9 +111,9 @@ One special file that is read in after the others, but only if you are
 interactive, is the ``~/.p4/interactive`` file, and note that while it is
 a Python file, it does not end in ``.py``.  I like to instantiate a few
 blank objects in there, for quick access to the doc strings via
-completion (see below).  Here is my current ``interactive`` file, for what its worth::
+completion (see below).  Here is my current ``interactive`` file, for what it's worth::
 
-     #print 'Here is the interactive startup file.'
+     #print('Here is the interactive startup file.')
 
      # Make some blank objects.
      if 1:
@@ -126,13 +126,13 @@ completion (see below).  Here is my current ``interactive`` file, for what its w
      # Give single Alignments, Trees, or SequenceLists names.
      if pyFileCount == 0:
          if len(var.alignments) == 1:
-             print "There is one alignment in var.alignments-- I am naming it 'a'"
+             print("There is one alignment in var.alignments-- I am naming it 'a'")
              a = var.alignments[0]
          if len(var.trees) == 1:
-             print "There is one tree in var.trees-- I am naming it 't'"
+             print("There is one tree in var.trees-- I am naming it 't'")
              t = var.trees[0]
          if len(var.sequenceLists) == 1:
-             print "There is one sequenceList in var.sequenceLists-- I am naming it 'sl'"
+             print("There is one sequenceList in var.sequenceLists-- I am naming it 'sl'")
              sl = var.sequenceLists[0]
 
      #import sys

@@ -226,7 +226,7 @@ class DualIndexNoDupes(object):
             self.add(quartet.left, quartet.right, quartet)
 
     def add(self, i1, i2, object):
-        if self.dict.has_key(i1):
+        if i1 in self.dict:
             self.dict[i1][i2] = object
         else:
             d = {}

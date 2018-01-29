@@ -8,7 +8,6 @@ from p4.node import Node, NodeBranch
 import sys
 import random
 import copy
-import types
 from p4.pnumbers import Numbers
 import math
 
@@ -140,8 +139,7 @@ class QuartetJoining(object):
 
         gm = ['QuartetJoining.__init__()']
         # Check the input trees.
-        assert type(theTrees) == type(
-            []), "Arg theTrees should be a list of p4 tree objects."
+        assert isinstance(theTrees, list), "Arg theTrees should be a list of p4 tree objects."
         for t in theTrees:
             assert isinstance(
                 t, Tree), "Input trees should be p4 Tree objects.  Got %s" % t
@@ -317,8 +315,13 @@ class QuartetJoining(object):
         # print "Got %i input trees." % len(self.trees)
         # print "There are %i taxa in all the input trees." % len(self.taxa)
 
-    nTrees = property(lambda self: len(self.trees))
-    nTax = property(lambda self: len(self.taxNames))
+    @property
+    def nTrees(self):
+        return len(self.trees)
+
+    @property
+    def nTax(self):
+        return len(self.taxNames)
 
     def dump(self, fName=None):
         """Dump info and options about self."""
@@ -2526,7 +2529,11 @@ class QuartetJoining(object):
     def pause(self):
         if self.verbose >= 3:
             p4.func.setTerminalColour('blue')
-            raw_input("Hit return to continue ...")
+            if sys.version_info < (3,):
+                raw_input("Hit return to continue ...")
+            else:
+                input("Hit return to continue ...")
+
             print("=" * 90)
             p4.func.unsetTerminalColour()
         else:

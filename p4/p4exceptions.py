@@ -1,6 +1,4 @@
 import textwrap
-import types
-
 
 class P4Error(Exception):
 
@@ -13,8 +11,7 @@ class P4Error(Exception):
 
     def __init__(self, msg='', flavour=''):
         myIndent = ' ' * 4
-        if type(msg) in [types.StringType, types.UnicodeType]:
-            #self.msg = '\n\n' + textwrap.fill(msg, 70, initial_indent=myIndent, subsequent_indent=myIndent)
+        if isinstance(msg, str):
             try:
                 if msg.startswith('\n\n'):
                     firstLine = '%s' % msg
@@ -26,7 +23,7 @@ class P4Error(Exception):
                 firstLine = ''
             self.msg = firstLine
 
-        elif type(msg) == types.ListType:
+        elif isinstance(msg, list):
             try:
                 if msg[0].startswith('\n\n'):
                     firstLine = '%s' % msg[0]
@@ -38,7 +35,7 @@ class P4Error(Exception):
                 firstLine = ''
             niceMsgList = [firstLine]
             for i in range(len(msg))[1:]:
-                if type(msg[i]) in [types.StringType, types.UnicodeType]:
+                if isinstance(msg[i], str):
                     #  If it is short, use it as is.  If it is long, wrap it.
                     if len(msg[i]) < 66:
                         niceMsgList.append(myIndent + msg[i])
@@ -49,15 +46,8 @@ class P4Error(Exception):
                 else:
                     pass
 
-            #self.msg = string.join(niceMsgList, '\n')
             self.msg = '\n'.join(niceMsgList)
 
-            # try:
-            #    myIndent = ' ' * 8
-            #    otherStuff = textwrap.fill(msg[1], 70, initial_indent=myIndent, subsequent_indent=myIndent)
-            # except:
-            #    otherStuff = ''
-            #self.msg = firstLine + '\n' + otherStuff
         else:
             self.msg = ''
         Exception.__init__(self)

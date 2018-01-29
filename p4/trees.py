@@ -43,7 +43,7 @@ class Trees(object):
             else:
                 self.trees = var.trees
         else:
-            if type(trees) != type([]):
+            if not isinstance(trees, list):
                 gm.append("If provided, the trees arg should be a list.")
                 raise P4Error(gm)
             if not len(trees):
@@ -55,7 +55,7 @@ class Trees(object):
                 raise P4Error(gm)
             self.trees = trees
         if taxNames:
-            if type(taxNames) == type([]) and len(taxNames) and type(taxNames[0]) == type('string'):
+            if isinstance(taxNames, list) and len(taxNames) and isinstance(taxNames[0], str):
                 pass
             else:
                 gm.append(
@@ -81,7 +81,9 @@ class Trees(object):
         self.data = None
         self.writeBranchLengths = True
 
-    nTax = property(lambda self: len(self.taxNames))
+    @property
+    def nTax(self):
+        return len(self.taxNames)
 
     def setTaxNames(self, theTaxNames=None):
         """Sets and checks taxNames for self and all trees in self.
@@ -471,7 +473,7 @@ class Trees(object):
                 dTree.stripBrLens()
                 skd[skk] = [1, dTree]
 
-        # for v in skd.itervalues():
+        # for v in skd.values():
         #    print v
 
         # Flatten to a list, order by counts
@@ -725,7 +727,7 @@ class Trees(object):
 
         nTrees = len(self.trees)
         for t in self.trees:
-            t.siteLikes = map(math.log, t.siteLikes)
+            t.siteLikes = [math.log(sl) for sl in t.siteLikes]
         nChar = len(self.trees[0].siteLikes)
 
         theSeed = 0
@@ -911,8 +913,8 @@ class Trees(object):
                     # print "    Split key: %12s, compCounts=%s" % (s.key,
                     # s.modelUsage.parts[pNum].compCounts)
                     for k in theTree.splitKeys:
-                        if tp.splitsHash.has_key(k):
-                            s = tp.splitsHash[k]
+                        s = tp.splitsHash.get(k)
+                        if s:
                             print("    Split key: %12s, compCounts=%s" % (k, s.modelUsage.parts[pNum].compCounts))
             startTNum += stride
 

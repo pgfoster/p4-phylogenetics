@@ -222,7 +222,7 @@ class Chain(object):
             #logLikeRatio = 0.0
 
             if self.mcmc.nChains > 1:
-                heatBeta = 1.0 / (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
+                heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
                 logLikeRatio *= heatBeta
                 self.logPriorRatio *= heatBeta
 
@@ -905,11 +905,14 @@ class Chain(object):
         #logLikeRatio = 0.0
 
         if self.mcmc.nChains > 1:
-            heatBeta = 1.0 / (1.0 + self.mcmc.tunings.chainTemp * self.tempNum)
+            heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
             logLikeRatio *= heatBeta
-            # print "logPriorRatio is %s, heatBeta is %s" %
-            # (self.logPriorRatio, heatBeta)
-            self.logPriorRatio *= heatBeta
+            try:
+                self.logPriorRatio *= heatBeta
+            except TypeError:
+                gm.append("logPriorRatio is %s, heatBeta is %s" % (self.logPriorRatio, heatBeta))
+                gm.append("proposal name %s" % theProposal.name)
+                raise P4Error(gm)
 
         # Experimental Heating hack
         if self.mcmc.doHeatingHack: # and theProposal.name in self.mcmc.heatingHackProposalNames:
@@ -918,8 +921,8 @@ class Chain(object):
             self.logPriorRatio *= heatFactor
 
         theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
-        if theProposal.name in ['rjComp', 'rjRMatrix']:
-            theSum += self.logJacobian
+        # if theProposal.name in ['rjComp', 'rjRMatrix']:
+        #     theSum += self.logJacobian
 
         # if theProposal.name in ['ndch2_leafCompsDir']:
         #     print("%20s: %10.2f %10.2f %10.2f %10.2f" % (theProposal.name, logLikeRatio,
@@ -951,114 +954,6 @@ class Chain(object):
 
         # doAborts means that it was not a valid generation,
         # neither accepted or rejected.  Give up, by returning True.
-        checkRj = False
-
-        if checkRj:
-            # Check rj stuff
-            pNum = 0
-            for mtNum in range(self.curTree.model.parts[pNum].nComps):
-                c = self.curTree.model.parts[pNum].comps[mtNum]
-                thisNNodes = 0
-                for n in self.curTree.iterNodes():
-                    if n.parts[pNum].compNum == c.num:
-                        thisNNodes += 1
-                if c.nNodes != thisNNodes:
-                    gm.append(
-                        "curTree  comp.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                    raise P4Error(gm)
-            for mtNum in range(self.propTree.model.parts[pNum].nComps):
-                c = self.propTree.model.parts[pNum].comps[mtNum]
-                thisNNodes = 0
-                for n in self.propTree.iterNodes():
-                    if n.parts[pNum].compNum == c.num:
-                        thisNNodes += 1
-                if c.nNodes != thisNNodes:
-                    gm.append(
-                        "propTree  comp.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                    raise P4Error(gm)
-            this_k = 0
-            for mtNum in range(self.curTree.model.parts[pNum].nComps):
-                c = self.curTree.model.parts[pNum].comps[mtNum]
-                if c.rj_isInPool:
-                    this_k += 1
-            if self.curTree.model.parts[pNum].rjComp_k != this_k:
-                gm.append("curTree. rjComp_k=%i, this_k=%i" %
-                          (self.curTree.model.parts[pNum].rjComp_k, this_k))
-                raise P4Error(gm)
-            this_k = 0
-            for mtNum in range(self.propTree.model.parts[pNum].nComps):
-                c = self.propTree.model.parts[pNum].comps[mtNum]
-                if c.rj_isInPool:
-                    this_k += 1
-            if self.propTree.model.parts[pNum].rjComp_k != this_k:
-                gm.append("propTree rjComp_k=%i, this_k=%i" %
-                          (self.propTree.model.parts[pNum].rjComp_k, this_k))
-                raise P4Error(gm)
-
-        # Same for rjRMatrix
-        checkRjR = False
-
-        if checkRjR:
-            # Check rjRMatrix stuff
-            for pNum in range(self.curTree.model.nParts):
-                if self.curTree.model.parts[pNum].nRMatrices > 1:
-                    thisK0_cur = 0
-                    for mtNum in range(self.curTree.model.parts[pNum].nRMatrices):
-                        c = self.curTree.model.parts[pNum].rMatrices[mtNum]
-                        thisNNodes = 0
-                        for n in self.curTree.iterNodesNoRoot():
-                            if n.br.parts[pNum].rMatrixNum == c.num:
-                                thisNNodes += 1
-                        if c.nNodes != thisNNodes:
-                            gm.append(
-                                "curTree  rMatrix.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                            raise P4Error(gm)
-                        if c.nNodes:
-                            thisK0_cur += 1
-                    thisK0_prop = 0
-                    for mtNum in range(self.propTree.model.parts[pNum].nRMatrices):
-                        c = self.propTree.model.parts[pNum].rMatrices[mtNum]
-                        thisNNodes = 0
-                        for n in self.propTree.iterNodesNoRoot():
-                            if n.br.parts[pNum].rMatrixNum == c.num:
-                                thisNNodes += 1
-                        if c.nNodes != thisNNodes:
-                            gm.append(
-                                "propTree  rMatrix.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                            raise P4Error(gm)
-                        if c.nNodes:
-                            thisK0_prop += 1
-                    if thisK0_cur != thisK0_prop:
-                        gm.append("part %i, checkRjR: thisK0_cur %i, thisK0_prop %i" % (
-                            pNum, thisK0_cur, thisK0_prop))
-                        raise P4Error(gm)
-                    this_k_cur = 0
-                    for mtNum in range(self.curTree.model.parts[pNum].nRMatrices):
-                        c = self.curTree.model.parts[pNum].rMatrices[mtNum]
-                        if c.rj_isInPool:
-                            this_k_cur += 1
-                    if self.curTree.model.parts[pNum].rjRMatrix_k != this_k_cur:
-                        gm.append("curTree. rjRMatrix_k=%i, this_k=%i" % (
-                            self.curTree.model.parts[pNum].rjRMatrix_k, this_k_cur))
-                        raise P4Error(gm)
-                    this_k_prop = 0
-                    for mtNum in range(self.propTree.model.parts[pNum].nRMatrices):
-                        c = self.propTree.model.parts[pNum].rMatrices[mtNum]
-                        if c.rj_isInPool:
-                            this_k_prop += 1
-                    if self.propTree.model.parts[pNum].rjRMatrix_k != this_k_prop:
-                        gm.append("propTree rjRMatrix_k=%i, this_k=%i" % (
-                            self.propTree.model.parts[pNum].rjRMatrix_k, this_k_prop))
-                        raise P4Error(gm)
-
-                    if this_k_cur != this_k_prop:
-                        gm.append("part %i, checkRjR: this_k_cur %i, this_k_prop %i" % (
-                            pNum, this_k_cur, this_k_prop))
-                        raise P4Error(gm)
-                    if thisK0_cur > this_k_cur:
-                        gm.append("part %i, checkRjR: thisK0_cur %i, this_k_cur %i" % (
-                            pNum, thisK0_cur, this_k_cur))
-                        raise P4Error(gm)
 
         if 0:
             ret = self.verifyIdentityOfTwoTreesInChain(
@@ -1083,11 +978,9 @@ class Chain(object):
                     print("7777777777777777777777777777777777777777777777777777777777 bad Cur Tree")
                 if math.fabs(self.propTree.logLike - sum(self.propTree.partLikes)) > 0.0001:
                     print("8888888888888888888888888888888888888888888888888888888888 bad Prop Tree")
-                # print self.propTree.partLikes, type(self.propTree.partLikes)
-                assert type(self.propTree.partLikes) == type(
-                    self.propTree.preOrder)
-                assert type(self.curTree.partLikes) == type(
-                    self.curTree.preOrder)
+                # print(self.propTree.partLikes, type(self.propTree.partLikes))
+                assert isinstance(self.propTree.partLikes, numpy.ndarray)
+                assert isinstance(self.curTree.partLikes, numpy.ndarray)
             pRet = self.proposeSp(aProposal)
         else:
             pRet = self.propose(aProposal)
@@ -1240,9 +1133,11 @@ class Chain(object):
         #    print("-------------- (gen %5i, %20s) acceptMove = %s" % (self.mcmc.gen, aProposal.name, acceptMove))
 
         aProposal.nProposals[self.tempNum] += 1
+        aProposal.tnNSamples[self.tempNum] += 1
         if acceptMove:
             aProposal.accepted = True
             aProposal.nAcceptances[self.tempNum] += 1
+            aProposal.tnNAccepts[self.tempNum] += 1
             if aProposal.name in ['local', 'eTBR']:
                 if aProposal.topologyChanged:
                     # print "zzz topologyChanged"
@@ -1596,109 +1491,7 @@ class Chain(object):
             if 0 and self.mcmc.gen in gNums:
                 self.propTree.calcLogLike()
 
-        if checkRj:
-            # Check rj stuff
-            pNum = 0
-            for mtNum in range(self.curTree.model.parts[pNum].nComps):
-                c = self.curTree.model.parts[pNum].comps[mtNum]
-                thisNNodes = 0
-                for n in self.curTree.iterNodes():
-                    if n.parts[pNum].compNum == c.num:
-                        thisNNodes += 1
-                if c.nNodes != thisNNodes:
-                    gm.append(
-                        "curTree  comp.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                    raise P4Error(gm)
-            for mtNum in range(self.propTree.model.parts[pNum].nComps):
-                c = self.propTree.model.parts[pNum].comps[mtNum]
-                thisNNodes = 0
-                for n in self.propTree.iterNodes():
-                    if n.parts[pNum].compNum == c.num:
-                        thisNNodes += 1
-                if c.nNodes != thisNNodes:
-                    gm.append(
-                        "propTree  comp.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                    raise P4Error(gm)
-            this_k = 0
-            for mtNum in range(self.curTree.model.parts[pNum].nComps):
-                c = self.curTree.model.parts[pNum].comps[mtNum]
-                if c.rj_isInPool:
-                    this_k += 1
-            if self.curTree.model.parts[pNum].rjComp_k != this_k:
-                gm.append("curTree. rjComp_k=%i, this_k=%i" %
-                          (self.curTree.model.parts[pNum].rjComp_k, this_k))
-                raise P4Error(gm)
-            this_k = 0
-            for mtNum in range(self.propTree.model.parts[pNum].nComps):
-                c = self.propTree.model.parts[pNum].comps[mtNum]
-                if c.rj_isInPool:
-                    this_k += 1
-            if self.propTree.model.parts[pNum].rjComp_k != this_k:
-                gm.append("propTree rjComp_k=%i, this_k=%i" %
-                          (self.propTree.model.parts[pNum].rjComp_k, this_k))
-                raise P4Error(gm)
 
-        if checkRjR:
-            # Check rjRMatrix stuff
-            for pNum in range(self.curTree.model.nParts):
-                if self.curTree.model.parts[pNum].nRMatrices > 1:
-                    thisK0_cur = 0
-                    for mtNum in range(self.curTree.model.parts[pNum].nRMatrices):
-                        c = self.curTree.model.parts[pNum].rMatrices[mtNum]
-                        thisNNodes = 0
-                        for n in self.curTree.iterNodesNoRoot():
-                            if n.br.parts[pNum].rMatrixNum == c.num:
-                                thisNNodes += 1
-                        if c.nNodes != thisNNodes:
-                            gm.append(
-                                "curTree  rMatrix.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                            raise P4Error(gm)
-                        if c.nNodes:
-                            thisK0_cur += 1
-                    thisK0_prop = 0
-                    for mtNum in range(self.propTree.model.parts[pNum].nRMatrices):
-                        c = self.propTree.model.parts[pNum].rMatrices[mtNum]
-                        thisNNodes = 0
-                        for n in self.propTree.iterNodesNoRoot():
-                            if n.br.parts[pNum].rMatrixNum == c.num:
-                                thisNNodes += 1
-                        if c.nNodes != thisNNodes:
-                            gm.append(
-                                "propTree  rMatrix.nNodes=%i, but thisNNodes=%i" % (c.nNodes, thisNNodes))
-                            raise P4Error(gm)
-                        if c.nNodes:
-                            thisK0_prop += 1
-                    if thisK0_cur != thisK0_prop:
-                        gm.append("part %i, checkRjR: thisK0_cur %i, thisK0_prop %i" % (
-                            pNum, thisK0_cur, thisK0_prop))
-                        raise P4Error(gm)
-                    this_k_cur = 0
-                    for mtNum in range(self.curTree.model.parts[pNum].nRMatrices):
-                        c = self.curTree.model.parts[pNum].rMatrices[mtNum]
-                        if c.rj_isInPool:
-                            this_k_cur += 1
-                    if self.curTree.model.parts[pNum].rjRMatrix_k != this_k_cur:
-                        gm.append("curTree. rjRMatrix_k=%i, this_k=%i" % (
-                            self.curTree.model.parts[pNum].rjRMatrix_k, this_k_cur))
-                        raise P4Error(gm)
-                    this_k_prop = 0
-                    for mtNum in range(self.propTree.model.parts[pNum].nRMatrices):
-                        c = self.propTree.model.parts[pNum].rMatrices[mtNum]
-                        if c.rj_isInPool:
-                            this_k_prop += 1
-                    if self.propTree.model.parts[pNum].rjRMatrix_k != this_k_prop:
-                        gm.append("propTree rjRMatrix_k=%i, this_k=%i" % (
-                            self.propTree.model.parts[pNum].rjRMatrix_k, this_k_prop))
-                        raise P4Error(gm)
-
-                    if this_k_cur != this_k_prop:
-                        gm.append("part %i, checkRjR: this_k_cur %i, this_k_prop %i" % (
-                            pNum, this_k_cur, this_k_prop))
-                        raise P4Error(gm)
-                    if thisK0_cur > this_k_cur:
-                        gm.append("part %i, checkRjR: thisK0_cur %i, this_k_cur %i" % (
-                            pNum, thisK0_cur, this_k_cur))
-                        raise P4Error(gm)
 
     def verifyIdentityOfTwoTreesInChain(self, doSplitKeys=False):
         #gm = ['Chain.verifyIdentityOfTwoTreesInChain()']
@@ -1735,12 +1528,13 @@ class Chain(object):
     def proposeCompWithSlider(self, theProposal):
         gm = ['Chain.proposeCompWithSlider()']
 
-        mt = self.propTree.model.parts[
-            theProposal.pNum].comps[theProposal.mtNum]
+        nComps = self.propTree.model.parts[theProposal.pNum].nComps
+        mtNum = random.randrange(0, stop=nComps)
+        mt = self.propTree.model.parts[theProposal.pNum].comps[mtNum]
         dim = self.propTree.model.parts[theProposal.pNum].dim
 
         # mt.val is a list, not a numpy array
-        #assert type(mt.val) == numpy.ndarray
+        #assert isinstance(mt.val, numpy.ndarray)
 
         indxs = random.sample(range(dim), 2)
         currentAplusB = mt.val[indxs[0]] + mt.val[indxs[1]]
@@ -1797,15 +1591,16 @@ class Chain(object):
     def proposeCompWithDirichlet(self, theProposal):
         gm = ['Chain.proposeCompWithDirichlet()']
 
-        mt = self.propTree.model.parts[
-            theProposal.pNum].comps[theProposal.mtNum]
+        nComps = self.propTree.model.parts[theProposal.pNum].nComps
+        mtNum = random.randrange(0, stop=nComps)
+        mt = self.propTree.model.parts[theProposal.pNum].comps[mtNum]
         dim = self.propTree.model.parts[theProposal.pNum].dim
 
         # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0])
+        # print(type(mt.val), type(mt.val[0]))
 
         # The tuning is the Dirichlet alpha.
-        # print theProposal.tuning
+        # print theProposal.tuning[self.tempNum]
 
         # This method previously used p4.func.dirichlet1, which is for lists not numpy
         # arrays.  A copy of inSeq is made, and the copy is modified and
@@ -1815,7 +1610,7 @@ class Chain(object):
         #    mt.val, theProposal.tuning, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
         # Now it uses scipy.
         mtVal = numpy.array(mt.val)
-        myProposer = scipy.stats.dirichlet(theProposal.tuning * mtVal)
+        myProposer = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * mtVal)
         newVal = myProposer.rvs(size=1)[0]
         while  newVal.min() < var.PIVEC_MIN:
             for i in range(dim):
@@ -1851,7 +1646,7 @@ class Chain(object):
         # We can re-use myProposer to get the log pdf
         forwardLnPdf = myProposer.logpdf(newVal)
         # Another dirichlet distribution for the reverse
-        spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
+        spDist = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * newVal)
         reverseLnPdf = spDist.logpdf(mtVal)
         self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
@@ -1863,475 +1658,17 @@ class Chain(object):
         # it was not flat, then we would need to do some calculation here.
         self.logPriorRatio = 0.0
 
-    def proposeRjComp(self, theProposal):
-        gm = ['Chain.proposeRjComp()']
-        theProposal.doAbort = False
-        mp = self.propTree.model.parts[theProposal.pNum]
-        assert mp.rjComp
-        assert mp.rjComp_k >= 1
-        assert mp.rjComp_k <= mp.nComps
-
-        # If the pool size k, mp.rjComp_k, is only 1, then we can only split
-        if mp.rjComp_k == 1:
-            self.proposeSplitComp(theProposal)
-
-        # If k, mp.rjComp_k is mp.nComps, then we can only merge
-        if mp.rjComp_k == mp.nComps:
-            self.proposeMergeComp(theProposal)
-
-        # Otherwise, choose randomly.
-        if random.random() < 0.5:
-            self.proposeSplitComp(theProposal)
-        else:
-            self.proposeMergeComp(theProposal)
-
-    def proposeSplitComp(self, theProposal):
-        gm = ['Chain.proposeSplitComp()']
-
-        # var.rjCompUniformAllocationPrior  True by default
-        # theProposal.tuning 200.  becomes p0 below
-
-        mp = self.propTree.model.parts[theProposal.pNum]
-        assert mp.rjComp
-        dim = mp.dim
-
-        # Check that k is less than k_max, which is nComps.  This should have been checked before, but check again.
-        # print gm[0], "rjComp_k is currently %i, with %i comps" %
-        # (mp.rjComp_k, mp.nComps)
-        assert mp.rjComp_k < mp.nComps
-
-        # Select an existing comp vector from the pool
-        pool = [c for c in mp.comps if c.rj_isInPool]
-        notInPool = [c for c in mp.comps if not c.rj_isInPool]
-        assert notInPool  # or else we can't split
-        pi0 = random.choice(pool)
-
-        # The nodes currently associated with pi0
-        beta0 = [n for n in self.propTree.iterNodes(
-        ) if n.parts[theProposal.pNum].compNum == pi0.num]
-        b0 = float(len(beta0))
-        # print gm[0], "comp %i is chosen, f=%f, currently on nodes" %
-        # (pi0.num, pi0.rj_f), [n.nodeNum for n in beta0]
-
-        # Divvy up the contents of beta0 into (new) beta1 and beta2, based on
-        # probability u
-        if var.rjCompUniformAllocationPrior:
-            u = 0.5
-        else:
-            u = random.random()
-
-        beta1 = []
-        beta2 = []
-        for it in beta0:
-            r = random.random()
-            if r < u:
-                beta1.append(it)
-            else:
-                beta2.append(it)
-        b1 = float(len(beta1))
-        b2 = float(len(beta2))
-        bPrime0 = b0 + 2.
-        bPrime1 = b1 + 1.
-        bPrime2 = b2 + 1.
-
-        # Calculation of f1 and f2 depends on u
-        f0 = pi0.rj_f
-        f1 = u * f0
-        f2 = (1.0 - u) * f0
-
-        uu = [random.normalvariate(0., 1.) for i in range(dim)]
-        p0 = theProposal.tuning
-        s0 = random.gammavariate(p0, 1.)
-        m0 = [s0 * it for it in pi0.val]
-        # print m0
-
-        # I get a math range error here -- needs debugging.
-        # m1 = [m0[j] * math.exp((bPrime0 * uu[j])/(bPrime1 * math.sqrt(m0[j])))
-        #      for j in range(dim)]
-        # m2 = [m0[j] * math.exp((-bPrime0 * uu[j])/(bPrime2 * math.sqrt(m0[j])))
-        #      for j in range(dim)]
-
-        safety = 0
-        while 1:
-            try:
-                m1 = [m0[j] * math.exp((bPrime0 * uu[j]) / (bPrime1 * math.sqrt(m0[j])))
-                      for j in range(dim)]
-                m2 = [m0[j] * math.exp((-bPrime0 * uu[j]) / (bPrime2 * math.sqrt(m0[j])))
-                      for j in range(dim)]
-                break
-            except OverflowError:
-                print("Overflow error in splitComp() (%2i)" % safety)
-                safety += 1
-                if safety >= 100:
-                    theProposal.doAbort = True
-                    # print "Too many overflows in splitComp.  Aborting!"
-                    return
-                uu = [random.normalvariate(0., 1.) for i in range(dim)]
-
-        if 0:
-            # testing ...
-            m1 = [m0[j] * math.exp((bPrime0 * uu[j]) / bPrime1)
-                  for j in range(dim)]
-            m2 = [m0[j] * math.exp((-bPrime0 * uu[j]) / bPrime2)
-                  for j in range(dim)]
-
-        # Long form of the above for debugging --
-        if 0:
-            m1 = []
-            for j in range(dim):
-                top = (bPrime0 * uu[j])
-                bottom = (bPrime1 * math.sqrt(m0[j]))
-                quot = top / bottom
-                try:
-                    myexp = math.exp(quot)
-                except OverflowError:
-                    gm.append(
-                        "Got overflow error for m1 exp(%f) at j=%i" % (quot, j))
-                    gm.append("s0 is %f" % s0)
-                    gm.append("bPrime0 = %f" % bPrime0)
-                    gm.append("uu[j] = %f" % uu[j])
-                    gm.append("bPrime1 = %f" % bPrime1)
-                    gm.append("m0[j] = %f, sqrt=%f" %
-                              (m0[j], math.sqrt(m0[j])))
-                    gm.append("m0 is %s" % m0)
-                    gm.append("top = %f" % top)
-                    gm.append("bottom = %f" % bottom)
-                    raise P4Error(gm)
-                m1.append(m0[j] * myexp)
-
-            m2 = []
-            for j in range(dim):
-                top = (-bPrime0 * uu[j])
-                bottom = (bPrime2 * math.sqrt(m0[j]))
-                quot = top / bottom
-                try:
-                    myexp = math.exp(quot)
-                except OverflowError:
-                    gm.append(
-                        "Got overflow error for m2 exp(%f) at j=%i" % (quot, j))
-                    gm.append("s0 is %f" % s0)
-                    gm.append("-bPrime0 = %f" % -bPrime0)
-                    gm.append("uu[j] = %f" % uu[j])
-                    gm.append("bPrime2 = %f" % bPrime2)
-                    gm.append("m0[j] = %f, sqrt=%f" %
-                              (m0[j], math.sqrt(m0[j])))
-                    gm.append("m0 is %s" % m0)
-                    gm.append("top = %f" % top)
-                    gm.append("bottom = %f" % bottom)
-                    raise P4Error(gm)
-                m2.append(m0[j] * myexp)
-
-        if 0:
-            # Loggified version, as in Gowri-Shankar and Rattray, eqn 7.
-            log_m1 = [math.log(m0[j]) + ((bPrime0 * uu[j]) / (bPrime1 * math.sqrt(m0[j])))
-                      for j in range(dim)]
-            log_m2 = [math.log(m0[j]) - ((bPrime0 * uu[j]) / (bPrime2 * math.sqrt(m0[j])))
-                      for j in range(dim)]
-
-            try:
-                m1 = [math.exp(it) for it in log_m1]
-            except OverflowError:
-                gm.append("m0 = %s" % m0)
-                gm.append("log_m1 = %s" % log_m1)
-                gm.append('overflow m1')
-                raise P4Error(gm)
-            try:
-                m2 = [math.exp(it) for it in log_m2]
-            except OverflowError:
-                gm.append("m0 = %s" % m0)
-                gm.append("log_m2 = %s" % log_m2)
-                gm.append("overflow m2")
-                raise P4Error(gm)
-
-        if 0:
-            print(m0)
-            print(m1)
-            print(m2)
-            print()
-
-        s1 = sum(m1)
-        s2 = sum(m2)
-        newVal1 = [it / s1 for it in m1]
-        newVal2 = [it / s2 for it in m2]
-
-        # print newVal1
-        # print newVal2
-
-        if 1:
-            # Peter adds, the following few lines to make sure the vals are
-            # more than var.PIVEC_MIN
-            isChanged = False
-            for vNum in range(len(newVal1)):
-                isGood = False
-                while not isGood:
-                    # print "gen %i" % self.mcmc.gen
-                    if newVal1[vNum] < var.PIVEC_MIN:
-                        newVal1[vNum] = (
-                            var.PIVEC_MIN - newVal1[vNum]) + var.PIVEC_MIN
-                        isChanged = True
-                    else:
-                        isGood = True
-            if isChanged:
-                s1 = sum(newVal1)
-                newVal1 = [it / s1 for it in newVal1]
-
-            isChanged = False
-            for vNum in range(len(newVal2)):
-                isGood = False
-                while not isGood:
-                    # print "y gen %i" % self.mcmc.gen
-                    if newVal2[vNum] < var.PIVEC_MIN:
-                        newVal2[vNum] = (
-                            var.PIVEC_MIN - newVal2[vNum]) + var.PIVEC_MIN
-                        isChanged = True
-                    else:
-                        isGood = True
-            if isChanged:
-                s2 = sum(newVal2)
-                newVal2 = [it / s2 for it in newVal2]
-
-        # print newVal1
-        # print newVal2
-
-        # Log prior ratio
-        # We could have a prior on the pool size, reflected in t1.  If all pool
-        # sizes are equally probable, then t1 = 0
-        t1 = 0.
-
-        if var.rjCompUniformAllocationPrior:
-            b = len([n for n in self.propTree.iterNodes()])
-            t2 = b * (math.log(mp.rjComp_k) - math.log(mp.rjComp_k + 1))
-        else:
-            t2 = (b1 * math.log(f1)) + \
-                (b2 * math.log(f2)) - (b0 * math.log(f0))
-
-        # t3 is for the prior on comp vectors.  With the Dirichlet prior alpha
-        # values all 1, t3 is log Gamma dim
-        t3 = pf.gsl_sf_lngamma(dim)
-
-        # t4 is for the f values.
-        if var.rjCompUniformAllocationPrior:
-            t4 = 0.0
-        else:
-            # If its a uniform Dirichlet, then t4 = log k, where k is from
-            # before the split
-            t4 = math.log(mp.rjComp_k)
-
-        self.logPriorRatio = t1 + t2 + t3 + t4
-
-        # Log proposal ratio
-        if mp.rjComp_k == 1:
-            t1 = math.log(0.5)
-        else:
-            t1 = 0.
-        if var.rjCompUniformAllocationPrior:
-            t2 = b0 * math.log(2.)
-        else:
-            t2 = (b0 * math.log(f0)) - (b1 * math.log(f1)) - \
-                (b2 * math.log(f2))          # this was changed 26 sept
-
-        # for t3, below, do some pre-calculations
-        sum_uu2 = sum([u * u for u in uu])
-        lastTerm = -pf.gsl_sf_lngamma(p0) + (0.5 * sum_uu2) + \
-            ((dim / 2.) * math.log(2 * math.pi))
-        t3 = (s0 - s1 - s2) + ((p0 - 1.) *
-                               (math.log(s1) + math.log(s2) - math.log(s0))) + lastTerm
-        self.logProposalRatio = t1 + t2 + t3
-        # print t1,t2,t3,s0,s1,s2
-
-        #self.logProposalRatio = 0.
-
-        # The Jacobian
-        lastTerm = 0.5 * sum([math.log(v) for v in pi0.val])    # added 26 sept
-        t1 = ((((3. * dim) - 2.) / 2.) * math.log(s0)) - \
-            ((dim - 1.) * (math.log(s1) + math.log(s2))) + lastTerm
-        t2 = (2. * dim * math.log(bPrime0)) - \
-            (dim * (math.log(bPrime1) + math.log(bPrime2)))
-        t3 = sum([uu[j] / (math.sqrt(s0 * pi0.val[j])) for j in range(dim)])
-        t3 = ((bPrime0 * (bPrime2 - bPrime1)) / (bPrime1 * bPrime2)) * t3
-
-        if var.rjCompUniformAllocationPrior:
-            self.logJacobian = t1 + t2 + t3
-        else:
-            self.logJacobian = t1 + t2 + t3 + math.log(f0)
-
-        # We will now make pi1 and pi2.  The pi1 will be made from pi0,
-        # and pi2 will be popped from the notInPool list.  We have newVal1
-        # and newVal2 which will be their vals, and we assign them to
-        # nodes in beta1 and beta2, and give them rj_f values of f1 and
-        # f2.
-        pi1 = pi0
-        pi1.val = newVal1
-        pi1.rj_f = f1
-        for n in beta1:
-            # not needed, its already that.
-            n.parts[theProposal.pNum].compNum = pi1.num
-            pf.p4_setCompNum(n.cNode, theProposal.pNum, pi1.num)
-        pi1.nNodes = b1
-
-        pi2 = notInPool.pop()
-        pi2.val = newVal2
-        pi2.rj_f = f2
-        for n in beta2:
-            n.parts[theProposal.pNum].compNum = pi2.num
-            pf.p4_setCompNum(n.cNode, theProposal.pNum, pi2.num)
-        pi2.nNodes = b2
-        pi2.rj_isInPool = True
-
-        self.propTree.model.parts[theProposal.pNum].rjComp_k += 1
-        # print "...finished proposeSplitComp()"
-
-    def proposeMergeComp(self, theProposal):
-        gm = ['Chain.proposeMergeComp()']
-
-        mp = self.propTree.model.parts[theProposal.pNum]
-        assert mp.rjComp
-        dim = mp.dim
-        p0 = theProposal.tuning
-
-        # Check that k is more than 1.  This should have been checked before, but check again.
-        # print "rjComp_k is currently %i, with %i comps" % (mp.rjComp_k,
-        # mp.nComps)
-        if mp.rjComp_k <= 1:
-            gm.append("part %i, rjComp_k = %i" %
-                      (theProposal.pNum, mp.rjComp_k))
-            pool = [c for c in mp.comps if c.rj_isInPool]
-            gm.append(
-                'len of pool = %i (should be the same as rjComp_k)' % len(pool))
-            gm.append(
-                "rjComp_k, the pool size, should be more than 1 for a merge.  This isn't.")
-            raise P4Error(gm)
-
-        # Choose two comps (to make into one).  They must be in the pool.
-        pool = [c for c in mp.comps if c.rj_isInPool]
-        assert len(pool) == mp.rjComp_k
-        pi1, pi2 = random.sample(pool, 2)
-        # print "proposing to merge comps %i and %i" % (pi1.num, pi2.num)
-
-        beta1 = []
-        beta2 = []
-        for n in self.propTree.iterNodes():
-            theCompNum = n.parts[theProposal.pNum].compNum
-            if theCompNum == pi1.num:
-                beta1.append(n)
-            elif theCompNum == pi2.num:
-                beta2.append(n)
-        beta0 = beta1 + beta2
-        b1 = float(len(beta1))
-        b2 = float(len(beta2))
-        b0 = float(b1 + b2)
-        assert len(beta0) == b0
-        bPrime0 = b0 + 2.
-        bPrime1 = b1 + 1.
-        bPrime2 = b2 + 1.
-        f1 = pi1.rj_f
-        f2 = pi2.rj_f
-        f0 = f1 + f2
-
-        # Obtain composition vector proposal
-        s1 = random.gammavariate(p0, 1.)
-        s2 = random.gammavariate(p0, 1.)
-        m1 = [v * s1 for v in pi1.val]
-        m2 = [v * s2 for v in pi2.val]
-        # print "m1 = ", m1
-        # print "m2 = ", m2
-        # print b0, b1, b2, bPrime0, bPrime1, bPrime2
-        m0 = [math.exp(((bPrime1 / bPrime0) * math.log(m1[j])) + ((bPrime2 / bPrime0) * math.log(m2[j])))
-              for j in range(dim)]
-
-        # print "m0 = ", m0
-        s0 = sum(m0)
-
-        newVal0 = [m0k / s0 for m0k in m0]
-
-        # Log prior ratio
-        # We could have a prior on the pool size, reflected in t1.  If all pool
-        # sizes are equally probable, then t1 = 0
-        t1 = 0.
-
-        if var.rjCompUniformAllocationPrior:
-            b = len([n for n in self.propTree.iterNodes()])
-            t2 = b * (math.log(mp.rjComp_k) - math.log(mp.rjComp_k - 1))
-        else:
-            t2 = (b0 * math.log(f0)) - \
-                (b1 * math.log(f1)) - (b2 * math.log(f2))
-
-        # t3 is for the prior on comp vectors.  With the Dirichlet prior alpha
-        # values all 1, t3 is log Gamma dim
-        t3 = -pf.gsl_sf_lngamma(dim)
-
-        # t4 is for the f values.
-        if var.rjCompUniformAllocationPrior:
-            t4 = 0.0
-        else:
-            # If its a uniform Dirichlet, then t4 = - log (k - 1), where k is
-            # from before the merge
-            t4 = -math.log(mp.rjComp_k - 1)
-
-        self.logPriorRatio = t1 + t2 + t3 + t4
-
-        # Log proposal ratio
-        if mp.rjComp_k == mp.nComps:  # nComps is k_max
-            t1 = math.log(0.5)
-        else:
-            t1 = 0.
-
-        if var.rjCompUniformAllocationPrior:
-            t2 = - (b0 * math.log(2.))
-        else:
-            t2 = (b1 * math.log(f1)) + \
-                (b2 * math.log(f2)) - (b0 * math.log(f0))
-
-        # for t3, below, do some pre-calculations
-        uu = [(bPrime1 / bPrime0) * math.sqrt(m0[j])
-              * (math.log(m1[j]) - math.log(m0[j])) for j in range(dim)]
-        sum_uu2 = sum([u * u for u in uu])
-        lastTerm = pf.gsl_sf_lngamma(p0) - (0.5 * sum_uu2) - \
-            ((dim / 2.) * math.log(2 * math.pi))
-        t3 = (s1 + s2 - s0) - ((p0 - 1.) *
-                               (math.log(s1) + math.log(s2) - math.log(s0))) + lastTerm
-
-        #logSterm = ((1. - p0) * (math.log(s1) + math.log(s2) - math.log(s0)))
-        # print "s1=%.1f s2=%.1f s0=%.1f    sum_uu2=%.1f  logGamma(p0)=%.1f, logSterm=%.1f" % (
-        #    s1, s2, s0, sum_uu2, pf.gsl_sf_lngamma(p0), logSterm)
-        self.logProposalRatio = t1 + t2 + t3
-
-        #self.logProposalRatio = 20.
-
-        # The Jacobian
-        lastTerm = 0.5 * sum([math.log(v) for v in newVal0])  # new 26 sept
-        t1 = ((((3. * dim) - 2.) / 2.) * math.log(s0)) - \
-            ((dim - 1.) * (math.log(s1) + math.log(s2))) + lastTerm
-        t2 = (2. * dim * math.log(bPrime0)) - \
-            (dim * (math.log(bPrime1) + math.log(bPrime2)))
-        t3 = sum([uu[j] / (math.sqrt(s0 * newVal0[j])) for j in range(dim)])
-        t3 = ((bPrime0 * (bPrime2 - bPrime1)) / (bPrime1 * bPrime2)) * t3
-        if var.rjCompUniformAllocationPrior:
-            self.logJacobian = -(t1 + t2 + t3)
-        else:
-            self.logJacobian = -(t1 + t2 + t3 + math.log(f0))
-
-        # Merge pi1 and pi2 => pi0, where pi0 is actually pi1, re-used, by
-        # giving "0" values to pi1 = pi0
-        pi1.rj_f = f0
-        pi1.val = newVal0
-        for n in beta0:
-            n.parts[theProposal.pNum].compNum = pi1.num
-            pf.p4_setCompNum(n.cNode, theProposal.pNum, pi1.num)
-        pi1.nNodes = b0
-        mp.rjComp_k -= 1
-        pi2.rj_isInPool = False
-        pi2.nNodes = 0
 
     def proposeRMatrixWithSlider(self, theProposal):
 
         # print "rMatrix proposal. the tuning is %s" % theProposal.tuning
+        nRMatrices = self.propTree.model.parts[theProposal.pNum].nRMatrices
+        mtNum = random.randrange(0, stop=nRMatrices)
+        
 
         assert var.rMatrixNormalizeTo1
-        mtCur = self.curTree.model.parts[
-            theProposal.pNum].rMatrices[theProposal.mtNum]
-        mtProp = self.propTree.model.parts[
-            theProposal.pNum].rMatrices[theProposal.mtNum]
+        mtCur = self.curTree.model.parts[theProposal.pNum].rMatrices[mtNum]
+        mtProp = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
         if mtProp.spec == '2p':
             # For 2p, its actually a Dirichlet, not a slider.  All this is
             # stolen from MrBayes, where the default tuning is 50.  In
@@ -2341,7 +1678,7 @@ class Chain(object):
             # zero.
 
             # note that mtCur.val and mtProp.val are both ndarrays 
-            # print mtCur.val, type(mtCur.val)
+            # print(mtCur.val, type(mtCur.val))
             old = [0.0, 0.0]
             old[0] = mtCur.val[0] / (mtCur.val[0] + 1.0)
             old[1] = 1.0 - old[0]
@@ -2368,11 +1705,10 @@ class Chain(object):
             self.logProposalRatio = x - y
 
         else:  # specified, ones, eg gtr
-            mt = self.propTree.model.parts[
-                theProposal.pNum].rMatrices[theProposal.mtNum]
+            mt = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
 
             # mt.val is a numpy array
-            assert type(mt.val) == numpy.ndarray
+            assert isinstance(mt.val, numpy.ndarray)
 
             nRates = len(mt.val)  # eg 6 for dna gtr, not 5
             indxs = random.sample(range(nRates), 2)
@@ -2430,10 +1766,10 @@ class Chain(object):
         # print "rMatrix proposal. the tuning is %s" % theProposal.tuning
 
         assert var.rMatrixNormalizeTo1
-        mtCur = self.curTree.model.parts[
-            theProposal.pNum].rMatrices[theProposal.mtNum]
-        mtProp = self.propTree.model.parts[
-            theProposal.pNum].rMatrices[theProposal.mtNum]
+        nRMatrices = self.propTree.model.parts[theProposal.pNum].nRMatrices
+        mtNum = random.randrange(0, stop=nRMatrices)
+        mtCur = self.curTree.model.parts[theProposal.pNum].rMatrices[mtNum]
+        mtProp = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
         if mtProp.spec == '2p':
 
             # This is derived from MrBayes, where the default tuning is 50.  In
@@ -2442,11 +1778,11 @@ class Chain(object):
             # the prior ratio 1.0 and the logPriorRatio zero.
 
             # note that mtCur.val and mtProp.val are both ndarrays, shape (1,) 
-            # print mtCur.val, type(mtCur.val), mtCur.val.shape
+            # print(mtCur.val, type(mtCur.val), mtCur.val.shape)
             oldVal = numpy.array([0.0, 0.0])
             oldVal[0] = mtCur.val[0] / (mtCur.val[0] + 1.0)
             oldVal[1] = 1.0 - oldVal[0]
-            myProposer = scipy.stats.dirichlet(theProposal.tuning * oldVal)
+            myProposer = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * oldVal)
             newVal = myProposer.rvs(size=1)[0]
 
             safety = 0
@@ -2463,24 +1799,23 @@ class Chain(object):
 
 
             mtProp.val[0] = newVal[0] / newVal[1]
-            # print mtProp.val, type(mtProp.val), mtProp.val.shape
+            # print(mtProp.val, type(mtProp.val), mtProp.val.shape)
 
             # Calculate the proposal ratio
             # We can re-use myProposer to get the log pdf
             forwardLnPdf = myProposer.logpdf(newVal)
             # Another dirichlet distribution for the reverse
-            spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
+            spDist = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * newVal)
             reverseLnPdf = spDist.logpdf(oldVal)
             self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
 
         else:  # specified, ones, eg gtr
-            mt = self.propTree.model.parts[
-                theProposal.pNum].rMatrices[theProposal.mtNum]
+            mt = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
 
             # mt.val is a numpy array
-            assert type(mt.val) == numpy.ndarray
-            myProposer = scipy.stats.dirichlet(theProposal.tuning * mt.val)
+            assert isinstance(mt.val, numpy.ndarray)
+            myProposer = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * mt.val)
 
             safety = 0
             newVal = myProposer.rvs(size=1)[0]
@@ -2496,449 +1831,24 @@ class Chain(object):
             # We can re-use myProposer to get the log pdf
             forwardLnPdf = myProposer.logpdf(newVal)
             # Another dirichlet distribution for the reverse
-            spDist = scipy.stats.dirichlet(theProposal.tuning * newVal)
+            spDist = scipy.stats.dirichlet(theProposal.tuning[self.tempNum] * newVal)
             reverseLnPdf = spDist.logpdf(mt.val)
             self.logProposalRatio = reverseLnPdf - forwardLnPdf
 
-            mtProp = self.propTree.model.parts[
-                theProposal.pNum].rMatrices[theProposal.mtNum]
+            mtProp = self.propTree.model.parts[theProposal.pNum].rMatrices[mtNum]
             for i,val in enumerate(newVal):
                 mtProp.val[i] = val
 
         self.logPriorRatio = 0.0
 
-    def proposeRjRMatrix(self, theProposal):
-        gm = ['Chain.proposeRjRMatrix()']
-        mp = self.propTree.model.parts[theProposal.pNum]
-        assert mp.rjRMatrix
-        assert mp.rjRMatrix_k >= 1
-        assert mp.rjRMatrix_k <= mp.nRMatrices
-
-        # If the pool size k, mp.rjRMatrix_k, is only 1, then we can only split
-        if mp.rjRMatrix_k == 1:
-            self.proposeSplitRMatrix(theProposal)
-
-        # If k, mp.rjRMatrix_k is mp.nRMatrices, then we can only merge
-        if mp.rjRMatrix_k == mp.nRMatrices:
-            self.proposeMergeRMatrix(theProposal)
-
-        # Otherwise, choose randomly.
-        if random.random() < 0.5:
-            self.proposeSplitRMatrix(theProposal)
-        else:
-            self.proposeMergeRMatrix(theProposal)
-
-    def proposeSplitRMatrix(self, theProposal):
-        gm = ['Chain.proposeSplitRMatrix()']
-        # var.rjRMatrixUniformAllocationPrior  True by default
-        # theProposal.tuning 300.  becomes p0 below
-
-        mp = self.propTree.model.parts[theProposal.pNum]
-        assert mp.rjRMatrix
-        rDim = ((mp.dim * mp.dim) - mp.dim) / 2
-
-        # Check that k is less than k_max, which is nRMatrices.  This should have been checked before, but check again.
-        # print gm[0], "rjRMatrix_k is currently %i, with %i rMatrices" %
-        # (mp.rjRMatrix_k, mp.nRMatrices)
-        assert mp.rjRMatrix_k < mp.nRMatrices
-
-        # Select an existing rMatrix from the pool
-        pool = [c for c in mp.rMatrices if c.rj_isInPool]
-        assert mp.rjRMatrix_k == len(pool)
-        notInPool = [c for c in mp.rMatrices if not c.rj_isInPool]
-        assert notInPool  # or else we can't split
-        assert mp.nRMatrices == len(pool) + len(notInPool)
-        rm0 = random.choice(pool)
-
-        # The nodes currently associated with rm0
-        beta0 = [n for n in self.propTree.iterNodesNoRoot(
-        ) if n.br.parts[theProposal.pNum].rMatrixNum == rm0.num]
-        b0 = float(len(beta0))
-        # print gm[0], "rMatrix %i is chosen, f=%f, currently on nodes" %
-        # (rm0.num, rm0.rj_f), [n.nodeNum for n in beta0]
-
-        # Divvy up the contents of beta0 into (new) beta1 and beta2, based on
-        # probability u
-        if var.rjRMatrixUniformAllocationPrior:
-            u = 0.5
-        else:
-            u = random.random()
-
-        beta1 = []
-        beta2 = []
-        for it in beta0:
-            r = random.random()
-            if r < u:
-                beta1.append(it)
-            else:
-                beta2.append(it)
-        b1 = float(len(beta1))
-        b2 = float(len(beta2))
-        bPrime0 = b0 + 2.
-        bPrime1 = b1 + 1.
-        bPrime2 = b2 + 1.
-
-        # Calculation of f1 and f2 depends on u
-        f0 = rm0.rj_f
-        f1 = u * f0
-        f2 = (1.0 - u) * f0
-
-        uu = [random.normalvariate(0., 1.) for i in range(rDim)]
-        p0 = theProposal.tuning
-        s0 = random.gammavariate(p0, 1.)
-        m0 = [s0 * it for it in rm0.val]
-        # print m0
-
-        # I get a math range error here -- needs debugging.
-        # m1 = [m0[j] * math.exp((bPrime0 * uu[j])/(bPrime1 * math.sqrt(m0[j])))
-        #      for j in range(rDim)]
-        # m2 = [m0[j] * math.exp((-bPrime0 * uu[j])/(bPrime2 * math.sqrt(m0[j])))
-        #      for j in range(rDim)]
-        safety = 0
-        while 1:
-            try:
-                m1 = [m0[j] * math.exp((bPrime0 * uu[j]) / (bPrime1 * math.sqrt(m0[j])))
-                      for j in range(rDim)]
-                m2 = [m0[j] * math.exp((-bPrime0 * uu[j]) / (bPrime2 * math.sqrt(m0[j])))
-                      for j in range(rDim)]
-                break
-            except OverflowError:
-                print("Overflow error in splitRMatrix() (%2i)" % safety)
-                safety += 1
-                if safety >= 100:
-                    theProposal.doAbort = True
-                    print("Too many overflows in splitComp.  Aborting!")
-                    return
-                uu = [random.normalvariate(0., 1.) for i in range(rDim)]
-
-        if 0:
-            # Long form of the above for debugging --
-            m1 = []
-            for j in range(rDim):
-                top = (bPrime0 * uu[j])
-                bottom = (bPrime1 * math.sqrt(m0[j]))
-                quot = top / bottom
-                try:
-                    myexp = math.exp(quot)
-                except OverflowError:
-                    gm.append(
-                        "Got overflow error for m1 exp(%f) at j=%i" % (quot, j))
-                    gm.append("bPrime0 = %f" % bPrime0)
-                    gm.append("uu[j] = %f" % uu[j])
-                    gm.append("bPrime1 = %f" % bPrime1)
-                    gm.append("m0[j] = %f, sqrt=%f" %
-                              (m0[j], math.sqrt(m0[j])))
-                    gm.append("m0 is %s" % m0)
-                    gm.append("top = %f" % top)
-                    gm.append("bottom = %f" % bottom)
-                    raise P4Error(gm)
-                m1.append(m0[j] * myexp)
-
-            m2 = []
-            for j in range(rDim):
-                top = (-bPrime0 * uu[j])
-                bottom = (bPrime2 * math.sqrt(m0[j]))
-                quot = top / bottom
-                try:
-                    myexp = math.exp(quot)
-                except OverflowError:
-                    gm.append(
-                        "Got overflow error for m2 exp(%f) at j=%i" % (quot, j))
-                    gm.append("-bPrime0 = %f" % -bPrime0)
-                    gm.append("uu[j] = %f" % uu[j])
-                    gm.append("bPrime2 = %f" % bPrime2)
-                    gm.append("m0[j] = %f, sqrt=%f" %
-                              (m0[j], math.sqrt(m0[j])))
-                    gm.append("m0 is %s" % m0)
-                    gm.append("top = %f" % top)
-                    gm.append("bottom = %f" % bottom)
-                    raise P4Error(gm)
-                m2.append(m0[j] * myexp)
-
-        s1 = sum(m1)
-        s2 = sum(m2)
-        newVal1 = [it / s1 for it in m1]
-        newVal2 = [it / s2 for it in m2]
-
-        # print newVal1
-        # print newVal2
-
-        if 1:
-            # Peter adds, the following few lines to get the vals more than
-            # var.RATE_MIN
-            isChanged = False
-            for vNum in range(len(newVal1)):
-                isGood = False
-                while not isGood:
-                    # print "gen %i" % self.mcmc.gen
-                    if newVal1[vNum] < var.RATE_MIN:
-                        newVal1[vNum] = (
-                            var.RATE_MIN - newVal1[vNum]) + var.RATE_MIN
-                        isChanged = True
-                    else:
-                        isGood = True
-            if isChanged:
-                s1 = sum(newVal1)
-                newVal1 = [it / s1 for it in newVal1]
-
-            isChanged = False
-            for vNum in range(len(newVal2)):
-                isGood = False
-                while not isGood:
-                    # print "y gen %i" % self.mcmc.gen
-                    if newVal2[vNum] < var.RATE_MIN:
-                        newVal2[vNum] = (
-                            var.RATE_MIN - newVal2[vNum]) + var.RATE_MIN
-                        isChanged = True
-                    else:
-                        isGood = True
-            if isChanged:
-                s2 = sum(newVal2)
-                newVal2 = [it / s2 for it in newVal2]
-
-        # print newVal1
-        # print newVal2
-
-        # Log prior ratio
-        # We could have a prior on the pool size, reflected in t1.  If all pool
-        # sizes are equally probable, then t1 = 0
-        t1 = 0.
-
-        if var.rjRMatrixUniformAllocationPrior:
-            b = len([n for n in self.propTree.iterNodesNoRoot()])
-            t2 = b * (math.log(mp.rjRMatrix_k) - math.log(mp.rjRMatrix_k + 1))
-        else:
-            t2 = (b1 * math.log(f1)) + \
-                (b2 * math.log(f2)) - (b0 * math.log(f0))
-
-        # t3 is for the prior on rMatrices.  With the Dirichlet prior alpha
-        # values all 1, t3 is log Gamma rDim
-        t3 = pf.gsl_sf_lngamma(rDim)
-
-        # t4 is for the f values.
-        if var.rjRMatrixUniformAllocationPrior:
-            t4 = 0.0
-        else:
-            # If its a uniform Dirichlet, then t4 = log k, where k is from
-            # before the split
-            t4 = math.log(mp.rjRMatrix_k)
-
-        self.logPriorRatio = t1 + t2 + t3 + t4
-
-        # Log proposal ratio
-        if mp.rjRMatrix_k == 1:
-            t1 = math.log(0.5)
-        else:
-            t1 = 0.
-        if var.rjRMatrixUniformAllocationPrior:
-            t2 = b0 * math.log(2.)
-        else:
-            t2 = (b0 * math.log(f0)) - (b1 * math.log(f1)) - \
-                (b2 * math.log(f2))          # this was changed 26 sept
-
-        # for t3, below, do some pre-calculations
-        sum_uu2 = sum([u * u for u in uu])
-        lastTerm = -pf.gsl_sf_lngamma(p0) + (0.5 * sum_uu2) + \
-            ((rDim / 2.) * math.log(2 * math.pi))
-        t3 = (s0 - s1 - s2) + ((p0 - 1.) *
-                               (math.log(s1) + math.log(s2) - math.log(s0))) + lastTerm
-        self.logProposalRatio = t1 + t2 + t3
-        # print t1,t2,t3,s0,s1,s2
-
-        #self.logProposalRatio = 0.
-
-        # The Jacobian
-        lastTerm = 0.5 * sum([math.log(v) for v in rm0.val])    # added 26 sept
-        t1 = ((((3. * rDim) - 2.) / 2.) * math.log(s0)) - \
-            ((rDim - 1.) * (math.log(s1) + math.log(s2))) + lastTerm
-        t2 = (2. * rDim * math.log(bPrime0)) - \
-            (rDim * (math.log(bPrime1) + math.log(bPrime2)))
-        t3 = sum([uu[j] / (math.sqrt(s0 * rm0.val[j])) for j in range(rDim)])
-        t3 = ((bPrime0 * (bPrime2 - bPrime1)) / (bPrime1 * bPrime2)) * t3
-
-        if var.rjRMatrixUniformAllocationPrior:
-            self.logJacobian = t1 + t2 + t3
-        else:
-            self.logJacobian = t1 + t2 + t3 + math.log(f0)
-
-        # We will now make rm1 and rm2.  The rm1 will be made from rm0,
-        # and rm2 will be popped from the notInPool list.  We have newVal1
-        # and newVal2 which will be their vals, and we assign them to
-        # nodes in beta1 and beta2, and give them rj_f values of f1 and
-        # f2.
-        rm1 = rm0
-        for rNum in range(rDim):
-            rm1.val[rNum] = newVal1[rNum]
-        rm1.rj_f = f1
-        for n in beta1:
-            # not needed, its already that.
-            n.br.parts[theProposal.pNum].rMatrixNum = rm1.num
-            pf.p4_setRMatrixNum(n.cNode, theProposal.pNum, rm1.num)
-        rm1.nNodes = b1
-
-        rm2 = notInPool.pop()
-        for rNum in range(rDim):
-            rm2.val[rNum] = newVal2[rNum]
-        rm2.rj_f = f2
-        for n in beta2:
-            n.br.parts[theProposal.pNum].rMatrixNum = rm2.num
-            pf.p4_setRMatrixNum(n.cNode, theProposal.pNum, rm2.num)
-        rm2.nNodes = b2
-        rm2.rj_isInPool = True
-
-        self.propTree.model.parts[theProposal.pNum].rjRMatrix_k += 1
-        # print "...finished proposeSplitRMatrix()"
-
-    def proposeMergeRMatrix(self, theProposal):
-        gm = ['Chain.proposeMergeRMatrix()']
-
-        mp = self.propTree.model.parts[theProposal.pNum]
-        assert mp.rjRMatrix
-        rDim = ((mp.dim * mp.dim) - mp.dim) / 2
-        p0 = theProposal.tuning
-
-        # Check that k is more than 1.  This should have been checked before, but check again.
-        # print "rjRMatrix_k is currently %i, with %i rMatrices" %
-        # (mp.rjRMatrix_k, mp.nRMatrices)
-        if mp.rjRMatrix_k <= 1:
-            gm.append("part %i, rjRMatrix_k = %i" %
-                      (theProposal.pNum, mp.rjRMatrix_k))
-            pool = [c for c in mp.rMatrices if c.rj_isInPool]
-            gm.append(
-                'len of pool = %i (should be the same as rjRMatrix_k)' % len(pool))
-            gm.append(
-                "rjRMatrix_k, the pool size, should be more than 1 for a merge.  This isn't.")
-            raise P4Error(gm)
-
-        # Choose two rMatrices (to make into one).  They must be in the pool.
-        pool = [c for c in mp.rMatrices if c.rj_isInPool]
-        assert len(pool) == mp.rjRMatrix_k
-        rm1, rm2 = random.sample(pool, 2)
-        # print "proposing to merge rMatrices %i and %i" % (rm1.num, rm2.num)
-
-        beta1 = []
-        beta2 = []
-        for n in self.propTree.iterNodesNoRoot():
-            theRMatrixNum = n.br.parts[theProposal.pNum].rMatrixNum
-            if theRMatrixNum == rm1.num:
-                beta1.append(n)
-            elif theRMatrixNum == rm2.num:
-                beta2.append(n)
-        beta0 = beta1 + beta2
-        b1 = float(len(beta1))
-        b2 = float(len(beta2))
-        b0 = float(b1 + b2)
-        assert len(beta0) == b0
-        bPrime0 = b0 + 2.
-        bPrime1 = b1 + 1.
-        bPrime2 = b2 + 1.
-        f1 = rm1.rj_f
-        f2 = rm2.rj_f
-        f0 = f1 + f2
-
-        # Obtain rMatrix proposal
-        s1 = random.gammavariate(p0, 1.)
-        s2 = random.gammavariate(p0, 1.)
-        m1 = [v * s1 for v in rm1.val]
-        m2 = [v * s2 for v in rm2.val]
-        # print "m1 = ", m1
-        # print "m2 = ", m2
-        # print b0, b1, b2, bPrime0, bPrime1, bPrime2
-        m0 = [math.exp(((bPrime1 / bPrime0) * math.log(m1[j])) + ((bPrime2 / bPrime0) * math.log(m2[j])))
-              for j in range(rDim)]
-
-        # print "m0 = ", m0
-        s0 = sum(m0)
-
-        newVal0 = [m0k / s0 for m0k in m0]
-
-        # Log prior ratio
-        # We could have a prior on the pool size, reflected in t1.  If all pool
-        # sizes are equally probable, then t1 = 0
-        t1 = 0.
-
-        if var.rjRMatrixUniformAllocationPrior:
-            b = len([n for n in self.propTree.iterNodes()])
-            t2 = b * (math.log(mp.rjRMatrix_k) - math.log(mp.rjRMatrix_k - 1))
-        else:
-            t2 = (b0 * math.log(f0)) - \
-                (b1 * math.log(f1)) - (b2 * math.log(f2))
-
-        # t3 is for the prior on rMatrices.  With the Dirichlet prior alpha
-        # values all 1, t3 is log Gamma rDim
-        t3 = -pf.gsl_sf_lngamma(rDim)
-
-        # t4 is for the f values.
-        if var.rjRMatrixUniformAllocationPrior:
-            t4 = 0.0
-        else:
-            # If its a uniform Dirichlet, then t4 = - log (k - 1), where k is
-            # from before the merge
-            t4 = -math.log(mp.rjRMatrix_k - 1)
-
-        self.logPriorRatio = t1 + t2 + t3 + t4
-
-        # Log proposal ratio
-        if mp.rjRMatrix_k == mp.nRMatrices:  # nRMatrices is k_max
-            t1 = math.log(0.5)
-        else:
-            t1 = 0.
-
-        if var.rjRMatrixUniformAllocationPrior:
-            t2 = - (b0 * math.log(2.))
-        else:
-            t2 = (b1 * math.log(f1)) + \
-                (b2 * math.log(f2)) - (b0 * math.log(f0))
-
-        # for t3, below, do some pre-calculations
-        uu = [(bPrime1 / bPrime0) * math.sqrt(m0[j])
-              * (math.log(m1[j]) - math.log(m0[j])) for j in range(rDim)]
-        sum_uu2 = sum([u * u for u in uu])
-        lastTerm = pf.gsl_sf_lngamma(p0) - (0.5 * sum_uu2) - \
-            ((rDim / 2.) * math.log(2 * math.pi))
-        t3 = (s1 + s2 - s0) - ((p0 - 1.) *
-                               (math.log(s1) + math.log(s2) - math.log(s0))) + lastTerm
-
-        #logSterm = ((1. - p0) * (math.log(s1) + math.log(s2) - math.log(s0)))
-        # print "s1=%.1f s2=%.1f s0=%.1f    sum_uu2=%.1f  logGamma(p0)=%.1f, logSterm=%.1f" % (
-        #    s1, s2, s0, sum_uu2, pf.gsl_sf_lngamma(p0), logSterm)
-        self.logProposalRatio = t1 + t2 + t3
-
-        #self.logProposalRatio = 20.
-
-        # The Jacobian
-        lastTerm = 0.5 * sum([math.log(v) for v in newVal0])  # new 26 sept
-        t1 = ((((3. * rDim) - 2.) / 2.) * math.log(s0)) - \
-            ((rDim - 1.) * (math.log(s1) + math.log(s2))) + lastTerm
-        t2 = (2. * rDim * math.log(bPrime0)) - \
-            (rDim * (math.log(bPrime1) + math.log(bPrime2)))
-        t3 = sum([uu[j] / (math.sqrt(s0 * newVal0[j])) for j in range(rDim)])
-        t3 = ((bPrime0 * (bPrime2 - bPrime1)) / (bPrime1 * bPrime2)) * t3
-        if var.rjRMatrixUniformAllocationPrior:
-            self.logJacobian = -(t1 + t2 + t3)
-        else:
-            self.logJacobian = -(t1 + t2 + t3 + math.log(f0))
-
-        # Merge rm1 and rm2 => rm0, where rm0 is actually rm1, re-used, by
-        # giving "0" values to rm1 = rm0
-        rm1.rj_f = f0
-        for rNum in range(rDim):
-            rm1.val[rNum] = newVal0[rNum]
-        for n in beta0:
-            n.br.parts[theProposal.pNum].rMatrixNum = rm1.num
-            pf.p4_setRMatrixNum(n.cNode, theProposal.pNum, rm1.num)
-        rm1.nNodes = b0
-        mp.rjRMatrix_k -= 1
-        rm2.rj_isInPool = False
-        rm2.nNodes = 0
 
     def proposeGdasrv(self, theProposal):
 
         # This is a multiplier proposal.
 
         gm = ["Chain.proposeGdasrv()"]
-        mt = self.propTree.model.parts[
-            theProposal.pNum].gdasrvs[theProposal.mtNum]
+        assert self.propTree.model.parts[theProposal.pNum].nGdasrvs == 1
+        mt = self.propTree.model.parts[theProposal.pNum].gdasrvs[0]
 
         # We can't have alpha less than about 1.e-16, or DiscreteGamma hangs.
         # But that is moot, as var.GAMMA_SHAPE_MIN is much bigger
@@ -2948,10 +1858,9 @@ class Chain(object):
         #mt.val /= theProposal.tuning
 
         # mt.val is a numpy.ndarray type, an array with 1 element.
-        assert type(mt.val) == numpy.ndarray
+        assert isinstance(mt.val, numpy.ndarray)
         oldVal = mt.val
-        newVal = oldVal * \
-            math.exp(theProposal.tuning * (random.random() - 0.5))
+        newVal = oldVal * math.exp(theProposal.tuning[self.tempNum] * (random.random() - 0.5))
 
         isGood = False
         while not isGood:
@@ -2962,7 +1871,7 @@ class Chain(object):
             else:
                 isGood = True
 
-        # print type(self.logProposalRatio), type(self.logPriorRatio),
+        # print(type(self.logProposalRatio), type(self.logPriorRatio), end=' ')
         self.logProposalRatio = math.log(newVal / oldVal)
 
         self.logPriorRatio = 0.0
@@ -2970,14 +1879,14 @@ class Chain(object):
         #self.logPriorRatio = self.mcmc.tunings.parts[theProposal.pNum].gdasrvPriorLambda * float(oldVal - newVal)
         mt.val = newVal
         assert type(mt.val) == numpy.ndarray
-        # print type(self.logProposalRatio), type(self.logPriorRatio),
-        # print self.logProposalRatio, self.logPriorRatio
+        # print(type(self.logProposalRatio), type(self.logPriorRatio), end= ' ')
+        # print(self.logProposalRatio, self.logPriorRatio)
 
     def proposePInvar(self, theProposal):
         mt = self.propTree.model.parts[theProposal.pNum].pInvar
 
         # Slider proposal
-        mt.val += (random.random() - 0.5) * theProposal.tuning
+        mt.val += (random.random() - 0.5) * theProposal.tuning[self.tempNum]
 
         # Linear reflect
         isGood = False
@@ -2996,7 +1905,7 @@ class Chain(object):
     def proposeRelRate(self, theProposal):
         for pNum in range(self.propTree.model.nParts):
             mp = self.propTree.model.parts[pNum]
-            ran = (random.random() - 0.5) * theProposal.tuning
+            ran = (random.random() - 0.5) * theProposal.tuning[self.tempNum]
             mp.relRate += ran
             isGood = False
             # while (mp.relRate < var.RELRATE_MIN) or (mp.relRate >
@@ -3029,36 +1938,15 @@ class Chain(object):
         gm = ["Chain.proposeCompLocation()"]
         mp = self.propTree.model.parts[theProposal.pNum]
         #nMT = self.propTree.model.parts[theProposal.pNum].nComps
-        if mp.rjComp:
-            pool = [c for c in mp.comps if c.rj_isInPool]
-            # We need at least 2 comps, because one of them will be the
-            # current comp for the node chosen below, and we need at least
-            # one other to change to.
-            if len(pool) < 2:
-                theProposal.doAbort = True
-                return True
-        validNodeNums = [
-            n for n in self.propTree.preOrder if n != var.NO_ORDER]
+        validNodeNums = [n for n in self.propTree.preOrder if n != var.NO_ORDER]
         validNodes = [self.propTree.nodes[n] for n in validNodeNums]
-        if mp.rjComp:
-            validNodes = [n for n in validNodes if (
-                mp.comps[n.parts[theProposal.pNum].compNum].rj_isInPool)]
-        else:
-            validNodes = [n for n in validNodes if (
-                mp.comps[n.parts[theProposal.pNum].compNum].nNodes > 1)]
+        validNodes = [n for n in validNodes if (mp.comps[n.parts[theProposal.pNum].compNum].nNodes > 1)]
         if not validNodes:
             theProposal.doAbort = True
             return True
         theNode = random.choice(validNodes)
         currentNum = theNode.parts[theProposal.pNum].compNum
-        if mp.rjComp:
-            validCompNumbers = [c.num for c in pool if c.num is not currentNum]
-            if not validCompNumbers:
-                theProposal.doAbort = True
-                return True
-        else:
-            validCompNumbers = [
-                c.num for c in mp.comps if c.num is not currentNum]
+        validCompNumbers = [c.num for c in mp.comps if c.num is not currentNum]
         #proposedNum = currentNum
         # while proposedNum == currentNum:
         #    proposedNum = random.randrange(nMT)
@@ -3073,7 +1961,10 @@ class Chain(object):
         theNode.parts[theProposal.pNum].compNum = proposedNum
         self.logProposalRatio = 0.0
         #self.logPriorRatio = 0.0
-        self.logPriorRatio = theProposal.tuning
+        if theProposal.tuning:
+            self.logPriorRatio = theProposal.tuning[self.tempNum]  # hack alert!
+        else:
+            self.logPriorRatio = 0.0
 
     def proposeRMatrixLocation(self, theProposal):
         #gm = ["proposeRMatrixLocation()"]
@@ -3128,8 +2019,10 @@ class Chain(object):
             proposedNum].nNodes += 1
         theNode.br.parts[theProposal.pNum].rMatrixNum = proposedNum
         self.logProposalRatio = 0.0
-        #self.logPriorRatio = 0.0
-        self.logPriorRatio = theProposal.tuning
+        if theProposal.tuning:
+            self.logPriorRatio = theProposal.tuning[self.tempNum]  # hack alert!
+        else:
+            self.logPriorRatio = 0.0
 
     def proposeGdasrvLocation(self, theProposal):
         #gm = ["proposeGdasrvLocation()"]
@@ -3158,262 +2051,6 @@ class Chain(object):
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
 
-    def proposeCmd1CompDir(self, theProposal):
-        gm = ['Chain.proposeCmd1CompDir()']
-
-        # print gm[0], theProposal.pNum, theProposal.mtNum
-
-        mp = self.propTree.model.parts[theProposal.pNum]
-
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
-        mt = random.choice(mp.comps)
-
-        # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0]), mt.val, mt.num
-
-        # This method uses p4.func.dirichlet1, which is for lists not numpy
-        # arrays.  A copy of inSeq is made, and the copy is modified and
-        # returned.
-        #dirichlet1(inSeq, alpha, theMin, theMax)
-        newVal = p4.func.dirichlet1(
-            mt.val, mp.cmd1_p, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
-
-        # proposal ratio
-        dirPrams = [mp.cmd1_p * v for v in newVal]
-        logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(mt.val))
-        dirPrams = [mp.cmd1_p * v for v in mt.val]
-        logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(newVal))
-        self.logProposalRatio = logPdfProps - logPdfCurrs
-
-        # prior ratio
-        dirPrams = [mp.cmd1_alpha * v for v in mp.cmd1_pi0]
-        logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(newVal))
-        logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(mt.val))
-        self.logPriorRatio = logPdfProps - logPdfCurrs
-
-        mt.val = newVal
-
-    def proposeCmd1Comp0Dir(self, theProposal):
-        gm = ['Chain.proposeCmd1Comp0Dir()']
-
-        # print gm[0], theProposal.pNum, theProposal.mtNum
-
-        mp = self.propTree.model.parts[theProposal.pNum]
-
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
-        curVal = mp.cmd1_pi0
-
-        # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0]), mt.val, mt.num
-
-        # This method uses p4.func.dirichlet1, which is for lists not numpy
-        # arrays.  A copy of inSeq is made, and the copy is modified and
-        # returned.
-        #dirichlet1(inSeq, alpha, theMin, theMax)
-        newVal = p4.func.dirichlet1(
-            curVal, mp.cmd1_q, var.PIVEC_MIN, 1 - var.PIVEC_MIN)
-
-        # proposal ratio
-        dirPrams = [mp.cmd1_q * v for v in newVal]
-        logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(curVal))
-        dirPrams = [mp.cmd1_q * v for v in curVal]
-        logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(newVal))
-        self.logProposalRatio = logPdfProps - logPdfCurrs
-
-        # prior ratio
-        dirPrams = [mp.cmd1_s * v for v in [1.0] * mp.dim]
-        logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(newVal))
-        logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(curVal))
-        self.logPriorRatio = logPdfProps - logPdfCurrs
-
-        for pi_i in mp.comps:
-            dirPrams = [mp.cmd1_alpha * v for v in newVal]
-            logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-                mp.dim, numpy.array(dirPrams), numpy.array(pi_i.val))
-            dirPrams = [mp.cmd1_alpha * v for v in curVal]
-            logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-                mp.dim, numpy.array(dirPrams), numpy.array(pi_i.val))
-            diff = logPdfProps - logPdfCurrs
-            self.logPriorRatio += diff
-
-        mp.cmd1_pi0 = newVal
-
-    def proposeCmd1AllCompDir(self, theProposal):
-        gm = ['Chain.proposeCmd1AllCompDir()']
-        # all the comps, including pi0, in one go.
-
-        mp = self.propTree.model.parts[theProposal.pNum]
-
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
-
-        # First do proposal for pi0
-
-        # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0]), mt.val, mt.num
-        # This method uses p4.func.dirichlet1, which is for lists not numpy
-        # arrays.  A copy of inSeq is made, and the copy is modified and
-        # returned.
-        #dirichlet1(inSeq, alpha, theMin, theMax)
-        myU = 0.0
-        pi0_newVal = p4.func.dirichlet1(
-            mp.cmd1_pi0, mp.cmd1_q, var.PIVEC_MIN, 1 - var.PIVEC_MIN, u=myU)
-
-        # Now do proposals for all the comps in mp.comps, now using u
-        # added to the dirichlet prams within p4.func.dirichlet1().  This of
-        # course needs to be taken into account when calculating the
-        # proposal ratio below.
-        piNewVals = [p4.func.dirichlet1(
-            mt.val, mp.cmd1_p, var.PIVEC_MIN, 1 - var.PIVEC_MIN, u=myU) for mt in mp.comps]
-
-        # proposal ratio for pi0
-        #myU = 0.0
-        dirPrams = [(mp.cmd1_q * v) + myU for v in pi0_newVal]
-        logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(mp.cmd1_pi0))
-        dirPrams = [(mp.cmd1_q * v) + myU for v in mp.cmd1_pi0]
-        logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(pi0_newVal))
-        self.logProposalRatio = logPdfProps - logPdfCurrs
-
-        # proposal ratios for all the comps in mp.comps
-        for mtNum in range(len(mp.comps)):
-            mt = mp.comps[mtNum]
-            newVal = piNewVals[mtNum]
-            dirPrams = [(mp.cmd1_p * v) + myU for v in newVal]
-            logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-                mp.dim, numpy.array(dirPrams), numpy.array(mt.val))
-            dirPrams = [(mp.cmd1_p * v) + myU for v in mt.val]
-            logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-                mp.dim, numpy.array(dirPrams), numpy.array(newVal))
-            self.logProposalRatio += (logPdfProps - logPdfCurrs)
-
-        # prior ratio for pi0 component
-        dirPrams = [mp.cmd1_s * v for v in [1.0] * mp.dim]
-        logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(pi0_newVal))
-        logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-            mp.dim, numpy.array(dirPrams), numpy.array(mp.cmd1_pi0))
-        self.logPriorRatio = logPdfProps - logPdfCurrs
-
-        # prior ratios for all the comps in mp.comps
-        for mtNum in range(len(mp.comps)):
-            mt = mp.comps[mtNum]
-            newVal = piNewVals[mtNum]
-            dirPrams = [mp.cmd1_alpha * v for v in pi0_newVal]
-            logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-                mp.dim, numpy.array(dirPrams), numpy.array(newVal))
-            dirPrams = [mp.cmd1_alpha * v for v in mp.cmd1_pi0]
-            logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-                mp.dim, numpy.array(dirPrams), numpy.array(mt.val))
-            diff = logPdfProps - logPdfCurrs
-            self.logPriorRatio += diff
-
-        # assign the proposals to the prop tree
-        mp.cmd1_pi0 = pi0_newVal
-        for mtNum in range(len(mp.comps)):
-            mt = mp.comps[mtNum]
-            newVal = piNewVals[mtNum]
-            mt.val = newVal
-
-    def proposeCmd1Alpha(self, theProposal):
-        gm = ['Chain.proposeCmd1Alpha()']
-        MIN = 1.
-        MAX = 1000.
-
-        # print gm[0], theProposal.pNum, theProposal.mtNum
-
-        mp = self.propTree.model.parts[theProposal.pNum]
-
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
-        curVal = mp.cmd1_alpha
-
-        assert curVal <= MAX
-        assert curVal >= MIN
-
-        # mt.val is a list of floats, not a numpy.ndarray
-        # print type(mt.val), type(mt.val[0]), mt.val, mt.num
-
-        if 0:
-            # Do a log scale proposal
-            if 0:
-                # Make proposals, and if it is outside MIN, MAX, then try
-                # again.
-                while 1:
-                    newVal = curVal * \
-                        math.exp(
-                            mp.cmd1_alphaLogScaleProposalTuning * (random.random() - 0.5))
-                    if (newVal < MIN) or (newVal > MAX):
-                        continue
-                    else:
-                        break
-            else:
-                # If it is outside MIN, MAX, then do logarithmic reflect
-                newVal = curVal * \
-                    math.exp(
-                        mp.cmd1_alphaLogScaleProposalTuning * (random.random() - 0.5))
-                if 1:
-                    # Logarithmic reflect if needed
-                    while (newVal < MIN) or (newVal > MAX):
-                        if newVal < MIN:
-                            newVal = MIN * MIN / newVal
-                        elif newVal > MAX:
-                            newVal = MAX * MAX / newVal
-        else:
-            # Do linear proposal
-            newVal = curVal + \
-                (mp.cmd1_alphaLinearScaleProposalTuning *
-                 (random.random() - 0.5))
-
-            # Linear reflect if needed
-            while (newVal < MIN) or (newVal > MAX):
-                if newVal < MIN:
-                    newVal = (MIN - newVal) + MIN
-                elif newVal > MAX:
-                    newVal = MAX - (newVal - MAX)
-
-        # print curVal, newVal
-
-        # proposal ratio
-        #self.logProposalRatio = math.log(newVal/curVal)
-        self.logProposalRatio = 0.0
-
-        # prior ratio
-        if 0:
-            # As in Tom's blurb
-            # logNormal for self
-            zeta = mp.cmd1_LN_a
-            sigma = mp.cmd1_LN_t
-            pdfProp = pf.gsl_ran_lognormal_pdf(newVal, zeta, sigma)
-            pdfCurr = pf.gsl_ran_lognormal_pdf(curVal, zeta, sigma)
-            priorRatio = pdfProp / pdfCurr
-            self.logPriorRatio = math.log(priorRatio)
-        else:
-            self.logPriorRatio = 0.0  # flat!
-
-        for pi_i in mp.comps:
-            dirPrams = [newVal * v for v in mp.cmd1_pi0]
-            logPdfProps = pf.gsl_ran_dirichlet_lnpdf(
-                mp.dim, numpy.array(dirPrams), numpy.array(pi_i.val))
-            dirPrams = [curVal * v for v in mp.cmd1_pi0]
-            logPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(
-                mp.dim, numpy.array(dirPrams), numpy.array(pi_i.val))
-            diff = logPdfProps - logPdfCurrs
-            self.logPriorRatio += diff
-
-        mp.cmd1_alpha = newVal
-
 
 
     def proposeAllCompsDir(self, theProposal):
@@ -3424,8 +2061,6 @@ class Chain(object):
         mpProp = self.propTree.model.parts[theProposal.pNum]
 
         assert not mpCur.ndch2, "allCompsDir proposal is not for ndch2"
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
 
         # Make proposals, accumulate log proposal ratios in the same loop
         self.logProposalRatio = 0.0
@@ -3433,7 +2068,7 @@ class Chain(object):
             mtCur = mpCur.comps[cNum]
             mtProp = mpProp.comps[cNum]
             # Result of the proposal goes into mtProp.val
-            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
             while  mtProp.val.min() < var.PIVEC_MIN:
                 for i in range(mpCur.dim):
                     if mtProp.val[i] < var.PIVEC_MIN:
@@ -3441,8 +2076,10 @@ class Chain(object):
                 thisSum = mtProp.val.sum()
                 mtProp.val /= thisSum
 
-            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
-            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
         # prior ratio
@@ -3454,9 +2091,6 @@ class Chain(object):
         mpCur = self.curTree.model.parts[theProposal.pNum]
         mpProp = self.propTree.model.parts[theProposal.pNum]
         assert mpCur.ndch2
-
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
 
         # Does this work for polytomies?  With that in mind, I iterate over
         # nodes rather than comps.
@@ -3470,7 +2104,7 @@ class Chain(object):
             mtProp = mpProp.comps[mtNum]
 
             # Make proposals. Result of the proposal goes into mtProp.val
-            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
             while  mtProp.val.min() < var.PIVEC_MIN:
                 for i in range(mpCur.dim):
                     if mtProp.val[i] < var.PIVEC_MIN:
@@ -3479,8 +2113,10 @@ class Chain(object):
                 mtProp.val /= thisSum
 
             # log proposal ratios
-            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
-            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
@@ -3488,7 +2124,8 @@ class Chain(object):
             dirPrams = mpCur.ndch2_leafAlpha * thisComp
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
-            self.logPriorRatio += lnPdfProps - lnPdfCurrs            
+            self.logPriorRatio += lnPdfProps - lnPdfCurrs 
+            # self.logPriorRatio = 0.0
 
 
     def proposeNdch2_internalCompsDir(self, theProposal):
@@ -3497,9 +2134,6 @@ class Chain(object):
         mpCur = self.curTree.model.parts[theProposal.pNum]
         mpProp = self.propTree.model.parts[theProposal.pNum]
         assert mpCur.ndch2
-
-        # The proposal mtNum is -1, meaning do all, or any
-        assert theProposal.mtNum == -1
 
         # Does this work for polytomies?  With that in mind, I iterate over
         # nodes rather than comps.
@@ -3518,7 +2152,7 @@ class Chain(object):
             mtProp = mpProp.comps[mtNum]
 
             # Make proposals. Result of the proposal goes into mtProp.val
-            p4.func.gsl_ran_dirichlet(theProposal.tuning * mtCur.val, mtProp.val)
+            p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
             while  mtProp.val.min() < var.PIVEC_MIN:
                 for i in range(mpCur.dim):
                     if mtProp.val[i] < var.PIVEC_MIN:
@@ -3527,8 +2161,10 @@ class Chain(object):
                 mtProp.val /= thisSum
 
             # log proposal ratios
-            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtCur.val, mtProp.val)
-            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning * mtProp.val, mtCur.val)
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
@@ -3572,8 +2208,8 @@ class Chain(object):
 
         if 1: 
             # Multiplier proposal
-            #myTuning = 2.0 * math.log(3.0)
-            myTuning = 2.0 * math.log(1.2)
+            #myTuning = 2.0 * math.log(1.2)
+            myTuning = theProposal.tuning[self.tempNum]
             oldVal = mpCur.ndch2_leafAlpha
             newVal = oldVal * math.exp((random.random() - 0.5) * myTuning)
 
@@ -3638,7 +2274,8 @@ class Chain(object):
 
         if 1: 
             # Multiplier proposal
-            myTuning = 2.0 * math.log(3.0)
+            # myTuning = 2.0 * math.log(3.0)
+            myTuning = theProposal.tuning[self.tempNum]
             oldVal = mpCur.ndch2_internalAlpha
             newVal = oldVal * math.exp((random.random() - 0.5) * myTuning)
 
