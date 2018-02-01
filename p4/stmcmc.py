@@ -22,6 +22,7 @@ from p4.tree import Tree
 import datetime
 import itertools
 from scipy.optimize import minimize
+import logging
 
 try:
     import bitarray
@@ -1616,6 +1617,8 @@ class STMcmc(object):
                  checkPointInterval=None, useSplitSupport=False, verbose=True,
                  checkForOutputFiles=True):
 
+        import p4.func  # This should not be needed, but it is.  Why?
+        #print(p4.func)
         gm = ['STMcmc.__init__()']
 
         assert inTrees
@@ -1915,8 +1918,7 @@ class STMcmc(object):
         if bigT:
             self.tree = bigT
         else:
-            self.tree = p4.func.randomTree(
-                taxNames=self.taxNames, name='stTree', randomBrLens=False)
+            self.tree = p4.func.randomTree(taxNames=self.taxNames, name='stTree', randomBrLens=False)
 
         if self.stRFCalc in ['purePython1', 'fastReducedRF']:
             for t in inTrees:
@@ -1939,13 +1941,12 @@ class STMcmc(object):
             self.Frrf = None
             if self.stRFCalc == 'fastReducedRF':
                 try:
-                    import fastReducedRF
-                    self.Frrf = fastReducedRF.Frrf
+                    import p4.fastReducedRF
+                    self.Frrf = p4.fastReducedRF.Frrf
                     # not explicitly used--but makes converters available
                     import pyublas
                 except ImportError:
-                    gm.append(
-                        "var.stRFCalc is set to 'fastReducedRF', but I could not import")
+                    gm.append("var.stRFCalc is set to 'fastReducedRF', but I could not import")
                     gm.append("at least one of fastReducedRF or pyublas.")
                     gm.append("Make sure they are installed.")
                     raise P4Error(gm)
