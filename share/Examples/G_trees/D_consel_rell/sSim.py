@@ -2,7 +2,7 @@ var.warnReadNoFile = 0
 var.verboseRead = 0
 
 read('((D:0.4, E:0.3):0.03, B:0.5, (C:0.3, A:0.4):0.03);')
-taxNames = list(string.uppercase[:5])
+taxNames = list(string.ascii_uppercase[:5])
 var.alignments.append(func.newEmptyAlignment(dataType='dna', taxNames=taxNames, length=500))
 d = Data()
 t = var.trees[0]

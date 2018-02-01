@@ -1,7 +1,7 @@
 nTax = int(var.argvAfterDoubleDash[0])
 nTrees = int(var.argvAfterDoubleDash[1])
 
-#taxNames = list(string.uppercase[:20])
+#taxNames = list(string.ascii_uppercase[:20])
 t = func.randomTree(nTax=nTax)
 #t.draw()
 a = func.newEmptyAlignment(dataType='dna', taxNames=t.taxNames, length=10)
@@ -15,8 +15,8 @@ t.data.writeNexus('d.nex') # For paup, and for the taxNames
 t.calcLogLike()
 
 # Subvert an mcmc object to generate related trees.
-m = Mcmc(t, nChains=1, runNum=0, sampleInterval=1, checkPointInterval=1, simulate=None, verbose=True)
-m.run(1)
+m = Mcmc(t, nChains=1, runNum=0, sampleInterval=1, checkPointInterval=None, simulate=None, verbose=True)
+m.run(0)
 
 # Find the 'local' proposal; give it a name.
 for p in m.proposals:

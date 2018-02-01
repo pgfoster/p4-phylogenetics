@@ -155,14 +155,14 @@ class TreePicture(object):
                             extras = 0
                             if self.textShowNodeNums:
                                 # 1 for the colon
-                                extras += len(`n.nodeNum`) + 1
+                                extras += len(repr(n.nodeNum)) + 1
                         else:
                             if self.textShowNodeNums:
                                 # So we do over-write a vertical line in text
                                 # draw
                                 extras = 0
                                 # 1 for the colon
-                                extras += len(`n.nodeNum`) + 1
+                                extras += len(repr(n.nodeNum)) + 1
                             else:
                                 # So we do not over-write a vertical line in
                                 # text draw
@@ -420,7 +420,7 @@ class TreePicture(object):
                         stringList.append('%f %f moveto \n' %
                                           (self.rootNameContribution + self.xOrigin + ((n.xPos + n.parent.xPos) * 0.5 * self.xScale),
                                            self.yOrigin + (n.yPos * self.yScale) + 2))
-                        # if n.name[0] == '\'' and n.name[-1] == '\'':  # Is this needed?
+                        # if n.name[0] == "'" and n.name[-1] == "'":  # Is this needed?
                         #    theName = n.name[1:-1]
                         # else:
                         #    theName = n.name
@@ -435,7 +435,7 @@ class TreePicture(object):
                         stringList.append('%f %f moveto \n' %
                                           (self.rootNameContribution + self.xOrigin + (n.xPos * self.xScale) + (self.labelTextSize / 3.0),
                                            self.yOrigin + (n.yPos * self.yScale) - (self.labelTextSize / 2.0) + (self.labelTextSize / 3.0)))
-                        # if n.name[0] == '\'' and n.name[-1] == '\'':
+                        # if n.name[0] == "'" and n.name[-1] == "'":
                         #    theName = n.name[1:-1]
                         # else:
                         #    theName = n.name
@@ -455,7 +455,7 @@ class TreePicture(object):
                         stringList.append('%f %f moveto \n' %
                                           (self.rootNameContribution + self.xOrigin + ((n.xPos + n.parent.xPos) * 0.5 * self.xScale),
                                            self.yOrigin + (n.yPos * self.yScale) + 2))
-                        if n.br.name[0] == '\'' and n.br.name[-1] == '\'':
+                        if n.br.name[0] == "'" and n.br.name[-1] == "'":
                             theName = n.br.name[1:-1]
                         else:
                             theName = n.br.name
@@ -470,7 +470,7 @@ class TreePicture(object):
             stringList.append('</svg>\n\n')
         else:
             stringList.append('\nshowpage \n\n')
-        return string.join(stringList, '')
+        return ''.join(stringList)
 
     def textString(self, returnAsList=False):
 
@@ -579,7 +579,7 @@ class TreePicture(object):
         for n in self.tree.iterInternalsNoRoot():
             theName = ''
             if self.textShowNodeNums:
-                theName = `n.nodeNum`
+                theName = repr(n.nodeNum)
             # print "x %s" % theName
             if self.showInternalNodeNames and n.name:
                 if self.textShowNodeNums:
@@ -629,9 +629,9 @@ class TreePicture(object):
         # Make strings from the list elements
         stringList.reverse()
         for i in range(len(stringList)):
-            #stringList[i] = string.join(stringList[i] + ['|'], '')
-            stringList[i] = string.join(stringList[i], '')
-            stringList[i] = string.rstrip(stringList[i])
+            #stringList[i] = ''.join(stringList[i] + ['|'])
+            stringList[i] = ''.join(stringList[i])
+            stringList[i] = stringList[i].rstrip()
 
         # Put a model key on the end
         if self.partNum > -1:
@@ -675,5 +675,5 @@ class TreePicture(object):
         if returnAsList:
             return stringList
         else:
-            s = string.join([''] + stringList, '\n')
+            s = '\n'.join([''] + stringList)
             return s

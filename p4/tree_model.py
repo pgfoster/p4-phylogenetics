@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
 import string
-import types
 import math
 import copy
 import os
@@ -21,7 +20,12 @@ from p4.alignment import Part
 import random
 
 if True:
-    def _setData(self, theData):
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, theData):
         """Sets self.data, and self.nParts"""
 
         # Two cases.  Either
@@ -31,7 +35,7 @@ if True:
         #     a.  Has a model.  So just check for compatibility.
         #     b.  Has no model, so has never seen a data before.
 
-        complaintHead = '\nTree._setData()'
+        complaintHead = 'Tree.data (property setter)'
         if self.name:
             complaintHead += ", tree '%s'" % self.name
         if self.fName:
@@ -198,10 +202,13 @@ if True:
                 if n.isLeaf:
                     n.seqNum = self.taxNames.index(n.name)
 
-    data = property(lambda self: self._data, _setData)
+    @property
+    def model(self):
+        return self._model
 
-    def _setModel(self, theModel):
-        gm = ['Tree._setModel()']
+    @model.setter
+    def model(self, theModel):
+        gm = ['Tree.model (property setter)']
         # print gm[0]
         # print "    Got '%s'" % theModel
         if isinstance(theModel, Model) or theModel == None:
@@ -212,23 +219,19 @@ if True:
                 "Don't set the model to anything other than 'None' or a Model, ok?  ")
             gm.append("(And generally the user only sets it to None.)  ")
             raise P4Error(gm)
-        # if theModel and self._model:  # Why do I do this?
-        #    gm.append("The tree already has a model object; I am refusing to clobber it.")
-        #    gm.append("Perhaps use a (perhaps duplicate) tree with no model.")
-        #    raise P4Error(gm)
         if self.model or self.data:
             self.deleteCStuff()
             # print 'Tree._setModel()  finished deleteCStuff()'
         self._model = theModel
 
-    def _delModel(self):
-        gm = ['Tree._delModel()']
+    @model.deleter
+    def model(self):
+        gm = ['Tree.model']
         gm.append("Caught an attempt to delete self.model, but")
         gm.append("self.model is a property, so you shouldn't delete it.")
         gm.append("But you can set it to None if you like.")
         raise P4Error(gm)
 
-    model = property(lambda self: self._model, _setModel, _delModel)
 
     def _checkModelThing(self, partNum, symbol, complaintHead):
         gm = [complaintHead]
@@ -249,7 +252,7 @@ if True:
             raise P4Error(gm)
 
         if symbol:
-            if type(symbol) != type('s') or len(symbol) != 1:
+            if not isinstance(symbol, str) or len(symbol) != 1:
                 gm.append("Symbols must be 1-length strings.")
                 raise P4Error(gm)
             if symbol == '?':
@@ -381,8 +384,10 @@ if True:
                 if thisVal < var.PIVEC_MIN:
                     print(gm[0])
                     print("    Specifying a comp of zero for a character is not allowed.")
-                    print("    Re-setting to %g" % var.PIVEC_MIN)
-                    val[i] = var.PIVEC_MIN
+                    print("    The minimum is %g" % var.PIVEC_MIN)
+                    myVal = (1.5 + random.random()) * var.PIVEC_MIN
+                    print("    Re-setting to %g" % myVal)
+                    val[i] = myVal
                     needsNormalizing = 1
 
             if needsNormalizing:
@@ -618,9 +623,9 @@ if True:
         # assign val
         dim = self.model.parts[partNum].dim
         if var.rMatrixNormalizeTo1:
-            goodLen = (((dim * dim) - dim) / 2)
+            goodLen = int((((dim * dim) - dim) / 2))
         else:
-            goodLen = (((dim * dim) - dim) / 2) - 1
+            goodLen = int((((dim * dim) - dim) / 2) - 1)
 
         v = None
         if spec == 'specified':
@@ -635,14 +640,11 @@ if True:
                         goodLen, len(val)))
                     raise P4Error(gm)
                 else:
-                    gm.append(
-                        "Bad length for arg val.  Length %i, should be %i" % (len(val), goodLen))
+                    gm.append("Bad length for arg val.  Length %i, should be %i" % (len(val), goodLen))
                     raise P4Error(gm)
             else:
-                gm.append(
-                    "spec is 'specified', but there are no specified rMatrix values.")
-                gm.append(
-                    "Specify rMatrix values by eg val=[2.0, 3.0, 4.0, 5.0,6.0]")
+                gm.append("spec is 'specified', but there are no specified rMatrix values.")
+                gm.append("Specify rMatrix values by eg val=[2.0, 3.0, 4.0, 5.0,6.0]")
                 raise P4Error(gm)
         elif spec == 'ones':
             v = numpy.array([1.0] * goodLen)
@@ -652,8 +654,7 @@ if True:
             try:
                 v = float(val)
             except (ValueError, TypeError):
-                gm.append(
-                    "Kappa ('val' arg) should be a float.  Setting to 2.0")
+                gm.append("Kappa ('val' arg) should be a float.  Setting to 2.0")
                 v = 2.0
             if v < var.KAPPA_MIN:
                 gm.append("Kappa is too small.   Setting to %f" %
@@ -669,8 +670,7 @@ if True:
                     partNum, self.data.parts[partNum].dataType))
                 raise P4Error(gm)
             if free:
-                gm.append(
-                    'The rMatrix should not be free if it is an empirical protein matrix.')
+                gm.append('The rMatrix should not be free if it is an empirical protein matrix.')
                 raise P4Error(gm)
 
         mt.val = v  # type numpy.ndarray, or None for protein
@@ -688,11 +688,9 @@ if True:
 
         # check if there is an nGammaCat > 1:
         if self.model.parts[partNum].nGammaCat == 1:
-            gm.append(
-                "For this part (%s), the number of nGammaCat has been set to 1." % partNum)
+            gm.append("For this part (%s), the number of nGammaCat has been set to 1." % partNum)
             gm.append("So gdasrv won't work.")
-            gm.append(
-                "You can set the nGammaCat with yourTree.setNGammaCat(partNum=x, nGammaCat=y)")
+            gm.append("You can set the nGammaCat with yourTree.setNGammaCat(partNum=x, nGammaCat=y)")
             raise P4Error(gm)
 
         # check val
@@ -885,7 +883,7 @@ if True:
             self.deleteCStuff()
         # self.model.dump()
 
-        if type(forceRepresentation) != type(1) or forceRepresentation < 1:
+        if not isinstance(forceRepresentation, int) or forceRepresentation < 1:
             gm.append("Arg 'forceRepresentation' should be 1 or more.")
             gm.append("Got forceRepresentation = %s" % forceRepresentation)
             raise P4Error(gm)
@@ -1107,7 +1105,7 @@ if True:
     def setTextDrawSymbol(self, theSymbol='-', node=None, clade=1):
         gm = ['\nTree.setTextDrawString()']
 
-        if not theSymbol or type(theSymbol) != type('c') or len(theSymbol) != 1:
+        if not theSymbol or not isinstance(theSymbol, str)  or len(theSymbol) != 1:
             gm.append("theSymbol should be a single character string.")
             raise P4Error(gm)
 

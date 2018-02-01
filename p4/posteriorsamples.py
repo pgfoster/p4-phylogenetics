@@ -9,7 +9,7 @@ import string
 import io
 import copy
 import math
-
+import sys
 
 class PosteriorSamples(object):
 
@@ -122,7 +122,7 @@ class PosteriorSamples(object):
         self.model.cModel = None
         self.runNum = int(runNum)
         self.goodPrograms = ['p4', 'mrbayes']
-        lowProgram = string.lower(program)
+        lowProgram = program.lower()
         if program not in self.goodPrograms:
             gm.append(
                 "The program generating the files should be one of %s" % self.goodPrograms)
@@ -173,8 +173,6 @@ class PosteriorSamples(object):
         f.close()
 
         # Get the translate command
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         lNum = 0
         aLine = fLines[0].strip()
         translateLines = []
@@ -188,11 +186,18 @@ class PosteriorSamples(object):
             lNum += 1
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
-        translateFlob = io.BytesIO(' '.join(translateLines))
+        
+        #translateFlob = io.StringIO(' '.join(translateLines))
+
+        if 1:
+            if sys.version_info < (3,):
+                translateFlob = io.BytesIO(' '.join(translateLines))
+            else:
+                translateFlob = io.StringIO(' '.join(translateLines))
+
         nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
-        # print self.translationHash
-        var.nexus_doFastNextTok = savedDoFastNextTok
+        #print(self.translationHash)
 
         # Get the models definition, if it exists.  Move to the first tree
         # line.
@@ -243,7 +248,7 @@ class PosteriorSamples(object):
                 fName = os.path.join(self.directory, fName)
             try:
                 loc = {}
-                execfile(fName, {}, loc)
+                exec(open(fName).read(), {}, loc)
                 # loc =locals()  no workee.
                 # print "loc = %s" % loc
                 self.nPrams = loc['nPrams']
@@ -252,16 +257,20 @@ class PosteriorSamples(object):
                 print("The file '%s' cannot be found." % fName)
 
     def _getP4SampleTree(self, sampNum):
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
             print(tLine)
-        f = io.BytesIO(tLine)
+
+        if 1:
+            if sys.version_info < (3,):
+                f = io.BytesIO(tLine)
+            else:
+                f = io.StringIO(tLine)
+
+
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)
-        var.nexus_doFastNextTok = savedDoFastNextTok
         t.taxNames = self.tree.taxNames
 
         for n in t.iterLeavesNoRoot():
@@ -293,8 +302,7 @@ class PosteriorSamples(object):
                 gdasrvNum = 0
                 for desc in self.pramsProfile[pNum]:
                     if desc[0] == 'relRate':
-                        t.model.parts[pNum].relRate = float(
-                            splitPLine[splIndx])
+                        t.model.parts[pNum].relRate = float(splitPLine[splIndx])
                         splIndx += 1
                     elif desc[0] == 'comp':
                         vv = []
@@ -360,8 +368,6 @@ class PosteriorSamples(object):
         f.close()
 
         # Get the translate command
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         lNum = 0
         aLine = fLines[0].strip()
         translateLines = []
@@ -375,11 +381,16 @@ class PosteriorSamples(object):
             lNum += 1
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
-        translateFlob = io.BytesIO(' '.join(translateLines))
+
+        if 1:
+            if sys.version_info < (3,):
+                translateFlob = io.BytesIO(' '.join(translateLines))
+            else:
+                translateFlob = io.StringIO(' '.join(translateLines))
+
         nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
         # print self.translationHash
-        var.nexus_doFastNextTok = savedDoFastNextTok
 
         # Get the models definition, if it exists.  Move to the first tree line.
         # MrBayes3.2 uses 'gen', 3.1.2 uses 'rep'.
@@ -431,16 +442,17 @@ class PosteriorSamples(object):
             print("pram line length is %i" % self.nPrams)
 
     def _getMrBayesSampleTree(self, sampNum):
-        savedDoFastNextTok = var.nexus_doFastNextTok
-        var.nexus_doFastNextTok = False
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
             print(tLine)
-        f = io.BytesIO(tLine)
+        if 1:
+            if sys.version_info < (3,):
+                f = io.BytesIO(tLine)
+            else:
+                f = io.StringIO(tLine)
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)  # doModelComments is nParts
-        var.nexus_doFastNextTok = savedDoFastNextTok
         t.taxNames = self.tree.taxNames
 
         for n in t.iterLeavesNoRoot():
@@ -457,8 +469,7 @@ class PosteriorSamples(object):
         splitTName = t.name.split('.')
         tGenNum = int(splitTName[1])
         if tGenNum != pGenNum:
-            raise P4Error(
-                "something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
+            raise P4Error("something wrong. tGenNum=%i, pGenNum=%i" % (tGenNum, pGenNum))
         if self.verbose >= 2:
             print("(zero-based) sample %i is gen %i" % (sampNum, tGenNum))
 

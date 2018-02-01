@@ -2,11 +2,8 @@ from __future__ import print_function
 import os
 import sys
 import string
-import array
-import types
 import copy
 from p4.var import var
-# Don't bother with NexusToken2, cuz sets blocks are small
 from p4.nexustoken import nexusSkipPastNextSemiColon, safeNextTok
 import p4.func
 from p4.p4exceptions import P4Error
@@ -40,20 +37,20 @@ class CaseInsensitiveDict(dict):
         #self.keyDict = {}
 
     def __setitem__(self, key, val):
-        if type(key) != types.StringType:
+        if not isinstance(key, str):
             gm = ["CaseInsensitiveDict()"]
             gm.append("The key must be a string.  Got '%s'" % key)
             raise P4Error(gm)
-        lowKey = string.lower(key)
+        lowKey = key.lower()
         dict.__setitem__(self, lowKey, val)
-        #self.keyDict[string.lower(key)] = key
+        #self.keyDict[key.lower()] = key
 
     def __getitem__(self, key):
-        if type(key) != types.StringType:
+        if not isinstance(key, str):
             gm = ["CaseInsensitiveDict()"]
             gm.append("The key must be a string.  Got '%s'" % key)
             raise P4Error(gm)
-        lowKey = string.lower(key)
+        lowKey = key.lower()
         try:
             return dict.__getitem__(self, lowKey)
         except KeyError:
@@ -240,12 +237,9 @@ class NexusSets(object):
         gm = ['NexusSets._continueReadingFromNexusFile()']
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
-        if 0:
-            print(gm[0])
-            print('    var.nexus_doFastNextTok = %s' % var.nexus_doFastNextTok)
         nexusSkipPastNextSemiColon(flob)
         commandName = safeNextTok(flob, gm[0])
-        lowCommandName = string.lower(commandName)
+        lowCommandName = commandName.lower()
         # print 'got lowCommandName = %s' % lowCommandName
         while lowCommandName not in [None, 'end', 'endblock']:
             # print "Got lowCommandName '%s'" % lowCommandName
@@ -268,7 +262,7 @@ class NexusSets(object):
                 raise P4Error(gm)
             commandName = safeNextTok(
                 flob, 'NexusSets.continueReadingFromNexusFile()')
-            lowCommandName = string.lower(commandName)
+            lowCommandName = commandName.lower()
 
     def _readCharSetCommand(self, flob):
         # We have just read 'charset'.  The next thing we expect is the charset
@@ -279,7 +273,7 @@ class NexusSets(object):
         name = p4.func.nexusUnquoteName(
             safeNextTok(flob, 'NexusSets: _readCharSetCommand'))
         # print "readCharSetCommand: got name '%s'" % name
-        lowName = string.lower(name)
+        lowName = name.lower()
         if not p4.func.nexusCheckName(lowName):
             gm.append("Bad charSet name '%s'" % name)
             raise P4Error(gm)
@@ -312,7 +306,7 @@ class NexusSets(object):
         name = p4.func.nexusUnquoteName(
             safeNextTok(flob, 'NexusSets: readTaxSetCommand'))
         # print "readTaxSetCommand: got name '%s'" % name
-        lowName = string.lower(name)
+        lowName = name.lower()
         if not p4.func.nexusCheckName(lowName):
             gm.append("Bad taxSet name '%s'" % name)
             raise P4Error(gm)
@@ -338,7 +332,7 @@ class NexusSets(object):
             gm.append("file name %s" % flob.name)
         name = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
         # print "readCharPartitionCommand: got name '%s'" % name
-        lowName = string.lower(name)
+        lowName = name.lower()
         if not p4.func.nexusCheckName(lowName):
             gm.append("Bad charPartition name '%s'" % name)
 
@@ -490,14 +484,14 @@ class TaxOrCharSet(object):
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
         tok = safeNextTok(flob, gm[0])
-        lowTok = string.lower(tok)
+        lowTok = tok.lower()
         # print "readTaxSetDefinition: get tok '%s'" % tok
         if lowTok == '=':
             pass
         elif lowTok == '(':
             #['standard', 'vector']:
             tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             if lowTok == 'standard':
                 pass
             elif lowTok == 'vector':
@@ -526,14 +520,14 @@ class TaxOrCharSet(object):
 
         # Now we are on the other side of the '='
         tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
-        lowTok = string.lower(tok)
+        lowTok = tok.lower()
         while lowTok not in [None, ';', 'end', 'endblock']:
             self.tokens.append(tok)
             tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
 
         if self.format == 'vector':
-            self.mask = string.join(self.tokens, '')
+            self.mask = ''.join(self.tokens)
             self.tokens = []
             for i in range(len(self.mask)):
                 if self.mask[i] not in ['0', '1']:
@@ -547,7 +541,7 @@ class TaxOrCharSet(object):
         # print "xx1 self.tokens is now %s" % self.tokens
         for tokNum in range(len(self.tokens)):
             tok = self.tokens[tokNum]
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             if lowTok in ['.', 'all', '-', '\\']:
                 pass
             elif self.className == 'CharSet' and lowTok in self.nexusSets.charSetLowNames:
@@ -579,8 +573,8 @@ class TaxOrCharSet(object):
         while tokNum < len(self.tokens):
             tok = self.tokens[tokNum]
             # print "Considering tok[%i]  '%s'" % (tokNum, tok)
-            if type(tok) == type('str'):
-                lowTok = string.lower(tok)
+            if isinstance(tok, str):
+                lowTok = tok.lower()
             else:
                 lowTok = None
 
@@ -649,7 +643,7 @@ class TaxOrCharSet(object):
                             "Tax or char set '.' may not be followed by a '\\'")
                         raise P4Error(gm)
 
-            elif type(tok) == type(1) or type(tok) == type('str'):
+            elif isinstance(tok, (int, str)):
                 aTriplet = [tok, None, None]
                 tokNum += 1
                 if tokNum < len(self.tokens):
@@ -657,10 +651,10 @@ class TaxOrCharSet(object):
                         tokNum += 1
                         if tokNum < len(self.tokens):
                             # maybe '.'
-                            if type(self.tokens[tokNum]) == type('str'):
+                            if isinstance(self.tokens[tokNum], str):
                                 aTriplet[1] = self.tokens[tokNum]
-                            elif type(self.tokens[tokNum]) == type(1):
-                                if type(aTriplet[0]) == type(1):
+                            elif isinstance(self.tokens[tokNum], int):
+                                if isinstance(aTriplet[0], int):
                                     if self.tokens[tokNum] > aTriplet[0]:
                                         aTriplet[1] = self.tokens[tokNum]
                                     else:
@@ -687,7 +681,7 @@ class TaxOrCharSet(object):
                                 if self.tokens[tokNum] == '\\':
                                     tokNum += 1
                                     if tokNum < len(self.tokens):
-                                        if type(self.tokens[tokNum]) == type(1):
+                                        if isinstance(self.tokens[tokNum], int):
                                             aTriplet[2] = self.tokens[tokNum]
                                         else:
                                             gm.append(
@@ -745,7 +739,7 @@ class TaxOrCharSet(object):
                 existingSetNames = self.nexusSets.taxSetLowNames
                 existingSets = self.nexusSets.taxSets
                 theTriplets = self.numberTriplets
-            mask = array.array('c', thisMaskLen * '0')
+            mask = ['0'] * thisMaskLen
 
             for aTriplet in theTriplets:
                 if 0:
@@ -757,10 +751,10 @@ class TaxOrCharSet(object):
 
                 lowFirst = None
                 lowSecond = None
-                if type(first) == type('str'):
-                    lowFirst = string.lower(first)
-                if type(second) == type('str'):
-                    lowSecond = string.lower(second)
+                if isinstance(first, str):
+                    lowFirst = first.lower()
+                if isinstance(second, str):
+                    lowSecond = second.lower()
 
                 # its a single, or an existing set, not a range
                 if first and not second:
@@ -793,7 +787,7 @@ class TaxOrCharSet(object):
 
                     elif first == '.':
                         mask[-1] = '1'
-                    elif type(first) == type(1):
+                    elif isinstance(first, int):
                         if first > 0 and first <= thisMaskLen:
                             mask[first - 1] = '1'
                         else:
@@ -819,9 +813,7 @@ class TaxOrCharSet(object):
                             mask[spot] = '1'
                 # print "            finished incorporating triplet %s into
                 # '%s' mask." % (aTriplet, self.name)
-            mask = mask.tostring()
-            # print "Got char set '%s' mask '%s'" % (self.name, mask)
-            self.mask = mask
+            self.mask = ''.join(mask)
 
     def invertMask(self):
         """Change zeros to ones, and non-zeros to zero."""
@@ -837,7 +829,7 @@ class TaxOrCharSet(object):
                 self.mask[i] = '1'
             else:
                 self.mask[i] = '0'
-        self.mask = string.join(self.mask, '')
+        self.mask = ''.join(self.mask)
 
     def write(self):
         """Write self in Nexus format to stdout."""
@@ -863,7 +855,7 @@ class TaxOrCharSet(object):
                 #    flob.write(' %s' % i)
                 previousTok = None
                 for theTok in self.tokens:
-                    if type(theTok) == types.StringType:
+                    if isinstance(theTok, str):
                         if theTok not in ['-', '\\']:
                             tok = p4.func.nexusFixNameIfQuotesAreNeeded(theTok)
                         else:
@@ -980,7 +972,7 @@ class CharSet(TaxOrCharSet):
                 second = aTriplet[1]
                 third = aTriplet[2]
                 if first and not second:  # its a single
-                    if type(first) == type(1):
+                    if isinstance(first, int):
                         if first > 0 and first <= self.aligNChar:
                             pass
                         else:
@@ -1041,8 +1033,7 @@ class TaxSet(TaxOrCharSet):
     def setNumberTriplets(self):
         gm = ['TaxSet.setNumberTriplets()']
         if not self.nexusSets.lowTaxNames:
-            self.nexusSets.lowTaxNames = [
-                string.lower(txName) for txName in self.nexusSets.taxNames]
+            self.nexusSets.lowTaxNames = [txName.lower() for txName in self.nexusSets.taxNames]
         self.numberTriplets = []
         # print "self.triplets = %s" % self.triplets
 
@@ -1054,13 +1045,13 @@ class TaxSet(TaxOrCharSet):
                 # print " considering '%s'" % trItem
                 if trItem == None:
                     numTr.append(trItem)
-                elif type(trItem) == type(1):
+                elif isinstance(trItem, int):
                     numTr.append(trItem)
                 elif trItem == '.':
                     numTr.append(self.nexusSets.nTax)
                 else:
-                    assert type(trItem) == type('str')
-                    lowTrItem = string.lower(trItem)
+                    assert isinstance(trItem, str)
+                    lowTrItem = trItem.lower()
                     if lowTrItem in self.nexusSets.taxSetLowNames:
                         numTr.append(trItem)
                     else:
@@ -1076,19 +1067,19 @@ class TaxSet(TaxOrCharSet):
             if trItem == None:
                 numTr.append(None)
             else:
-                assert type(trItem) == type(1)
+                assert isinstance(trItem, int)
                 numTr.append(trItem)
             assert len(numTr) == 3
             # print numTr
 
             first = numTr[0]
             # first might be a pre-existing taxSet name
-            if type(first) == type('str'):
+            if isinstance(first, str):
                 pass
             else:
                 second = numTr[1]
-                assert type(first) == type(1) and first != 0
-                if type(second) == type(1):
+                assert isinstance(first, int) and first != 0
+                if isinstance(second, int):
                     assert second != 0
                     if second <= first:
                         gm.append("Triplet %s" % tr)
@@ -1160,11 +1151,11 @@ class CharPartition(object):
         if hasattr(flob, 'name') and flob.name:
             gm.append("file name %s" % flob.name)
         tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
-        lowTok = string.lower(tok)
+        lowTok = tok.lower()
         while lowTok != '=':
             if lowTok == '(':
                 tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
-                lowTok = string.lower(tok)
+                lowTok = tok.lower()
                 while lowTok != ')':
                     if lowTok in ['notokens', 'vector']:
                         gm.append("Got charpartition modifier: '%s'" % tok)
@@ -1181,7 +1172,7 @@ class CharPartition(object):
                             "(Only 'tokens' and 'standard' are implemented.)")
                         raise P4Error(gm)
                     tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
-                    lowTok = string.lower(tok)
+                    lowTok = tok.lower()
             else:
                 gm.append("Got unexpected token: '%s'" % tok)
                 gm.append(
@@ -1189,11 +1180,11 @@ class CharPartition(object):
                 raise P4Error(gm)
 
         tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
-        lowTok = string.lower(tok)
+        lowTok = tok.lower()
         while lowTok not in [None, ';', 'end', 'endblock']:
             self.tokens.append(tok)
             tok = p4.func.nexusUnquoteName(safeNextTok(flob, gm[0]))
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
 
         # print "_readCharPartitionDefinition: tokens %s" % self.tokens
 
@@ -1206,7 +1197,7 @@ class CharPartition(object):
                 gm.append("CharPartition '%s' definition:" % self.name)
                 gm.append("Bad subset name (%s, I think)" % aSubset.name)
                 raise P4Error(gm)
-            aSubset.lowName = string.lower(aSubset.name)
+            aSubset.lowName = aSubset.name.lower()
             i += 1
             if i >= len(self.tokens):
                 gm.append("CharPartition '%s' definition:" % self.name)
@@ -1247,7 +1238,7 @@ class CharPartition(object):
             existingPartNames.append(aSubset.lowName)
             for i in range(len(aSubset.tokens)):
                 tok = aSubset.tokens[i]
-                lowTok = string.lower(tok)
+                lowTok = tok.lower()
                 # print "considering '%s', ord(lowTok[0])=%i" % (lowTok,
                 # ord(lowTok[0]))
                 # Does not pick up '.'!!!!
@@ -1291,8 +1282,8 @@ class CharPartition(object):
             aSubset.triplets = []
             while i < len(aSubset.tokens):
                 tok = aSubset.tokens[i]
-                if type(tok) == type('string'):
-                    lowTok = string.lower(tok)
+                if isinstance(tok, str):
+                    lowTok = tok.lower()
                 else:
                     lowTok = None
                 # print "Doing triplets: looking at tok '%s'" % tok
@@ -1375,7 +1366,7 @@ class CharPartition(object):
                                 "Char set '.' may not be followed by a '\\'")
                             raise P4Error(gm)
 
-                elif type(tok) == type(1):
+                elif isinstance(tok, int):
                     aTriplet = [tok, None, None]
                     i = i + 1
                     if i < len(aSubset.tokens):
@@ -1384,7 +1375,7 @@ class CharPartition(object):
                             if i < len(aSubset.tokens):
                                 if aSubset.tokens[i] == '.':
                                     aTriplet[1] = aSubset.tokens[i]
-                                elif type(aSubset.tokens[i]) == type(1):
+                                elif isinstance(aSubset.tokens[i], int):
                                     if aSubset.tokens[i] > aTriplet[0]:
                                         aTriplet[1] = aSubset.tokens[i]
                                     else:
@@ -1413,7 +1404,7 @@ class CharPartition(object):
                                     if aSubset.tokens[i] == '\\':
                                         i = i + 1
                                         if i < len(aSubset.tokens):
-                                            if type(aSubset.tokens[i]) == type(1):
+                                            if isinstance(aSubset.tokens[i], int):
                                                 aTriplet[2] = aSubset.tokens[i]
                                             else:
                                                 gm.append(
@@ -1439,7 +1430,7 @@ class CharPartition(object):
                 print("Got aSubset (%s) triplets %s" % (aSubset.name, aSubset.triplets))
                 # sys.exit()
 
-            aSubset.mask = array.array('c', self.nexusSets.aligNChar * '0')
+            aSubset.mask = ['0'] * self.nexusSets.aligNChar
 
             for aTriplet in aSubset.triplets:
                 # print "setSubsetMasks()  Looking at triplet '%s'" % aTriplet
@@ -1448,10 +1439,10 @@ class CharPartition(object):
                 third = aTriplet[2]
                 lowFirst = None
                 lowSecond = None
-                if type(first) == type('str'):
-                    lowFirst = string.lower(first)
-                if type(second) == type('str'):
-                    lowSecond = string.lower(second)
+                if isinstance(first, str):
+                    lowFirst = first.lower()
+                if isinstance(second, str):
+                    lowSecond = second.lower()
 
                 if first and not second:  # its a single
                     # print "Got single: %s" % first
@@ -1483,17 +1474,14 @@ class CharPartition(object):
                     # Its legit to use this as a single char.
                     elif first == '.':
                         aSubset.mask[-1] = '1'
-                    elif type(first) == type(1):
+                    elif isinstance(first, int):
                         if first > 0 and first <= self.nexusSets.aligNChar:
                             aSubset.mask[first - 1] = '1'
                         else:
-                            gm.append(
-                                "CharPartition '%s' definition" % self.name)
+                            gm.append("CharPartition '%s' definition" % self.name)
                             gm.append("Subset '%s' definition" % aSubset.name)
-                            gm.append(
-                                "Charset definition element '%s' is out of range" % first)
-                            gm.append("(aligNChar = %i)" %
-                                      self.nexusSets.aligNChar)
+                            gm.append("Charset definition element '%s' is out of range" % first)
+                            gm.append("(aligNChar = %i)" % self.nexusSets.aligNChar)
                             raise P4Error(gm)
                     elif lowFirst == 'remainder':
                         # print "Got first == remainder"
@@ -1507,20 +1495,15 @@ class CharPartition(object):
                                     if ss.mask[j] == '1':
                                         aSubset.mask[j] = '0'
                             else:
-                                gm.append(
-                                    "CharPartition '%s' definition" % self.name)
-                                gm.append("Subset '%s' definition" %
-                                          aSubset.name)
-                                gm.append(
-                                    "When implementing 'remainder' charset")
-                                gm.append(
-                                    "Found that subset '%s' had no mask" % ss)
+                                gm.append("CharPartition '%s' definition" % self.name)
+                                gm.append("Subset '%s' definition" % aSubset.name)
+                                gm.append("When implementing 'remainder' charset")
+                                gm.append("Found that subset '%s' had no mask" % ss)
                                 raise P4Error(gm)
                     else:
                         gm.append("CharPartition '%s' definition" % self.name)
                         gm.append("Subset '%s' definition" % aSubset.name)
-                        gm.append(
-                            "Charset definition element '%s' is not understood" % first)
+                        gm.append("Charset definition element '%s' is not understood" % first)
                         raise P4Error(gm)
 
                 elif first and second:  # its a range
@@ -1529,8 +1512,7 @@ class CharPartition(object):
                     except ValueError:
                         gm.append("CharPartition '%s' definition" % self.name)
                         gm.append("Subset '%s' definition" % aSubset.name)
-                        gm.append(
-                            "Can't parse definition element '%s'" % first)
+                        gm.append("Can't parse definition element '%s'" % first)
                         raise P4Error(gm)
                     if second == '.':
                         fin = len(aSubset.mask)
@@ -1541,29 +1523,24 @@ class CharPartition(object):
                             gm.append(
                                 "CharPartition '%s' definition" % self.name)
                             gm.append("Subset '%s' definition" % aSubset.name)
-                            gm.append(
-                                "Can't parse definition element '%s'" % second)
+                            gm.append("Can't parse definition element '%s'" % second)
                             raise P4Error(gm)
                     if third:
                         try:
                             bystep = int(third)
                         except ValueError:
-                            gm.append(
-                                "CharPartition '%s' definition" % self.name)
+                            gm.append("CharPartition '%s' definition" % self.name)
                             gm.append("Subset '%s' definition" % aSubset.name)
-                            gm.append(
-                                "Can't parse definition element '%s'" % third)
+                            gm.append("Can't parse definition element '%s'" % third)
                         for spot in range(start - 1, fin, bystep):
                             aSubset.mask[spot] = '1'
                     else:
                         for spot in range(start - 1, fin):
                             aSubset.mask[spot] = '1'
-            aSubset.mask = aSubset.mask.tostring()
-            # print "Got char subset '%s' mask '%s'" % (aSubset.name,
-            # aSubset.mask)
+            aSubset.mask = ''.join(aSubset.mask)
+            # print "Got char subset '%s' mask '%s'" % (aSubset.name, aSubset.mask)
             if aSubset.mask.count('1') == 0:
-                gm.append(
-                    "The mask for charPartitionSubset '%s' is empty." % aSubset.name)
+                gm.append("The mask for charPartitionSubset '%s' is empty." % aSubset.name)
                 raise P4Error(gm)
 
     def checkForOverlaps(self):
@@ -1576,12 +1553,9 @@ class CharPartition(object):
                     sum += 1
             if sum > 1:
                 gm.append("Char partition '%s'" % self.name)
-                gm.append(
-                    "The problem is that there are overlapping subsets in this")
-                gm.append(
-                    "charpartition.  The same position is in more than one subset.")
-                gm.append(
-                    "Zero-based position %i, one-based position %i." % (i, i + 1))
+                gm.append("The problem is that there are overlapping subsets in this")
+                gm.append("charpartition.  The same position is in more than one subset.")
+                gm.append("Zero-based position %i, one-based position %i." % (i, i + 1))
                 raise P4Error(gm)
             if sum < 1:
                 unspanned = 1
@@ -1592,7 +1566,7 @@ class CharPartition(object):
 
     def dump(self):
         print("                CharPartition:     name: %s" % p4.func.nexusFixNameIfQuotesAreNeeded(self.name))
-        # string.join(self.tokens)
+        # ' '.join(self.tokens)
         print("                                 tokens: %s" % self.tokens)
         # for t in self.tokens:
         #    print "                                         %s" % t
@@ -1613,10 +1587,9 @@ class CharPartition(object):
         if not self.nexusSets.aligNChar:
             self.nexusSets.aligNChar = self.theNexusSets.aligNChar
         self.setSubsetMasks()
-        import array
-        m = array.array('c', self.nexusSets.aligNChar * '0')
+        m = ['0'] * self.nexusSets.aligNChar 
         for i in range(self.nexusSets.aligNChar):
             for aSubset in self.subsets:
                 if aSubset.mask[i] == '1':
                     m[i] = '1'
-        return m.tostring()
+        return ''.join(m)

@@ -1,5 +1,4 @@
 from __future__ import print_function
-import types
 import string
 import io
 import sys
@@ -9,9 +8,7 @@ from p4.node import Node, NodePart, NodeBranchPart
 from p4.trees import Trees
 from p4.nexus import Nexus, NexusData
 from p4.p4exceptions import P4Error
-#from p4.nexustoken import nextTok,safeNextTok,nexusSkipPastNextSemiColon
-import p4.nexustoken   # needed for cStrings
-# import nexustoken2  # Faster, in c
+from p4.nexustoken import nextTok, safeNextTok, nexusSkipPastNextSemiColon
 import p4.func
 from p4.var import var
 
@@ -209,18 +206,18 @@ def _getModelInfo(theComment):
     flob = io.BytesIO(theComment)
     flob.seek(1, 0)  # past the [
 
-    tok = p4.nexustoken.nextTok(flob)
+    tok = nextTok(flob)
     if not tok or tok != '&&p4':
         print("a got tok=%s" % tok)
         flob.close()
         return  # not an error, just the wrong kind of comment
-    tok = p4.nexustoken.nextTok(flob)
+    tok = nextTok(flob)
     if not tok or tok != 'models':
         print("b got tok=%s" % tok)
         flob.close()
         gm.append("Expecting 'models'.  Got %s" % tok)
         raise P4Error(gm)
-    tok = p4.nexustoken.nextTok(flob)
+    tok = nextTok(flob)
     if tok[0] != 'p':
         gm.append("Expecting 'pN'.  Got %s" % tok)
         raise P4Error(gm)
@@ -240,14 +237,14 @@ def _getModelInfo(theComment):
         gm.append("Failed to parse model comment.")
         raise P4Error(gm)
 
-    tok = p4.nexustoken.safeNextTok(flob)
+    tok = safeNextTok(flob)
     while 1:
         # print "top of loop, tok = %s" % tok
         if tok == ']':
             break
         elif tok[0] in ['c', 'r', 'g']:
             ending = tok[1:]
-            splitEnding = string.split(ending, '.')
+            splitEnding = ending.split('.')
             # print "got splitEnding = %s" % splitEnding
             try:
                 firstNum = int(splitEnding[0])
@@ -264,7 +261,7 @@ def _getModelInfo(theComment):
         else:
             gm.append("Bad token %s")
             raise P4Error(gm)
-        tok = p4.nexustoken.safeNextTok(flob)
+        tok = safeNextTok(flob)
 
     # theModelInfo.dump()
     return theModelInfo
@@ -400,7 +397,7 @@ something like this::
             if taxNames:
                 self.taxNames = taxNames
                 self.nTax = len(taxNames)
-        if type(inThing) == type('string'):
+        if isinstance(inThing, str):
             if not os.path.isfile(inThing):
                 gm.append(
                     "The inThing is a string, but does not appear to be a file name.")
@@ -424,8 +421,7 @@ something like this::
                 self._readNexusFile(inThing, skip, max)
         elif isinstance(inThing, Tree):
             if skip or max:
-                gm.append(
-                    "Args skip and and max only come into play when reading from files.")
+                gm.append("Args skip and and max only come into play when reading from files.")
                 raise P4Error(gm)
             if not inThing.taxNames:
                 gm.append("If inThing is a Tree object, it needs taxNames.")
@@ -463,20 +459,13 @@ something like this::
         f = open(fName)
 
         # print 'TreePartitions._readPhylipTreeFile().
-        # var.nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok, nexusSkipPastNextSemiColon
-            from nexustoken2 import checkLineLengths
-            checkLineLengths(f)
-        else:
-            from p4.nexustoken import nextTok, safeNextTok, nexusSkipPastNextSemiColon
 
         # Skip over trees
         if skip:
             for i in range(skip):
                 nexusSkipPastNextSemiColon(f)
             #tok = safeNextTok(f)
-            #lowTok = string.lower(tok)
+            #lowTok = tok.lower()
 
         # Read in the trees
         while 1:
@@ -502,22 +491,12 @@ something like this::
         gm = ['TreePartitions._readNexusFile()']
 
         f = open(fName)
-
-        # print 'TreePartitions._readNexusFile().  var.nexus_doFastNextTok=%s'
-        # % var.nexus_doFastNextTok
-        if var.nexus_doFastNextTok:
-            from nexustoken2 import nextTok, safeNextTok, nexusSkipPastNextSemiColon
-            from nexustoken2 import checkLineLengths
-            checkLineLengths(f)
-        else:
-            from p4.nexustoken import nextTok, safeNextTok, nexusSkipPastNextSemiColon
-
         nf = Nexus()  # provides nf.readBlock(), nf.readTranslateCommand()
 
         # Read the #nexus
         tok = nextTok(f)
         if tok:
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
         else:
             gm.append("Empty file?!?")
             raise P4Error(gm)
@@ -530,7 +509,7 @@ something like this::
         inBlock = 0
         while 1:
             tok = safeNextTok(f)
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             if not inBlock:
                 if lowTok != 'begin':
                     gm.append("Expecting the 'begin' of a nexus block.")
@@ -563,7 +542,7 @@ something like this::
         nexusSkipPastNextSemiColon(f)
         tok = safeNextTok(f)
         # print "t got tok = %s" % tok
-        lowTok = string.lower(tok)
+        lowTok = tok.lower()
         if lowTok == 'translate':
             translationHash = nf.readTranslateCommand(f)
             if not self.taxNames:
@@ -606,7 +585,7 @@ something like this::
                         elif ret == 2:
                             self.doModelComments = 1
                 else:
-                    lowTok = string.lower(tok)
+                    lowTok = tok.lower()
             var.nexus_getP4CommandComments = savedState
 
         if not self.taxNames or not self.nTax:
@@ -631,7 +610,7 @@ something like this::
             for i in range(skip):
                 nexusSkipPastNextSemiColon(f)
             tok = safeNextTok(f)
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
 
         # Read in the trees
         while 1:
@@ -673,7 +652,7 @@ something like this::
                 gm.append("I was expecting 'tree' or 'end'.")
                 raise P4Error(gm)
             tok = safeNextTok(f)
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             # print "xx got tok %s" % tok
         f.close()
 
@@ -744,7 +723,7 @@ something like this::
             # case we get it from self.splitsHash, or we have to
             # make a new one.
 
-            if self.splitsHash.has_key(theSKey):
+            if theSKey in self.splitsHash:
                 theSplit = self.splitsHash[theSKey]
             else:
                 theSplit = Split()
@@ -768,7 +747,7 @@ something like this::
                     if 1 & n.br.rawSplitKey:
                         theSplit.count += theWeight
 
-                    if self.biSplitsHash.has_key(theSKey):
+                    if theSKey in self.biSplitsHash:
                         theBiSplit = self.biSplitsHash[theSKey]
                     else:
                         theBiSplit = Split()
@@ -1223,7 +1202,7 @@ something like this::
             theKey = s.key
             prop1 = s.proportion
 
-            if otherTP.splitsHash.has_key(theKey):
+            if theKey in otherTP.splitsHash:
                 prop2 = otherTP.splitsHash[theKey].proportion
             else:
                 prop2 = 0.0
@@ -1250,7 +1229,7 @@ something like this::
                 if theStarCount == 1 or theStarCount == self.nTax - 1:
                     continue
             theKey = s.key
-            if not self.splitsHash.has_key(theKey):
+            if theKey not in self.splitsHash:
                 prop1 = 0.0
                 prop2 = s.proportion
                 if bothMustMeetMinimum:
@@ -1611,7 +1590,7 @@ something like this::
                 # get the contribution of the root splits from the
                 # count from the biRootHash.
                 biRootCountContribution = 0.0
-                if self.biSplitsHash.has_key(n.br.split.key):
+                if n.br.split.key in self.biSplitsHash:
                     biRootCountContribution = self.biSplitsHash[
                         n.br.split.key].count
                 theCount = n.br.split.count - biRootCountContribution
@@ -1632,7 +1611,7 @@ something like this::
         # Get rootCount and biRootCount
         if self.isBiRoot:
             for n in conTree.iterNodesNoRoot():
-                if self.biSplitsHash.has_key(n.br.split.key):
+                if n.br.split.key in self.biSplitsHash:
                     n.br.biRootCount = self.biSplitsHash[n.br.split.key].count
                 else:
                     n.br.biRootCount = 0.0
@@ -1839,13 +1818,12 @@ something like this::
                     for n in conTree.iterNodesNoRoot():
                         n.br.textDrawSymbol = var.modelSymbols[
                             n.parts[pNum].compNum]
-                        if not modelKeyHash.has_key(n.parts[pNum].compNum):
-                            modelKeyHash[
-                                n.parts[pNum].compNum] = n.br.textDrawSymbol
+                        if n.parts[pNum].compNum not in modelKeyHash:
+                            modelKeyHash[n.parts[pNum].compNum] = n.br.textDrawSymbol
                     print()
                     conTree.draw()
                     print("\nThe drawing above shows majority comp numbers in partition %i" % pNum)
-                    kk = modelKeyHash.keys()
+                    kk = list(modelKeyHash.keys())
                     kk.sort()
                     for k in kk:
                         print("    comp %2i - %s" % (k, modelKeyHash[k]))
@@ -1855,13 +1833,13 @@ something like this::
                     for n in conTree.iterNodesNoRoot():
                         n.br.textDrawSymbol = var.modelSymbols[
                             n.br.parts[pNum].rMatrixNum]
-                        if not modelKeyHash.has_key(n.br.parts[pNum].rMatrixNum):
+                        if n.br.parts[pNum].rMatrixNum not in modelKeyHash:
                             modelKeyHash[
                                 n.br.parts[pNum].rMatrixNum] = n.br.textDrawSymbol
                     print()
                     conTree.draw()
                     print("\nThe drawing above shows majority rMatrix numbers in partition %i" % pNum)
-                    kk = modelKeyHash.keys()
+                    kk = list(modelKeyHash.keys())
                     kk.sort()
                     for k in kk:
                         print("    rMatrix %2i - %s" % (k, modelKeyHash[k]))
@@ -1929,16 +1907,16 @@ something like this::
         """
 
         gm = ['TreePartitions.makeTreeFromPartitions()']
-        if type(partitions) != types.ListType:
+        if not isinstance(partitions, list):
             gm.append('The partitions should be a list of lists of ints.')
             raise P4Error(gm)
 
         for it in partitions:
-            if type(it) != types.ListType:
+            if not isinstance(it, list):
                 gm.append('The partitions should be a list of lists of ints.')
                 raise P4Error(gm)
             for it2 in it:
-                if type(it2) != types.IntType:
+                if not isinstance(it2, int):
                     gm.append(
                         'The partitions should be a list of lists of ints.')
                     raise P4Error(gm)

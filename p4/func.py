@@ -10,10 +10,8 @@ import io
 import random
 import glob
 import time
-import types
 import pickle
 import random
-import array
 import inspect
 import datetime
 import subprocess
@@ -31,20 +29,52 @@ import p4.pf as pf
 import numpy
 from p4.pnumbers import Numbers
 import p4.version
+from p4.nexustoken import nextTok
+
+# # From http://python3porting.com/problems.html#bytes-strings-and-unicode
+# if sys.version_info < (3,):
+#     def b(x):
+#         return x
+# else:
+#     import codecs
+#     def b(x):
+#         return codecs.latin_1_encode(x)[0]
+
+# # Py2/3 compatibility
+# try:
+#   basestring
+# except NameError:
+#   basestring = str
+
+
+
 
 def nexusCheckName(theName):
-    """Check to see if theName conforms to Nexus standards."""
-    if type(theName) != type('string'):
+    """Check to see if theName conforms to Nexus standards
+
+    See page 597 of Maddison, Swofford, and Maddison 1997, where they say "Names
+    are single NEXUS words; they cannot consist entirely of digits (e.g., a
+    taxon called 123 is illegal).
+
+    The all-digit name restriction can be relaxed in p4 by setting 
+    var.nexus_allowAllDigitNames.
+
+    Single digit names are prohibited, regardless.
+    """
+    if not isinstance(theName, str):
+        print("func.nexusCheckName() %s is not str, is %s" % (theName, type(theName)))
         return 0
-    if var.nexus_allowAllDigitNames:
-        return 1
-    if len(theName) == 1 and theName[0] not in string.letters:
+    if len(theName) == 1 and theName[0] not in string.ascii_letters:
         return 0
-    try:
-        int(theName)
-        return 0  # we don't allow all-digit names
-    except ValueError:
+    if not var.nexus_allowAllDigitNames:
+        try:
+            int(theName)
+            return 0  
+        except ValueError:
+            return 1
+    else:
         return 1
+
 
 
 def nexusUnquoteAndDeUnderscoreName(theName):
@@ -53,17 +83,16 @@ def nexusUnquoteAndDeUnderscoreName(theName):
     If theName is not quoted, convert any underscores to spaces.  If
     theName is quoted, remove the outside quotes, and convert any
     cases of 2 single quotes in a row to 1 single quote.
+
+    This does not appear to be used in the rest of p4.
     """
 
-    if theName[0] == '\'':
+    if theName[0] == "'":
         assert theName[-1] == "'", \
             "func.nexusUnquoteAndDeUnderscoreName().  First char is a single quote, but last char is not."
         theName = theName[1:-1]
-        if theName.count('\'\''):
-            return theName.replace('\'\'', '\'')
-        else:
-            return theName
-    if string.count(theName, '_'):
+        return theName.replace("''", "'")
+    if '_' in theName:
         return theName.replace('_', ' ')
     else:
         return theName
@@ -74,17 +103,18 @@ def nexusUnquoteName(theName):
 
     If theName is not quoted, just return it.  If
     theName is quoted, remove the outside quotes, and convert any
-    cases of 2 single quotes in a row to 1 single quote."""
+    cases of 2 single quotes in a row to 1 single quote.
+    """
 
-    if theName[0] == '\'':
+    if theName[0] == "'":
         if theName[-1] != "'":
-            gm = ['func.nexusUnquotName()']
+            gm = ['func.nexusUnquoteName()']
             gm.append('the name is %s' % theName)
             gm.append("First char is a single quote, but last char is not.")
             raise P4Error(gm)
         theName = theName[1:-1]
-        if theName.count('\'\''):
-            return theName.replace('\'\'', '\'')
+        if theName.count("''"):
+            return theName.replace("''", "'")
         else:
             return theName
     else:
@@ -102,11 +132,12 @@ def nexusFixNameIfQuotesAreNeeded(theName, verbose=0):
     If it has (nexus-defined) punctuation, or spaces, then put quotes
     around it before returning it.  If there are internal single
     quotes, then double them, nexus-style.  Except if there are any
-    already doubled single quotes, don't double them.  """
+    already doubled single quotes, don't double them.  
+    """
 
     if theName == None:
         return theName
-    if theName.startswith('\''):
+    if theName.startswith("'"):
         return theName
     quotesAreNeeded = 0
     # for c in var.nexus_punctuation:
@@ -122,13 +153,13 @@ def nexusFixNameIfQuotesAreNeeded(theName, verbose=0):
     if quotesAreNeeded:
         if verbose:
             oldName = theName
-        if theName.count('\''):
+        if theName.count("'"):
             # If we have doubled quotes, don't re-double them
-            if theName.count('\'\''):
+            if theName.count("''"):
                 pass
             else:
-                theName = theName.replace('\'', '\'\'')
-        newName = '\'' + theName + '\''
+                theName = theName.replace("'", "''")
+        newName = "'" + theName + "'"
         if verbose:
             print("Warning. Nexus quoting |%s| to |%s|" % (oldName, newName))
         return newName
@@ -143,15 +174,15 @@ def isDnaRnaOrProtein(aString):
 
     It only works for lowercase symbol letters.
     """
-    nGaps = string.count(aString, '-')
-    nQs = string.count(aString, '?')
+    nGaps = aString.count('-')
+    nQs = aString.count('?')
     strLenNoGaps = len(aString) - (nGaps + nQs)
-    acgn = (string.count(aString, 'a') +
-            string.count(aString, 'c') +
-            string.count(aString, 'g') +
-            string.count(aString, 'n'))
-    t = string.count(aString, 't')
-    u = string.count(aString, 'u')
+    acgn = (aString.count('a') +
+            aString.count('c') +
+            aString.count('g') +
+            aString.count('n'))
+    t = aString.count('t')
+    u = aString.count('u')
     if 0:
         print("stringLength(no gaps) = %s" % strLenNoGaps)
         print("acgn = %f" % acgn)
@@ -171,16 +202,16 @@ def isDnaRnaOrProtein(aString):
     # prevent eg 'rymkswhvd' from being assigned as dna.
 
     threshold1 = 0.75 * strLenNoGaps
-    tally = (string.count(aString, 'r') +
-             string.count(aString, 'y') +
-             string.count(aString, 'm') +
-             string.count(aString, 'k') +
-             string.count(aString, 's') +
-             string.count(aString, 'w') +
-             string.count(aString, 'h') +
-             string.count(aString, 'b') +
-             string.count(aString, 'v') +
-             string.count(aString, 'd'))
+    tally = (aString.count('r') +
+             aString.count('y') +
+             aString.count('m') +
+             aString.count('k') +
+             aString.count('s') +
+             aString.count('w') +
+             aString.count('h') +
+             aString.count('b') +
+             aString.count('v') +
+             aString.count('d'))
     threshold2 = 0.99 * strLenNoGaps
     # print "  string length is %i, strLenNoGaps is %i" % (len(aString), strLenNoGaps)
     # print "  threshold2 is %3.1f, acgn + t + ambigs = %i" % (threshold, (acgn + t + tally))
@@ -196,11 +227,10 @@ def isDnaRnaOrProtein(aString):
 def stringZapWhitespaceAndDigits(inString):
     out = list(inString)
     theRange = range(len(out))
-    theRange.reverse()
-    for i in theRange:
+    for i in reversed(theRange):
         if out[i] in string.whitespace or out[i] in string.digits:
             del out[i]
-    return string.join(out, '')
+    return ''.join(out)
 
 
 def dump():
@@ -330,7 +360,6 @@ def read(stuff):
     # ()A; they cannot be specified simply as A.
 
     gm = ['p4.read()']
-    # if type(stuff) != type('string'):
     if isinstance(stuff, str):
         pass
     else:
@@ -339,7 +368,6 @@ def read(stuff):
     #nAlignments = len(var.alignments)
 
     if os.path.exists(stuff):
-        #var.nexus_doFastNextTok = False
         readFile(stuff)
     else:
         # Is it a glob?
@@ -349,42 +377,41 @@ def read(stuff):
             for fName in myFlist:
                 readFile(fName)
         else:  # Nope, not a glob.  Is it a string, not a file name?
-            saved_nexus_doFastNextTok = var.nexus_doFastNextTok
             if var.warnReadNoFile:
                 print("\nread()")
                 print("    A file by the name specified by the argument cannot be found.")
                 print("    So I am assuming that it is to be taken as a string.")
                 print("    Maybe it was a mis-specified file name?")
                 print("    (You can turn off this warning by turning var.warnReadNoFile off.)\n")
-            var.nexus_doFastNextTok = False
-            flob = io.BytesIO(stuff)
-                    
+
+            if 0:
+                if sys.version_info < (3,):
+                    stuff = unicode(stuff)
+                    flob = io.StringIO(stuff)
+            if 1:
+                if sys.version_info < (3,):
+                    flob = io.BytesIO(stuff)
+                else:
+                    flob = io.StringIO(stuff)
+            
             _decideFromContent('<input string>', flob)
-            #_decideFromContent(stuff, flob)
-            # if var.verboseRead:
-            # print "(You can turn off these messages by turning
-            # var.verboseRead off.)\n"
-            var.nexus_doFastNextTok = saved_nexus_doFastNextTok
 
 
 def readFile(fName):
-    """If its a data or tree file, read it.  If its python code, execfile it."""
+    """If its a data or tree file, read it.  If its python code, exec it."""
 
     gm = ['func.readFile(%s)' % fName]
+    # print(gm)
 
-    if var.nexus_doFastNextTok:
-        gm.append("var.nexus_doFastNextTok is not working this week.  Don't turn it on.")
-        raise P4Error(gm)
-
-    # print gm
-    # print 'func.readFile().  nexus_doFastNextTok=%s' % var.nexus_doFastNextTok
     # I should check if the file is a text file, an executable, or whatever.
     try:
-        flob = open(fName, "U")  # Universal line endings.
+        flob = open(fName)
     except IOError:
-        gm.append(
-            "Can't open %s.  Are you sure you have the right name?" % fName)
+        gm.append("Can't open %s.  Are you sure you have the right name?" % fName)
         raise P4Error(gm)
+
+    # print(flob, type(flob), flob.name)
+    # print(dir(flob))
 
     # See if there is an informative suffix on the file name
     # If there is a suffix, but the file cannot be read,
@@ -392,14 +419,28 @@ def readFile(fName):
     result = re.search('(.+)\.(.+)', fName)
     if result:
         #baseName = result.group(1)
-        # print "got result.group(2) = %s" % result.group(2)
-        suffix = string.lower(result.group(2))
-        # print "readFile: got suffix '%s'" % suffix
+        # print("got result.group(2) = %s" % result.group(2))
+        suffix = result.group(2).lower()
+        #print("readFile: got suffix '%s'" % suffix)
         if suffix == 'py':
             flob.close()
             import __main__
-            #print "__main__.__dict__ is %s" % __main__.__dict__
-            execfile(fName, __main__.__dict__,  __main__.__dict__)
+            # print("__main__.__dict__ is %s" % __main__.__dict__)
+            
+            #execfile(fName, __main__.__dict__,  __main__.__dict__)
+            #exec(open(fName).read(), __main__.__dict__,  __main__.__dict__)
+            #exec(flob.read(), __main__.__dict__,  __main__.__dict__)
+
+            # The following is better than simple exec(open(fName).read())
+            # because in the event of a traceback the former (below) knows the
+            # file name, but the simple version does not.  As explained on
+            # stackoverflow, "(The compile call isn't strictly needed, but it
+            # associates the filename with the code object making debugging a
+            # little easier.)"
+            with open(fName) as f:
+                myCode = compile(f.read(), fName, 'exec')
+                exec(myCode,  __main__.__dict__,  __main__.__dict__)
+
             if hasattr(__main__, 'pyFileCount'):
                 __main__.pyFileCount += 1
             return
@@ -418,7 +459,7 @@ def readFile(fName):
                 gm.append("Failed to read supposed gde file '%s'" % fName)
                 raise P4Error(gm)
             return
-        elif suffix in ['pir', 'nbrf']:  # new, july 2010
+        elif suffix in ['pir', 'nbrf']:  
             ret = _tryToReadPirFile(fName, flob)
             if not ret:
                 gm.append("Failed to read supposed pir file '%s'" % fName)
@@ -514,7 +555,7 @@ def _decideFromContent(fName, flob):
             if ret:
                 return
 
-        else:  # Maybe its a phylip file?
+        else:  # Maybe it is a phylip file?
             if var.verboseRead:
                 print("Guessing that '%s' is a phylip file..." % fName)
             # either data or trees
@@ -547,6 +588,8 @@ def _decideFromContent(fName, flob):
 
         # print "got firstChar = %s" % firstChar
         flob.seek(0)
+        if var.verboseRead:
+            print("Guessing that '%s' is a nexus or gde file..." % fName)
         if firstChar in ['[', '#']:
             # it might be a nexus file
             if var.verboseRead:
@@ -561,43 +604,25 @@ def _decideFromContent(fName, flob):
             if ret:
                 return
 
-        # If we are here then it isn't a nexus or gde file.
-        # Last alternative: its assumed to be a python script
+        # If we are here then it isn't a nexus or gde file.  Previously I then
+        # tried to read it as a python script, even though it does not end in
+        # '.py'.  Probably a bad idea.  So just give up.
+
         if var.verboseRead:
-            # print "As a last resort, guessing that '%s' is a python file..."
-            # % fName
-            print("Trying to read '%s' as a python file..." % fName)
-        try:
-            # get it, for a possible error message below, while the flob is
-            # still open
-            theString = flob.getvalue()
-        except AttributeError:
-            theString = None
-        flob.close()
-        try:
-            import __main__
-            execfile(fName, __main__.__dict__, __main__.__dict__)
-            if hasattr(__main__, 'pyFileCount'):
-                __main__.pyFileCount += 1
-        except:
-            if var.verboseRead:
-                gm = ["Failed to read '%s' as a python file..." % fName]
-                gm.append("Giving up on trying to read '%s' at all." % fName)
+            print("Giving up on trying to read '%s'." % fName)
+
+        if fName == '<input string>':
+            flob.seek(0)
+            first100 = flob.read(100)
+            if first100:
+                gm = ["Couldn't make sense out of the input '%s'" % first100]
             else:
-                # probably a mis-spelled file name
-                if type(flob) == type(io.BytesIO('foo')):
-                    if theString:
-                        if len(theString) < 100:
-                            gm = [
-                                "Couldn't make sense out of the input '%s'" % theString]
-                        else:
-                            gm = [
-                                "Couldn't make sense out of the input '%s ...'" % theString[100]]
-                    gm.append(
-                        "It is not a file name, and I could not make sense out of it otherwise.")
-                else:
-                    gm = ["Couldn't make sense of the input '%s'." % fName]
-            raise P4Error(gm)
+                gm = ["Couldn't make sense out of the input '%s'" % fName]
+            gm.append("It is not a file name, and I could not make sense out of it otherwise.")
+        else:
+            gm = ["Couldn't make sense of the input '%s'." % fName]
+        flob.close()
+        raise P4Error(gm)
 
 
 def _tryToReadNexusFile(fName, flob):
@@ -642,9 +667,9 @@ def _tryToReadNexusFile(fName, flob):
             if len(var.trees):
                 tnList = []
                 for t in var.trees:
-                    tnList.append(string.lower(t.name))
+                    tnList.append(t.name.lower())
                 for t in var.trees:
-                    if tnList.count(string.lower(t.name)) > 1:
+                    if tnList.count(t.name.lower()) > 1:
                         print("P4: Warning: got duplicated tree name '%s' (names are compared in lowercase)" \
                               % t.name)
                         # print "Lowercased tree names: %s" % tnList
@@ -808,12 +833,6 @@ def _tryToReadPhylipFile(fName, flob, firstLine):
         print("Trying to read '%s' as a phylip tree file..." % fName)
     flob.seek(0, 0)
     theseTrees = []
-
-    # We need to import nextTok.
-    if var.nexus_doFastNextTok:
-        from p4.nexustoken2 import nextTok
-    else:
-        from p4.nexustoken import nextTok
 
     while 1:
         savedPosition = flob.tell()
@@ -1000,30 +1019,24 @@ p.foster@nhm.ac.uk""")
     print('')
     print("(Control-d to quit.)\n")
 
-def splash2(outFile="splash2"):
+def splash2(outFile=None, verbose=True):
     """Another splash, showing things like version, git hash, and date
 
-    It gets printed to a file, unless you set arg outFile to None or to
-    sys.stdout.
+    If verbose is set, it gets printed to sys.stdout.
 
-    The outFile is appended to, not overwritten.
+    If you set an outFile, it will also be appended to that file.
+
+    It also returns the info as a list of strings.
     """
 
-    fh = sys.stdout
-    if not outFile:
-        pass
-    elif  outFile == sys.stdout:
-        pass
-    else:
-        print("Appending splash2 info to file %s" % outFile) 
-        fh = open(outFile, "a")
+    # Collect all the info in a list of strings
+    stuff = []
 
     # Stolen from Cymon.  Thanks!
-    print("\nSummary from func.splash2()", file=fh)
-    print("%16s: %s" % ("P4 version", p4.version.versionString), file=fh)
+    #stuff.append("\nSummary from func.splash2()")
+    stuff.append("%16s: %s" % ("P4 version", p4.version.versionString))
     lp = os.path.dirname(inspect.getfile(p4))
-    print("%16s: %s" % ("Library path", lp), file=fh)
-    #lp = "/Users/peter/C"
+    stuff.append("%16s: %s" % ("Library path", lp))
 
     # Get git version.
     if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
@@ -1034,24 +1047,32 @@ def splash2(outFile="splash2"):
             ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
             #ret = ret.strip()    # get rid of newline, needed for rev-parse
             ret = ret[1:-1]       # get rid of quotes, needed for log
-            print("%16s: %s" % ("git hash", ret), file=fh)
+            stuff.append("%16s: %s" % ("git hash", ret))
 
         except subprocess.CalledProcessError:
             #print("%16s: %s" % ("git hash", "Not a git repo?"))
             pass
     else:
-        print("%16s: %s" % ("git hash", "Not a git repo"), file=fh)
+        stuff.append("%16s: %s" % ("git hash", "Not a git repo"))
 
 
-    print("%16s: %s" % ("Python version", ".".join([str(i) for i in sys.version_info[:-2]])), file=fh)
-    #print("%16s: %s" % ("Date" , datetime.datetime.now().strftime("%d/%m/%Y")), file=fh)
-    print("%16s: %s" % ("Today's date" , datetime.datetime.now().strftime("%Y-%m-%d")), file=fh)  # iso 8601 see https://xkcd.com/1179/
+    stuff.append("%16s: %s" % ("Python version", ".".join([str(i) for i in sys.version_info[:-2]])))
+    #print("%16s: %s" % ("Date" , datetime.datetime.now().strftime("%d/%m/%Y")))
+    stuff.append("%16s: %s" % ("Today's date" , datetime.datetime.now().strftime("%Y-%m-%d")))  # iso 8601 see https://xkcd.com/1179/
     host = os.uname()[1].split('.')[0]
-    print("%16s: %s" % ("Host", host), file=fh)
-    print("\n", file=fh)
-    # sys.stdout.flush()
-    fh.close()
+    stuff.append("%16s: %s" % ("Host", host))
+    #stuff.append("\n")
 
+    if outFile:
+        print("Appending splash2 info to file %s" % outFile) 
+        fh = open(outFile, "a")
+        for aLine in stuff:
+            print(aLine, file=fh)
+        fh.close()
+    if verbose:
+        for aLine in stuff:
+            print(aLine)
+    return stuff
 
 
 def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None):
@@ -1105,7 +1126,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
     # Make a random list of indices for the taxNames
     if seed != None:  # it might be 0
         random.seed(seed)
-    indcs = range(nTax)
+    indcs = list(range(nTax))
     random.shuffle(indcs)
 
     # Instantiate the tree, and add a root node
@@ -1332,10 +1353,8 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
 
         # addNodeBetweenNodes() requires t.preOrder.
         if 1:
-            t.preOrder = numpy.array(
-                [var.NO_ORDER] * len(t.nodes), numpy.int32)
-            t.postOrder = numpy.array(
-                [var.NO_ORDER] * len(t.nodes), numpy.int32)
+            t.preOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
+            t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
             if len(t.nodes) > 1:
                 t.setPreAndPostOrder()
         nodeNum = t.addNodeBetweenNodes(n, n.parent)
@@ -1443,9 +1462,9 @@ def getSplitStringFromKey(theKey, nTax, escaped=False):
             ss[i] = '*'
             #ss[i] = '1'
     if escaped:
-        return '\\' + string.join(ss, '\\')
+        return '\\' + '\\'.join(ss)
     else:
-        return string.join(ss, '')
+        return ''.join(ss)
 
 
 def getSplitKeyFromTaxNames(allTaxNames, someTaxNames):
@@ -1516,7 +1535,7 @@ def _sumOfRows(aList):
     Adds up the rows of a 2d matrix, returning the vector.
     Eg _sumOfRows([[2,3], [6,13]]) returns [5, 19]
     """
-    if type(aList[0]) != type([]):
+    if not isinstance(aList[0], list):
         print("_sumOfRows: not a 2D array.  Assume its a row vector and return sum")
         return sum(aList)
     outList = []
@@ -1530,7 +1549,7 @@ def _sumOfColumns(aList):
     Adds up the rows of a 2d matrix, returning the vector.
     Eg _sumOfColumns([[2,3], [6,13]]) returns [8, 16]
     """
-    if type(aList[0]) != type([]):
+    if not isinstance(aList[0], list):
         print("_sumOfColumns: not a 2D array.  Assume its a column vector and return sum")
         return sum(aList)
     theLen = len(aList[0])
@@ -1680,7 +1699,7 @@ def which(what, verbose=0):
     given by the argument 'what') is in the path.  It returns 0 or 1.
     If verbose is turned on, it speaks the path, if it exists."""
 
-    if type(what) != type('aString'):
+    if not isinstance(what, str):
         raise P4Error("function which().  I was expecting a string argument.")
     f = os.popen('which %s 2> /dev/null' % what, 'r')
     aLine = f.readline()
@@ -1883,15 +1902,14 @@ def fixCharsForLatex(theString):
                 l[i] = '$' + l[i] + '$'
         else:
             pass
-    if l[0] == '\'' and l[-1] == '\'':
+    if l[0] == "'" and l[-1] == "'":
         del(l[-1])
         del(l[0])
         theRange = range(len(l))
-        theRange.reverse()
-        for i in theRange[:-1]:
-            if l[i] == '\'' and l[i - 1] == '\'':
+        for i in reversed(theRange[:-1]):
+            if l[i] == "'" and l[i - 1] == "'":
                 del(l[i])
-    return string.join(l, '')
+    return ''.join(l)
 
 
 def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
@@ -1913,9 +1931,9 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
     #cListAllPat = re.compile('all\\\\?(\d+)?')
 
     # print "char list is: %s" % nexusCharListString
-    cList = string.split(nexusCharListString)
+    cList = nexusCharListString.split()
     # print "cList is %s" % cList
-    mask = array.array('c', maskLength * '0')
+    mask = ['0'] * maskLength
     for c in cList:        # eg 6-10\2
         first = None       # the first item eg 6
         second = None      # the second item eg 10
@@ -1948,7 +1966,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
                       nexusCharListString)
             raise P4Error(gm)
         elif first and not second:  # its a single
-            if string.lower(first) == 'all':
+            if first.lower() == 'all':
                 for i in range(len(mask)):
                     mask[i] = '1'
             elif first == '.':
@@ -1995,7 +2013,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
                 mask[i] = '1'
             elif mask[i] == '1':
                 mask[i] = '0'
-    return mask.tostring()
+    return ''.join(mask)
 
 
 def polar2square(angleLenList):
@@ -2287,6 +2305,8 @@ def unPickleMcmc(runNum, theData, verbose=True):
         ch.propTree.data = theData
         ch.propTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
 
+    m._setLogger()
+
     return m
 
 
@@ -2380,26 +2400,34 @@ def recipes(writeToFile=var.recipesWriteToFile):
 
     for recNum in range(len(recipesList)):
         rec = recipesList[recNum]
-        print("%s.  %s" % (string.uppercase[recNum], rec[0]))
-    ret = raw_input('Tell me a letter: ')
+        print("%s.  %s" % (string.ascii_uppercase[recNum], rec[0]))
+
+    if sys.version_info < (3,):
+        ret = raw_input('Tell me a letter: ')
+    else:
+        ret = input('Tell me a letter: ')
+    
     # print "Got %s" % ret
     if ret == '':
         return
-    elif ret[0] in string.uppercase:
-        recNum = string.uppercase.index(ret[0])
-    elif ret[0] in string.lowercase:
-        recNum = string.lowercase.index(ret[0])
+    elif ret[0] in string.ascii_uppercase:
+        recNum = string.ascii_uppercase.index(ret[0])
+    elif ret[0] in string.ascii_lowercase:
+        recNum = string.ascii_lowercase.index(ret[0])
     else:
         return
     # print "Got recNum %i" % recNum
 
     if writeToFile:
-        ret = raw_input(
-            'Write it to file name [default %s] :' % recipesList[recNum][1])
+        if sys.version_info < (3,):
+            ret = raw_input('Write it to file name [default %s] :' % recipesList[recNum][1])
+        else:
+            ret = input('Write it to file name [default %s] :' % recipesList[recNum][1])
+
         if ret == '':
             theFName = recipesList[recNum][1]
         else:
-            theFName = string.strip(ret)
+            theFName = ret.strip()
         if os.path.exists(theFName):
             "The file %s already exists.  I'm refusing to over-write it, so I'm doing nothing." % theFName
             return
@@ -2442,8 +2470,12 @@ and the documentation in the directory
 
 """ % (installation.p4ScriptPath, installation.p4LibDir, installation.p4DocDir))
 
-    ret = raw_input('Ok to do this? [y/n]')
-    ret = string.lower(ret)
+    if sys.version_info < (3,):
+        ret = raw_input('Ok to do this? [y/n]')
+    else:
+        ret = input('Ok to do this? [y/n]')
+
+    ret = ret.lower()
     if ret not in ['y', 'yes']:
         return
     print("Ok, deleting ...")
@@ -2532,7 +2564,7 @@ def spaceDelimitedToTabDelimited(fName, outFName=None):
     else:
         oFName = "%s.tabbed" % fName
 
-    f = open(fName, "U")  # Universal line endings.
+    f = open(fName)
     ll = f.readlines()
     f.close()
 
@@ -2613,56 +2645,72 @@ unsetTerminalColor = unsetTerminalColour
 
 
 def _sumOfSquares(seq):
-    """Pure Python, using reduce."""
+    """Pure Python.  Converts to floats, returns a float."""
 
-    def addSq(x, y):
-        return float(x) + (float(y) * float(y))
-    return reduce(addSq, seq, 0)
+    if not seq:
+        return 0.0
+    mySum = 0.0
+    for it in seq:
+        mySum += (float(it) * float(it))
+    return mySum
 
 
 def sortListOfObjectsOnAttribute(aListOfObjects, attributeString):
     """Returns a new sorted list."""
 
-    def pairing(anObject, a=attributeString):
-        return (getattr(anObject, a), anObject)
-    paired = map(pairing, aListOfObjects)
-    # print paired
-    # 'paired' is a list of 2-element tuples, (thingToSortOn, theOriginalObject)
-    paired.sort()
+    # Repaired for py3. 
 
-    def stripit(pair):
-        return pair[1]
-    return map(stripit, paired)
+    # In the original (that worked with py2 all these years) used pairs, where,
+    # 'paired' was a list of 2-element tuples, (thingToSortOn, theOriginalObject)
+
+    # The problem in py3 is in tie scores in thingToSortOn, where sort() will
+    # then attempt to compare objects, and that will generally fail, cuz objA <
+    # objB (in Py3) will throw a
+    # TypeError: '<' not supported between instances of 'Foo' and 'Foo'
+
+    # So I simply add a third element, the indx in the middle, that allows
+    # reliable sorting when there is a tie score at the first position.
+
+    def tripling(anObject, indx, a=attributeString):
+        return (getattr(anObject, a), indx, anObject)
+    triplets = []
+    for indx, ob in enumerate(aListOfObjects):
+        triplets.append(tripling(ob, indx, a=attributeString))
+    #print(triplets)
+    triplets.sort()
+    def stripit(aTriplet):
+        return aTriplet[2]
+    return [stripit(tr) for tr in triplets]
 
 
 def sortListOfObjectsOn2Attributes(aListOfObjects, attributeString1, attributeString2):
     """Returns a new sorted list."""
 
-    def tripling(anObject, a=attributeString1, b=attributeString2):
-        return (getattr(anObject, a), getattr(anObject, b), anObject)
-    tripled = map(tripling, aListOfObjects)
-    # 'tripled' is a list of 3-element tuples, (thingToSortOn, secondThingToSortOn, theOriginalObject)
-    tripled.sort()
-
-    def stripit(triple):
-        return triple[2]
-    return map(stripit, tripled)
-
+    # Fixed for py3 as in sortListOfObjectsOnAttribute, adding a 4th element
+    def quadding(anObject, indx, a=attributeString1, b=attributeString2):
+        return (getattr(anObject, a), getattr(anObject, b), indx, anObject)
+    quads = []
+    for indx, ob in  enumerate(aListOfObjects):
+        quads.append(quadding(ob, indx, a=attributeString1, b=attributeString2))
+    #print(quads)
+    quads.sort()
+    def stripit(quad):
+        return quad[3]
+    return [stripit(qu) for qu in quads]
 
 def sortListOfListsOnListElementNumber(aListOfLists, elementNumber):
     """Returns a new sorted list."""
 
     def pairing(aList, e=elementNumber):
         return (aList[e], aList)
-    paired = map(pairing, aListOfLists)
+    paired = [pairing(aList) for aList in aListOfLists]
     # 'paired' is a list of 2-element tuples, (thingToSortOn, theOriginalElement)
     # print "paired = ", paired
     paired.sort()
 
     def stripit(pair):
         return pair[1]
-    return map(stripit, paired)
-
+    return [stripit(pr) for pr in paired]
 
 def readAndPop(stuff):
     """Read in simple stuff, pop the single object from var lists, and return it.
@@ -2791,14 +2839,14 @@ def gsl_meanVariance(seq, mean=None, variance=None):
 
     """
 
-    if type(seq) == numpy.ndarray:
+    if isinstance(seq, numpy.ndarray):
         mySeq = seq
     else:
         mySeq = numpy.array(seq, numpy.float)
 
-    if type(mean) == types.NoneType:
+    if mean is None:
         mean = numpy.array([0.0])
-    if type(variance) == types.NoneType:
+    if variance is None:
         variance = numpy.array([0.0])
     pf.gsl_meanVariance(mySeq, len(seq), mean, variance)
     if 0:
@@ -2861,8 +2909,8 @@ def dirichlet2(inSeq, outSeq, alpha, theMin):
     """
 
     gm = ['func.dirichlet2()']
-    assert type(inSeq) == numpy.ndarray
-    assert type(outSeq) == numpy.ndarray
+    assert isinstance(inSeq, numpy.ndarray)
+    assert isinstance(outSeq, numpy.ndarray)
     kk = len(inSeq)
     theMax = 1.0 - ((kk - 1) * theMin)
     safety = 0
@@ -2906,8 +2954,8 @@ def gsl_ran_dirichlet(alpha, theta, seed=None):
     complaintHead = '\nfunc.gsl_ran_dirichlet()'
     gm = complaintHead
     try:
-        assert type(alpha) == numpy.ndarray
-        assert type(theta) == numpy.ndarray
+        assert isinstance(alpha, numpy.ndarray)
+        assert isinstance(theta, numpy.ndarray)
     except AssertionError:
         gm.append(" alpha, theta, should be numpy arrays.")
         raise P4Error(gm)
@@ -2983,10 +3031,8 @@ def effectiveSampleSize(data, mean):
         maxLag = 1000
 
     gammaStatAtPreviousLag = numpy.array([0.0])
-    assert type(data) == type(
-        gammaStatAtPreviousLag), "Arg 'data' should be a numpy.array.  Its %s" % type(data)
-    assert type(mean) == type(
-        gammaStatAtPreviousLag), "Arg 'mean' should be a numpy.array.  Its %s" % type(mean)
+    assert isinstance(data, numpy.ndarray), "Arg 'data' should be a numpy.array.  Its %s" % type(data)
+    assert isinstance(mean, numpy.ndarray), "Arg 'mean' should be a numpy.array.  Its %s" % type(mean)
     gammaStat = numpy.array([0.0])
     varStat = numpy.array([0.0])
     gammaStatAtLagZero = numpy.array([0.0])
@@ -3061,7 +3107,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
         try:
             loc = {}
             theFName = "mcmc_pramsProfile_%i.py" % runNum
-            execfile(os.path.join(theDir, theFName), {}, loc)
+            exec(open(os.path.join(theDir, theFName)).read(), {}, loc)
             # loc =locals()  no workee.
             # print "loc = %s" % loc
             nPrams = loc['nPrams']
@@ -3083,7 +3129,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
             try:
                 loc = {}
                 theFName = "mcmc_pramsProfile_%i.py" % runNum
-                execfile(os.path.join(theDir, theFName), {}, loc)
+                exec(open(os.path.join(theDir, theFName)).read(), {}, loc)
                 # loc =locals()  no workee.
                 # print "loc = %s" % loc
                 nPrams = loc['nPrams']
@@ -3137,7 +3183,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
                         try:
                             theOne = splitLine[pramNum + 1]
                         except IndexError:
-                            gm.append("Line '%s'.  " % string.rstrip(aLine))
+                            gm.append("Line '%s'.  " % aLine.rstrip())
                             gm.append(
                                 "Can't get parameter number %i  " % pramNum)
                             raise P4Error(gm)

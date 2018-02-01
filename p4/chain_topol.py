@@ -16,7 +16,8 @@ if True:
         if len(internalsNoRoot):
             newRoot = random.choice(internalsNoRoot)
             self.propTree.reRoot(
-                newRoot, moveInternalName=False, fixRawSplitKeys=self.mcmc.constraints)
+                newRoot, moveInternalName=False, 
+                fixRawSplitKeys=self.mcmc.constraints)
         else:
             print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
         self.logProposalRatio = 0.0
@@ -36,7 +37,7 @@ if True:
 
         if 1:  # "Multiplier" proposal
             newBrLen = oldBrLen * \
-                math.exp(theProposal.tuning * (random.random() - 0.5))
+                math.exp(theProposal.tuning[self.tempNum] * (random.random() - 0.5))
 
             # Logarithmic reflect if needed
             while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
@@ -48,7 +49,7 @@ if True:
             self.logProposalRatio = math.log(newBrLen / oldBrLen)
 
         else:  # Sliding window.
-            newBrLen = oldBrLen + (theProposal.tuning * (random.random() - 0.5))
+            newBrLen = oldBrLen + (theProposal.tuning[self.tempNum] * (random.random() - 0.5))
             #newBrLen = oldBrLen + (2.0 * (random.random() - 0.5))
 
             # Linear reflect if needed
@@ -60,7 +61,7 @@ if True:
             theNode.br.len = newBrLen
             self.logProposalRatio = 0.0
 
-        if hasattr(self.mcmc.tunings, 'doInternalBrLenPrior') and self.mcmc.tunings.doInternalBrLenPrior:
+        if 0 and hasattr(self.mcmc.tunings, 'doInternalBrLenPrior') and self.mcmc.tunings.doInternalBrLenPrior:
             if theNode.isLeaf:
                 self.logPriorRatio = self.mcmc.tunings.brLenPriorLambda * \
                     (oldBrLen - newBrLen)
@@ -68,8 +69,8 @@ if True:
                 self.logPriorRatio = self.mcmc.tunings.brLenPriorLambdaForInternals * \
                     (oldBrLen - newBrLen)
         else:
-            if self.mcmc.tunings.brLenPriorType == 'exponential':
-                self.logPriorRatio = self.mcmc.tunings.brLenPriorLambda * \
+            if theProposal.brLenPriorType == 'exponential':
+                self.logPriorRatio = theProposal.brLenPriorLambda * \
                     (oldBrLen - newBrLen)
             else:
                 self.logPriorRatio = 0.
@@ -102,8 +103,8 @@ if True:
                 newBrLens.append(newBrLen)
                 nBranches += 1
                 n.br.len = newBrLen
-                if self.mcmc.tunings.brLenPriorType == 'exponential':
-                    self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
+                if theProposal.brLenPriorType == 'exponential':
+                    self.logPriorRatio += theProposal.brLenPriorLambda * \
                                           (oldBrLen - newBrLen)
                 else:
                     pass # log prior remains zero for uniform prior
@@ -115,7 +116,7 @@ if True:
                 oldBrLen = n.br.len
 
                 # sliding window
-                newBrLen = oldBrLen + (theProposal.tuning * (random.random() - 0.5))
+                newBrLen = oldBrLen + (theProposal.tuning[self.tempNum] * (random.random() - 0.5))
 
                 # Linear reflect if needed
                 while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
@@ -125,49 +126,12 @@ if True:
                         newBrLen = var.BRLEN_MAX - (newBrLen - var.BRLEN_MAX)
 
                 n.br.len = newBrLen
-                if self.mcmc.tunings.brLenPriorType == 'exponential':
-                    self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
+                if theProposal.brLenPriorType == 'exponential':
+                    self.logPriorRatio += theProposal.brLenPriorLambda * \
                                           (oldBrLen - newBrLen)
                 else:
                     pass # log prior remains zero for uniform prior
 
-
-    # def proposeTreeScale(self, theProposal):
-    #     gm = ['Chain.proposeTreeScale']
-    #     pTree = self.propTree
-    #     nBranches = 0
-    #     oldTreeLen = 0.0
-    #     for n in pTree.iterNodesNoRoot():
-    #         nBranches += 1
-    #         oldTreeLen += n.br.len
-    #     # newTreeLen = oldTreeLen *  math.exp(theProposal.tuning * (random.random() - 0.5))
-    #     newTreeLen = oldTreeLen + (theProposal.tuning * (random.random() - 0.5))
-    #     forwardScaler = newTreeLen/oldTreeLen
-    #     #reverseScaler = oldTreeLen/newTreeLen
-
-    #     self.logPriorRatio = 0.0
-    #     for n in pTree.iterNodesNoRoot():
-    #         oldBrLen = n.br.len
-    #         newBrLen = oldBrLen * forwardScaler
-
-    #         # Linear reflect if needed
-    #         while (newBrLen < var.BRLEN_MIN) or (newBrLen > var.BRLEN_MAX):
-    #             if newBrLen < var.BRLEN_MIN:
-    #                 newBrLen = (var.BRLEN_MIN - newBrLen) + var.BRLEN_MIN
-    #             elif newBrLen > var.BRLEN_MAX:
-    #                 newBrLen = var.BRLEN_MAX - (newBrLen - var.BRLEN_MAX)
-
-    #         n.br.len = newBrLen
-
-    #         # no need to bother with this next line, because all branches change
-    #         #n.br.lenChanged = True
-    #         if self.mcmc.tunings.brLenPriorType == 'exponential':
-    #             self.logPriorRatio += self.mcmc.tunings.brLenPriorLambda * \
-    #                                   (oldBrLen - n.br.len)
-    #         else:
-    #             pass # remains zero
-
-    #     self.logProposalRatio = 0.0 # nBranches * (math.log(newTreeLen) - math.log(oldTreeLen))
             
 
     def proposeLocal(self, theProposal):  # from BAMBE and MrBayes.
@@ -366,7 +330,7 @@ if True:
         x = u.br.len
         y = x + v.br.len
         # by default, 0.909 to 1.1
-        newMRatio = math.exp(theProposal.tuning * (random.random() - 0.5))
+        newMRatio = math.exp(theProposal.tuning[self.tempNum] * (random.random() - 0.5))
         newM = m * newMRatio
 
         # Hopefully these checks will not be needed forever.
@@ -822,7 +786,7 @@ if True:
         # then we do it like Yang and Rannala Syst Biol 54(3):455-470,
         # 2005.  Do it before reRooting (does it make any difference?)
         # print self.mcmc.tunings.doInternalBrLenPrior
-        if hasattr(self.mcmc.tunings, 'doInternalBrLenPrior') and self.mcmc.tunings.doInternalBrLenPrior:
+        if 0 and hasattr(self.mcmc.tunings, 'doInternalBrLenPrior') and self.mcmc.tunings.doInternalBrLenPrior:
             # originally this
             #                +------c
             #        +-------|(v)
@@ -844,72 +808,72 @@ if True:
                 # Do the 3 edges in turn.  First the a edge, then the internal
                 # edge, then the c edge.
                 if a.isLeaf:
-                    theSum += (self.mcmc.tunings.brLenPriorLambda * x) - \
-                        (self.mcmc.tunings.brLenPriorLambda * newX)
+                    theSum += (theProposal.brLenPriorLambda * x) - \
+                        (theProposal.brLenPriorLambda * newX)
                 else:
-                    theSum += (self.mcmc.tunings.brLenPriorLambdaForInternals * x) - (
-                        self.mcmc.tunings.brLenPriorLambdaForInternals * newX)
-                theSum += (self.mcmc.tunings.brLenPriorLambdaForInternals * (y - x)) - (
-                    self.mcmc.tunings.brLenPriorLambdaForInternals * (newY - newX))
+                    theSum += (theProposal.brLenPriorLambdaForInternals * x) - (
+                        theProposal.brLenPriorLambdaForInternals * newX)
+                theSum += (theProposal.brLenPriorLambdaForInternals * (y - x)) - (
+                    theProposal.brLenPriorLambdaForInternals * (newY - newX))
                 if c.isLeaf:
-                    theSum += (self.mcmc.tunings.brLenPriorLambda * (m - y)) - \
-                        (self.mcmc.tunings.brLenPriorLambda * (newM - newY))
+                    theSum += (theProposal.brLenPriorLambda * (m - y)) - \
+                        (theProposal.brLenPriorLambda * (newM - newY))
                 else:
-                    theSum += (self.mcmc.tunings.brLenPriorLambdaForInternals * (m - y)) - (
-                        self.mcmc.tunings.brLenPriorLambdaForInternals * (newM - newY))
+                    theSum += (theProposal.brLenPriorLambdaForInternals * (m - y)) - (
+                        theProposal.brLenPriorLambdaForInternals * (newM - newY))
             else:  # with topology change
                 if a.isLeaf:
-                    theSum += (self.mcmc.tunings.brLenPriorLambda * x) - \
-                        (self.mcmc.tunings.brLenPriorLambda * newY)
+                    theSum += (theProposal.brLenPriorLambda * x) - \
+                        (theProposal.brLenPriorLambda * newY)
                 else:
-                    theSum += (self.mcmc.tunings.brLenPriorLambdaForInternals * x) - (
-                        self.mcmc.tunings.brLenPriorLambdaForInternals * newY)
-                theSum += (self.mcmc.tunings.brLenPriorLambdaForInternals * (y - x)) - (
-                    self.mcmc.tunings.brLenPriorLambdaForInternals * (newX - newY))
+                    theSum += (theProposal.brLenPriorLambdaForInternals * x) - (
+                        theProposal.brLenPriorLambdaForInternals * newY)
+                theSum += (theProposal.brLenPriorLambdaForInternals * (y - x)) - (
+                    theProposal.brLenPriorLambdaForInternals * (newX - newY))
                 if c.isLeaf:
-                    theSum += (self.mcmc.tunings.brLenPriorLambda * (m - y)) - \
-                        (self.mcmc.tunings.brLenPriorLambda * (newM - newX))
+                    theSum += (theProposal.brLenPriorLambda * (m - y)) - \
+                        (theProposal.brLenPriorLambda * (newM - newX))
                 else:
-                    theSum += (self.mcmc.tunings.brLenPriorLambdaForInternals * (m - y)) - (
-                        self.mcmc.tunings.brLenPriorLambdaForInternals * (newM - newX))
+                    theSum += (theProposal.brLenPriorLambdaForInternals * (m - y)) - (
+                        theProposal.brLenPriorLambdaForInternals * (newM - newX))
 
             if 0:
                 # Slow check, via priorDensities.
-                theta1 = self.mcmc.tunings.brLenPriorLambda
-                theta2 = self.mcmc.tunings.brLenPriorLambdaForInternals
+                theta1 = theProposal.brLenPriorLambda
+                theta2 = theProposal.brLenPriorLambdaForInternals
 
                 if newX < newY:
                     if a.isLeaf:
-                        theta = self.mcmc.tunings.brLenPriorLambda
+                        theta = theProposal.brLenPriorLambda
                     else:
-                        theta = self.mcmc.tunings.brLenPriorLambdaForInternals
+                        theta = theProposal.brLenPriorLambdaForInternals
                     prDensNu1 = theta * math.exp(-theta * x)
                     prDensNuStar1 = theta * math.exp(-theta * newX)
 
-                    theta = self.mcmc.tunings.brLenPriorLambdaForInternals
+                    theta = theProposal.brLenPriorLambdaForInternals
                     prDensNu2 = theta * math.exp(-theta * (y - x))
                     prDensNuStar2 = theta * math.exp(-theta * (newY - newX))
                     if c.isLeaf:
-                        theta = self.mcmc.tunings.brLenPriorLambda
+                        theta = theProposal.brLenPriorLambda
                     else:
-                        theta = self.mcmc.tunings.brLenPriorLambdaForInternals
+                        theta = theProposal.brLenPriorLambdaForInternals
                     prDensNu3 = theta * math.exp(-theta * (m - y))
                     prDensNuStar3 = theta * math.exp(-theta * (newM - newY))
                 else:
                     if a.isLeaf:
-                        theta = self.mcmc.tunings.brLenPriorLambda
+                        theta = theProposal.brLenPriorLambda
                     else:
-                        theta = self.mcmc.tunings.brLenPriorLambdaForInternals
+                        theta = theProposal.brLenPriorLambdaForInternals
                     prDensNu1 = theta * math.exp(-theta * x)
                     prDensNuStar1 = theta * math.exp(-theta * newY)
 
-                    theta = self.mcmc.tunings.brLenPriorLambdaForInternals
+                    theta = theProposal.brLenPriorLambdaForInternals
                     prDensNu2 = theta * math.exp(-theta * (y - x))
                     prDensNuStar2 = theta * math.exp(-theta * (newX - newY))
                     if c.isLeaf:
-                        theta = self.mcmc.tunings.brLenPriorLambda
+                        theta = theProposal.brLenPriorLambda
                     else:
-                        theta = self.mcmc.tunings.brLenPriorLambdaForInternals
+                        theta = theProposal.brLenPriorLambdaForInternals
                     prDensNu3 = theta * math.exp(-theta * (m - y))
                     prDensNuStar3 = theta * math.exp(-theta * (newM - newX))
                 prRat = (prDensNuStar1 * prDensNuStar2 * prDensNuStar3) / \
@@ -924,14 +888,14 @@ if True:
             self.logPriorRatio = theSum
 
         else:  # Do not doInternalBrLenPrior
-            if self.mcmc.tunings.brLenPriorType == 'uniform':
+            if theProposal.brLenPriorType == 'uniform':
                 self.logPriorRatio = 0.0
-            elif self.mcmc.tunings.brLenPriorType == 'exponential':
-                self.logPriorRatio = self.mcmc.tunings.brLenPriorLambda *  (m - newM)
+            elif theProposal.brLenPriorType == 'exponential':
+                self.logPriorRatio = theProposal.brLenPriorLambda *  (m - newM)
                 if 0:  # Do the same calculation the long way, edge by edge.
                     # print "logPriorRatio = %+.4f" % self.logPriorRatio,
-                    foo0 = (self.mcmc.tunings.brLenPriorLambda * m) - \
-                        (self.mcmc.tunings.brLenPriorLambda * newM)
+                    foo0 = (theProposal.brLenPriorLambda * m) - \
+                        (theProposal.brLenPriorLambda * newM)
                     # print "%+.4f" % foo0,
 
                     foo = 0.0
@@ -946,13 +910,13 @@ if True:
                         # |(a)   +-------b
                         # |
                         # +------X
-                        foo += (self.mcmc.tunings.brLenPriorLambda * x) - \
-                            (self.mcmc.tunings.brLenPriorLambda * newX)
-                        foo += (self.mcmc.tunings.brLenPriorLambda * (y - x)) - \
-                            (self.mcmc.tunings.brLenPriorLambda *
+                        foo += (theProposal.brLenPriorLambda * x) - \
+                            (theProposal.brLenPriorLambda * newX)
+                        foo += (theProposal.brLenPriorLambda * (y - x)) - \
+                            (theProposal.brLenPriorLambda *
                              (newY - newX))
-                        foo += (self.mcmc.tunings.brLenPriorLambda * (m - y)) - \
-                            (self.mcmc.tunings.brLenPriorLambda *
+                        foo += (theProposal.brLenPriorLambda * (m - y)) - \
+                            (theProposal.brLenPriorLambda *
                              (newM - newY))
                     else:  # with topology change
                         #        newY    newX   newM
@@ -965,13 +929,13 @@ if True:
                         # |(a)   +-------d
                         # |
                         # +------X
-                        foo += (self.mcmc.tunings.brLenPriorLambda * x) - \
-                            (self.mcmc.tunings.brLenPriorLambda * newY)
-                        foo += (self.mcmc.tunings.brLenPriorLambda * (y - x)) - \
-                            (self.mcmc.tunings.brLenPriorLambda *
+                        foo += (theProposal.brLenPriorLambda * x) - \
+                            (theProposal.brLenPriorLambda * newY)
+                        foo += (theProposal.brLenPriorLambda * (y - x)) - \
+                            (theProposal.brLenPriorLambda *
                              (newX - newY))
-                        foo += (self.mcmc.tunings.brLenPriorLambda * (m - y)) - \
-                            (self.mcmc.tunings.brLenPriorLambda *
+                        foo += (theProposal.brLenPriorLambda * (m - y)) - \
+                            (theProposal.brLenPriorLambda *
                              (newM - newX))
                     # print "%+.4f" % foo
                     if (math.fabs(self.logPriorRatio - foo0) > 1.e-10):
@@ -1159,8 +1123,8 @@ if True:
         eX = None
         eY = None
 
-        etbrLambda = theProposal.tuning
-        etbrPExt = self.mcmc.tunings.etbrPExt
+        etbrLambda = theProposal.etbrLambda
+        etbrPExt = theProposal.etbrPExt
 
         if 0 and dbug:
             print("=" * 50)
@@ -1623,13 +1587,13 @@ if True:
         # branch length.  The number of internal branches does not change
         # (though the number of polytomies may change), so the topology prior
         # ratio is always 1.
-        if self.mcmc.tunings.brLenPriorType == 'exponential':
-            lnPrior = -self.mcmc.tunings.brLenPriorLambda * (vA1 - vA0)
+        if theProposal.brLenPriorType == 'exponential':
+            lnPrior = -theProposal.brLenPriorLambda * (vA1 - vA0)
             if x0Uncon:
-                lnPrior += -self.mcmc.tunings.brLenPriorLambda * (vX1 - vX0)
+                lnPrior += -theProposal.brLenPriorLambda * (vX1 - vX0)
             if y0Uncon:
-                lnPrior += -self.mcmc.tunings.brLenPriorLambda * (vY1 - vY0)
-        elif self.mcmc.tunings.brLenPriorType == 'uniform':
+                lnPrior += -theProposal.brLenPriorLambda * (vY1 - vY0)
+        elif theProposal.brLenPriorType == 'uniform':
             lnPrior = 0.0
 
         # The proposal ratio is the product of the proposal ratios for
@@ -1737,7 +1701,7 @@ if True:
         eY = None
 
         etbrLambda = theProposal.tuning
-        etbrPExt = self.mcmc.tunings.etbrPExt
+        etbrPExt = theProposal.etbrPExt
 
         if 0 and dbug:
             print("=" * 50)
@@ -2045,11 +2009,11 @@ if True:
             # More from Crux ...  The prior ratio is the product of the prior ratios
             # for each modified branch length.  The number of internal branches does
             # not change, so the topology prior ratio is always 1.
-            if self.mcmc.tunings.brLenPriorType == 'exponential':
-                lnPrior = -self.mcmc.tunings.brLenPriorLambda * (vA1 - vA0)
+            if theProposal.brLenPriorType == 'exponential':
+                lnPrior = -theProposal.brLenPriorLambda * (vA1 - vA0)
                 if x0Uncon:
-                    lnPrior += -self.mcmc.tunings.brLenPriorLambda * (vX1 - vX0)
-            elif self.mcmc.tunings.brLenPriorType == 'uniform':
+                    lnPrior += -theProposal.brLenPriorLambda * (vX1 - vX0)
+            elif theProposal.brLenPriorType == 'uniform':
                 lnPrior = 0.0
 
         # The proposal ratio is the product of the proposal ratios for
@@ -2195,7 +2159,7 @@ if True:
         eY = None
 
         etbrLambda = theProposal.tuning
-        etbrPExt = self.mcmc.tunings.etbrPExt
+        etbrPExt = theProposal.etbrPExt
 
         if 1 and dbug:
             print("=" * 80)
@@ -2753,11 +2717,11 @@ if True:
             # branch length.  The number of internal branches does not change
             # (though the number of polytomies may change), so the topology prior
             # ratio is always 1.
-            lnPrior = -self.mcmc.tunings.brLenPriorLambda * (vA1 - vA0)
+            lnPrior = -theProposal.brLenPriorLambda * (vA1 - vA0)
             if x0Uncon:
-                lnPrior += -self.mcmc.tunings.brLenPriorLambda * (vX1 - vX0)
+                lnPrior += -theProposal.brLenPriorLambda * (vX1 - vX0)
             if y0Uncon:
-                lnPrior += -self.mcmc.tunings.brLenPriorLambda * (vY1 - vY0)
+                lnPrior += -theProposal.brLenPriorLambda * (vY1 - vY0)
 
         # The proposal ratio is the product of the proposal ratios for
         # extension of each end of eA, as well as the branch multipliers.  The
@@ -2880,7 +2844,7 @@ if True:
         eY = None
 
         etbrLambda = theProposal.tuning
-        etbrPExt = self.mcmc.tunings.etbrPExt
+        etbrPExt = theProposal.etbrPExt
 
         if 1 and dbug:
             print("=" * 80)
@@ -3241,9 +3205,9 @@ if True:
             # ratio is always 1.
 
             # This needs fixing to accommodate uniform/exponential brLenPriorType. 
-            lnPrior = -self.mcmc.tunings.brLenPriorLambda * (vA1 - vA0)
+            lnPrior = -theProposal.brLenPriorLambda * (vA1 - vA0)
             if x0Uncon:
-                lnPrior += -self.mcmc.tunings.brLenPriorLambda * (vX1 - vX0)
+                lnPrior += -theProposal.brLenPriorLambda * (vX1 - vX0)
 
         # proposal ratio
         # For this, we need to know if y0 is a leaf (constrained) or not.
@@ -3450,13 +3414,13 @@ if True:
 
         # Choose a branch length for newNode.  See LewisHolderHolsinger eqn 6.
         newNode.br.len = - \
-            (1.0 / self.mcmc.tunings.brLenPriorLambda) * \
+            (1.0 / theProposal.brLenPriorLambda) * \
             math.log(1. - random.random())
         if newNode.br.len < var.BRLEN_MIN or newNode.br.len > var.BRLEN_MAX:
             safety = 0
             while newNode.br.len < var.BRLEN_MIN or newNode.br.len > var.BRLEN_MAX:
                 newNode.br.len = - \
-                    (1.0 / self.mcmc.tunings.brLenPriorLambda) * \
+                    (1.0 / theProposal.brLenPriorLambda) * \
                     math.log(1. - random.random())
                 safety += 1
                 if safety > 20:
@@ -3552,17 +3516,17 @@ if True:
         self.logProposalRatio = math.log(hastingsRatio)
 
         if 0:
-            priorRatio = self.mcmc.tunings.brLenPriorLambda * \
-                math.exp(- self.mcmc.tunings.brLenPriorLambda * newNode.br.len)
+            priorRatio = theProposal.brLenPriorLambda * \
+                math.exp(- theProposal.brLenPriorLambda * newNode.br.len)
             if dbug:
-                print("The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda)
+                print("The theProposal.brLenPriorLambda is %f" % theProposal.brLenPriorLambda)
                 print("So the prior ratio is %f" % priorRatio)
 
             self.logPriorRatio = math.log(priorRatio)
 
             # The Jacobian
-            jacobian = 1.0 / (self.mcmc.tunings.brLenPriorLambda *
-                              math.exp(- self.mcmc.tunings.brLenPriorLambda * newNode.br.len))
+            jacobian = 1.0 / (theProposal.brLenPriorLambda *
+                              math.exp(- theProposal.brLenPriorLambda * newNode.br.len))
             self.logJacobian = math.log(jacobian)
             print("logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian))
 
@@ -3572,7 +3536,7 @@ if True:
         self.logPriorRatio = 0.0
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
-        if self.mcmc.tunings.doPolytomyResolutionClassPrior:
+        if theProposal.doPolytomyResolutionClassPrior:
             # We are gaining a node.  So the prior ratio is T_{n,m + 1} /
             # (T_{n,m} * C) .  We have the logs, and the result is the
             # log.
@@ -3583,17 +3547,17 @@ if True:
                 print('logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes])
                 # print
                 # math.exp(theProposal.logBigT[self.curTree.nInternalNodes])
-                print('C ', self.mcmc.tunings.polytomyPriorLogBigC)
+                print('C ', theProposal.polytomyPriorLogBigC)
                 print('logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes])
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
                 print("-" * 30)
             self.logPriorRatio = (theProposal.logBigT[self.curTree.nInternalNodes] -
-                                  (self.mcmc.tunings.polytomyPriorLogBigC +
+                                  (theProposal.polytomyPriorLogBigC +
                                    theProposal.logBigT[pTree.nInternalNodes]))
 
         else:
-            if self.mcmc.tunings.polytomyPriorLogBigC:
-                self.logPriorRatio = -self.mcmc.tunings.polytomyPriorLogBigC
+            if theProposal.polytomyPriorLogBigC:
+                self.logPriorRatio = -theProposal.polytomyPriorLogBigC
             else:
                 self.logPriorRatio = 0.0
         # print "\ngaining a node, m %2i->%2i. logPriorRatio is %f" % (self.curTree.nInternalNodes,
@@ -3750,17 +3714,17 @@ if True:
             # branch length is lambda * exp(-lambda * nu).  To a first
             # approximation, with equal priors on topologies, the prior ratio
             # is 1/f(nu)
-            priorRatio = 1.0 / (self.mcmc.tunings.brLenPriorLambda *
-                                math.exp(- self.mcmc.tunings.brLenPriorLambda * theChosenNode.br.len))
+            priorRatio = 1.0 / (theProposal.brLenPriorLambda *
+                                math.exp(- theProposal.brLenPriorLambda * theChosenNode.br.len))
             if dbug:
-                print("The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda)
+                print("The theProposal.brLenPriorLambda is %f" % theProposal.brLenPriorLambda)
                 print("So the prior ratio is %f" % priorRatio)
 
             self.logPriorRatio = math.log(priorRatio)
 
             # The Jacobian
-            jacobian = self.mcmc.tunings.brLenPriorLambda * \
-                math.exp(- self.mcmc.tunings.brLenPriorLambda *
+            jacobian = theProposal.brLenPriorLambda * \
+                math.exp(- theProposal.brLenPriorLambda *
                          theChosenNode.br.len)
             self.logJacobian = math.log(jacobian)
             print("logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian))
@@ -3772,7 +3736,7 @@ if True:
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
 
-        if self.mcmc.tunings.doPolytomyResolutionClassPrior:
+        if theProposal.doPolytomyResolutionClassPrior:
             # We are losing a node.  So the prior ratio is (T_{n,m} * C) /
             # T_{n,m - 1}.  We have the logs, and the result is the log.
             if 0:
@@ -3782,17 +3746,17 @@ if True:
                 print('logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes])
                 # print
                 # math.exp(theProposal.logBigT[self.curTree.nInternalNodes])
-                print('C ', self.mcmc.tunings.polytomyPriorLogBigC)
+                print('C ', theProposal.polytomyPriorLogBigC)
                 print('logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes])
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
                 print("-" * 30)
             self.logPriorRatio = ((theProposal.logBigT[self.curTree.nInternalNodes] +
-                                   self.mcmc.tunings.polytomyPriorLogBigC) -
+                                   theProposal.polytomyPriorLogBigC) -
                                   theProposal.logBigT[pTree.nInternalNodes])
 
         else:
-            if self.mcmc.tunings.polytomyPriorLogBigC:
-                self.logPriorRatio = self.mcmc.tunings.polytomyPriorLogBigC
+            if theProposal.polytomyPriorLogBigC:
+                self.logPriorRatio = theProposal.polytomyPriorLogBigC
             else:
                 self.logPriorRatio = 0.0
 

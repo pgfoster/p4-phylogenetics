@@ -15,7 +15,7 @@ def pepper(self, proportion=0.1, andAmbiguities=1):
             else:
                 if random.random() < proportion:
                     s.sequence[i] = '-'
-        s.sequence = string.join(s.sequence, '')
+        s.sequence = ''.join(s.sequence)
 
 Alignment.pepper = pepper
 del(pepper)

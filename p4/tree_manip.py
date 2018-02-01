@@ -1,7 +1,6 @@
 from __future__ import print_function
 import sys
 import string
-import types
 import math
 import copy
 import os
@@ -32,18 +31,18 @@ if True:
 
         gm = ['Tree.node()']
 
-        if type(specifier) == types.IntType:
+        if isinstance(specifier, int):
             nodeNum = specifier
-        elif type(specifier) == numpy.int32:
+        elif isinstance(specifier, numpy.int32):
             nodeNum = specifier
-        elif isinstance(specifier, Node):   # if its a node object
+        elif isinstance(specifier, Node):
             if specifier in self.nodes:
                 return specifier
             else:
                 gm.append(
                     "The specifier is a node object, but is not part of self.")
                 raise P4Error(gm)
-        elif type(specifier) == types.StringType:   # if its a string
+        elif isinstance(specifier, str):
             for n in self.iterNodes():
                 if n.name == specifier:
                     return n
@@ -1194,7 +1193,7 @@ if True:
                         cycleType = LAST_CYCLE
                         # print "We are now in the last cycle.  hasFreqOnly=%s"
                         # % hasFreqOnly
-                        splitLine = string.split(prevLine)
+                        splitLine = prevLine.split()
                         thisKeyLength = len(splitLine[0])
                         keyCounter = 0
                     elif cycleType == MIDDLE_CYCLE:
@@ -1228,7 +1227,7 @@ if True:
                         # It will usually be a line like: ...*....*.     67.83  67.9%
                         # But it will sometimes be a line like: ...*....*.
                         # 68
-                        splitLine = string.split(aLine)
+                        splitLine = aLine.split()
                         theKey = splitLine[0]
                         if hasFreqOnly:
                             theSupport = float(splitLine[-1])
@@ -1296,14 +1295,11 @@ if True:
                 if not n.isLeaf:
                     theNodeSplitString = p4.func.getSplitStringFromKey(
                         n.br.splitKey, self.nTax)
-                    if theHash.has_key(theNodeSplitString):
+                    if theNodeSplitString in theHash:
                         if hasattr(n.br, 'support') and n.br.support is not None:
-                            gm.append(
-                                "Node %i already has a br.support." % n.nodeNum)
-                            gm.append(
-                                "I am refusing to clobber it with the split support.")
-                            gm.append(
-                                "Either fix the tree or fix this method.")
+                            gm.append("Node %i already has a br.support." % n.nodeNum)
+                            gm.append("I am refusing to clobber it with the split support.")
+                            gm.append("Either fix the tree or fix this method.")
                             raise P4Error(gm)
                         n.br.support = float(theHash[theNodeSplitString])
         return theHash
@@ -1373,19 +1369,23 @@ if True:
 
         gm = ["Tree.restoreNamesFromRenameForPhylip()"]
         if os.path.exists(dictFName):
-            import __main__
-            execfile(dictFName, __main__.__dict__,  __main__.__dict__)
-            from __main__ import p4_renameForPhylip_dict, p4_renameForPhylip_originalNames
+            loc = {}
+            exec(open(dictFName).read(), {},  loc)
+            try:
+                p4_renameForPhylip_dict = loc['p4_renameForPhylip_dict']
+                p4_renameForPhylip_originalNames = loc['p4_renameForPhylip_originalNames']
+            except KeyError:
+                gm.append("Dict file %s exists, but I can't read it correctly." % dictFName)
+                raise P4Error(gm)
         else:
             gm.append("The dictionary file '%s' can't be found." % dictFName)
             raise P4Error(gm)
         for n in self.iterNodes():
             if n.isLeaf:
-                if p4_renameForPhylip_dict.has_key(n.name):
+                if n.name in p4_renameForPhylip_dict:
                     n.name = p4_renameForPhylip_dict[n.name]
                 else:
-                    gm.append(
-                        "The dictionary does not contain a key for '%s'." % n.name)
+                    gm.append("The dictionary does not contain a key for '%s'." % n.name)
                     raise P4Error(gm)
         if p4_renameForPhylip_originalNames:
             self.taxNames = p4_renameForPhylip_originalNames
@@ -1394,8 +1394,7 @@ if True:
                 gm.append("self.taxNames is set, and should be replaced, but")
                 gm.append("p4_renameForPhylip_originalNames is None. ?!?")
                 raise P4Error(gm)
-        del(__main__.p4_renameForPhylip_dict)
-        del(__main__.p4_renameForPhylip_originalNames)
+
 
     def restoreDupeTaxa(self, dictFileName='p4DupeSeqRenameDict.py', asMultiNames=True):
         """Restore previously removed duplicate taxa from a dict file.
@@ -1422,7 +1421,7 @@ if True:
             gm.append("Can't find dict file '%s'" % dictFileName)
             raise P4Error(gm)
         loc = {}
-        execfile(dictFileName, {}, loc)
+        exec(open(dictFileName).read(), {}, loc)
         try:
             p4DupeSeqRenameDict = loc['p4DupeSeqRenameDict']
         except KeyError:

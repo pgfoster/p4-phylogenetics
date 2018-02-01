@@ -53,12 +53,17 @@ class Numbers(object):
         #self.range = None
         # self.col
         # self.skip
-        if type(inThing) == numpy.ndarray:
+        if isinstance(inThing, numpy.ndarray):
             inThing = list(inThing)
         if inThing:
             self.read(inThing, col, skip)
 
-    def _setBinSize(self, binSize):
+    @property
+    def binSize(self):
+        return self._binSize
+
+    @binSize.setter
+    def binSize(self, binSize):
         try:
             theBinSize = float(binSize)
         except (ValueError, TypeError):
@@ -67,10 +72,9 @@ class Numbers(object):
             raise P4Error("Arg binSize, if set, should be a positive float.")
         self._binSize = theBinSize
 
-    def _delBinSize(self):
+    @binSize.deleter
+    def binSize(self):
         self._binSize = None
-
-    binSize = property(lambda self: self._binSize, _setBinSize, _delBinSize)
 
     def read(self, inThing, col=0, skip=0):
         """Slurp in some more numbers.
@@ -79,7 +83,7 @@ class Numbers(object):
         than one list or file.  """
 
         gm = ['Numbers.read()']
-        if type(inThing) == type('string') and os.path.isfile(inThing):
+        if isinstance(inThing, str) and os.path.isfile(inThing):
             # col and skip only come into play if its a file.
             try:
                 self.col = int(col)
@@ -119,7 +123,7 @@ class Numbers(object):
                         try:
                             theOne = splitLine[col]
                         except IndexError:
-                            gm.append("Line '%s'.  " % string.rstrip(aLine))
+                            gm.append("Line '%s'.  " % aLine.rstrip())
                             gm.append(
                                 "Can't get the item at (zero-based) index %i  " % col)
                             raise P4Error(gm)
@@ -127,10 +131,10 @@ class Numbers(object):
                             aFloat = float(theOne)
                             self.data.append(aFloat)
                         except (ValueError, TypeError):
-                            gm.append("Line '%s'.  " % string.rstrip(aLine))
+                            gm.append("Line '%s'.  " % aLine.rstrip())
                             gm.append("Can't make sense of '%s'" % theOne)
                             raise P4Error(gm)
-        elif type(inThing) == type([]):
+        elif isinstance(inThing, list):
             for thing in inThing:
                 try:
                     aFloat = float(thing)

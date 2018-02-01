@@ -4,7 +4,7 @@ import pyublas # not explicitly used--but makes converters available
 
 nTax = 7
 import string
-tNames = list(string.uppercase[:nTax])
+tNames = list(string.ascii_uppercase[:nTax])
 
 # Here is a supertree, the first of many.
 var.warnReadNoFile = False
@@ -53,20 +53,20 @@ for t in var.trees:
 
 #tr.dump()
 #frrf.dump()
-#print "=" * 25
+#print("=" * 25)
 frrf.setInTreeTaxBits()
 #frrf.dump()
 frrf.setInTreeInternalBits()
 frrf.maybeFlipInTreeBits()
-print
+print()
 frrf.setBigTInternalBits()
-print "-" * 50
+print("-" * 50)
 #frrf.dump()
 sd = frrf.getLogLike(1.)
-print sd
+print(sd)
 rfDist = bigT.inputTreesToSuperTreeDistances(var.trees, doSd=True, doScqdist=False)
-print rfDist
-print "====="
+print(rfDist)
+print("=====")
 #frrf.dump()
 
 if 0:
@@ -88,14 +88,14 @@ if 0:
                     bigTr.setSibling(n.nodeNum, n.sibling.nodeNum)
             frrf.setBigTInternalBits()
             sd = frrf.getSymmDiff()
-            #print sd
+            #print(sd)
             if 1:
                 rfDist = bigT.inputTreesToSuperTreeDistances(var.trees, doSd=True, doScqdist=False)
                 if sd == rfDist:
                     pass
-                    #print "ok"
+                    #print("ok")
                 else:
-                    print "====================== differs ", sd, rfDist
+                    print("====================== differs ", sd, rfDist)
                 
         
     

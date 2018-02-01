@@ -11,8 +11,7 @@ import string
 import p4.func
 import re
 import sys
-import array
-import types
+import random
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix
@@ -21,6 +20,7 @@ from p4.part import Part
 import numpy
 import numpy.linalg
 from p4.alignment import ExcludeDelete
+from p4.geneticcode import GeneticCode
 
 if True:
     def simpleConstantMask(self, ignoreGapQ=True, invert=False):
@@ -54,7 +54,7 @@ if True:
 
         """
         nTaxRange = range(self.nTax)
-        mask = array.array('c', self.length * '0')
+        mask = ['0'] * self.length
         for seqPos in range(self.length):
             theSlice = self.sequenceSlice(seqPos)
             # print("%2i: %s" % (seqPos, theSlice))
@@ -101,8 +101,7 @@ if True:
                 elif mask[seqPos] == '1':
                     mask[seqPos] = '0'
 
-        # print("mask = %s" %  mask.tostring())
-        return mask.tostring()
+        return ''.join(mask)
 
     def constantMask(self, invert=None):
         """Returns a mask string with 1 at constant sites, and 0 otherwise.
@@ -138,7 +137,7 @@ if True:
         # and fast are tried first.  Only if there are ambiguities
         # (equates) does it get time-consuming.
 
-        mask = array.array('c', self.length * '0')
+        mask = ['0'] * self.length
         for seqPos in range(self.length):
             theSlice = self.sequenceSlice(seqPos)
             # print("%2i: %s" % (seqPos, theSlice))
@@ -168,7 +167,7 @@ if True:
                         if aChar in self.symbols:
                             symbolsSlice[nSymbolChars] = aChar
                             nSymbolChars += 1
-                        elif self.equates.has_key(aChar):
+                        elif aChar in self.equates:
                             equatesSlice[nEquateChars] = aChar
                             nEquateChars += 1
 
@@ -292,14 +291,12 @@ if True:
                 elif mask[seqPos] == '1':
                     mask[seqPos] = '0'
 
-        # print("mask = %s" %  mask.tostring())
-        return mask.tostring()
+        return ''.join(mask)
 
     def gappedMask(self, invert=None):
         """Returns a mask string with 1 at positions with any gaps, and 0 otherwise."""
 
-        import array
-        mask = array.array('c', self.length * '0')
+        mask = ['0'] * self.length
         for i in range(self.length):
             theSlice = self.sequenceSlice(i)
             # if theSlice.count('-') == len(self.sequences):
@@ -313,7 +310,7 @@ if True:
                 elif mask[i] == '1':
                     mask[i] = '0'
 
-        return mask.tostring()
+        return ''.join(mask)
 
     def getLikelihoodTopologyInformativeSitesMask(self):
         """Make and return a mask for those sites that are likelihood informative about the topology.
@@ -360,7 +357,7 @@ if True:
         assert self.nTax > 2
         mask = ['0'] * len(self)
         if self.equates:
-            equateKeys = self.equates.keys()
+            equateKeys = list(self.equates)
         else:
             equateKeys = []
         counts = [0] * self.dim  # re-zero every loop
@@ -507,7 +504,7 @@ if True:
                     pass
             hitsAtThisPos = 0
             thereIsASingleton = False  
-            for k,v in counters.iteritems():
+            for k,v in counters.items():
                 if v:
                     hitsAtThisPos += 1
                     if v == 1:
@@ -552,7 +549,7 @@ if True:
                 except KeyError:
                     pass
             hitsAtThisPos = 0
-            for k,v in counters.iteritems():
+            for k,v in counters.items():
                 if v:
                     hitsAtThisPos += 1
                 counters[k] = 0                # Initialize for next pos
@@ -618,7 +615,7 @@ if True:
                     pass
             hitsAtThisPos = 0
             thereIsASingleton = False  
-            for k,v in counters.iteritems():
+            for k,v in counters.items():
                 if v:
                     hitsAtThisPos += 1
                     if v == 1:
@@ -647,18 +644,17 @@ if True:
         gm = ["Alignment.orMasks()"]
 
         # check for silliness
-        if type(maskA) != type('str'):
+        if not isinstance(maskA, str):
             gm.append("Alignment: orMasks(). Masks must be strings.")
             raise P4Error(gm)
-        if type(maskB) != type('str'):
+        if not isinstance(maskB, str):
             gm.append("Alignment: orMasks(). Masks must be strings.")
             raise P4Error(gm)
         if len(maskA) != self.length or len(maskB) != self.length:
             gm.append("Masks must be the same length as the alignment.")
             raise P4Error(gm)
         l = self.length
-        import array
-        orMask = array.array('c', self.length * '0')
+        orMask = ['0'] * self.length
         for i in range(l):
             # if maskA[i] == '1' and maskB[i] == '1':
             #    orMask[i] = '1'
@@ -674,7 +670,7 @@ if True:
                 raise P4Error(gm)
             if iA or iB:
                 orMask[i] = '1'
-        return orMask.tostring()
+        return ''.join(orMask)
 
     def andMasks(self, maskA, maskB):
         """Given two masks, this logically and's the string chars.
@@ -687,34 +683,26 @@ if True:
         gm = ['Alignment.andMasks']
 
         # check for silliness
-        if type(maskA) != type('str'):
+        if not isinstance(maskA, str):
             gm.append("Masks must be strings.")
             raise P4Error(gm)
-        if type(maskB) != type('str'):
+        if not isinstance(maskB, str):
             gm.append("Masks must be strings.")
             raise P4Error(gm)
         if len(maskA) != self.length or len(maskB) != self.length:
             gm.append("Masks must be the same length as the alignment.")
             raise P4Error(gm)
-        l = self.length
-        import array
-        andMask = array.array('c', self.length * '0')
-        for i in range(l):
+
+        andMask = ['0'] * self.length
+        for i in range(self.length):
             # if maskA[i] == '1' and maskB[i] == '1':
             #    orMask[i] = '1'
-            try:
-                iA = int(maskA[i])
-                iB = int(maskB[i])
-            except ValueError:
-                gm.append(
-                    "All mask characters must be convertable to integers")
-                raise P4Error(gm)
             if iA not in [0, 1] or iB not in [0, 1]:
                 gm.append("All mask characters must be zero or 1")
                 raise P4Error(gm)
             if iA and iB:
                 andMask[i] = '1'
-        return andMask.tostring()
+        return ''.join(andMask)
 
     def sequenceSlice(self, pos):
         """Returns a list composed of the characters from the alignment at position pos.
@@ -731,7 +719,7 @@ if True:
                 sList = []
                 for i in range(len(self.sequences)):
                     sList.append(self.sequences[i].sequence[pos])
-                # return string.join(sList, '')
+                # return ''.join(sList)
                 return sList
             else:
                 raise P4Error("Alignment.sequenceSlice().  pos out of range")
@@ -903,7 +891,7 @@ if True:
         sequences site by site as long as there are no gaps or
         ambiguities.  """
 
-        from alignment import Alignment
+        from p4.alignment import Alignment
         dbug = 0
         seqCount = len(self.sequences)
         newAlig = Alignment()
@@ -957,17 +945,16 @@ if True:
                     for j in range(seqCount):
                         newAlig.sequences[j].sequence.append(theSlice[j])
         for j in range(seqCount):
-            newAlig.sequences[j].sequence = string.join(
-                newAlig.sequences[j].sequence, '')
+            newAlig.sequences[j].sequence = ''.join(newAlig.sequences[j].sequence)
         newAlig.checkLengthsAndTypes()
         return newAlig
 
     def hasGapsOrAmbiguities(self):
         """Asks whether self has any gaps or ambiguities."""
 
-        ambigs = self.equates.keys()
+        ambigs = list(self.equates.keys())
         ambigs.append('-')
-        ambigs = string.join(ambigs, '')
+        ambigs = ''.join(ambigs)
         # print("got ambigs = '%s'" % ambigs)
 
         for s in self.sequences:
@@ -995,7 +982,6 @@ if True:
                 "This only works with Alignments having only one data partition.")
             raise P4Error(gm)
 
-        import copy
         # although we will be replacing the sequences...
         a = copy.deepcopy(self)
         n = len(self.sequences)
@@ -1006,14 +992,13 @@ if True:
             one = ['a'] * self.length
             newList.append(one)
         # fill the array with random slices from the sequences
-        import random
         for j in range(self.length):
             r = int(self.length * random.random())
             for i in range(n):
                 newList[i][j] = self.sequences[i].sequence[r]
         # replace the sequences
         for i in range(n):
-            a.sequences[i].sequence = string.join(newList[i], '')
+            a.sequences[i].sequence = ''.join(newList[i])
         return a
 
     def compositionEuclideanDistanceMatrix(self):
@@ -1025,8 +1010,6 @@ if True:
         the frequencies of character states of one pair of sequences.
         """
 
-        from distancematrix import DistanceMatrix
-        import math
         d = DistanceMatrix()
         d.setDim(len(self.sequences))
         d.names = []
@@ -1062,13 +1045,13 @@ if True:
         gm = ['Alignment.covarionStats()']
 
         # listA and listB should be lists
-        if type(listA) != type([1, 2]) or type(listB) != type([1, 2]):
+        if not isinstance(listA, list) or not isinstance(listB, list):
             gm.append("The args should be lists of sequences numbers or names")
             raise P4Error(gm)
         lstA = []
         lstB = []
         for i in listA:
-            if type(i) == type('string'):
+            if isinstance(i, str):
                 it = None
                 for s in range(len(self.sequences)):
                     if self.sequences[s].name == i:
@@ -1077,7 +1060,7 @@ if True:
                     gm.append("Name '%s' is not in self." % i)
                     raise P4Error(gm)
                 lstA.append(it)
-            elif type(i) == type(1) and i >= 0 and i < len(self.sequences):
+            elif isinstance(i, int) and i >= 0 and i < len(self.sequences):
                 lstA.append(i)
             else:
                 gm.append(
@@ -1085,7 +1068,7 @@ if True:
                 raise P4Error(gm)
 
         for i in listB:
-            if type(i) == type('string'):
+            if isinstance(i, str):
                 it = None
                 for s in range(len(self.sequences)):
                     if self.sequences[s].name == i:
@@ -1094,7 +1077,7 @@ if True:
                     gm.append("Name '%s' is not in self." % i)
                     raise P4Error(gm)
                 lstB.append(it)
-            elif type(i) == type(1) and i >= 0 and i < len(self.sequences):
+            elif isinstance(i, int) and i >= 0 and i < len(self.sequences):
                 lstB.append(i)
             else:
                 gm.append(
@@ -1179,7 +1162,6 @@ if True:
         If divideByNPositionsCompared is turned off, then the number of
         differences is divided by the length of the alignment.  """
 
-        from distancematrix import DistanceMatrix
         d = DistanceMatrix()
         d.setDim(len(self.sequences))
         d.names = []
@@ -1291,6 +1273,7 @@ if True:
                     gm.append("Unknown character state '%s'" % c)
                     raise P4Error(gm)
             s.sequence = string.join(s.sequence, '')
+
         self.dataType = 'standard'
         self.equates = {}
         self.dim = 6
@@ -1325,12 +1308,12 @@ if True:
             gm.append("This is only for protein alignments.")
             raise P4Error(gm)
 
-        assert type(groups) == types.ListType
+        assert isinstance(groups, list)
         nGroups = len(groups)
         assert nGroups > 1
         assert nGroups < 20
         for gr in groups:
-            assert type(gr) == types.StringType
+            assert isinstance(gr, str)
         myGroups = [gr.lower() for gr in groups]
         theseSymbols = ''.join(myGroups)
         assert len(theseSymbols) == 20
@@ -1461,7 +1444,7 @@ if True:
             gm.append("Self should be a DNA alignment.")
             raise P4Error(gm)
         if not theProteinAlignment or \
-                type(theProteinAlignment) != type(self) or \
+                not isinstance(theProteinAlignment, p4.alignment.Alignment) or \
                 theProteinAlignment.dataType != 'protein':
             gm.append("Something wrong with theProteinAlignment")
             raise P4Error(gm)
@@ -1487,7 +1470,6 @@ if True:
                       (theProteinAlignment.length, (3 * theProteinAlignment.length)))
             raise P4Error(gm)
 
-        from geneticcode import GeneticCode
         gc = GeneticCode(transl_table)
 
         pLen = theProteinAlignment.length
@@ -1507,7 +1489,7 @@ if True:
                 elif theCodon.count('-'):
                     print("    position %4i, codon '%s' is incomplete" % (j, theCodon))
                     crimes += 1
-                # elif gc.code.has_key(theCodon):
+                # elif theCodon in gc.code:
                 #     if gc.code[theCodon] != s2.sequence[j]:
                 #         print "    position %4i, codon '%s' is '%s', should be '%s'" % (
                 #             j, theCodon, s2.sequence[j], gc.code[theCodon])
@@ -1593,12 +1575,10 @@ if True:
             s.sequence = ['-'] * a.length
             s.dataType = 'protein'
 
-        from geneticcode import GeneticCode
         gc = GeneticCode(transl_table)
 
-        dnaEquates = self.equates.keys()
-        # print dnaEquates  # ['b', 'd', 'h', 'k', 'm', 'n', 's', 'r', 'w',
-        # 'v', 'y']
+        # dnaEquates = self.equates.keys()
+        # print dnaEquates  # ['b', 'd', 'h', 'k', 'm', 'n', 's', 'r', 'w', 'v', 'y']
 
         for i in range(len(self.sequences)):
             dnaSeq = self.sequences[i].sequence
@@ -1630,7 +1610,7 @@ if True:
                                 i, self.sequences[i].name, theCodon))
 
         for s in a.sequences:
-            s.sequence = string.join(s.sequence, '')
+            s.sequence = ''.join(s.sequence)
             # print(s.sequence)
         return a
 
@@ -1640,7 +1620,7 @@ if True:
         gm = ['Alignment.excludeCharSet()']
         if not self.nexusSets:
             self.setNexusSets()
-        lowName = string.lower(theCharSetName)
+        lowName = theCharSetName.lower()
         theCS = None
 
         # We have either a pre-defined or non pre-defined char set
@@ -1688,8 +1668,7 @@ if True:
 
     def dupe(self):
         """Duplicates self, with no c-pointers.  And no parts"""
-        from copy import deepcopy
-        theDupe = deepcopy(self)
+        theDupe = copy.deepcopy(self)
         for p in theDupe.parts:
            p.alignment = theDupe
            p.cPart = None
@@ -1781,7 +1760,7 @@ if True:
                     s.sequence[j] = dnaSeq.sequence[dnaPos:dnaPos + 3]
                     dnaPos = dnaPos + 3
                 # print(", codon %s" %  s.sequence[j])
-            s.sequence = string.join(s.sequence, '')
+            s.sequence = ''.join(s.sequence)
             # print(s.sequence)
             a.sequences.append(s)
 
@@ -1874,8 +1853,8 @@ if True:
         # if sequenceType == 'p':
         #    if self.dataType != 'protein':
         #        errors.append("Gblocks sequenceType is p, but this alignment is dataType %s" % self.dataType)
-        if isinstance(b1, types.NoneType):
-            if not isinstance(b2, types.NoneType):
+        if b1 is None:
+            if b2 is not None:
                 errors.append(
                     "\tYou must set b1 and b2 together or not at all")
                 errors.append(
@@ -1884,7 +1863,7 @@ if True:
                     "\tb2 = Minimum number of sequences for a flank position")
             pass
         else:
-            if not isinstance(b1, types.IntType):
+            if not isinstance(b1, int):
                 errors.append(
                     "\tb1 (Minimum number of sequences for a conserved position)")
                 errors.append("\tmust be None or an integer")
@@ -1899,20 +1878,20 @@ if True:
                         "\tb1 (Minimum number of sequences for a conserved position)")
                     errors.append(
                         "\tmust be > than the number of taxa in matrix /2")
-        if isinstance(b2, types.NoneType):
+        if b2 is None:
             pass
         else:
-            if not isinstance(b2, types.IntType):
+            if not isinstance(b2, int):
                 errors.append(
                     "\tb2 (Minimum number of sequences for a flank position)")
                 errors.append("\tmust be None or an integer")
             elif b2 < b1:
                 errors.append(
                     "\tb2 (Minimum number of sequences for a flank position) must be >= b1")
-        if not isinstance(b3, types.IntType):
+        if not isinstance(b3, int):
             errors.append(
                 "\tb3 (Maximum Number Of Contiguous Nonconserved Positions) must be an integer")
-        if not isinstance(b4, types.IntType):
+        if not isinstance(b4, int):
             errors.append(
                 "\tb4 (Minimum Length Of A Block) must be an integer")
         if b5 not in ['n', 'h', 'a']:
@@ -1958,11 +1937,10 @@ if True:
         outputMaskFileName = fastaFileName + "-gbMask"
 
         try:
-            fh = open(outputTextFileName, 'rU')
+            fh = open(outputTextFileName, 'r')
         except IOError:
-            gm.append("\tUnable to read output from GBlocks")
-            gm.append(
-                "\tCheck that Gblocks is in your $PATH or set 'pathToGBlocks'")
+            gm.append("Unable to read output from GBlocks")
+            gm.append("Check that Gblocks is in your $PATH or set 'pathToGBlocks'")
             os.remove(fastaFileName)
             raise P4Error(gm)
 
@@ -1983,8 +1961,7 @@ if True:
         # make sure its the Gblocks line
         aLine = fLines[spot].rstrip()
         if not aLine.endswith("Gblocks"):
-            gm.append(
-                "Something wrong with reading the mask file.  No Gblocks line.")
+            gm.append("Something wrong with reading the mask file.  No Gblocks line.")
             raise P4Error(gm)
 
         # collect lines until the end of the fLines
@@ -2125,7 +2102,7 @@ if True:
                     counters[c] += 1
             #hits = 0
             hitsAtThisPos = 0
-            for k, v in counters.iteritems():
+            for k, v in counters.items():
                 if v:
                     hitsAtThisPos += 1
                     counters[k] = 0
@@ -2137,14 +2114,14 @@ if True:
                     hits += hitsAtThisPos
                     nPos += 1
             if showDistribution:
-                if distro.has_key(hitsAtThisPos):
+                if hitsAtThisPos in distro:
                     distro[hitsAtThisPos] += 1
                 else:
                     distro[hitsAtThisPos] = 1
             # print pos, hits
         #print(hits, nPos)
         if showDistribution:
-            kk = distro.keys()
+            kk = list(distro.keys())
             kk.sort()
             theMin = kk[0]
             theMax = kk[-1]
@@ -2624,9 +2601,6 @@ if True:
         From share/examples/kosiol_ais.html
         This writes files.
         """
-        #import subprocess
-        import numpy
-        import numpy.linalg
         gm = ["Alignment.writeKosiolAISFiles() "]
         if not tree.model:
             gm.append("Requires a tree with an optimimised model attached.")

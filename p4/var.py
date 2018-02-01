@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy
-import types
 from p4.p4exceptions import P4Error
 
 # A           Ala            Alanine
@@ -207,8 +206,6 @@ class Var(object):
 
         self.SAME = 0
         self.DIFFERENT = 1
-        self.OK = 0
-        self.NOT_OK = 1
 
         # The python that shiped with MacOS was usually old and was
         # not built with readline.  Thats ok, 'cuz it was easy enough
@@ -250,11 +247,6 @@ class Var(object):
         self._nexus_getAllCommandComments = numpy.array(
             [0], numpy.int32)            # all [&...]
         self._nexus_getLineEndingsAsTokens = numpy.array([0], numpy.int32)
-
-        # nextTok in C, from NexusToken2.  Does not work for CStrings.
-        # This week it is turned off, for python3 compatibility.
-        # The speedup is only up to about 2x, so I'm not sure it is worth the bother.
-        self.nexus_doFastNextTok = False
 
         self.rMatrixProteinSpecs = ['cpREV', 'd78', 'jtt', 'mtREV24', 'mtmam',
                                     'wag', 'rtRev', 'tmjtt94', 'tmlg99', 'lg',
@@ -321,8 +313,6 @@ class Var(object):
         # self._nexus_getWeightCommandComments = 1         # all [&w ...]
         # self._nexus_getAllCommandComments = 0            # all [&...]
         # self._nexus_getLineEndingsAsTokens = 0
-        # # nextTok in C, from NexusToken2.  Does not work for CStrings.
-        # self.nexus_doFastNextTok = False
         # self._rMatrixNormalizeTo1 = 1
         self._interactiveHelper = None
         self._excepthookEditor = None

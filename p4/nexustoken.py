@@ -2,7 +2,6 @@ from __future__ import print_function
 import os
 import string
 import sys
-import types
 from p4.var import var
 from p4.p4exceptions import P4Error
 
@@ -70,25 +69,6 @@ def nextTok(flob):
 
     """
 
-    #global pieces
-    #global wordIsFinished
-    # if not flob:
-    #    if 1:
-    #        print '\nNexusToken.nextTok()'
-    #        print "    No flob?"
-    #        import sys; sys.exit()
-    #    else:
-    #        return None
-
-    # It may be that the last tok returned was a comment, but we
-    # know that there is a word in pieces that is finished.  So
-    # just return it.
-    # if wordIsFinished:
-    #    assert pieces
-    #    ret = ''.join(pieces)
-    #    wordIsFinished = False
-    #    pieces = []
-    #    return ret
 
     global comment
 
@@ -98,7 +78,6 @@ def nextTok(flob):
         return ret
 
     while 1:
-
         c = flob.read(1)
         if 0:
             if c == '\n' or c == '\r':
@@ -118,21 +97,21 @@ def nextTok(flob):
         if c in string.whitespace:
             continue
         elif c == '[':
-            ret = _handleComment(flob)
+            ret = _handleComment(flob, c)
             if ret:
                 return ret
             else:
                 continue
         elif c == "'":
             return _getQuotedStuff(flob)
-        # elif c in var.nexus_punctuation:
         elif c in var.punctuation:
             return c
         else:
-            return _getWord(flob)
+            # print("nt %3i  %s" % (flob.tell(), c))
+            return _getWord(flob, c)
 
 
-def _handleComment(flob):
+def _handleComment(flob, c0):
     """Do the right thing with [a nexus comment].
 
     The only comments we are interested in are the tree weights, eg
@@ -145,52 +124,48 @@ def _handleComment(flob):
     #   nexus_getWeightCommandComments  # all [&w ...]
     #   nexus_getAllCommandComments     # all [&...]
 
-    # We are here having read the opening '[' character.
-    commentStartPos = flob.tell() - 1
+    gm = ["nexustoken._handleComment()"]
+    localPieces = [c0]
+    # presumably c0 is '['
 
     c = flob.read(1)
-    # empty string, ie at the end of the flob.  level can be assumed to be
-    # more than zero.
+    localPieces.append(c)
     if not c:
-        gm = ["NexusToken._skipComment()"]
-        gm.append("Reached the end while still in a comment.")
+        # empty string, ie at the end of the flob.  level can be assumed to be
+        # more than zero.
+        gm.append("Reached the end while still in a comment. No comment close.")
         raise P4Error(gm)
-    if 0:
-        if c in string.whitespace:
-            print("hc %3i whitespace" % flob.tell())
-        else:
-            print("hc %3i  %s" % (flob.tell(), c))
     if c == ']':
-        return None
+        return None   # appears to be '[]'
     if c == '!' and var.nexus_writeVisibleComments:
-        flob.seek(commentStartPos, 0)
-        theComment = _getComment(flob)
+        theComment = _getComment(flob, localPieces)
         print(theComment)
         return None
     elif c in ['&']:  # , '\\']:
         if var.nexus_getAllCommandComments:
-            flob.seek(commentStartPos, 0)
-            return _getComment(flob)
+            # print("_handleComment(), var.nexus_getAllCommandComments is set")
+            return _getComment(flob, localPieces)
         c2 = flob.read(1)
         if not c2:
-            gm = ["NexusToken._skipComment()"]
             gm.append("Reached the end while still in a comment.")
             raise P4Error(gm)
-        if c == '&' and string.lower(c2) == 'w' and var.nexus_getWeightCommandComments:
-            flob.seek(commentStartPos, 0)
-            return _getComment(flob)
+        localPieces.append(c2)
+        if c == '&' and c2.lower() == 'w' and var.nexus_getWeightCommandComments:
+            return _getComment(flob, localPieces)
         elif c2 == '&' and var.nexus_getP4CommandComments:
+            # We may need to get back here, and relative seek will not work.
+            startSpot = flob.tell()
             # ask whether the next 3 characters are 'p4 ' (ie p, 4, space)
-            c2 = flob.read(3)
-            if len(c2) != 3 or string.lower(c2) != 'p4 ':
-                flob.seek(commentStartPos + 1, 0)
+            c3 = flob.read(3)
+            if len(c3) != 3 or c3.lower() != 'p4 ':
+                flob.seek(startSpot)
                 _skipComment(flob)
                 return
-            flob.seek(commentStartPos, 0)
-            return _getComment(flob)
+            # So it is a p4 comment.  Get it.
+            localPieces.append(c3)
+            return _getComment(flob, localPieces)
         else:
-            flob.seek(commentStartPos + 1, 0)
-            return _skipComment(flob)
+            return _skipComment(flob)  # None, normally
     else:
         _skipComment(flob)
         return
@@ -210,7 +185,7 @@ def _skipComment(flob):
         # empty string, ie at the end of the flob.  level can be assumed to be
         # more than zero.
         if not c:
-            gm = ["NexusToken._skipComment()"]
+            gm = ["nexustoken._skipComment()"]
             gm.append("Reached the end while still in a comment.")
             raise P4Error(gm)
         if c == '[':
@@ -221,20 +196,19 @@ def _skipComment(flob):
             return
 
 
-def _getComment(flob):
-    startPos = flob.tell()
-    # ie level of nested comments.  This assumes that we have not already read
-    # one '['.
-    level = 0
+def _getComment(flob, localPieces):
+    # level, ie level of nested comments.  This assumes that we have already read one '['.
+    level = 1
     while 1:
         c = flob.read(1)
+        localPieces.append(c)
         if 0:
             if c in string.whitespace:
                 print("gc %3i  whitespace" % flob.tell())
             else:
                 print("gc %3i  %s" % (flob.tell(), c))
         if not c:
-            gm = ["NexusToken._getComment()"]
+            gm = ["nexustoken._getComment()"]
             gm.append("Reached the end while still in a comment.")
             raise P4Error(gm)
         if c == '[':
@@ -242,13 +216,10 @@ def _getComment(flob):
         elif c == ']':
             level = level - 1
         if level == 0:
-            endPos = flob.tell()
-            flob.seek(startPos)
-            theLen = endPos - startPos
-            return flob.read(theLen)
+            return ''.join(localPieces)
 
 
-def _getWord(flob):
+def _getWord(flob, c0):
     """Get a nexus token that isnt punctuation or a comment.
 
     The word might be broken by comments (the authors of the Nexus
@@ -257,13 +228,13 @@ def _getWord(flob):
     the enclosing word, because the comment ends before the enclosing
     word."""
 
-    # pieces = [] # It might be broken by comments.
     global pieces
     #global wordIsFinished
     global comment
 
-    startPos = flob.tell() - 1
+    localPieces = [c0]
     while 1:
+        prevPosn = flob.tell()
         c = flob.read(1)
         if 0:
             if not c:
@@ -273,91 +244,96 @@ def _getWord(flob):
             else:
                 print("gw %3i  %s" % (flob.tell(), c))
         if c == '[':
-            endPos = flob.tell() - 1
-            theLen = endPos - startPos
-            flob.seek(startPos)
-            theWordPiece = flob.read(theLen)
-            # print "gw got theWordPiece = %s" % theWordPiece
+            theWordPiece = ''.join(localPieces)
+            # print("gw comm got theWordPiece '%s'" % theWordPiece) 
             pieces.append(theWordPiece)
-            commentStartPos = flob.tell()
-            flob.seek(1, 1)  # skip the '['
-            #_skipComment(flob)
-            ret = _handleComment(flob)
-            startPos = flob.tell()
-            # print 'gw %3i  comment=%s' % (flob.tell(), ret)
+            localPieces = []
+            ret = _handleComment(flob, c)
+            # print('gw %3i  comment=%s' % (flob.tell(), ret))
+
+            # Here it might be useful to have wordIsFinished as a global, but here it is local.
 
             if ret:
                 # Now we need to ask if the word is finished, or whether it
                 # continues immediately after the comment.
+                beforeC2Posn = flob.tell()
+                # print("beforC2Posn is %i" % beforeC2Posn)
                 wordIsFinished = False
                 c2 = flob.read(1)
+                if 0:
+                    if c2 in string.whitespace:
+                        print("gw %3i  c2=whitespace" % flob.tell())
+                    else:
+                        print("gw %3i  c2=%s" % (flob.tell(), c2))
+
                 if c2 in string.whitespace or c2 in var.punctuation or not c2:
                     wordIsFinished = True
                 if c2:
-                    # back up one space only if we went forward one space
-                    flob.seek(-1, 1)
+                    # back up one space only if we need to
+                    if c2 in string.whitespace:
+                        if var.nexus_getLineEndingsAsTokens:
+                            if c2 == '\n' or c2 == '\r':
+                                #print("seeking %i" % beforeC2Posn)
+                                flob.seek(beforeC2Posn)
+                    elif c in var.punctuation:
+                        #print("seeking %i" % beforeC2Posn)
+                        flob.seek(beforeC2Posn)
 
                 if wordIsFinished:
+                    # The word (ie pieces) will be returned first, then comment will be returned on the following nextTok()
                     comment = ret
                 else:
+                    # There is more word to come, so return the comment now.
                     return ret
             else:
+                # We threw the comment away.  Look for more word.
                 continue
 
-            # if 0:
-            #    # If it is the end of a word, like this:
-            #    # aWord[aComment], then maybe we do not want to skip
-            #    # it.  That is why we saved the commentStartPos.  Test
-            #    # for whether it was at the end of a word.
-            #    c2 = flob.read(1)
-            #    if c2 in string.whitespace or c2 in var.nexus_punctuation or not c2:
-            #        # It was at the end of a word, so back up and break
-            #        flob.seek(commentStartPos, 0)
-            #        break
-            #    else:
-            #        flob.seek(-1,1) # un-do the move of the previous read(1)
-            #startPos = flob.tell()
-        # elif c in string.whitespace or c in var.nexus_punctuation or not c:
         elif c in string.whitespace or c in var.punctuation or not c:
             if c:
-                # back up one space only if we went forward one space
-                flob.seek(-1, 1)
-            endPos = flob.tell()
-            theLen = endPos - startPos
-            if theLen:
-                flob.seek(startPos)
-                theWordPiece = flob.read(theLen)
-                # print "gw got theWordPiece = %s" % theWordPiece
-                pieces.append(theWordPiece)
+                # We need to back up one (unicode) char, sometimes
+                if c in string.whitespace:
+                    if var.nexus_getLineEndingsAsTokens:
+                        if c == '\n' or c == '\r':
+                            #print("seeking %i" % prevPosn)
+                            flob.seek(prevPosn)
+                elif c in var.punctuation:
+                    #print("seeking %i" % prevPosn)
+                    flob.seek(prevPosn)
+            theWordPiece = ''.join(localPieces)
+            # print("gw got theWordPiece '%s'" % theWordPiece) 
+            pieces.append(theWordPiece)
             break
-    theWord = string.join(pieces, '')
+        else:
+            localPieces.append(c)
+    theWord = ''.join(pieces)
     pieces = []
     return theWord
 
 
 def _getQuotedStuff(flob):
-    complaintHead = '\nNexusToken._getQuotedStuff()'
-    local_pieces = []
-    startPos = flob.tell()  # we have passed the opening single quote
+    complaintHead = 'nexustoken._getQuotedStuff()'
+    local_pieces = ["'"]
 
     # Check that we do not have a single quote immediately following.
     # 2 single quotes is ok, tho.
     c = flob.read(1)
     if c:
-        if c == '\'':
+        local_pieces.append(c)
+        if c == "'":
             c2 = flob.read(1)
             if c2:
-                if c2 == '\'':
+                local_pieces.append(c2)
+                if c2 == "'":
                     # The opening single quote has been directly
                     # followed by 2 single quotes. Thats ok.
-                    flob.seek(-2, 1)  # Back up 2 spaces.
+                    pass
                 else:
                     # The opening single quote was followed by a
                     # single quote and then something else.  Thats
                     # bad.
                     gm = [complaintHead]
-                    gm.append(
-                        "Got 2 single quotes in a row, not properly within single quotes.")
+                    gm.append("Got 2 single quotes in a row, not properly within single quotes.")
                     raise P4Error(gm)
             else:
                 gm = [complaintHead]
@@ -366,14 +342,13 @@ def _getQuotedStuff(flob):
                 gm.append("And then the file ended.  Bad.")
                 raise P4Error(gm)
         else:
-            flob.seek(-1, 1)  # it wasn't a single quote, so back up one space
+            pass
     else:
         gm = [complaintHead]
-        gm.append("    File ended with an un-matched single quote.")
+        gm.append("File ended with an un-matched single quote.")
         raise P4Error(gm)
 
-    # print 'At the start of the while(1) loop, the file position is %i' %
-    # flob.tell()
+    # print 'At the start of the while(1) loop, the file position is %i' % flob.tell()
     while 1:
         c = flob.read(1)
         # print '! c= %s' % c
@@ -384,38 +359,37 @@ def _getQuotedStuff(flob):
                 print("gq %3i  whitespace" % flob.tell())
             else:
                 print("gq %3i  %s" % (flob.tell(), c))
-        if c == '\'':
-            c2 = flob.read(1)
-            if c2:
-                flob.seek(-1, 1)
-            endPos = flob.tell() - 1
-            theLen = endPos - startPos
-            flob.seek(startPos)
-            if theLen:
-                thePiece = flob.read(theLen)
-                # print "gq got thePiece = %s" % thePiece
-                local_pieces.append(thePiece)
-
-            if c2 and c2 == '\'':  # ie 2 single quotes in a row
-                local_pieces.append('\'\'')
-                flob.seek(2, 1)
-                startPos = flob.tell()
-                continue
-            else:
-                flob.seek(1, 1)
-                break
+        if c:
+            local_pieces.append(c)
+            if c == "'":
+                posnBeforeC2 = flob.tell()
+                c2 = flob.read(1)
+                if c2:
+                    if c2 == "'":  # ie 2 single quotes in a row
+                        local_pieces.append(c2)
+                        continue
+                    else:
+                        # It was a single quote, not followed by a single quote,
+                        # so we are finished.  But in finding out that fact, we
+                        # have gone too far.  So back up.
+                        flob.seek(posnBeforeC2)
+                        break
+                    
+                else:
+                    # It was a closing single quote, followed by nothing.
+                    break
 
         elif not c:
             gm = [complaintHead]
             gm.append("File ended while still in a quoted word.")
             raise P4Error(gm)
-    return string.join(['\''] + local_pieces + ['\''], '')
+    return ''.join(local_pieces)
 
 # (Thats it for the token generation stuff)
 
 
 def nexusSkipPastNextSemiColon(flob):
-    complaintHead = '\nNexus.nexusSkipPastNextSemiColon()'
+    complaintHead = 'nexustoken.nexusSkipPastNextSemiColon()'
     while 1:
         c = flob.read(1)
         # print "nexusSkipPastNextSemiColon() c=%s" % c
@@ -435,12 +409,12 @@ def nexusSkipPastNextSemiColon(flob):
 def nexusSkipPastBlockEnd(flob):
     """Read up to and including a block 'end' or 'endblock'."""
     # This should only ever be issued after a semi-colon
-    gm = ['NexusToken.nexusSkipPastBlockEnd()']
+    gm = ['nexustoken.nexusSkipPastBlockEnd()']
     while 1:
         tok = nextTok(flob)
         # print "nexusSkipPastBlockEnd() tok=%s" % tok
         if tok:
-            lowTok = string.lower(tok)
+            lowTok = tok.lower()
             if lowTok == 'end' or lowTok == 'endblock':
                 tok2 = nextTok(flob)
                 if not tok2 or tok2 != ';':
@@ -464,7 +438,7 @@ def nexusSkipPastBlockEnd(flob):
     raise P4Error(gm)
 
 
-def nexusNextCommand(flob):
+def nexusNextCommand(flob):                           # does not appear to be used anywhere
     """Return a nexus command as a list of tokens.
 
     Does not return the final semi-colon."""
@@ -473,14 +447,14 @@ def nexusNextCommand(flob):
     tok = nextTok(flob)
     if not tok:  # end of file, not an error
         return None
-    if string.lower(tok) == '#nexus':
+    if tok.lower() == '#nexus':
         tok = nextTok(flob)
     while tok:
         if tok == ';':
             return toks
         toks.append(tok)
         tok = nextTok(flob)
-    gm = ["NexusToken.nexusNextCommand()"]
+    gm = ["nexustoken.nexusNextCommand()"]
     gm.append("Could not find a semi-colon to end the nexus command.")
     gm.append("Premature end of file?")
     raise P4Error(gm)

@@ -1,6 +1,6 @@
 # Simulate data with more than one data partition.
 nTax = 5
-taxNames = list(string.uppercase[:nTax])
+taxNames = list(string.ascii_uppercase[:nTax])
 
 dnaAlign = func.newEmptyAlignment(dataType='dna', taxNames=taxNames, length=300)
 read(r"#nexus begin sets; charpartition p1 = first:1-100, second:101-.; end;")

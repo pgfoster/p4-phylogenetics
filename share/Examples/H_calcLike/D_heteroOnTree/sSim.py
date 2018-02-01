@@ -3,7 +3,7 @@ var.verboseRead = 0
 func.reseedCRandomizer(os.getpid())
 
 nTax = 5
-taxNames = list(string.uppercase[:nTax])
+taxNames = list(string.ascii_uppercase[:nTax])
 a = func.newEmptyAlignment(dataType='dna', taxNames=taxNames, length=100)
 d = Data([a])
 

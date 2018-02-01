@@ -16,7 +16,6 @@ typedef struct p4_gdasrvStruct p4_gdasrv;
 typedef struct p4_pInvarStruct p4_pInvar;
 typedef struct p4_bigQAndEigStruct p4_bigQAndEig;
 
-typedef struct nexusTokenStruct nexusToken;
 typedef struct p4_drawAncStStruct p4_drawAncStResults; 
 
 
@@ -213,22 +212,6 @@ struct p4_bigQAndEigStruct {
 //	double    *freqs;
 //	double    *rates;
 //};
-
-struct nexusTokenStruct {
-    int       *writeVisibleComments;
-    int       *getP4CommandComments;
-    int       *getWeightCommandComments;
-    int       *getAllCommandComments;
-    int       *getLineEndings;
-    int       *max;
-    int       *tokLen;
-    char      *tok;
-    int       *embeddedCommentLen;
-    char      *embeddedComment;
-    int       *savedCommentLen;
-    FILE      *filePtr;
-};
-
 
 struct p4_drawAncStStruct {
     int chStNum;

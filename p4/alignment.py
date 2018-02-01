@@ -10,8 +10,6 @@ import math
 import string
 import re
 import sys
-import array
-import types
 from p4.nexussets import CharSet
 import subprocess
 from p4.distancematrix import DistanceMatrix
@@ -136,7 +134,7 @@ class ExcludeDelete(object):
             for i in range(len(self.mask)):
                 if self.mask[i]:
                     s.append(self.sequences[sNum].sequence[i])
-            self.alignment.sequences[sNum].sequence = string.join(s, '')
+            self.alignment.sequences[sNum].sequence = ''.join(s)
         self.alignment.length = len(self.alignment.sequences[0].sequence)
 
 
@@ -340,13 +338,17 @@ class Alignment(SequenceList):
         self.parts = []
         self.excludeDelete = None  # An ExcludeDelete object
 
-    # Properties
-    #: A property -- the number of sequences
-    nTax = property(lambda self: len(self.sequences))
-    #: A synonym for Alignment.length
-    nChar = property(lambda self: self.length)
-    #: A property -- the number of equates
-    nEquates = property(lambda self: len(self.equates))
+    @property
+    def nTax(self):
+        return len(self.sequences)
+
+    @property
+    def nChar(self):
+        return self.length
+
+    @property
+    def nEquates(self):
+        return len(self.equates)
 
     def _getTaxNames(self):
         theTaxNames = []
@@ -480,8 +482,7 @@ class Alignment(SequenceList):
         final comp.
         """
 
-        gm = [
-            'Alignment.composition(sequenceNumberList=%s).' % sequenceNumberList]
+        gm = ['Alignment.composition(sequenceNumberList=%s).' % sequenceNumberList]
         dbug = 0
 
         # symbolFreq and equateFreq are hashes for the raw counts
@@ -490,20 +491,18 @@ class Alignment(SequenceList):
             symbolFreq[symb] = 0.0
         if self.equates:
             equateFreq = {}
-            equatesKeys = self.equates.keys()
-            for equate in equatesKeys:
+            for equate in self.equates:
                 equateFreq[equate] = 0.0
         hasEquates = 0
 
         if dbug:
             print("Alignment.composition() sequenceNumberList = %s" % sequenceNumberList)
         if sequenceNumberList:
-            if type(sequenceNumberList) != type([1, 2]):
+            if not isinstance(sequenceNumberList, list):
                 gm.append("The sequenceNumberList should be a list, ok?")
                 raise P4Error(gm)
             if len(sequenceNumberList) == 0:
-                gm.append(
-                    "The sequenceNumberList should have something in it, ok?")
+                gm.append("The sequenceNumberList should have something in it, ok?")
                 raise P4Error(gm)
         else:
             sequenceNumberList = range(len(self.sequences))
@@ -515,12 +514,11 @@ class Alignment(SequenceList):
         maxIterations = 1000
 
         for i in sequenceNumberList:
-            if type(i) != type(1):
+            if not isinstance(i, int):
                 gm.append("The sequenceNumberList should be integers, ok?")
                 raise P4Error(gm)
             if i < 0 or i > len(self.sequences) - 1:
-                gm.append(
-                    "Item '%i' in sequenceNumberList is out of range" % i)
+                gm.append("Item '%i' in sequenceNumberList is out of range" % i)
                 raise P4Error(gm)
 
             seq = self.sequences[i]
@@ -533,14 +531,12 @@ class Alignment(SequenceList):
             grandNSites = grandNSites + nSites
 
             for symb in self.symbols:
-                #symbolFreq[symb] = symbolFreq[symb] + float(string.count(seq.sequence, symb))
-                symbolFreq[symb] = float(string.count(seq.sequence, symb))
+                #symbolFreq[symb] = symbolFreq[symb] + float(seq.sequence.count(symb))
+                symbolFreq[symb] = float(seq.sequence.count(symb))
             if self.equates:
-                for equate in equatesKeys:
-                    # equateFreq[equate] = equateFreq[equate] + \
-                    #                     float(string.count(seq.sequence, equate))
-                    equateFreq[equate] = float(
-                        string.count(seq.sequence, equate))
+                for equate in self.equates:
+                    # equateFreq[equate] = equateFreq[equate] + float(seq.sequence.count(equate))
+                    equateFreq[equate] = float(seq.sequence.count(equate))
                     if equateFreq[equate]:
                         hasEquates = 1
 
@@ -559,7 +555,7 @@ class Alignment(SequenceList):
                 for symb in self.symbols:
                     symbSum[symb] = symbolFreq[symb]
                 if hasEquates:
-                    for equate in equatesKeys:
+                    for equate in self.equates:
                         if equateFreq[equate]:
                             factor = 0.0
                             for symb in self.equates[equate]:
@@ -617,7 +613,7 @@ class Alignment(SequenceList):
 ##            gm.append("This alignment has no charPartitions")
 ##            raise P4Error(gm)
 ##        theCP = None
-##        lowName = string.lower(charPartitionName)
+##        lowName = charPartitionName.lower()
 # for cp in self.nexusSets.charPartitions:
 # if cp.lowName == lowName:
 ##                theCP = cp
@@ -656,7 +652,7 @@ class Alignment(SequenceList):
 
 # Find the charPartition
 ##        theCP = None
-##        lowName = string.lower(charPartitionName)
+##        lowName = charPartitionName.lower()
 # for cp in self.nexusSets.charPartitions:
 # if cp.lowName == lowName:
 ##                theCP = cp
@@ -667,7 +663,7 @@ class Alignment(SequenceList):
 
 # Find the charPartitionSubset
 ##        theCPsubset = None
-##        lowName = string.lower(charPartitionSubsetName)
+##        lowName = charPartitionSubsetName.lower()
 # for cps in theCP.subsets:
 # if cps.lowName == lowName:
 ##                theCPsubset = cps
@@ -709,7 +705,7 @@ class Alignment(SequenceList):
             self.setNexusSets()
 
         theCS = None
-        lowName = string.lower(charSetName)
+        lowName = charSetName.lower()
         if lowName not in self.nexusSets.predefinedCharSetLowNames and lowName not in self.nexusSets.charSetLowNames:
             gm.append("This alignment has no charset named '%s'" % charSetName)
             raise P4Error(gm)
@@ -774,7 +770,7 @@ class Alignment(SequenceList):
                 gm.append("equal the alignment length (%i)" % self.length)
                 raise P4Error(gm)
 
-        if type(theMaskChar) != type('a') or len(theMaskChar) != 1:
+        if not isinstance(theMaskChar, str) or len(theMaskChar) != 1:
             gm.append("theMaskChar needs to be a single-character string")
             raise P4Error(gm)
 
@@ -840,7 +836,7 @@ class Alignment(SequenceList):
 
         # replace the sequences
         for i in range(len(self.sequences)):
-            a.sequences[i].sequence = string.join(newList[i], '')
+            a.sequences[i].sequence = ''.join(newList[i])
 
         a.checkLengthsAndTypes()
         if 0:
@@ -1139,7 +1135,7 @@ class Alignment(SequenceList):
             print("  symbols are '%s'" % self.symbols)
         if self.equates:
             print("  equates")
-            theKeys = self.equates.keys()
+            theKeys = list(self.equates.keys())
             theKeys.sort()
             for k in theKeys:
                 print("%20s  %-30s" % (k, self.equates[k]))
@@ -1212,7 +1208,7 @@ class Alignment(SequenceList):
         if self.nexusSets.taxSets:
             # print("%s. There are %i taxSets." % (gm[0], len(self.nexusSets.taxSets)))
             # Check that no taxSet name is a taxName
-            lowSelfTaxNames = [string.lower(txName)
+            lowSelfTaxNames = [txName.lower()
                                for txName in self.taxNames]
             for ts in self.nexusSets.taxSets:
                 if ts.lowName in lowSelfTaxNames:
