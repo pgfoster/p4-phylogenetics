@@ -1273,7 +1273,6 @@ if True:
                     gm.append("Unknown character state '%s'" % c)
                     raise P4Error(gm)
             s.sequence = string.join(s.sequence, '')
-
         self.dataType = 'standard'
         self.equates = {}
         self.dim = 6
