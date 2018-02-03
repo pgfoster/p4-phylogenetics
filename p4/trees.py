@@ -354,7 +354,7 @@ class Trees(object):
         different metrics.  The metrics are given in
         ``var.topologyDistanceMetrics``"""
 
-        from distancematrix import DistanceMatrix
+        from p4.distancematrix import DistanceMatrix
         d = DistanceMatrix()
         d.names = []
         for t in self.trees:

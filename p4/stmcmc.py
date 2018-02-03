@@ -1375,8 +1375,8 @@ class STMcmcProposalProbs(dict):
     def __init__(self):
         object.__setattr__(self, 'nni', 1.0)
         object.__setattr__(self, 'spr', 1.0)
-        object.__setattr__(self, 'SR2008beta_uniform', 1.0)
-        object.__setattr__(self, 'spaQ_uniform', 1.0)
+        object.__setattr__(self, 'SR2008beta_uniform', 0.1)
+        object.__setattr__(self, 'spaQ_uniform', 0.1)
         object.__setattr__(self, 'polytomy', 0.0)
 
     def __setattr__(self, item, val):
@@ -1420,7 +1420,7 @@ class STProposal(object):
 
     def __init__(self, theSTMcmc=None):
         self.name = None
-        self.stMcmc = theSTMcmc            # reference loop!
+        self.stMcmc = theSTMcmc            # reference loop
         self.nChains = theSTMcmc.nChains
         self.pNum = -1
         self.mtNum = -1
@@ -2277,31 +2277,31 @@ class STMcmc(object):
         gm = ['STMcmc._setOutputTreeFile()']
 
         # Write the preamble for the trees outfile.
-        self.treeFile = open(self.treeFileName, 'w')
-        self.treeFile.write('#nexus\n\n')
-        self.treeFile.write('begin taxa;\n')
-        self.treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
-        self.treeFile.write('  taxlabels')
+        treeFile = open(self.treeFileName, 'w')
+        treeFile.write('#nexus\n\n')
+        treeFile.write('begin taxa;\n')
+        treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
+        treeFile.write('  taxlabels')
         for tN in self.tree.taxNames:
-            self.treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
-        self.treeFile.write(';\nend;\n\n')
+            treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
+        treeFile.write(';\nend;\n\n')
 
-        self.treeFile.write('begin trees;\n')
+        treeFile.write('begin trees;\n')
         self.translationHash = {}
         i = 1
         for tName in self.tree.taxNames:
             self.translationHash[tName] = i
             i += 1
 
-        self.treeFile.write('  translate\n')
+        treeFile.write('  translate\n')
         for i in range(self.tree.nTax - 1):
-            self.treeFile.write('    %3i %s,\n' % (
+            treeFile.write('    %3i %s,\n' % (
                 i + 1, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[i])))
-        self.treeFile.write('    %3i %s\n' % (
+        treeFile.write('    %3i %s\n' % (
             self.tree.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
-        self.treeFile.write('  ;\n')
-        self.treeFile.write('  [Tree numbers are gen+1]\n')
-        self.treeFile.close()
+        treeFile.write('  ;\n')
+        treeFile.write('  [Tree numbers are gen+1]\n')
+        treeFile.close()
 
     def run(self, nGensToDo, verbose=True):
         """Start the STMcmc running."""
@@ -2793,11 +2793,17 @@ class STMcmc(object):
                 savedBigTrs.append(ch.bigTr)
                 ch.bigTr = None
 
+        # _io.TextIOWrapper objects (as returned by open(fileName)) cannot be
+        # copied ("serialized"), even if they are closed.  So save them and
+        # restore them.
+        # Except that this is not needed, as it is not really used.  But I will
+        # leave this comment here for when I do start to use it.
+        # savedTreeFile = self.treeFile
+
         theCopy = copy.deepcopy(self)
 
         theCopy.treePartitions._finishSplits()
-        theCopy.likesFile = None
-        theCopy.treeFile = None
+        # assert theCopy.treeFile == None
         # theCopy.treePartitions = None    # this can be the biggest part of
         # the pickle.
 
