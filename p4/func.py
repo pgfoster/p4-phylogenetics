@@ -1881,7 +1881,7 @@ def fixCharsForLatex(theString):
     # print l
     inMath = False
     for i in range(len(l)):
-        if l[i] in string.letters or l[i] in string.digits:
+        if l[i] in string.ascii_letters or l[i] in string.digits:
             pass
         elif l[i] == '$':
             if inMath:
