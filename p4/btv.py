@@ -8,9 +8,9 @@ import math
 from p4.tree import Tree
 from p4.p4exceptions import P4Error
 try:
-    from Tkinter import *
+    from tkinter import *
 except ImportError:
-    print("TV and BTV need Tkinter, and it does not seem to be installed.")
+    print("TV and BTV need tkinter, and it does not seem to be installed.")
     raise
 
 

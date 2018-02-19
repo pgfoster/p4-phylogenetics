@@ -213,7 +213,7 @@ class Proposal(object):
     def tune(self, tempNum):
         assert self.tnSampleSize >= 100.
         assert self.tnNSamples[tempNum] >= self.tnSampleSize
-        acc = self.tnNAccepts[tempNum] / self.tnNSamples[tempNum]
+        acc = float(self.tnNAccepts[tempNum]) / self.tnNSamples[tempNum]   # float() for Py2
         doMessage = False
         if acc > self.tnAccHi:
             oldTn = self.tuning[tempNum]
@@ -361,7 +361,7 @@ class SwapTuner(object):
 
     def tune(self, theMcmc):
         assert self.swaps01_nAttempts >= self.sampleSize
-        acc = self.swaps01_nSwaps / self.swaps01_nAttempts 
+        acc = float(self.swaps01_nSwaps) / self.swaps01_nAttempts    # float() for Py2
         #print("SwapTuner.tune() nSwaps %i, nAttemps %i, acc %s" % (
         #    self.swaps01_nSwaps, self.swaps01_nAttempts, acc))
         doMessage = False

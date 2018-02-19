@@ -462,9 +462,9 @@ class Tree(object):
         if 0:
             print('var.nexus_getWeightCommandComments = %s' % var.nexus_getWeightCommandComments)
             print('var.nexus_getAllCommandComments = %s' % var.nexus_getAllCommandComments)
-            print("Got comment '%s', checking if it is a 'weight' comment." % tok)
+            print("Got comment '%s' (type %s), checking if it is a 'weight' comment." % (tok, type(tok)))
         gm = ["Tree.getWeightCommandComment()"]
-        cFlob = io.BytesIO(tok)
+        cFlob = io.StringIO(tok)
         cFlob.seek(1)  # The [
         cTok = nextTok(cFlob)
         if not cTok:
