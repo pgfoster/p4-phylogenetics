@@ -660,11 +660,6 @@ class Mcmc(object):
         self.sampleInterval = sampleInterval
         self.checkPointInterval = checkPointInterval
 
-        # self.proposals = []
-        # self.proposalsHash = {}
-        # self.propWeights = []
-        # self.cumPropWeights = []
-        # self.totalPropWeights = 0.0
         self.props = Proposals()
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     gdasrv local ndch2_internalCompsDir 
@@ -679,7 +674,6 @@ class Mcmc(object):
         self.simFileName = "mcmc_sims_%i" % runNum
         self.pramsFileName = "mcmc_prams_%i" % runNum
         self.hypersFileName = "mcmc_hypers_%i" % runNum
-        #self.rjKFileName = "mcmc_rjK_%i" % runNum
         self.writePrams = writePrams
         self.writeHypers = True
 
