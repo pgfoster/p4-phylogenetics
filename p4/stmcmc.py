@@ -912,17 +912,17 @@ class STChain(object):
         self.logProposalRatio = math.log(hastingsRatio)
 
         if 0:
-            priorRatio = self.mcmc.tunings.brLenPriorLambda * \
-                math.exp(- self.mcmc.tunings.brLenPriorLambda * newNode.br.len)
+            priorRatio = theProposal.brLenPriorLambda * \
+                math.exp(- theProposal.brLenPriorLambda * newNode.br.len)
             if dbug:
-                print("The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda)
+                print("The theProposal.brLenPriorLambda is %f" % theProposal.brLenPriorLambda)
                 print("So the prior ratio is %f" % priorRatio)
 
             self.logPriorRatio = math.log(priorRatio)
 
             # The Jacobian
-            jacobian = 1.0 / (self.mcmc.tunings.brLenPriorLambda *
-                              math.exp(- self.mcmc.tunings.brLenPriorLambda * newNode.br.len))
+            jacobian = 1.0 / (theProposal.brLenPriorLambda *
+                              math.exp(- theProposal.brLenPriorLambda * newNode.br.len))
             self.logJacobian = math.log(jacobian)
             print("logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian))
 
@@ -932,7 +932,7 @@ class STChain(object):
         self.logPriorRatio = 0.0
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
-        if self.stMcmc.tunings.doPolytomyResolutionClassPrior:
+        if theProposal.doPolytomyResolutionClassPrior:
             # We are gaining a node.  So the prior ratio is T_{n,m + 1} /
             # (T_{n,m} * C) .  We have the logs, and the result is the
             # log.
@@ -943,17 +943,17 @@ class STChain(object):
                 print('logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes])
                 # print
                 # math.exp(theProposal.logBigT[self.curTree.nInternalNodes])
-                print('C ', self.stMcmc.tunings.polytomyPriorLogBigC)
+                print('C ', theProposal.polytomyPriorLogBigC)
                 print('logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes])
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
                 print("-" * 30)
             self.logPriorRatio = (theProposal.logBigT[self.curTree.nInternalNodes] -
-                                  (self.stMcmc.tunings.polytomyPriorLogBigC +
+                                  (theProposal.polytomyPriorLogBigC +
                                    theProposal.logBigT[pTree.nInternalNodes]))
 
         else:
-            if self.stMcmc.tunings.polytomyPriorLogBigC:
-                self.logPriorRatio = -self.stMcmc.tunings.polytomyPriorLogBigC
+            if theProposal.polytomyPriorLogBigC:
+                self.logPriorRatio = -theProposal.polytomyPriorLogBigC
             else:
                 self.logPriorRatio = 0.0
         # print "gaining a node, m %2i->%2i. logPriorRatio is %f" % (self.curTree.nInternalNodes,
@@ -1049,17 +1049,17 @@ class STChain(object):
             # branch length is lambda * exp(-lambda * nu).  To a first
             # approximation, with equal priors on topologies, the prior ratio
             # is 1/f(nu)
-            priorRatio = 1.0 / (self.mcmc.tunings.brLenPriorLambda *
-                                math.exp(- self.mcmc.tunings.brLenPriorLambda * theChosenNode.br.len))
+            priorRatio = 1.0 / (theProposal.brLenPriorLambda *
+                                math.exp(- theProposal.brLenPriorLambda * theChosenNode.br.len))
             if dbug:
-                print("The self.mcmc.tunings.brLenPriorLambda is %f" % self.mcmc.tunings.brLenPriorLambda)
+                print("The theProposal.brLenPriorLambda is %f" % theProposal.brLenPriorLambda)
                 print("So the prior ratio is %f" % priorRatio)
 
             self.logPriorRatio = math.log(priorRatio)
 
             # The Jacobian
-            jacobian = self.mcmc.tunings.brLenPriorLambda * \
-                math.exp(- self.mcmc.tunings.brLenPriorLambda *
+            jacobian = theProposal.brLenPriorLambda * \
+                math.exp(- theProposal.brLenPriorLambda *
                          theChosenNode.br.len)
             self.logJacobian = math.log(jacobian)
             print("logPriorRatio = %f, logJacobian = %f" % (self.logPriorRatio, self.logJacobian))
@@ -1071,7 +1071,7 @@ class STChain(object):
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
 
-        if self.stMcmc.tunings.doPolytomyResolutionClassPrior:
+        if theProposal.doPolytomyResolutionClassPrior:
             # We are losing a node.  So the prior ratio is (T_{n,m} * C) /
             # T_{n,m - 1}.  We have the logs, and the result is the log.
             if 0:
@@ -1081,7 +1081,7 @@ class STChain(object):
                 print('logBigT[curTree.nInternalNodes]', theProposal.logBigT[self.curTree.nInternalNodes])
                 # print
                 # math.exp(theProposal.logBigT[self.curTree.nInternalNodes])
-                print('C ', self.stMcmc.tunings.polytomyPriorLogBigC)
+                print('C ', theProposal.polytomyPriorLogBigC)
                 print('logBigT[pTree.nInternalNodes]', theProposal.logBigT[pTree.nInternalNodes])
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
                 print("-" * 30)
@@ -1090,8 +1090,8 @@ class STChain(object):
                                   theProposal.logBigT[pTree.nInternalNodes])
 
         else:
-            if self.stMcmc.tunings.polytomyPriorLogBigC:
-                self.logPriorRatio = self.stMcmc.tunings.polytomyPriorLogBigC
+            if theProposal.polytomyPriorLogBigC:
+                self.logPriorRatio = theProposal.polytomyPriorLogBigC
             else:
                 self.logPriorRatio = 0.0
 
@@ -1122,7 +1122,7 @@ class STChain(object):
             mt = self.propTree.beta
 
             # Slider proposal
-            mt += (random.random() - 0.5) * theProposal.tuning
+            mt += (random.random() - 0.5) * theProposal.tuning[self.tempNum]
 
             # Linear reflect
             isGood = False
@@ -1142,7 +1142,7 @@ class STChain(object):
             mt = self.propTree.spaQ
             originally = mt
             # Slider proposal
-            mt += (random.random() - 0.5) * theProposal.tuning
+            mt += (random.random() - 0.5) * theProposal.tuning[self.tempNum]
 
             # Linear reflect
             isGood = False
@@ -1157,11 +1157,10 @@ class STChain(object):
                     isGood = True
             self.propTree.spaQ = mt
             self.logProposalRatio = 0.0
-            if self.stMcmc.tunings.spaQPriorType == 'flat':
+            if theProposal.spaQPriorType == 'flat':
                 self.logPriorRatio = 0.0
-            elif self.stMcmc.tunings.spaQPriorType == 'exponential':
-                self.logPriorRatio = self.stMcmc.tunings.spaQExpPriorLambda * \
-                    (originally - mt)
+            elif theProposal.spaQPriorType == 'exponential':
+                self.logPriorRatio = theProposal.spaQExpPriorLambda * (originally - mt)
             else:
                 raise P4Error("this should not happen! wxyzz")
             # print "proposing mt from %.3f to %.3f, diff=%g" % (originally,
@@ -1214,7 +1213,7 @@ class STChain(object):
 
         # Mcmcmc
         if self.stMcmc.nChains > 1:
-            heatBeta = 1.0 / (1.0 + self.stMcmc.tunings.chainTemp * self.tempNum)
+            heatBeta = 1.0 / (1.0 + self.stMcmc.chainTemp * self.tempNum)
             logLikeRatio *= heatBeta
             self.logPriorRatio *= heatBeta
 
@@ -1267,9 +1266,11 @@ class STChain(object):
             print(" %6.0f    %5i   %5i  %5s" % (pRet, d1, d2, acceptMove))
 
         aProposal.nProposals[self.tempNum] += 1
+        aProposal.tnNSamples[self.tempNum] += 1
         if acceptMove:
             aProposal.accepted = True
             aProposal.nAcceptances[self.tempNum] += 1
+            aProposal.tnNAccepts[self.tempNum] += 1
 
         # if not aProposal.doAbort:
         if acceptMove:
@@ -1387,8 +1388,8 @@ class STMcmcProposalProbs(dict):
     def __init__(self):
         object.__setattr__(self, 'nni', 1.0)
         object.__setattr__(self, 'spr', 1.0)
-        object.__setattr__(self, 'SR2008beta_uniform', 0.1)
-        object.__setattr__(self, 'spaQ_uniform', 0.1)
+        object.__setattr__(self, 'SR2008beta_uniform', 1.0)
+        object.__setattr__(self, 'spaQ_uniform', 1.0)
         object.__setattr__(self, 'polytomy', 0.0)
 
     def __setattr__(self, item, val):
@@ -1500,11 +1501,11 @@ class STProposal(object):
         self.tnNSamples[tempNum] = 0
         self.tnNAccepts[tempNum] = 0
         if doMessage:
-            message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % (self.name, self.mcmc.gen, tempNum, acc)
+            message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % (self.name, self.stMcmc.gen, tempNum, acc)
             message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
             message += "Adjusting tuning from %g to %g" % (oldTn, self.tuning[tempNum])
             #print(message)
-            self.mcmc.logger.info(message)
+            self.stMcmc.logger.info(message)
 
 
 
@@ -2245,6 +2246,12 @@ class STMcmc(object):
                     "Arg useSplitSupport is turned on, but none of the trees seem to have split info.")
                 raise P4Error(gm)
 
+
+        splash = p4.func.splash2(verbose=False)
+        for aLine in splash:
+            self.logger.info(aLine)
+
+
         # Hidden experimental hacking
         self.doHeatingHack = False
         self.heatingHackTemperature = 5.0
@@ -2264,6 +2271,8 @@ class STMcmc(object):
             elif self.nChains > 1:
                 print("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
                 # Don't say the temperature here, as it will likely be re-set later.
+
+
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
@@ -2309,8 +2318,8 @@ class STMcmc(object):
             p = STProposal(self)
             p.name = 'nni'
             # * (len(self.tree.nodes) - 1) * fudgeFactor['nni']
-            print(self.prob.nni)
-            print(fudgeFactor)
+            #print(self.prob.nni)
+            #print(fudgeFactor)
             
             p.weight = self.prob.nni * fudgeFactor['nni']
             self.props.proposals.append(p)
@@ -2347,6 +2356,8 @@ class STMcmc(object):
                 p = STProposal(self)
                 p.name = 'spaQ_uniform'
                 p.tuning = [self._tunings.default[p.name]] * self.nChains
+                p.spaQPriorType = 'flat'
+                p.spaQExpPriorLambda = 100.
                 # * (len(self.tree.nodes) - 1) * fudgeFactor['spaQ_uniform']
                 p.weight = self.prob.spaQ_uniform * fudgeFactor['spaQ_uniform']
   
@@ -2382,14 +2393,14 @@ class STMcmc(object):
 
         gm = ['STMcmc._refreshProposalProbsAndTunings()']
 
-        for p in self.proposals:
+        for p in self.props.proposals:
             # nni
             if p.name == 'nni':
                 #p.weight = self.prob.local * (len(self.tree.nodes) - 1) * fudgeFactor['local']
                 p.weight = self.prob.nni
 
         self.propWeights = []
-        for p in self.proposals:
+        for p in self.props.proposals:
             self.propWeights.append(p.weight)
         self.cumPropWeights = [self.propWeights[0]]
         for i in range(len(self.propWeights))[1:]:
@@ -2413,7 +2424,7 @@ class STMcmc(object):
         print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
             self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
         print("%s %20s %10s %13s%8s" % (spacer, 'proposal', 'nProposals', 'acceptance(%)', 'tuning'))
-        for p in self.proposals:
+        for p in self.props.proposals:
             print("%s" % spacer, end=' ')
             print("%20s" % p.name, end=' ')
             print("%10i" % p.nProposals[0], end=' ')
@@ -2425,18 +2436,23 @@ class STMcmc(object):
 
             if p.tuning == None:
                 print("      -", end=' ')
-            elif p.tuning < 2.0:
-                print("  %5.3f" % p.tuning, end=' ')
+            elif p.tuning[0] < 2.0:
+                print("  %8.4f" % p.tuning[0], end=' ')
+            elif p.tuning[0] < 20.0:
+                print("  %8.3f" % p.tuning[0], end=' ')
+            elif p.tuning[0] < 200.0:
+                print("  %8.1f" % p.tuning[0], end=' ')
             else:
-                print("%7.1f" % p.tuning, end=' ')
+                print("  %8.3g" % p.tuning[0], end=' ')
             print()
+
 
         # # Tabulate topology changes by temperature
         if self.nChains > 1:
             for propName in ['nni', 'spr']:
-                p = self.proposalsHash.get(propName)
+                p = self.props.proposalsDict.get(propName)
                 if p:
-                    print("'%s' proposal-- topology changes by temperature (chainTemp is %s)" % (propName, self.chainTemp))
+                    print("'%s' proposal-- topology changes by temperature (chainTemp is %.2f)" % (propName, self.chainTemp))
                     print("%s tempNum   nProps nAccepts percent" % spacer)
                     for tNum in range(self.nChains):
                         print("%s" % spacer, end=' ')
@@ -2455,15 +2471,49 @@ class STMcmc(object):
         #                     print("(Aborts might be due to violated constraints.)")
         #             else:
         #                 print("The '%s' proposal had no aborts in the cold chain" % propName)
-        for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+        for pN in ['polytomy']:
             p = None
             try:
-                p = self.proposalsHash[pN]
+                p = self.props.proposalsDict[pN]
             except KeyError:
                 pass
             if p:
                 if hasattr(p, 'nAborts'):
-                    print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+                    print("The %s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+
+        if self.nChains > 1:
+            print("\n\nAcceptances and tunings by temperature")
+            print("%s %30s %5s %5s %10s %13s%10s" % (
+                spacer, 'proposal', 'part', 'tempNum', 'nProposals', 'acceptance(%)', 'tuning'))
+            for p in self.props.proposals:
+                for tempNum in range(self.nChains):
+                    print("%s" % spacer, end=' ')
+                    print("%30s" % p.name, end=' ')
+                    if p.pNum != -1:
+                        print(" %3i " % p.pNum, end=' ')
+                    else:
+                        print("   - ", end=' ')
+                    print(" %3i " % tempNum, end=' ')
+                    print("%10i" % p.nProposals[tempNum], end=' ')
+
+                    if p.nProposals[tempNum]:  # Don't divide by zero
+                        print("       %5.1f " % (
+                            100.0 * float(p.nAcceptances[tempNum]) / float(p.nProposals[tempNum])), end=' ')
+                    else:
+                        print("           - ", end=' ')
+
+                    if p.tuning == None:
+                        print("      -", end=' ')
+                    elif p.tuning[tempNum] < 2.0:
+                        print("  %8.4f" % p.tuning[tempNum], end=' ')
+                    elif p.tuning[tempNum] < 20.0:
+                        print("  %8.3f" % p.tuning[tempNum], end=' ')
+                    elif p.tuning[tempNum] < 200.0:
+                        print("  %8.1f" % p.tuning[tempNum], end=' ')
+                    else:
+                        print("  %8.3g" % p.tuning[tempNum], end=' ')
+                    print()
+
 
     def writeSwapMatrix(self):
         print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
@@ -2471,7 +2521,7 @@ class STMcmc(object):
         print("    Swaps are presented as a square matrix, nChains * nChains.")
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
-        print("    The current tunings.chainTemp is %5.3f\n" % self.tunings.chainTemp)
+        print("    The current tunings.chainTemp is %5.3f\n" % self.chainTemp)
         print(" " * 10, end=' ')
         for i in range(self.nChains):
             print("%7i" % i, end=' ')
@@ -2618,7 +2668,7 @@ class STMcmc(object):
             # Start the tree partitions over.
             self.treePartitions = None
             # Zero the proposal counts
-            for p in self.proposals:
+            for p in self.props.proposals:
                 p.nProposals = [0] * self.nChains
                 p.nAcceptances = [0] * self.nChains
                 #p.nTopologyChangeAttempts = [0] * self.nChains
@@ -2725,6 +2775,8 @@ class STMcmc(object):
                 print("Sampling every %i." % self.sampleInterval)
             else:
                 print("Arg 'writeSamples' is off, so samples are not being written")
+            if equiProbableProposals:
+                print("Arg 'equiProbableProposals' is turned on")
             if self.checkPointInterval:
                 print("CheckPoints written every %i." % self.checkPointInterval)
             if nGensToDo <= 20000:
@@ -2770,7 +2822,8 @@ class STMcmc(object):
                     while not gotIt:
                         # equiProbableProposals is True or False.  Usually False.
                         aProposal = self.props.chooseProposal(equiProbableProposals)
-                        gotIt = True
+                        if aProposal:
+                            gotIt = True
 
                         if aProposal.name == 'nni':
                             # Can't do nni on a star tree.
@@ -2907,7 +2960,7 @@ class STMcmc(object):
 
             # If it is a writeInterval, write stuff
             if (self.gen + 1) % self.sampleInterval == 0:
-                if 1:
+                if writeSamples:
                     likesFile = open(self.likesFileName, 'a')
                     likesFile.write(
                         '%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
@@ -2920,7 +2973,7 @@ class STMcmc(object):
                                                                   doMcmcCommandComments=False)
                     treeFile.close()
 
-                if self.writePrams:
+                if writeSamples and self.writePrams:
                     pramsFile = open(self.pramsFileName, 'a')
                     #pramsFile.write("%12i " % (self.gen + 1))
                     pramsFile.write("%12i" % (self.gen + 1))
@@ -3002,7 +3055,7 @@ class STMcmc(object):
                     # Start the tree partitions over.
                     self.treePartitions = None
                     # Zero the proposal counts
-                    for p in self.proposals:
+                    for p in self.props.proposals:
                         p.nProposals = [0] * self.nChains
                         p.nAcceptances = [0] * self.nChains
                         #p.nTopologyChangeAttempts = [0] * self.nChains
@@ -3097,6 +3150,11 @@ class STMcmc(object):
                 savedBigTrs.append(ch.bigTr)
                 ch.bigTr = None
 
+        # The logger does not pickle
+        savedLogger = self.logger
+        self.logger = None
+
+
         # _io.TextIOWrapper objects (as returned by open(fileName)) cannot be
         # copied ("serialized"), even if they are closed.  So save them and
         # restore them.
@@ -3105,6 +3163,8 @@ class STMcmc(object):
         # savedTreeFile = self.treeFile
 
         theCopy = copy.deepcopy(self)
+
+        self.logger = savedLogger
 
         theCopy.treePartitions._finishSplits()
         # assert theCopy.treeFile == None
@@ -3123,441 +3183,6 @@ class STMcmc(object):
                 ch.frrf = savedFrrfs[chNum]
                 ch.bigTr = savedBigTrs[chNum]
 
-    # def autoTune(self, gensPerProposal=500, verbose=True, giveUpAfter=10, writeTunings=True, carryOn=False):
-    #     """Attempt to tune the Mcmc automatically.  A bit of a hack.
-
-    #     Here we let the Mcmc run for a while, and then examine the
-    #     proposal acceptances to see if they are ok, and if they are
-    #     not, make adjustments and do it again.
-
-    #     We let the chain run in cycles for the number of proposals
-    #     times gensPerProposal (default 500) gens.  The proposals are
-    #     made randomly but with expected equal frequency, to counter
-    #     the effects that proposals being common and rare might
-    #     otherwise have.  At the end of a cycle, the proposals that are
-    #     affected by tunings are examined to see if the acceptances are
-    #     within range.  If adjustments are made, then another cycle is
-    #     done.  When all the acceptances are ok, then the operation
-    #     stops.  If arg 'giveUpAfter' (by default 10) cycles complete
-    #     without getting it right, it gives up.
-
-    #     The carryOn arg is set to False by default, meaning that if it gives up
-    #     after so many cycles then it dies with a P4Error.  However, if you set
-    #     carryOn to True then it does not die, even though it is not tuned.  This
-    #     may be useful for difficult tunings, as a partially tuned chain may be
-    #     better than completely untuned.
-
-    #     The chainTemp is also tested.  I test the acceptance between the cold
-    #     chain and the first heated chain.  If acceptance is less than 1% then
-    #     the temperature is deemed too high and so is lowered, and if the
-    #     acceptance is more than 10% then the temperature is deemed too low and
-    #     raised.
-
-    #     It is a bit of a hack, so you might see a tuning adjusted on
-    #     one cycle, and then that adjustment is reversed on another
-    #     cycle.
-
-    #     If you follow this method directly with Mcmc.run(), it uses
-    #     the chains in the state they are left in by this method, which
-    #     might save some burn-in time.
-
-    #     News: you can pickle the tunings from this method by turning on the arg
-    #     *writeTunings*, which writes a pickle file.  The name of the pickle file
-    #     incorporates the ``runNum``, eg ``mcmc_tunings_0.pickle`` for runNum 0.
-    #     You can then read it by::
-
-    #         tf = open(tuningsFileName, 'rb')
-    #         tunings = pickle.load(tf)
-    #         tf.close()
-    #         tunings.dump()
-        
-    #     and you can then apply the autoTune tuning values to another Mcmc, like
-    #     this::
-
-    #         m = STMcmc(t, tuningsFileName='myTuningsFile.pickle')
-
-
-    #     """
-
-    #     gm = ['STMcmc.autoTune()']
-
-    #     if writeTunings:
-    #         tuningsFileName = "mcmc_tunings_%i.pickle" % self.runNum
-    #         if os.path.isfile(tuningsFileName):
-    #             gm.append("Arg 'writeTunings' is on")
-    #             gm.append("File '%s' already exists." % tuningsFileName)
-    #             gm.append("I'm refusing to over-write.  Delete it or move it.")
-    #             raise P4Error(gm)
-
-    #     if self.proposals:  # Its a re-start
-    #         self.gen = -1
-    #         self.startMinusOne = -1
-    #         self.treePartitions = None
-    #         # Zero the proposal counts
-    #         for p in self.proposals:
-    #             p.nProposals = [0] * self.nChains
-    #             p.nAcceptances = [0] * self.nChains
-    #             p.nTopologyChangeAttempts = [0] * self.nChains
-    #             p.nTopologyChanges = [0] * self.nChains
-    #         # Zero the swap matrix
-    #         if self.nChains > 1:
-    #             self.swapMatrix = []
-    #             for i in range(self.nChains):
-    #                 self.swapMatrix.append([0] * self.nChains)
-
-    #     if not self.proposals:
-    #         self._makeChainsAndProposals()
-
-    #     #coldChainNum = 0
-    #     nGensToDo = gensPerProposal * len(self.proposals)
-    #     if verbose:
-    #         print("Starting the STMCMC autoTune()")
-    #         print("There are %i proposals." % len(self.proposals))
-    #         print("Set to do %i samples." % nGensToDo)
-    #         print("One dot is 100 generations.")
-
-    #     if 0:
-    #         for pr in self.proposals:
-    #             print("pNum = %2i  mtNum = %2i   %s" % (pr.pNum, pr.mtNum, pr.name))  
-    #         print()
-
-    #     # for ch in self.chains:
-    #     #     ch.verifyIdentityOfTwoTreesInChain()
-
-    #     print("Before autoTune() ...", end=' ')
-    #     self.tunings.dump()
-    #     # return
-    #     needsToBeTuned = True  # To start.
-    #     roundCounter = 0
-
-    #     while needsToBeTuned:
-    #         if verbose:
-    #             print("================ autoTune() round %i ================" % roundCounter)
-
-    #         # self.chains[0].curTree.model.dump()
-    #         needsToBeTuned = False
-    #         for gNum in range(nGensToDo):
-    #             self.gen += 1
-    #             for chNum in range(self.nChains):
-    #                 # Get the next proposal
-    #                 gotIt = False
-    #                 safety = 0
-    #                 while not gotIt:
-    #                     aProposal = random.choice(self.proposals)
-    #                     gotIt = True
-    #                     if aProposal.name == 'nni':
-    #                         # Can't do nni on a star tree.
-    #                         if self.chains[chNum].curTree.nInternalNodes == 1:
-    #                             #aProposal = self.proposalsHash['brLen']
-    #                             gotIt = False
-    #                     safety += 1
-    #                     if safety > 100:
-    #                         gm.append(
-    #                             "I've been unable to find a suitable proposal after 100 tries.")
-    #                         gm.append(
-    #                             "Its probably a star tree, and none of the proposals can use star trees.")
-    #                         raise P4Error(gm)
-
-    #                 # print aProposal.name
-    #                 self.chains[chNum].gen(aProposal)
-
-    #             # Do swap, if there is more than 1 chain.
-    #             if self.nChains == 1:
-    #                 #coldChain = 0
-    #                 pass
-    #             else:
-    #                 # Chain swapping stuff was lifted from MrBayes.  Thanks
-    #                 # again.
-    #                 chain1, chain2 = random.sample(self.chains, 2)
-
-    #                 # Use the upper triangle of swapMatrix for nProposed's
-    #                 if chain1.tempNum < chain2.tempNum:
-    #                     self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
-    #                 else:
-    #                     self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-
-    #                 lnR = (
-    #                     1.0 / (1.0 + (self.tunings.chainTemp * chain1.tempNum))) * chain2.curTree.logLike
-    #                 lnR += (1.0 / (1.0 + (self.tunings.chainTemp *
-    #                                       chain2.tempNum))) * chain1.curTree.logLike
-    #                 lnR -= (1.0 / (1.0 + (self.tunings.chainTemp *
-    #                                       chain1.tempNum))) * chain1.curTree.logLike
-    #                 lnR -= (1.0 / (1.0 + (self.tunings.chainTemp *
-    #                                       chain2.tempNum))) * chain2.curTree.logLike
-
-    #                 if lnR < -100.0:
-    #                     r = 0.0
-    #                 elif lnR >= 0.0:
-    #                     r = 1.0
-    #                 else:
-    #                     r = math.exp(lnR)
-
-    #                 acceptSwap = 0
-    #                 if random.random() < r:
-    #                     acceptSwap = 1
-
-    #                 if acceptSwap:
-    #                     # Use the lower triangle of swapMatrix to keep track of
-    #                     # nAccepted's
-    #                     if chain1.tempNum < chain2.tempNum:
-    #                         self.swapMatrix[chain2.tempNum][
-    #                             chain1.tempNum] += 1
-    #                     else:
-    #                         self.swapMatrix[chain1.tempNum][
-    #                             chain2.tempNum] += 1
-
-    #                     # Do the swap
-    #                     temporary = chain1.tempNum
-    #                     chain1.tempNum = chain2.tempNum
-    #                     chain2.tempNum = temporary
-
-    #             # Checking and debugging constraints
-    #             if 0 and self.constraints:
-    #                 print("Mcmc x1d")
-    #                 print(self.chains[0].verifyIdentityOfTwoTreesInChain())
-    #                 print("c checking curTree ...")
-    #                 self.chains[0].curTree.checkSplitKeys()
-    #                 print("c checking propTree ...")
-    #                 self.chains[0].propTree.checkSplitKeys()
-    #                 print("c checking that all constraints are present")
-    #                 theSplits = [
-    #                     n.br.splitKey for n in self.chains[0].curTree.iterNodesNoRoot()]
-    #                 for sk in self.constraints.constraints:
-    #                     if sk not in theSplits:
-    #                         gm.append(
-    #                             "split %i is not present in the curTree." % sk)
-    #                         raise P4Error(gm)
-    #                 print("Mcmc zzz")
-
-    #             # Reassuring pips ...
-    #             # if self.gen and self.gen % 1000 == 0:
-    #             #    print "%10i" % self.gen
-    #             # elif self.gen and self.gen % 100 == 0:
-    #             if self.gen and self.gen % 100 == 0:
-    #                 sys.stdout.write(".")
-    #                 sys.stdout.flush()
-
-    #         if verbose:
-    #             print()
-
-    #         atLeast = 100
-    #         for i in range(len(self.proposals)):
-    #             p = self.proposals[i]
-    #             if p.nProposals[0] < atLeast:
-    #                 self.writeProposalProbs()
-    #                 gm.append(
-    #                     "nProposals for proposal %i (%s) is only %i." % (i, p.name, p.nProposals[0]))
-    #                 gm.append(
-    #                     "We want at least %i samples per proposal." % atLeast)
-    #                 gm.append("The sample size is not big enough.")
-    #                 raise P4Error(gm)
-    #         # self.writeProposalAcceptances()
-    #         if 0:
-    #             for p in self.proposals:
-    #                 accepted = float(
-    #                     p.nAcceptances[0]) / float(p.nProposals[0])
-    #                 print("%25s  %5.3f" % (p.name, accepted))
-
-    #         # Here is where we go over each tuning and ask whether the
-    #         # proposal acceptance is within limits.  Here there should not be
-    #         # more than one proposal for a tuning, so we need not take that
-    #         # into account.  The limits are 0.1 to 0.7, as suggested
-    #         # by MrBayes.  However, we don't want it too close to the
-    #         # border, so we use 'safe' limits.
-    #         safeLower = 0.15
-    #         safeUpper = 0.60
-    #         #safeMultiUpper = 0.40  # For allBrLens, compDir, allCompsDir, 
-    #         #safeMultiLower = 0.05
-
-    #         if verbose:
-    #             print("Acceptances for the tunings:")
-
-    #         theSig = "%25s  %5.3f"
-    #         sig2 = " %-10s"
-    #         sig3 = "%40s %s"
-
-    #         p = self.proposalsHash.get('spaQ_uniform')
-    #         if p:
-    #             accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
-    #             if verbose:
-    #                 print(theSig % ("spaQ_uniform", accepted), end=' ')
-    #             if accepted < safeLower:
-    #                 if verbose:
-    #                     print(sig2 % "too small", end=' ')
-    #                 oldTuning = self.tunings.spaQ_uniform
-    #                 self.tunings.spaQ_uniform /= 2.0
-    #                 if verbose:
-    #                     print("tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.spaQ_uniform))
-    #                 needsToBeTuned = True
-    #             elif accepted > safeUpper:
-    #                 if verbose:
-    #                     print(sig2 % "too big", end=' ')
-    #                 oldTuning = self.tunings.spaQ_uniform
-    #                 self.tunings.spaQ_uniform *= 2.0
-    #                 if verbose:
-    #                     print("tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.spaQ_uniform))
-    #                 needsToBeTuned = True
-    #             else:
-    #                 if verbose:
-    #                     print(sig2 % "ok")
-
-    #         p = self.proposalsHash.get('SR2008beta_uniform')
-    #         if p:
-    #             accepted = float(p.nAcceptances[0]) / float(p.nProposals[0])
-    #             if verbose:
-    #                 print(theSig % ("SR2008beta_uniform", accepted), end=' ')
-    #             if accepted < safeLower:
-    #                 if verbose:
-    #                     print(sig2 % "too small", end=' ')
-    #                 oldTuning = self.tunings.SR2008beta_uniform
-    #                 self.tunings.SR2008beta_uniform /= 2.0
-    #                 if verbose:
-    #                     print("tuning currently %5.3f; halve it to %5.3f" % (oldTuning, self.tunings.SR2008beta_uniform))
-    #                 needsToBeTuned = True
-    #             elif accepted > safeUpper:
-    #                 if verbose:
-    #                     print(sig2 % "too big", end=' ')
-    #                 oldTuning = self.tunings.SR2008beta_uniform
-    #                 self.tunings.SR2008beta_uniform *= 2.0
-    #                 if verbose:
-    #                     print("tuning currently %5.3f; double it to %5.3f" % (oldTuning, self.tunings.SR2008beta_uniform))
-    #                 needsToBeTuned = True
-    #             else:
-    #                 if verbose:
-    #                     print(sig2 % "ok")
-
-
-    #         if 1 and self.nChains > 1:
-    #             # Try to autoTune the swaps, by adjusting the chainTemp.  New
-    #             # arbitrary rules, to encourage a high temperature.  I think
-    #             # that the most important number is between the cold chain and
-    #             # the next chain, and it should be low.  I think 1-10% should be
-    #             # OK.
-
-    #             # First check that there were enough proposals to make a valid
-    #             # calculation.
-    #             tooFews = 0
-    #             for i in range(self.nChains)[:-1]:
-    #                 for j in range(i + 1, self.nChains):
-    #                     if self.swapMatrix[i][j] < atLeast:
-    #                         tooFews += 1
-    #             if tooFews:
-    #                 self.writeSwapMatrix()
-    #                 gm.append(
-    #                     "checking the swap matrix, but there were too few samples taken.")
-    #                 gm.append("I want at least %i samples, but %i swaps had fewer than that." % (
-    #                     atLeast, tooFews))
-    #                 raise P4Error(gm)
-
-                
-    #             myAccepted = float(self.swapMatrix[1][0]) / float(self.swapMatrix[0][1])
-    #             isOK = True
-    #             if myAccepted > 0.1:   # temperature too low
-    #                 isOK = False
-    #                 if verbose:
-    #                     self.writeSwapMatrix()
-    #                     print("    Current chainTemp is %5.3f; too low" % self.tunings.chainTemp)
-    #                 self.tunings.chainTemp *= 1.3333
-    #                 if verbose:
-    #                     print("    Acceptance of chain 0 with chain 1 is is %5.3f" % myAccepted)
-    #                     print("      -> raising the chainTemp by one third, to %5.3f" % self.tunings.chainTemp)
-    #                 needsToBeTuned = True
-    #             elif myAccepted < 0.01:  # temperature too high
-    #                 isOK = False
-    #                 if verbose:
-    #                     self.writeSwapMatrix()
-    #                     print("    Current chainTemp is %5.3f; too high" % self.tunings.chainTemp)
-    #                     print("    Acceptance of chain 0 with chain 1 is %5.3f" % myAccepted)
-    #                 if myAccepted > 0.005:
-    #                     self.tunings.chainTemp /= 1.3333
-    #                     if verbose:
-    #                         print("      -> lowering the chainTemp by one quarter, to %5.3f" % self.tunings.chainTemp)
-    #                 elif myAccepted > 0.001:
-    #                     self.tunings.chainTemp /= 2.0
-    #                     if verbose:
-    #                         print("      -> lowering the chainTemp by half, to %5.3f" % self.tunings.chainTemp)
-    #                 else:
-    #                     self.tunings.chainTemp /= 3.0
-    #                     if verbose:
-    #                         print("      -> dividing the chainTemp by 3, to %5.3f" % self.tunings.chainTemp)
-
-    #                 needsToBeTuned = True
-                        
-    #             if isOK:
-    #                 if verbose:
-    #                     print("    Chain temp appears to be ok.")
-
-    #         roundCounter += 1
-    #         # if roundCounter >= 1:
-    #         #    needsToBeTuned = False
-    #         if needsToBeTuned and roundCounter >= giveUpAfter:
-    #             self.tunings.dump()
-    #             myMessage = "autoTune() has gone thru %i rounds, and it still needs tuning." % giveUpAfter
-    #             if not carryOn:
-    #                 gm.append(myMessage)
-    #                 gm.append("Giving up.  Do it by hand?  Or set carryOn to not give up?")
-    #                 if writeTunings:
-    #                     print("Writing tunings to pickle file '%s'" % tuningsFileName)
-    #                     self.pickleTunings(tuningsFileName)
-    #                 raise P4Error(gm)
-    #             else:
-    #                 # carry on
-    #                 if verbose:
-    #                     print(myMessage)
-    #                     print('carryOn is set, so continuing anyway ...')
-    #                 break
-                    
-                
-
-    #         # self.writeProposalProbs()
-
-    #         # This stuff below should be the same as is done after pickling
-    #         self.startMinusOne = self.gen
-
-    #         # Start the tree partitions over.
-    #         self.treePartitions = None
-    #         # Zero the proposal counts
-    #         for p in self.proposals:
-    #             p.nProposals = [0] * self.nChains
-    #             p.nAcceptances = [0] * self.nChains
-    #             p.nTopologyChangeAttempts = [0] * self.nChains
-    #             p.nTopologyChanges = [0] * self.nChains
-    #         # Zero the swap matrix
-    #         if self.nChains > 1:
-    #             self.swapMatrix = []
-    #             for i in range(self.nChains):
-    #                 self.swapMatrix.append([0] * self.nChains)
-
-    #         # print "End of round %i, needsToBeTuned = %s" % (roundCounter - 1, needsToBeTuned)
-    #         # break
-
-    #     print("\nAfter autoTune() ...", end=' ')
-    #     self.tunings.dump()
-    #     self.gen = -1
-    #     self.startMinusOne = -1
-    #     self.treePartitions = None
-    #     # Zero the proposal counts
-    #     for p in self.proposals:
-    #         p.nProposals = [0] * self.nChains
-    #         p.nAcceptances = [0] * self.nChains
-    #         p.nTopologyChangeAttempts = [0] * self.nChains
-    #         p.nTopologyChanges = [0] * self.nChains
-    #     if self.nChains > 1:
-    #         self.swapMatrix = []
-    #         for i in range(self.nChains):
-    #             self.swapMatrix.append([0] * self.nChains)
-    #     else:
-    #         self.swapMatrix = None
-    #     #self.chains = []
-
-    #     if writeTunings:
-    #         print("Writing tunings to pickle file '%s'" % tuningsFileName)
-    #         self.pickleTunings(tuningsFileName)
-
-    # def pickleTunings(self, tuningsFileName):
-    #     f = open(tuningsFileName, 'wb')
-    #     pickle.dump(self.tunings, f, pickle.HIGHEST_PROTOCOL)
-    #     f.close()
 
     def writeProposalProbs(self):
         """(Another) Pretty-print the proposal probabilities.
@@ -3565,21 +3190,16 @@ class STMcmc(object):
         See also STMcmc.writeProposalAcceptances().
         """
 
-        nProposals = len(self.proposals)
+        nProposals = len(self.props.proposals)
         if not nProposals:
             print("STMcmc.writeProposalProbs().  No proposals (yet?).")
             return
-        #intended = self.propWeights[:]
-        # for i in range(len(intended)):
-        #    intended[i] /= self.totalPropWeights
-        # if math.fabs(sum(intended) - 1.0 > 1e-15):
-        #    raise P4Error("bad sum of intended proposal probs. %s" % sum(intended))
 
         nAttained = [0] * nProposals
         nAccepted = [0] * nProposals
         for i in range(nProposals):
-            nAttained[i] = self.proposals[i].nProposals[0]
-            nAccepted[i] = self.proposals[i].nAcceptances[0]
+            nAttained[i] = self.props.proposals[i].nProposals[0]
+            nAccepted[i] = self.props.proposals[i].nAcceptances[0]
         sumAttained = float(sum(nAttained))  # should be zero or nGen
         if not sumAttained:
             print("STMcmc.writeProposalProbs().  No proposals have been made.")
@@ -3599,12 +3219,12 @@ class STMcmc(object):
         # print "There are %i proposals" % len(self.proposals)
         print("For %i gens, from gens %i to %i, inclusive." % (
             (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-        print("%2s %11s %11s  %11s %10s %23s %5s %5s" % ('', 'nProposals', 'proposed(%)',
-                                                         'accepted(%)', 'tuning', 'proposal', 'part', 'num'))
-        for i in range(len(self.proposals)):
+        print("%2s %11s %11s  %11s %10s %23s" % ('', 'nProposals', 'proposed(%)',
+                                                         'accepted(%)', 'tuning', 'proposal'))
+        for i in range(len(self.props.proposals)):
             print("%2i" % i, end=' ')
-            p = self.proposals[i]
-            print("   %7i " % self.proposals[i].nProposals[0], end=' ')
+            p = self.props.proposals[i]
+            print("   %7i " % self.props.proposals[i].nProposals[0], end=' ')
             print("   %5.1f    " % probAttained[i], end=' ')
             if nAttained[i]:
                 print("   %5.1f   " % (100.0 * float(nAccepted[i]) / float(nAttained[i])), end=' ')
@@ -3612,21 +3232,16 @@ class STMcmc(object):
                 print("       -   ", end=' ')
 
             if p.tuning == None:
-                print("       -    ", end=' ')
-            elif p.tuning < 2.0:
-                print("   %7.3f  " % p.tuning, end=' ')
+                print("      -   ", end=' ')
+            elif p.tuning[0] < 2.0:
+                print("  %8.4f" % p.tuning[0], end=' ')
+            elif p.tuning[0] < 20.0:
+                print("  %8.3f" % p.tuning[0], end=' ')
+            elif p.tuning[0] < 200.0:
+                print("  %8.1f" % p.tuning[0], end=' ')
             else:
-                print("   %7.1f  " % p.tuning, end=' ')
-
-            print(" %20s" % p.name, end=' ')
-            if p.pNum != -1:
-                print(" %3i " % p.pNum, end=' ')
-            else:
-                print("   - ", end=' ')
-            if p.mtNum != -1:
-                print(" %3i " % p.mtNum, end=' ')
-            else:
-                print("   - ", end=' ')
+                print("  %8.3g" % p.tuning[0], end=' ')
+            print("%23s " % p.name, end=' ')
             print()
 
     # def writeProposalIntendedProbs(self):
@@ -3813,7 +3428,7 @@ class STMcmcCheckPointReader(object):
                     # print "  %f " % sumOfStdDevs,
                     print("     nSplits=%i, average of std devs of splits %.4f " % (nSplits, sumOfStdDevs / nSplits))
                     print("     max difference %f, mean difference %f" % (max(diffs), sum(diffs) / nSplits))
-            return sumOfStdDevs / nSplits
+            return (sumOfStdDevs / nSplits, max(diffs), sum(diffs) / nSplits)
         else:
             return None
 
@@ -4019,7 +3634,9 @@ class SR2008ML(object):
             raise P4Error('SR2008ML: The bigT needs taxNames')
 
         stm = STMcmc(ttDupes, bigT=bigTDupe, modelName='SR2008_rf_aZ_fb',
-                     beta=1.0, spaQ=0.5, stRFCalc='purePython1',
+                     beta=1.0, spaQ=0.5, 
+                     stRFCalc='purePython1',
+                     #stRFCalc='bitarray',
                      nChains=1, runNum=0, sampleInterval=100,
                      checkPointInterval=None, useSplitSupport=False, verbose=False, 
                      checkForOutputFiles=False)
