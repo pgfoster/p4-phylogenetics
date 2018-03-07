@@ -1932,6 +1932,11 @@ if True:
             upperNode = self.node(upperNodeSpec)
         else:
             candidates = [n for n in self.iterInternalsNoRoot()]
+            if not candidates:
+                self.dump()
+                self.draw()
+                gm.append("No internal nodes?")
+                raise P4Error(gm)
             upperNode = random.choice(candidates)
 
         # Want the upperNode to have at least 2 children
