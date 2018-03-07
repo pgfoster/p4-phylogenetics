@@ -2720,7 +2720,7 @@ class Tree(object):
             raise P4Error(gm)
         if metric == 'scqdist':  # no need for taxNames
             try:
-                import scqdist
+                import p4.scqdist as scqdist
             except ImportError:
                 gm.append(
                     "Could not find the 'scqdist' module needed for this metric.")
