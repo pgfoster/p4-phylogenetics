@@ -1477,148 +1477,148 @@ class Mcmc(object):
             print("\nwriteProposalAcceptances()  There is no info in memory. ")
             print(" Maybe it was just emptied after writing to a checkpoint?  ")
             print("If so, read the checkPoint and get the proposalAcceptances from there.")
-        else:
+            return
 
-            spacer = ' ' * 8
-            print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
-                self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-            print("%s %30s %5s %10s %13s%10s" % (spacer, 'proposal', 'part', 'nProposals', 'acceptance(%)', 'tuning'))
+        spacer = ' ' * 8
+        print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
+            self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+        print("%s %30s %5s %10s %13s%10s" % (spacer, 'proposal', 'part', 'nProposals', 'acceptance(%)', 'tuning'))
+        for p in self.props.proposals:
+            print("%s" % spacer, end=' ')
+            print("%30s" % p.name, end=' ')
+            if p.pNum != -1:
+                print(" %3i " % p.pNum, end=' ')
+            else:
+                print("   - ", end=' ')
+            print("%10i" % p.nProposals[0], end=' ')
+
+            if p.nProposals[0]:  # Don't divide by zero
+                print("       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])), end=' ')
+            else:
+                print("           - ", end=' ')
+
+            if p.tuning == None:
+                print("      -", end=' ')
+            elif p.tuning[0] < 2.0:
+                print("  %8.4f" % p.tuning[0], end=' ')
+            elif p.tuning[0] < 20.0:
+                print("  %8.3f" % p.tuning[0], end=' ')
+            elif p.tuning[0] < 200.0:
+                print("  %8.1f" % p.tuning[0], end=' ')
+            else:
+                print("  %8.3g" % p.tuning[0], end=' ')
+            print()
+
+        # Tabulate topology changes for 'local', if any were attempted.
+        doTopol = 0
+        p = self.props.proposalsDict.get('local')
+        if p:
+            for tNum in range(self.nChains):
+                if p.nTopologyChangeAttempts[tNum]:
+                    doTopol = 1
+                    break
+            if doTopol:
+                print("'Local' proposal-- attempted topology changes")
+                print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
+                for tNum in range(self.nChains):
+                    print("%s" % spacer, end=' ')
+                    print("%4i " % tNum, end=' ')
+                    print("%9i" % p.nProposals[tNum], end=' ')
+                    print("%8i" % p.nAcceptances[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
+                    print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
+                    print("%13i" % p.nTopologyChanges[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
+            else:
+                print("%sFor the 'local' proposals, there were no attempted" % spacer)
+                print("%stopology changes in any of the chains." % spacer)
+
+        # do the same for eTBR
+        doTopol = 0
+        p = self.props.proposalsDict.get('eTBR')
+        if p:
+            for tNum in range(self.nChains):
+                if p.nTopologyChangeAttempts[tNum]:
+                    doTopol = 1
+                    break
+            if doTopol:
+                print("'eTBR' proposal-- attempted topology changes")
+                print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
+                for tNum in range(self.nChains):
+                    print("%s" % spacer, end=' ')
+                    print("%4i " % tNum, end=' ')
+                    print("%9i" % p.nProposals[tNum], end=' ')
+                    print("%8i" % p.nAcceptances[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
+                    print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
+                    print("%13i" % p.nTopologyChanges[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
+            else:
+                print("%sFor the 'eTBR' proposals, there were no attempted" % spacer)
+                print("%stopology changes in any of the chains." % spacer)
+
+        # Check for aborts.
+        p = self.props.proposalsDict.get('local')
+        if p:
+            if hasattr(p, 'nAborts'):
+                if p.nAborts[0]:
+                    print("The 'local' proposal had %i aborts. (Not counted in nProps above.)" % p.nAborts[0])
+                    print("(Aborts might be due to brLen proposals too big or too small)")
+                    if self.constraints:
+                        print("(Or, more likely, due to violated constraints.)")
+                else:
+                    print("The 'local' proposal had no aborts (either due to brLen proposals")
+                    print("too big or too small, or due to violated constraints).")
+
+        p = self.props.proposalsDict.get('eTBR')
+        if p:
+            if hasattr(p, 'nAborts'):
+                if p.nAborts[0]:
+                    print("The 'eTBR' proposal had %i aborts.  (Not counted in nProps above.)" % p.nAborts[0])
+                    assert self.constraints
+                    print("(Aborts due to violated constraints)")
+                else:
+                    if self.constraints:
+                        print("The 'eTBR' proposal had no aborts (due to violated constraints).")
+
+        for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+            p = self.props.proposalsDict.get(pN)
+            if p:
+                if hasattr(p, 'nAborts'):
+                    print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+
+        if self.nChains > 1:
+            print("\n\nAcceptances and tunings by temperature")
+            print("%s %30s %5s %5s %10s %13s%10s" % (
+                spacer, 'proposal', 'part', 'tempNum', 'nProposals', 'acceptance(%)', 'tuning'))
             for p in self.props.proposals:
-                print("%s" % spacer, end=' ')
-                print("%30s" % p.name, end=' ')
-                if p.pNum != -1:
-                    print(" %3i " % p.pNum, end=' ')
-                else:
-                    print("   - ", end=' ')
-                print("%10i" % p.nProposals[0], end=' ')
-
-                if p.nProposals[0]:  # Don't divide by zero
-                    print("       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])), end=' ')
-                else:
-                    print("           - ", end=' ')
-
-                if p.tuning == None:
-                    print("      -", end=' ')
-                elif p.tuning[0] < 2.0:
-                    print("  %8.4f" % p.tuning[0], end=' ')
-                elif p.tuning[0] < 20.0:
-                    print("  %8.3f" % p.tuning[0], end=' ')
-                elif p.tuning[0] < 200.0:
-                    print("  %8.1f" % p.tuning[0], end=' ')
-                else:
-                    print("  %8.3g" % p.tuning[0], end=' ')
-                print()
-
-            # Tabulate topology changes for 'local', if any were attempted.
-            doTopol = 0
-            p = self.props.proposalsDict.get('local')
-            if p:
-                for tNum in range(self.nChains):
-                    if p.nTopologyChangeAttempts[tNum]:
-                        doTopol = 1
-                        break
-                if doTopol:
-                    print("'Local' proposal-- attempted topology changes")
-                    print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
-                    for tNum in range(self.nChains):
-                        print("%s" % spacer, end=' ')
-                        print("%4i " % tNum, end=' ')
-                        print("%9i" % p.nProposals[tNum], end=' ')
-                        print("%8i" % p.nAcceptances[tNum], end=' ')
-                        print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
-                        print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
-                        print("%13i" % p.nTopologyChanges[tNum], end=' ')
-                        print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
-                else:
-                    print("%sFor the 'local' proposals, there were no attempted" % spacer)
-                    print("%stopology changes in any of the chains." % spacer)
-
-            # do the same for eTBR
-            doTopol = 0
-            p = self.props.proposalsDict.get('eTBR')
-            if p:
-                for tNum in range(self.nChains):
-                    if p.nTopologyChangeAttempts[tNum]:
-                        doTopol = 1
-                        break
-                if doTopol:
-                    print("'eTBR' proposal-- attempted topology changes")
-                    print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
-                    for tNum in range(self.nChains):
-                        print("%s" % spacer, end=' ')
-                        print("%4i " % tNum, end=' ')
-                        print("%9i" % p.nProposals[tNum], end=' ')
-                        print("%8i" % p.nAcceptances[tNum], end=' ')
-                        print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
-                        print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
-                        print("%13i" % p.nTopologyChanges[tNum], end=' ')
-                        print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
-                else:
-                    print("%sFor the 'eTBR' proposals, there were no attempted" % spacer)
-                    print("%stopology changes in any of the chains." % spacer)
-
-            # Check for aborts.
-            p = self.props.proposalsDict.get('local')
-            if p:
-                if hasattr(p, 'nAborts'):
-                    if p.nAborts[0]:
-                        print("The 'local' proposal had %i aborts. (Not counted in nProps above.)" % p.nAborts[0])
-                        print("(Aborts might be due to brLen proposals too big or too small)")
-                        if self.constraints:
-                            print("(Or, more likely, due to violated constraints.)")
+                for tempNum in range(self.nChains):
+                    print("%s" % spacer, end=' ')
+                    print("%30s" % p.name, end=' ')
+                    if p.pNum != -1:
+                        print(" %3i " % p.pNum, end=' ')
                     else:
-                        print("The 'local' proposal had no aborts (either due to brLen proposals")
-                        print("too big or too small, or due to violated constraints).")
+                        print("   - ", end=' ')
+                    print(" %3i " % tempNum, end=' ')
+                    print("%10i" % p.nProposals[tempNum], end=' ')
 
-            p = self.props.proposalsDict.get('eTBR')
-            if p:
-                if hasattr(p, 'nAborts'):
-                    if p.nAborts[0]:
-                        print("The 'eTBR' proposal had %i aborts.  (Not counted in nProps above.)" % p.nAborts[0])
-                        assert self.constraints
-                        print("(Aborts due to violated constraints)")
+                    if p.nProposals[tempNum]:  # Don't divide by zero
+                        print("       %5.1f " % (
+                            100.0 * float(p.nAcceptances[tempNum]) / float(p.nProposals[tempNum])), end=' ')
                     else:
-                        if self.constraints:
-                            print("The 'eTBR' proposal had no aborts (due to violated constraints).")
+                        print("           - ", end=' ')
 
-            for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-                p = self.props.proposalsDict.get(pN)
-                if p:
-                    if hasattr(p, 'nAborts'):
-                        print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
-
-            if self.nChains > 1:
-                print("\n\nAcceptances and tunings by temperature")
-                print("%s %30s %5s %5s %10s %13s%10s" % (
-                    spacer, 'proposal', 'part', 'tempNum', 'nProposals', 'acceptance(%)', 'tuning'))
-                for p in self.props.proposals:
-                    for tempNum in range(self.nChains):
-                        print("%s" % spacer, end=' ')
-                        print("%30s" % p.name, end=' ')
-                        if p.pNum != -1:
-                            print(" %3i " % p.pNum, end=' ')
-                        else:
-                            print("   - ", end=' ')
-                        print(" %3i " % tempNum, end=' ')
-                        print("%10i" % p.nProposals[tempNum], end=' ')
-
-                        if p.nProposals[tempNum]:  # Don't divide by zero
-                            print("       %5.1f " % (
-                                100.0 * float(p.nAcceptances[tempNum]) / float(p.nProposals[tempNum])), end=' ')
-                        else:
-                            print("           - ", end=' ')
-
-                        if p.tuning == None:
-                            print("      -", end=' ')
-                        elif p.tuning[tempNum] < 2.0:
-                            print("  %8.4f" % p.tuning[tempNum], end=' ')
-                        elif p.tuning[tempNum] < 20.0:
-                            print("  %8.3f" % p.tuning[tempNum], end=' ')
-                        elif p.tuning[tempNum] < 200.0:
-                            print("  %8.1f" % p.tuning[tempNum], end=' ')
-                        else:
-                            print("  %8.3g" % p.tuning[tempNum], end=' ')
-                        print()
+                    if p.tuning == None:
+                        print("      -", end=' ')
+                    elif p.tuning[tempNum] < 2.0:
+                        print("  %8.4f" % p.tuning[tempNum], end=' ')
+                    elif p.tuning[tempNum] < 20.0:
+                        print("  %8.3f" % p.tuning[tempNum], end=' ')
+                    elif p.tuning[tempNum] < 200.0:
+                        print("  %8.1f" % p.tuning[tempNum], end=' ')
+                    else:
+                        print("  %8.3g" % p.tuning[tempNum], end=' ')
+                    print()
 
     def writeSwapMatrix(self):
         print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
@@ -1960,7 +1960,8 @@ class Mcmc(object):
                     while not gotIt:
                         # equiProbableProposals is True or False.  Usually False.
                         aProposal = self.props.chooseProposal(equiProbableProposals)
-                        gotIt = True
+                        if aProposal:
+                            gotIt = True
 
                         if aProposal.name == 'local':
                             # Can't do local on a star tree.
