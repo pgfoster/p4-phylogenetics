@@ -302,10 +302,6 @@ class Var(object):
 
         self.mcmcMaxCompAndRMatrixTuning = 0.9
 
-        #self.allowUnusedComps = False
-        #self.rjCompUniformAllocationPrior = True
-        #self.rjRMatrixUniformAllocationPrior = True
-
         # # Modify behavior of NexusToken.nextTok() function.
         # # write, but do not get, all [!...]
         # self._nexus_writeVisibleComments = 0
@@ -317,6 +313,8 @@ class Var(object):
         self._interactiveHelper = None
         self._excepthookEditor = None
         self.allowEmptyCharSetsAndTaxSets = False
+
+        self.stmcmc_swap = 'matrix'  # (old) matrix or (new) vector
 
 
     def _del_nothing(self):
