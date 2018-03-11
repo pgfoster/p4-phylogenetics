@@ -110,7 +110,17 @@ class McmcCheckPointReader(object):
             print("%12s %12s %12s %12s" % (" ", i, m.runNum, m.gen + 1))
 
     def compareSplits(self, mNum1, mNum2, verbose=True, minimumProportion=0.1):
-        """Should we be only looking at splits within the 95% ci of the topologies?"""
+        """Do the TreePartitions.compareSplits() method between two checkpoints 
+
+        Args:
+            mNum1, mNum2 (int): indices to Mcmc checkpoints in self
+
+        Returns:
+            a tuple of asdoss and the maximum difference in split supports
+
+        """
+
+        # Should we be only looking at splits within the 95% ci of the topologies?
         m1 = self.mm[mNum1]
         m2 = self.mm[mNum2]
         tp1 = m1.treePartitions
@@ -132,75 +142,105 @@ class McmcCheckPointReader(object):
                 #    print i
                 print(" %10i " % m.treePartitions.nTrees)
 
-        asdos = self.compareSplitsBetweenTwoTreePartitions(
+        asdos, maxDiff = self.compareSplitsBetweenTwoTreePartitions(
             tp1, tp2, minimumProportion, verbose=verbose)
-        asdos2 = self.compareSplitsBetweenTwoTreePartitions(
+        asdos2, maxDiff = self.compareSplitsBetweenTwoTreePartitions(
             tp2, tp1, minimumProportion, verbose=verbose)
         if math.fabs(asdos - asdos2) > 0.000001:
             print("Reciprocal assdos differs:  %s  %s" % (asdos, asdos2))
 
         if asdos == None and verbose:
             print("No splits > %s" % minimumProportion)
-        return asdos
+        return asdos, maxDiff
 
     def compareSplitsBetweenTwoTreePartitions(tp1, tp2, minimumProportion, verbose=False):
+        """Returns a tuple of asdoss, max(diffs)"""
+
         ret = tp1.compareSplits(tp2, minimumProportion=minimumProportion)
-        # print ret
-        if ret != []:
-            sumOfStdDevs = 0.0
-            nSplits = len(ret)
-            diffs = []
-            for i in ret:
-                # print "            %.3f  %.3f    " % (i[2][0], i[2][1]),
-                stdDev = math.sqrt(p4.func.variance(i[2]))
-                # print "%.5f" % stdDev
-                sumOfStdDevs += stdDev
-                diffs.append(math.fabs(i[2][0] - i[2][1]))
-            quot = sumOfStdDevs / nSplits
-            if verbose:
-                # print "  %f " % sumOfStdDevs,
-                print("     nSplits=%i, average of std devs of splits %.4f " % (nSplits, quot))
-                print("     max difference %f, mean difference %f" % (max(diffs), sum(diffs) / nSplits))
-            return quot
-        else:
+
+        #print(ret)  # a list of 3-item lists
+        #  1. The split key
+        #  2. The split string
+        #  3. A list of the 2 supports
+
+        if not ret:
             return None
+
+        sumOfStdDevs = 0.0
+        nSplits = len(ret)
+        diffs = []
+        for i in ret:
+            # print "            %.3f  %.3f    " % (i[2][0], i[2][1]),
+            stdDev = math.sqrt(p4.func.variance(i[2]))
+            # print "%.5f" % stdDev
+            sumOfStdDevs += stdDev
+            diffs.append(math.fabs(i[2][0] - i[2][1]))
+        quot = sumOfStdDevs / nSplits
+        maxDiffs = max(diffs)
+        if verbose:
+            # print "  %f " % sumOfStdDevs,
+            print("     nSplits=%i, average of std devs of splits %.4f " % (nSplits, quot))
+            print("     max difference %f, mean difference %f" % (max(diffs), sum(diffs) / nSplits))
+        return (quot, maxDiffs)
 
     compareSplitsBetweenTwoTreePartitions = staticmethod(
         compareSplitsBetweenTwoTreePartitions)
 
     def compareSplitsAll(self, precision=3, linewidth=120):
+        """Do the compareSplits() method between all pairs
+
+        Output is verbose.  Shows 
+        - average standard deviation of split frequencies (or supports), like MrBayes
+        - maximum difference between split supports from each pair of checkpoints, like PhyloBayes
+
+        Returns:
+            None
+
+        """
         nM = len(self.mm)
-        nItems = ((nM * nM) - nM) / 2
-        results = numpy.zeros((nM, nM), numpy.float)
-        vect = numpy.zeros(nItems, numpy.float)
+        nItems = int(((nM * nM) - nM) / 2)
+        asdosses = numpy.zeros((nM, nM), dtype=numpy.float64)
+        vect = numpy.zeros(nItems, dtype=numpy.float64)
+        maxDiffs = numpy.zeros((nM, nM), dtype=numpy.float64)
+
         vCounter = 0
         for mNum1 in range(1, nM):
             for mNum2 in range(mNum1):
-                ret = self.compareSplits(mNum1, mNum2, verbose=False)
-                # print "+++ ret = %s" % ret
-                if ret == None:
-                    ret = 0.0
-                results[mNum1][mNum2] = ret
-                results[mNum2][mNum1] = ret
-                vect[vCounter] = ret
+                thisAsdoss, thisMaxDiff = self.compareSplits(mNum1, mNum2, verbose=False)
+                #print("+++ thisAsdoss = %s  thisMaxDiff=%f, mNum1=%i, mNum2=%i" % (thisAsdoss, thisMaxDiff, mNum1, mNum2))
+                if thisAsdoss == None:
+                    thisAsdoss = 0.0
+                asdosses[mNum1][mNum2] = thisAsdoss
+                asdosses[mNum2][mNum1] = thisAsdoss
+                vect[vCounter] = thisAsdoss
                 vCounter += 1
+                maxDiffs[mNum1][mNum2] = thisMaxDiff
+                maxDiffs[mNum2][mNum1] = thisMaxDiff
+
                 if 0:
                     print(" %10i " % mNum1, end=' ')
                     print(" %10i " % mNum2, end=' ')
-                    print("%.3f" % ret)
+                    print("%.3f" % thisAsdoss)
 
         # Save current numpy printoptions, and restore, below.
         curr = numpy.get_printoptions()
         numpy.set_printoptions(precision=precision, linewidth=linewidth)
-        print(results)
-        numpy.set_printoptions(
-            precision=curr['precision'], linewidth=curr['linewidth'])
-
+        print("Pairwise asdoss values ---")
+        print(asdosses)
+        print()
         print("For the %i values in one triangle," % nItems)
         print("max =  ", vect.max())
         print("min =  ", vect.min())
         print("mean = ", vect.mean())
         print("var =  ", vect.var())
+
+        print()
+        print("Pairwise maximum differences in split supports between the two runs ---")
+        print(maxDiffs)
+
+        # Reset printoptions back to what it was
+        numpy.set_printoptions(
+            precision=curr['precision'], linewidth=curr['linewidth'])
 
     def writeProposalAcceptances(self):
         for m in self.mm:
