@@ -314,7 +314,8 @@ class Var(object):
         self._excepthookEditor = None
         self.allowEmptyCharSetsAndTaxSets = False
 
-        self.stmcmc_swap = 'matrix'  # (old) matrix or (new) vector
+        self.mcmc_swapVector = False  # (old) matrix or (new) vector
+        self.stmcmc_swapTunerSampleSize = 250
 
 
     def _del_nothing(self):
