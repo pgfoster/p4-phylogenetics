@@ -142,19 +142,31 @@ class McmcCheckPointReader(object):
                 #    print i
                 print(" %10i " % m.treePartitions.nTrees)
 
-        asdos, maxDiff = self.compareSplitsBetweenTwoTreePartitions(
+        asdos, maxDiff, meanDiff = self.compareSplitsBetweenTwoTreePartitions(
             tp1, tp2, minimumProportion, verbose=verbose)
-        asdos2, maxDiff = self.compareSplitsBetweenTwoTreePartitions(
+        asdos2, maxDiff2, meanDiff2= self.compareSplitsBetweenTwoTreePartitions(
             tp2, tp1, minimumProportion, verbose=verbose)
         if math.fabs(asdos - asdos2) > 0.000001:
             print("Reciprocal assdos differs:  %s  %s" % (asdos, asdos2))
 
         if asdos == None and verbose:
             print("No splits > %s" % minimumProportion)
-        return asdos, maxDiff
+        return asdos, maxDiff, meanDiff
 
     def compareSplitsBetweenTwoTreePartitions(tp1, tp2, minimumProportion, verbose=False):
-        """Returns a tuple of asdoss, max(diffs)"""
+        """Returns a tuple of asdoss, maximum of the differences and mean of the differences
+
+        This calls the method TreePartitions.compareSplits(), and digests the
+        results returned from that.
+
+        Args:
+            tp1, tp2 (TreePartition): TreePartition objects
+            minimumProportion (float): passed to TreePartitions.compareSplits()
+        
+        Returns:
+            (asdoss, maxOfDiffs, meanOfDiffs)
+
+        """
 
         ret = tp1.compareSplits(tp2, minimumProportion=minimumProportion)
 
@@ -175,13 +187,13 @@ class McmcCheckPointReader(object):
             # print "%.5f" % stdDev
             sumOfStdDevs += stdDev
             diffs.append(math.fabs(i[2][0] - i[2][1]))
-        quot = sumOfStdDevs / nSplits
-        maxDiffs = max(diffs)
+        asdoss = sumOfStdDevs / nSplits
+        maxOfDiffs = max(diffs)
+        meanOfDiffs = sum(diffs)/nSplits
         if verbose:
-            # print "  %f " % sumOfStdDevs,
-            print("     nSplits=%i, average of std devs of splits %.4f " % (nSplits, quot))
-            print("     max difference %f, mean difference %f" % (max(diffs), sum(diffs) / nSplits))
-        return (quot, maxDiffs)
+            print("     nSplits=%i, average of std devs of split supports %.4f " % (nSplits, asdoss))
+            print("     max of differences %f, mean of differences %f" % (maxOfDiffs, meanOfDiffs))
+        return (quot, maxOfDiffs, meanOfDiffs)
 
     compareSplitsBetweenTwoTreePartitions = staticmethod(
         compareSplitsBetweenTwoTreePartitions)
