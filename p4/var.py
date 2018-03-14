@@ -315,7 +315,7 @@ class Var(object):
         self.allowEmptyCharSetsAndTaxSets = False
 
         self.mcmc_swapVector = False  # (old) matrix or (new) vector
-        self.stmcmc_swapTunerSampleSize = 250
+        self.mcmc_swapTunerSampleSize = 250
 
 
     def _del_nothing(self):

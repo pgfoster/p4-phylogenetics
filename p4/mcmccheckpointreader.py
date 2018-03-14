@@ -193,7 +193,7 @@ class McmcCheckPointReader(object):
         if verbose:
             print("     nSplits=%i, average of std devs of split supports %.4f " % (nSplits, asdoss))
             print("     max of differences %f, mean of differences %f" % (maxOfDiffs, meanOfDiffs))
-        return (quot, maxOfDiffs, meanOfDiffs)
+        return (asdoss, maxOfDiffs, meanOfDiffs)
 
     compareSplitsBetweenTwoTreePartitions = staticmethod(
         compareSplitsBetweenTwoTreePartitions)
@@ -218,8 +218,9 @@ class McmcCheckPointReader(object):
         vCounter = 0
         for mNum1 in range(1, nM):
             for mNum2 in range(mNum1):
-                thisAsdoss, thisMaxDiff = self.compareSplits(mNum1, mNum2, verbose=False)
-                #print("+++ thisAsdoss = %s  thisMaxDiff=%f, mNum1=%i, mNum2=%i" % (thisAsdoss, thisMaxDiff, mNum1, mNum2))
+                thisAsdoss, thisMaxDiff, thisMeanDiff = self.compareSplits(mNum1, mNum2, verbose=False)
+                #print("+++ thisAsdoss = %s  thisMaxDiff=%f, mNum1=%i, mNum2=%i" % (
+                #      thisAsdoss, thisMaxDiff, mNum1, mNum2))
                 if thisAsdoss == None:
                     thisAsdoss = 0.0
                 asdosses[mNum1][mNum2] = thisAsdoss

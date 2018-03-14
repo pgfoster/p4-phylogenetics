@@ -1214,7 +1214,7 @@ class STChain(object):
         # Mcmcmc
         if self.stMcmc.nChains > 1:
             if var.mcmc_swapVector:
-                heatBeta = 1.0 / (1.0 + self.stMcmc.chainTemps[self.tempNum] * self.tempNum)
+                heatBeta = 1.0 / (1.0 + self.stMcmc.chainTemps[self.tempNum])
             else:
                 heatBeta = 1.0 / (1.0 + self.stMcmc.chainTemp * self.tempNum)
             logLikeRatio *= heatBeta
@@ -1668,14 +1668,13 @@ class SwapTuner(object):
             #print(message)
             theMcmc.logger.info(message)
 
-class SwapTunerV(object):
+class STSwapTunerV(object):
     """Continuous tuning for swap temperature"""
 
     def __init__(self, theMcmc):
-        assert var.stmcmc_swapTunerSampleSize >= 100
-        #self.sampleSize = var.stmcmc_swapTunerSampleSize
-        self.STMcmc = theMcmc
-        self.nChains = self.STMcmc.nChains
+        assert var.mcmc_swapTunerSampleSize >= 100
+        self.mcmc = theMcmc
+        self.nChains = self.mcmc.nChains
 
         # These are for adjacent pairs. Eg for attempts between chains 0 and 1,
         # we increment self.nAttempts[0], ie it is indexed with the lower number
@@ -1695,47 +1694,50 @@ class SwapTunerV(object):
 
 
     def tune(self, theTempNum):
-        assert self.nAttempts[theTempNum] >= var.stmcmc_swapTunerSampleSize
+        assert self.nAttempts[theTempNum] >= var.mcmc_swapTunerSampleSize
         acc = float(self.nSwaps[theTempNum]) / self.nAttempts[theTempNum]    # float() for Py2
-        # print("SwapTunerV.tune() theTempNum %i, nSwaps %i, nAttemps %i, acc %s" % (
+        # print("STSwapTunerV.tune() theTempNum %i, nSwaps %i, nAttemps %i, acc %s" % (
         #     theTempNum, self.nSwaps[theTempNum], self.nAttempts[theTempNum], acc))
-        # print("tempDiffs %s" % self.STMcmc.chainTempDiffs)
-        # print("temps     %s" % self.STMcmc.chainTemps)
+        # print("tempDiffs %s" % self.mcmc.chainTempDiffs)
+        # print("temps     %s" % self.mcmc.chainTemps)
 
         doMessage = False
         direction = None
-        oldTn = self.STMcmc.chainTempDiffs[theTempNum]
+        oldTn = self.mcmc.chainTempDiffs[theTempNum]
         if acc > self.tnAccHi:
             if acc > self.tnAccVeryHi:
-                self.STMcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryHi
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryHi
             else:
-                self.STMcmc.chainTempDiffs[theTempNum] *= self.tnFactorHi
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorHi
             doMessage = True
             direction = 'Increase'
         elif acc < self.tnAccLo:
-            oldTn = self.STMcmc.chainTemp
+            oldTn = self.mcmc.chainTemp
             if acc == 0.0:   # no swaps at all
-                self.STMcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
             elif acc < self.tnAccVeryLo:
-                self.STMcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryLo
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryLo
             else:
-                self.STMcmc.chainTempDiffs[theTempNum] *= self.tnFactorLo
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorLo
             doMessage = True
             direction = 'Decrease'
         self.nAttempts[theTempNum] = 0
         self.nSwaps[theTempNum] = 0
         if doMessage:
-            message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % ('chainTemp', self.STMcmc.gen, theTempNum, acc)
+            message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % ('chainTemp', self.mcmc.gen, theTempNum, acc)
             message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
-            message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.STMcmc.chainTempDiffs[theTempNum])
+            message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.mcmc.chainTempDiffs[theTempNum])
             #print(message)
-            self.STMcmc.logger.info(message)
+            self.mcmc.logger.info(message)
         # Make chainTemps from chainTempDiffs
-        self.STMcmc.chainTemps = [0.0]
-        for dNum in range(self.STMcmc.nChains - 1):
-            self.STMcmc.chainTemps.append(self.STMcmc.chainTempDiffs[dNum] + self.STMcmc.chainTemps[-1])
-        #if doMessage:
-        #    print("new temps %s" % self.STMcmc.chainTemps)
+        self.mcmc.chainTemps = [0.0]
+        for dNum in range(self.mcmc.nChains - 1):
+            self.mcmc.chainTemps.append(self.mcmc.chainTempDiffs[dNum] + self.mcmc.chainTemps[-1])
+        if doMessage:
+            message = "new chainTemps gen=%i " % (self.mcmc.gen)
+            for cT in self.mcmc.chainTemps:
+                message += "%10.2f" % cT
+            self.mcmc.logger.info(message)
 
 
 class BigTSplitStuff(object):
@@ -1963,6 +1965,7 @@ class STMcmc(object):
         if var.mcmc_swapVector and self.nChains > 1:
             # These are differences in temperatures between adjacent chains.  The last one is not used.
             self.chainTempDiffs = [self.chainTemp] * self.nChains 
+            #self.chainTempDiffs = [100.] * self.nChains 
             # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
             self.chainTemps = [0.0]
             for dNum in range(self.nChains - 1):
@@ -2052,7 +2055,7 @@ class STMcmc(object):
             for i in range(self.nChains):
                 self.swapMatrix.append([0] * self.nChains)
             if var.mcmc_swapVector:
-                self.swapTuner = SwapTunerV(self)
+                self.swapTuner = STSwapTunerV(self)
             else:
                 if swapTuner:             # a kwarg
                     myST = int(swapTuner)
@@ -2605,10 +2608,15 @@ class STMcmc(object):
     def writeSwapMatrix(self):
         print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
             (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-        print("    Swaps are presented as a square matrix, nChains * nChains.")
+        #print("    Swaps are presented as a square matrix, nChains * nChains.")
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
-        print("    The current tunings.chainTemp is %5.3f\n" % self.chainTemp)
+        #print("    The current tunings.chainTemp is %5.3f\n" % self.chainTemp)
+        if var.mcmc_swapVector:
+            print("    The chainTemp is continuously tuned for each chain\n")
+        else:
+            print("    The overall chainTemp is continuously tuned.\n")
+
         print(" " * 10, end=' ')
         for i in range(self.nChains):
             print("%7i" % i, end=' ')
@@ -3022,7 +3030,7 @@ class STMcmc(object):
                         self.swapTuner.nAttempts[chain1.tempNum] += 1
                         if acceptSwap:
                             self.swapTuner.nSwaps[chain1.tempNum] += 1
-                        if self.swapTuner.nAttempts[chain1.tempNum] >= var.stmcmc_swapTunerSampleSize:
+                        if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
                             self.swapTuner.tune(chain1.tempNum)
                             # tune() zeros nAttempts and nSwaps counters
 

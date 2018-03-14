@@ -393,6 +393,79 @@ class SwapTuner(object):
             #print(message)
             theMcmc.logger.info(message)
 
+class SwapTunerV(object):
+    """Continuous tuning for swap temperature"""
+
+    def __init__(self, theMcmc):
+        assert var.mcmc_swapTunerSampleSize >= 100
+        self.mcmc = theMcmc
+        self.nChains = theMcmc.nChains
+
+        # These are for adjacent pairs. Eg for attempts between chains 0 and 1,
+        # we increment self.nAttempts[0], ie it is indexed with the lower number
+        # in the pair.
+        self.nAttempts = [0] * self.nChains
+        self.nSwaps = [0] * self.nChains
+
+        self.tnAccVeryHi = 0.25
+        self.tnAccHi = 0.20
+        self.tnAccLo = 0.10
+        self.tnAccVeryLo = 0.05
+        self.tnFactorVeryHi = 1.4
+        self.tnFactorHi = 1.2
+        self.tnFactorLo = 0.9
+        self.tnFactorVeryLo = 0.6
+        self.tnFactorZero = 0.4
+
+
+
+    def tune(self, theTempNum):
+        assert self.nAttempts[theTempNum] >= var.mcmc_swapTunerSampleSize
+        acc = float(self.nSwaps[theTempNum]) / self.nAttempts[theTempNum]    # float() for Py2
+        # print("SwapTunerV.tune() theTempNum %i, nSwaps %i, nAttemps %i, acc %s" % (
+        #     theTempNum, self.nSwaps[theTempNum], self.nAttempts[theTempNum], acc))
+        # print("tempDiffs %s" % self.mcmc.chainTempDiffs)
+        # print("temps     %s" % self.mcmc.chainTemps)
+
+        doMessage = False
+        direction = None
+        oldTn = self.mcmc.chainTempDiffs[theTempNum]
+        if acc > self.tnAccHi:
+            if acc > self.tnAccVeryHi:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryHi
+            else:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorHi
+            doMessage = True
+            direction = 'Increase'
+        elif acc < self.tnAccLo:
+            oldTn = self.mcmc.chainTemp
+            if acc == 0.0:   # no swaps at all
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
+            elif acc < self.tnAccVeryLo:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryLo
+            else:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorLo
+            doMessage = True
+            direction = 'Decrease'
+        self.nAttempts[theTempNum] = 0
+        self.nSwaps[theTempNum] = 0
+        if doMessage:
+            message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % ('chainTemp', self.mcmc.gen, theTempNum, acc)
+            message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
+            message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.mcmc.chainTempDiffs[theTempNum])
+            #print(message)
+            self.mcmc.logger.info(message)
+        # Make chainTemps from chainTempDiffs
+        self.mcmc.chainTemps = [0.0]
+        for dNum in range(self.mcmc.nChains - 1):
+            self.mcmc.chainTemps.append(self.mcmc.chainTempDiffs[dNum] + self.mcmc.chainTemps[-1])
+        if doMessage:
+            message = "new chainTemps gen=%i " % (self.mcmc.gen)
+            for cT in self.mcmc.chainTemps:
+                message += "%10.2f" % cT
+            self.mcmc.logger.info(message)
+
+
 
 
 class Mcmc(object):
@@ -599,6 +672,13 @@ class Mcmc(object):
         self.gen = -1
         self.startMinusOne = -1
         self.chainTemp = 0.15
+        if var.mcmc_swapVector and self.nChains > 1:
+            # These are differences in temperatures between adjacent chains.  The last one is not used.
+            self.chainTempDiffs = [self.chainTemp] * self.nChains 
+            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+            self.chainTemps = [0.0]
+            for dNum in range(self.nChains - 1):
+                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         for n in self.tree.iterNodesNoRoot():
             if n.br.len < var.BRLEN_MIN:
@@ -700,15 +780,18 @@ class Mcmc(object):
             self.swapMatrix = []
             for i in range(self.nChains):
                 self.swapMatrix.append([0] * self.nChains)
-            if swapTuner:             # a kwarg
-                myST = int(swapTuner)
-                if myST >= 100:
-                    self.swapTuner = SwapTuner(myST)
-                else:
-                    gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
-                    raise P4Error(gm)
+            if var.mcmc_swapVector:
+                self.swapTuner = SwapTunerV(self)
             else:
-                self.swapTuner = None
+                if swapTuner:             # a kwarg
+                    myST = int(swapTuner)
+                    if myST >= 100:
+                        self.swapTuner = SwapTuner(myST)
+                    else:
+                        gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
+                        raise P4Error(gm)
+                else:
+                    self.swapTuner = None
         else:
             self.swapMatrix = None
             self.swapTuner = None
@@ -857,6 +940,8 @@ class Mcmc(object):
         for aLine in splash:
             self.logger.info(aLine)
 
+        if var.mcmc_swapVector:
+            print("%-16s: %s" % ('swapVector', "on"))
 
         # Hidden experimental hacking
         self.doHeatingHack = False
@@ -1623,10 +1708,13 @@ class Mcmc(object):
     def writeSwapMatrix(self):
         print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
             (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-        print("    Swaps are presented as a square matrix, nChains * nChains.")
+        #print("    Swaps are presented as a square matrix, nChains * nChains.")
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
-        print("    The current chainTemp is %5.3f\n" % self.chainTemp)
+        if var.mcmc_swapVector:
+            print("    The chainTemp is continuously tuned for each chain\n")
+        else:
+            print("    The overall chainTemp is continuously tuned.\n")
         print(" " * 10, end=' ')
         for i in range(self.nChains):
             print("%7i" % i, end=' ')
@@ -2033,61 +2121,116 @@ class Mcmc(object):
             if self.nChains == 1:
                 coldChain = 0
             else:
-                # Chain swapping stuff was lifted from MrBayes.  Thanks again.
-                chain1, chain2 = random.sample(self.chains, 2)
-
-                thisCh1Temp = None
-                thisCh2Temp = None
-                # Use the upper triangle of swapMatrix for nProposed's
-                if chain1.tempNum < chain2.tempNum:
-                    self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
-                    thisCh1Temp = chain1.tempNum
-                    thisCh2Temp = chain2.tempNum
-                else:
-                    self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-                    thisCh1Temp = chain2.tempNum
-                    thisCh2Temp = chain1.tempNum
+                if var.mcmc_swapVector:
+                    rTempNum1 = random.randrange(self.nChains - 1)
+                    rTempNum2 = rTempNum1 + 1
+                    chain1 = None
+                    chain2 = None
+                    for ch in self.chains:
+                        if ch.tempNum == rTempNum1:
+                            chain1 = ch
+                        elif ch.tempNum == rTempNum2:
+                            chain2 = ch
+                    assert chain1 and chain2
                     
+                    # Use the upper triangle of swapMatrix for nAttempts
+                    self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
 
-                lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                        ) * chain2.curTree.logLike
-                lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                        ) * chain1.curTree.logLike
-                lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                        ) * chain1.curTree.logLike
-                lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                        ) * chain2.curTree.logLike
+                    lnR = (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                            ) * chain2.curTree.logLike
+                    lnR += (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                            ) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                            ) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                            ) * chain2.curTree.logLike
 
-                if lnR < -100.0:
-                    r = 0.0
-                elif lnR >= 0.0:
-                    r = 1.0
-                else:
-                    r = math.exp(lnR)
-
-                acceptSwap = 0
-                if random.random() < r:
-                    acceptSwap = 1
-
-                # for continuous temperature tuning with self.swapTuner
-                if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
-                    self.swapTuner.swaps01_nAttempts += 1
-                    if acceptSwap:
-                        self.swapTuner.swaps01_nSwaps += 1
-                    if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
-                        self.swapTuner.tune(self)
-                        # tune() zeros nAttempts and nSwaps counters
-
-                if acceptSwap:
-                    # Use the lower triangle of swapMatrix to keep track of
-                    # nAccepted's
-                    if chain1.tempNum < chain2.tempNum:
-                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                    if lnR < -100.0:
+                        r = 0.0
+                    elif lnR >= 0.0:
+                        r = 1.0
                     else:
-                        self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                        r = math.exp(lnR)
 
-                    # Do the swap
-                    chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+                    acceptSwap = 0
+                    if random.random() < r:
+                        acceptSwap = 1
+
+                    # for continuous temperature tuning with self.swapTuner
+                    if self.swapTuner:
+                        # Index the nAttempts and nSwaps with the lower of the two tempNum's, which would be chain1.tempNum
+                        self.swapTuner.nAttempts[chain1.tempNum] += 1
+                        if acceptSwap:
+                            self.swapTuner.nSwaps[chain1.tempNum] += 1
+                        if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
+                            self.swapTuner.tune(chain1.tempNum)
+                            # tune() zeros nAttempts and nSwaps counters
+
+                    if acceptSwap:
+                        # Use the lower triangle of swapMatrix to keep track of
+                        # nAccepted's
+                        assert chain1.tempNum < chain2.tempNum
+                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+
+                        # Do the swap
+                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+
+                else:    # swap matrix
+                    # Chain swapping stuff was lifted from MrBayes.  Thanks again.
+                    chain1, chain2 = random.sample(self.chains, 2)
+
+                    thisCh1Temp = None
+                    thisCh2Temp = None
+                    # Use the upper triangle of swapMatrix for nProposed's
+                    if chain1.tempNum < chain2.tempNum:
+                        self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                        thisCh1Temp = chain1.tempNum
+                        thisCh2Temp = chain2.tempNum
+                    else:
+                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                        thisCh1Temp = chain2.tempNum
+                        thisCh2Temp = chain1.tempNum
+
+
+                    lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                            ) * chain2.curTree.logLike
+                    lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                            ) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                            ) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                            ) * chain2.curTree.logLike
+
+                    if lnR < -100.0:
+                        r = 0.0
+                    elif lnR >= 0.0:
+                        r = 1.0
+                    else:
+                        r = math.exp(lnR)
+
+                    acceptSwap = 0
+                    if random.random() < r:
+                        acceptSwap = 1
+
+                    # for continuous temperature tuning with self.swapTuner
+                    if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
+                        self.swapTuner.swaps01_nAttempts += 1
+                        if acceptSwap:
+                            self.swapTuner.swaps01_nSwaps += 1
+                        if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
+                            self.swapTuner.tune(self)
+                            # tune() zeros nAttempts and nSwaps counters
+
+                    if acceptSwap:
+                        # Use the lower triangle of swapMatrix to keep track of
+                        # nAccepted's
+                        if chain1.tempNum < chain2.tempNum:
+                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                        else:
+                            self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+
+                        # Do the swap
+                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
 
                 # Find the cold chain, the one where tempNum is 0
                 coldChainNum = -1
