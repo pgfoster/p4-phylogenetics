@@ -381,6 +381,10 @@ class STChain(object):
                 for ss in nonRedundantStSplitDict:
                     ss.dump()
                 print("There are %i non-redundant splits in the st for this it." % len(nonRedundantStSplitDict))
+            if 0:
+                if(len(relevantStSplits) != len(nonRedundantStSplitDict)):
+                    print("Gen %12i: Got %i relevantStSplits; %i in nonRedundantStSplitDict" % (
+                        self.stMcmc.gen, len(relevantStSplits),len(nonRedundantStSplitDict)))
 
             # S_st is the number of splits in the reduced supertree
             S_st = len(nonRedundantStSplitDict)
@@ -1244,6 +1248,8 @@ class STChain(object):
 
         # print "Doing %s" % aProposal.name
         pRet = self.propose(aProposal)
+        if self.tempNum == 0:
+            print(self.propTree.postOrder)
 
         # print "pRet = %.6f" % pRet,
         if not aProposal.doAbort:
@@ -1712,7 +1718,6 @@ class STSwapTunerV(object):
             doMessage = True
             direction = 'Increase'
         elif acc < self.tnAccLo:
-            oldTn = self.mcmc.chainTemp
             if acc == 0.0:   # no swaps at all
                 self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
             elif acc < self.tnAccVeryLo:
@@ -1975,6 +1980,8 @@ class STMcmc(object):
         self.constraints = None
         self.simulate = None
 
+
+        # spaQ is a property.  Whenever it is set, it is propagated to all the chains.
         self._spaQ = None
         if modelName in ['SPA', 'QPA']:
             try:
@@ -2083,12 +2090,12 @@ class STMcmc(object):
         #         n.name = None
 
         if not bigT:
-            allNames = []
+            allNames = set()
             for t in inTrees:
                 t.unsorted_taxNames = [n.name for n in t.iterLeavesNoRoot()]
-                # Efficient?  Probably does not matter.
-                allNames += t.unsorted_taxNames
-            self.taxNames = list(set(allNames))
+                # Get the union of a set and other stuff using set.update(stuff).
+                allNames.update(t.unsorted_taxNames)
+            self.taxNames = list(allNames)
             # not needed, but nice for debugging
             self.taxNames.sort()
         else:
