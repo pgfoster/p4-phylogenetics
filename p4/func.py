@@ -2348,6 +2348,7 @@ def unPickleSTMcmc(runNum, verbose=True):
             ch = m.chains[chNum]
             ch.startFrrf()
 
+    m._setLogger()
     return m
 
 

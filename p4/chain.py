@@ -222,7 +222,10 @@ class Chain(object):
             #logLikeRatio = 0.0
 
             if self.mcmc.nChains > 1:
-                heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
+                if var.mcmc_swapVector:
+                    heatBeta = 1.0 / (1.0 + self.mcmc.chainTemps[self.tempNum])
+                else:
+                    heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
                 logLikeRatio *= heatBeta
                 self.logPriorRatio *= heatBeta
 
@@ -905,7 +908,10 @@ class Chain(object):
         #logLikeRatio = 0.0
 
         if self.mcmc.nChains > 1:
-            heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
+            if var.mcmc_swapVector:
+                heatBeta = 1.0 / (1.0 + self.mcmc.chainTemps[self.tempNum])
+            else:
+                heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
             logLikeRatio *= heatBeta
             try:
                 self.logPriorRatio *= heatBeta

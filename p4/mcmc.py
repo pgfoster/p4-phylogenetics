@@ -393,6 +393,79 @@ class SwapTuner(object):
             #print(message)
             theMcmc.logger.info(message)
 
+class SwapTunerV(object):
+    """Continuous tuning for swap temperature"""
+
+    def __init__(self, theMcmc):
+        assert var.mcmc_swapTunerSampleSize >= 100
+        self.mcmc = theMcmc
+        self.nChains = theMcmc.nChains
+
+        # These are for adjacent pairs. Eg for attempts between chains 0 and 1,
+        # we increment self.nAttempts[0], ie it is indexed with the lower number
+        # in the pair.
+        self.nAttempts = [0] * self.nChains
+        self.nSwaps = [0] * self.nChains
+
+        self.tnAccVeryHi = 0.25
+        self.tnAccHi = 0.20
+        self.tnAccLo = 0.10
+        self.tnAccVeryLo = 0.05
+        self.tnFactorVeryHi = 1.4
+        self.tnFactorHi = 1.2
+        self.tnFactorLo = 0.9
+        self.tnFactorVeryLo = 0.6
+        self.tnFactorZero = 0.4
+
+
+
+    def tune(self, theTempNum):
+        assert self.nAttempts[theTempNum] >= var.mcmc_swapTunerSampleSize
+        acc = float(self.nSwaps[theTempNum]) / self.nAttempts[theTempNum]    # float() for Py2
+        # print("SwapTunerV.tune() theTempNum %i, nSwaps %i, nAttemps %i, acc %s" % (
+        #     theTempNum, self.nSwaps[theTempNum], self.nAttempts[theTempNum], acc))
+        # print("tempDiffs %s" % self.mcmc.chainTempDiffs)
+        # print("temps     %s" % self.mcmc.chainTemps)
+
+        doMessage = False
+        direction = None
+        oldTn = self.mcmc.chainTempDiffs[theTempNum]
+        if acc > self.tnAccHi:
+            if acc > self.tnAccVeryHi:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryHi
+            else:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorHi
+            doMessage = True
+            direction = 'Increase'
+        elif acc < self.tnAccLo:
+            oldTn = self.mcmc.chainTemp
+            if acc == 0.0:   # no swaps at all
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
+            elif acc < self.tnAccVeryLo:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryLo
+            else:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorLo
+            doMessage = True
+            direction = 'Decrease'
+        self.nAttempts[theTempNum] = 0
+        self.nSwaps[theTempNum] = 0
+        if doMessage:
+            message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % ('chainTemp', self.mcmc.gen, theTempNum, acc)
+            message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
+            message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.mcmc.chainTempDiffs[theTempNum])
+            #print(message)
+            self.mcmc.logger.info(message)
+        # Make chainTemps from chainTempDiffs
+        self.mcmc.chainTemps = [0.0]
+        for dNum in range(self.mcmc.nChains - 1):
+            self.mcmc.chainTemps.append(self.mcmc.chainTempDiffs[dNum] + self.mcmc.chainTemps[-1])
+        if doMessage:
+            message = "new chainTemps gen=%i " % (self.mcmc.gen)
+            for cT in self.mcmc.chainTemps:
+                message += "%10.2f" % cT
+            self.mcmc.logger.info(message)
+
+
 
 
 class Mcmc(object):
@@ -599,6 +672,13 @@ class Mcmc(object):
         self.gen = -1
         self.startMinusOne = -1
         self.chainTemp = 0.15
+        if var.mcmc_swapVector and self.nChains > 1:
+            # These are differences in temperatures between adjacent chains.  The last one is not used.
+            self.chainTempDiffs = [self.chainTemp] * self.nChains 
+            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+            self.chainTemps = [0.0]
+            for dNum in range(self.nChains - 1):
+                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         for n in self.tree.iterNodesNoRoot():
             if n.br.len < var.BRLEN_MIN:
@@ -660,11 +740,6 @@ class Mcmc(object):
         self.sampleInterval = sampleInterval
         self.checkPointInterval = checkPointInterval
 
-        # self.proposals = []
-        # self.proposalsHash = {}
-        # self.propWeights = []
-        # self.cumPropWeights = []
-        # self.totalPropWeights = 0.0
         self.props = Proposals()
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     gdasrv local ndch2_internalCompsDir 
@@ -679,7 +754,6 @@ class Mcmc(object):
         self.simFileName = "mcmc_sims_%i" % runNum
         self.pramsFileName = "mcmc_prams_%i" % runNum
         self.hypersFileName = "mcmc_hypers_%i" % runNum
-        #self.rjKFileName = "mcmc_rjK_%i" % runNum
         self.writePrams = writePrams
         self.writeHypers = True
 
@@ -706,15 +780,18 @@ class Mcmc(object):
             self.swapMatrix = []
             for i in range(self.nChains):
                 self.swapMatrix.append([0] * self.nChains)
-            if swapTuner:             # a kwarg
-                myST = int(swapTuner)
-                if myST >= 100:
-                    self.swapTuner = SwapTuner(myST)
-                else:
-                    gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
-                    raise P4Error(gm)
+            if var.mcmc_swapVector:
+                self.swapTuner = SwapTunerV(self)
             else:
-                self.swapTuner = None
+                if swapTuner:             # a kwarg
+                    myST = int(swapTuner)
+                    if myST >= 100:
+                        self.swapTuner = SwapTuner(myST)
+                    else:
+                        gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
+                        raise P4Error(gm)
+                else:
+                    self.swapTuner = None
         else:
             self.swapMatrix = None
             self.swapTuner = None
@@ -863,6 +940,8 @@ class Mcmc(object):
         for aLine in splash:
             self.logger.info(aLine)
 
+        if var.mcmc_swapVector:
+            print("%-16s: %s" % ('swapVector', "on"))
 
         # Hidden experimental hacking
         self.doHeatingHack = False
@@ -1483,156 +1562,159 @@ class Mcmc(object):
             print("\nwriteProposalAcceptances()  There is no info in memory. ")
             print(" Maybe it was just emptied after writing to a checkpoint?  ")
             print("If so, read the checkPoint and get the proposalAcceptances from there.")
-        else:
+            return
 
-            spacer = ' ' * 8
-            print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
-                self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-            print("%s %30s %5s %10s %13s%10s" % (spacer, 'proposal', 'part', 'nProposals', 'acceptance(%)', 'tuning'))
+        spacer = ' ' * 8
+        print("\nProposal acceptances, run %i, for %i gens, from gens %i to %i, inclusive." % (
+            self.runNum, (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+        print("%s %30s %5s %10s %13s%10s" % (spacer, 'proposal', 'part', 'nProposals', 'acceptance(%)', 'tuning'))
+        for p in self.props.proposals:
+            print("%s" % spacer, end=' ')
+            print("%30s" % p.name, end=' ')
+            if p.pNum != -1:
+                print(" %3i " % p.pNum, end=' ')
+            else:
+                print("   - ", end=' ')
+            print("%10i" % p.nProposals[0], end=' ')
+
+            if p.nProposals[0]:  # Don't divide by zero
+                print("       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])), end=' ')
+            else:
+                print("           - ", end=' ')
+
+            if p.tuning == None:
+                print("      -", end=' ')
+            elif p.tuning[0] < 2.0:
+                print("  %8.4f" % p.tuning[0], end=' ')
+            elif p.tuning[0] < 20.0:
+                print("  %8.3f" % p.tuning[0], end=' ')
+            elif p.tuning[0] < 200.0:
+                print("  %8.1f" % p.tuning[0], end=' ')
+            else:
+                print("  %8.3g" % p.tuning[0], end=' ')
+            print()
+
+        # Tabulate topology changes for 'local', if any were attempted.
+        doTopol = 0
+        p = self.props.proposalsDict.get('local')
+        if p:
+            for tNum in range(self.nChains):
+                if p.nTopologyChangeAttempts[tNum]:
+                    doTopol = 1
+                    break
+            if doTopol:
+                print("'Local' proposal-- attempted topology changes")
+                print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
+                for tNum in range(self.nChains):
+                    print("%s" % spacer, end=' ')
+                    print("%4i " % tNum, end=' ')
+                    print("%9i" % p.nProposals[tNum], end=' ')
+                    print("%8i" % p.nAcceptances[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
+                    print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
+                    print("%13i" % p.nTopologyChanges[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
+            else:
+                print("%sFor the 'local' proposals, there were no attempted" % spacer)
+                print("%stopology changes in any of the chains." % spacer)
+
+        # do the same for eTBR
+        doTopol = 0
+        p = self.props.proposalsDict.get('eTBR')
+        if p:
+            for tNum in range(self.nChains):
+                if p.nTopologyChangeAttempts[tNum]:
+                    doTopol = 1
+                    break
+            if doTopol:
+                print("'eTBR' proposal-- attempted topology changes")
+                print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
+                for tNum in range(self.nChains):
+                    print("%s" % spacer, end=' ')
+                    print("%4i " % tNum, end=' ')
+                    print("%9i" % p.nProposals[tNum], end=' ')
+                    print("%8i" % p.nAcceptances[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
+                    print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
+                    print("%13i" % p.nTopologyChanges[tNum], end=' ')
+                    print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
+            else:
+                print("%sFor the 'eTBR' proposals, there were no attempted" % spacer)
+                print("%stopology changes in any of the chains." % spacer)
+
+        # Check for aborts.
+        p = self.props.proposalsDict.get('local')
+        if p:
+            if hasattr(p, 'nAborts'):
+                if p.nAborts[0]:
+                    print("The 'local' proposal had %i aborts. (Not counted in nProps above.)" % p.nAborts[0])
+                    print("(Aborts might be due to brLen proposals too big or too small)")
+                    if self.constraints:
+                        print("(Or, more likely, due to violated constraints.)")
+                else:
+                    print("The 'local' proposal had no aborts (either due to brLen proposals")
+                    print("too big or too small, or due to violated constraints).")
+
+        p = self.props.proposalsDict.get('eTBR')
+        if p:
+            if hasattr(p, 'nAborts'):
+                if p.nAborts[0]:
+                    print("The 'eTBR' proposal had %i aborts.  (Not counted in nProps above.)" % p.nAborts[0])
+                    assert self.constraints
+                    print("(Aborts due to violated constraints)")
+                else:
+                    if self.constraints:
+                        print("The 'eTBR' proposal had no aborts (due to violated constraints).")
+
+        for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+            p = self.props.proposalsDict.get(pN)
+            if p:
+                if hasattr(p, 'nAborts'):
+                    print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+
+        if self.nChains > 1:
+            print("\n\nAcceptances and tunings by temperature")
+            print("%s %30s %5s %5s %10s %13s%10s" % (
+                spacer, 'proposal', 'part', 'tempNum', 'nProposals', 'acceptance(%)', 'tuning'))
             for p in self.props.proposals:
-                print("%s" % spacer, end=' ')
-                print("%30s" % p.name, end=' ')
-                if p.pNum != -1:
-                    print(" %3i " % p.pNum, end=' ')
-                else:
-                    print("   - ", end=' ')
-                print("%10i" % p.nProposals[0], end=' ')
-
-                if p.nProposals[0]:  # Don't divide by zero
-                    print("       %5.1f " % (100.0 * float(p.nAcceptances[0]) / float(p.nProposals[0])), end=' ')
-                else:
-                    print("           - ", end=' ')
-
-                if p.tuning == None:
-                    print("      -", end=' ')
-                elif p.tuning[0] < 2.0:
-                    print("  %8.4f" % p.tuning[0], end=' ')
-                elif p.tuning[0] < 20.0:
-                    print("  %8.3f" % p.tuning[0], end=' ')
-                elif p.tuning[0] < 200.0:
-                    print("  %8.1f" % p.tuning[0], end=' ')
-                else:
-                    print("  %8.3g" % p.tuning[0], end=' ')
-                print()
-
-            # Tabulate topology changes for 'local', if any were attempted.
-            doTopol = 0
-            p = self.props.proposalsDict.get('local')
-            if p:
-                for tNum in range(self.nChains):
-                    if p.nTopologyChangeAttempts[tNum]:
-                        doTopol = 1
-                        break
-                if doTopol:
-                    print("'Local' proposal-- attempted topology changes")
-                    print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
-                    for tNum in range(self.nChains):
-                        print("%s" % spacer, end=' ')
-                        print("%4i " % tNum, end=' ')
-                        print("%9i" % p.nProposals[tNum], end=' ')
-                        print("%8i" % p.nAcceptances[tNum], end=' ')
-                        print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
-                        print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
-                        print("%13i" % p.nTopologyChanges[tNum], end=' ')
-                        print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
-                else:
-                    print("%sFor the 'local' proposals, there were no attempted" % spacer)
-                    print("%stopology changes in any of the chains." % spacer)
-
-            # do the same for eTBR
-            doTopol = 0
-            p = self.props.proposalsDict.get('eTBR')
-            if p:
-                for tNum in range(self.nChains):
-                    if p.nTopologyChangeAttempts[tNum]:
-                        doTopol = 1
-                        break
-                if doTopol:
-                    print("'eTBR' proposal-- attempted topology changes")
-                    print("%s tempNum   nProps nAccepts percent nTopolChangeAttempts nTopolChanges percent" % spacer)
-                    for tNum in range(self.nChains):
-                        print("%s" % spacer, end=' ')
-                        print("%4i " % tNum, end=' ')
-                        print("%9i" % p.nProposals[tNum], end=' ')
-                        print("%8i" % p.nAcceptances[tNum], end=' ')
-                        print("  %5.1f" % (100.0 * float(p.nAcceptances[tNum]) / float(p.nProposals[tNum])), end=' ')
-                        print("%20i" % p.nTopologyChangeAttempts[tNum], end=' ')
-                        print("%13i" % p.nTopologyChanges[tNum], end=' ')
-                        print("  %5.1f" % (100.0 * float(p.nTopologyChanges[tNum]) / float(p.nTopologyChangeAttempts[tNum])))
-                else:
-                    print("%sFor the 'eTBR' proposals, there were no attempted" % spacer)
-                    print("%stopology changes in any of the chains." % spacer)
-
-            # Check for aborts.
-            p = self.props.proposalsDict.get('local')
-            if p:
-                if hasattr(p, 'nAborts'):
-                    if p.nAborts[0]:
-                        print("The 'local' proposal had %i aborts. (Not counted in nProps above.)" % p.nAborts[0])
-                        print("(Aborts might be due to brLen proposals too big or too small)")
-                        if self.constraints:
-                            print("(Or, more likely, due to violated constraints.)")
+                for tempNum in range(self.nChains):
+                    print("%s" % spacer, end=' ')
+                    print("%30s" % p.name, end=' ')
+                    if p.pNum != -1:
+                        print(" %3i " % p.pNum, end=' ')
                     else:
-                        print("The 'local' proposal had no aborts (either due to brLen proposals")
-                        print("too big or too small, or due to violated constraints).")
+                        print("   - ", end=' ')
+                    print(" %3i " % tempNum, end=' ')
+                    print("%10i" % p.nProposals[tempNum], end=' ')
 
-            p = self.props.proposalsDict.get('eTBR')
-            if p:
-                if hasattr(p, 'nAborts'):
-                    if p.nAborts[0]:
-                        print("The 'eTBR' proposal had %i aborts.  (Not counted in nProps above.)" % p.nAborts[0])
-                        assert self.constraints
-                        print("(Aborts due to violated constraints)")
+                    if p.nProposals[tempNum]:  # Don't divide by zero
+                        print("       %5.1f " % (
+                            100.0 * float(p.nAcceptances[tempNum]) / float(p.nProposals[tempNum])), end=' ')
                     else:
-                        if self.constraints:
-                            print("The 'eTBR' proposal had no aborts (due to violated constraints).")
+                        print("           - ", end=' ')
 
-            for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-                p = self.props.proposalsDict.get(pN)
-                if p:
-                    if hasattr(p, 'nAborts'):
-                        print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
-
-            if self.nChains > 1:
-                print("\n\nAcceptances and tunings by temperature")
-                print("%s %30s %5s %5s %10s %13s%10s" % (
-                    spacer, 'proposal', 'part', 'tempNum', 'nProposals', 'acceptance(%)', 'tuning'))
-                for p in self.props.proposals:
-                    for tempNum in range(self.nChains):
-                        print("%s" % spacer, end=' ')
-                        print("%30s" % p.name, end=' ')
-                        if p.pNum != -1:
-                            print(" %3i " % p.pNum, end=' ')
-                        else:
-                            print("   - ", end=' ')
-                        print(" %3i " % tempNum, end=' ')
-                        print("%10i" % p.nProposals[tempNum], end=' ')
-
-                        if p.nProposals[tempNum]:  # Don't divide by zero
-                            print("       %5.1f " % (
-                                100.0 * float(p.nAcceptances[tempNum]) / float(p.nProposals[tempNum])), end=' ')
-                        else:
-                            print("           - ", end=' ')
-
-                        if p.tuning == None:
-                            print("      -", end=' ')
-                        elif p.tuning[tempNum] < 2.0:
-                            print("  %8.4f" % p.tuning[tempNum], end=' ')
-                        elif p.tuning[tempNum] < 20.0:
-                            print("  %8.3f" % p.tuning[tempNum], end=' ')
-                        elif p.tuning[tempNum] < 200.0:
-                            print("  %8.1f" % p.tuning[tempNum], end=' ')
-                        else:
-                            print("  %8.3g" % p.tuning[tempNum], end=' ')
-                        print()
+                    if p.tuning == None:
+                        print("      -", end=' ')
+                    elif p.tuning[tempNum] < 2.0:
+                        print("  %8.4f" % p.tuning[tempNum], end=' ')
+                    elif p.tuning[tempNum] < 20.0:
+                        print("  %8.3f" % p.tuning[tempNum], end=' ')
+                    elif p.tuning[tempNum] < 200.0:
+                        print("  %8.1f" % p.tuning[tempNum], end=' ')
+                    else:
+                        print("  %8.3g" % p.tuning[tempNum], end=' ')
+                    print()
 
     def writeSwapMatrix(self):
         print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
             (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
-        print("    Swaps are presented as a square matrix, nChains * nChains.")
+        #print("    Swaps are presented as a square matrix, nChains * nChains.")
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
-        print("    The current chainTemp is %5.3f\n" % self.chainTemp)
+        if var.mcmc_swapVector:
+            print("    The chainTemp is continuously tuned for each chain\n")
+        else:
+            print("    The overall chainTemp is continuously tuned.\n")
         print(" " * 10, end=' ')
         for i in range(self.nChains):
             print("%7i" % i, end=' ')
@@ -1966,7 +2048,8 @@ class Mcmc(object):
                     while not gotIt:
                         # equiProbableProposals is True or False.  Usually False.
                         aProposal = self.props.chooseProposal(equiProbableProposals)
-                        gotIt = True
+                        if aProposal:
+                            gotIt = True
 
                         if aProposal.name == 'local':
                             # Can't do local on a star tree.
@@ -2038,61 +2121,116 @@ class Mcmc(object):
             if self.nChains == 1:
                 coldChain = 0
             else:
-                # Chain swapping stuff was lifted from MrBayes.  Thanks again.
-                chain1, chain2 = random.sample(self.chains, 2)
-
-                thisCh1Temp = None
-                thisCh2Temp = None
-                # Use the upper triangle of swapMatrix for nProposed's
-                if chain1.tempNum < chain2.tempNum:
-                    self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
-                    thisCh1Temp = chain1.tempNum
-                    thisCh2Temp = chain2.tempNum
-                else:
-                    self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-                    thisCh1Temp = chain2.tempNum
-                    thisCh2Temp = chain1.tempNum
+                if var.mcmc_swapVector:
+                    rTempNum1 = random.randrange(self.nChains - 1)
+                    rTempNum2 = rTempNum1 + 1
+                    chain1 = None
+                    chain2 = None
+                    for ch in self.chains:
+                        if ch.tempNum == rTempNum1:
+                            chain1 = ch
+                        elif ch.tempNum == rTempNum2:
+                            chain2 = ch
+                    assert chain1 and chain2
                     
+                    # Use the upper triangle of swapMatrix for nAttempts
+                    self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
 
-                lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                        ) * chain2.curTree.logLike
-                lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                        ) * chain1.curTree.logLike
-                lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                        ) * chain1.curTree.logLike
-                lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                        ) * chain2.curTree.logLike
+                    lnR = (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                            ) * chain2.curTree.logLike
+                    lnR += (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                            ) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                            ) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                            ) * chain2.curTree.logLike
 
-                if lnR < -100.0:
-                    r = 0.0
-                elif lnR >= 0.0:
-                    r = 1.0
-                else:
-                    r = math.exp(lnR)
-
-                acceptSwap = 0
-                if random.random() < r:
-                    acceptSwap = 1
-
-                # for continuous temperature tuning with self.swapTuner
-                if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
-                    self.swapTuner.swaps01_nAttempts += 1
-                    if acceptSwap:
-                        self.swapTuner.swaps01_nSwaps += 1
-                    if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
-                        self.swapTuner.tune(self)
-                        # tune() zeros nAttempts and nSwaps counters
-
-                if acceptSwap:
-                    # Use the lower triangle of swapMatrix to keep track of
-                    # nAccepted's
-                    if chain1.tempNum < chain2.tempNum:
-                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                    if lnR < -100.0:
+                        r = 0.0
+                    elif lnR >= 0.0:
+                        r = 1.0
                     else:
-                        self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                        r = math.exp(lnR)
 
-                    # Do the swap
-                    chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+                    acceptSwap = 0
+                    if random.random() < r:
+                        acceptSwap = 1
+
+                    # for continuous temperature tuning with self.swapTuner
+                    if self.swapTuner:
+                        # Index the nAttempts and nSwaps with the lower of the two tempNum's, which would be chain1.tempNum
+                        self.swapTuner.nAttempts[chain1.tempNum] += 1
+                        if acceptSwap:
+                            self.swapTuner.nSwaps[chain1.tempNum] += 1
+                        if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
+                            self.swapTuner.tune(chain1.tempNum)
+                            # tune() zeros nAttempts and nSwaps counters
+
+                    if acceptSwap:
+                        # Use the lower triangle of swapMatrix to keep track of
+                        # nAccepted's
+                        assert chain1.tempNum < chain2.tempNum
+                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+
+                        # Do the swap
+                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+
+                else:    # swap matrix
+                    # Chain swapping stuff was lifted from MrBayes.  Thanks again.
+                    chain1, chain2 = random.sample(self.chains, 2)
+
+                    thisCh1Temp = None
+                    thisCh2Temp = None
+                    # Use the upper triangle of swapMatrix for nProposed's
+                    if chain1.tempNum < chain2.tempNum:
+                        self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                        thisCh1Temp = chain1.tempNum
+                        thisCh2Temp = chain2.tempNum
+                    else:
+                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                        thisCh1Temp = chain2.tempNum
+                        thisCh2Temp = chain1.tempNum
+
+
+                    lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                            ) * chain2.curTree.logLike
+                    lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                            ) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                            ) * chain1.curTree.logLike
+                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                            ) * chain2.curTree.logLike
+
+                    if lnR < -100.0:
+                        r = 0.0
+                    elif lnR >= 0.0:
+                        r = 1.0
+                    else:
+                        r = math.exp(lnR)
+
+                    acceptSwap = 0
+                    if random.random() < r:
+                        acceptSwap = 1
+
+                    # for continuous temperature tuning with self.swapTuner
+                    if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
+                        self.swapTuner.swaps01_nAttempts += 1
+                        if acceptSwap:
+                            self.swapTuner.swaps01_nSwaps += 1
+                        if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
+                            self.swapTuner.tune(self)
+                            # tune() zeros nAttempts and nSwaps counters
+
+                    if acceptSwap:
+                        # Use the lower triangle of swapMatrix to keep track of
+                        # nAccepted's
+                        if chain1.tempNum < chain2.tempNum:
+                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                        else:
+                            self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+
+                        # Do the swap
+                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
 
                 # Find the cold chain, the one where tempNum is 0
                 coldChainNum = -1
