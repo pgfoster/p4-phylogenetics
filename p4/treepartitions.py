@@ -1603,10 +1603,10 @@ something like this::
         # Get splitSupport
         for n in conTree.nodes[2:]:  # skip the (terminal) root, and the node 0
             if not n.isLeaf:
-                # print "setting n %i support to %s" % (n.nodeNum,
-                # n.br.split.proportion)
+                #print("setting n %i support to %s" % (n.nodeNum,
+                #n.br.split.proportion))
                 n.br.support = n.br.split.proportion
-            conTree.nodes[0].br.support = -1.0
+        conTree.nodes[0].br.support = -1.0
 
         # Get rootCount and biRootCount
         if self.isBiRoot:
