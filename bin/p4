@@ -1,7 +1,8 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 # As of mid-october 2017, homebrew on my mac uses python2.7.14, aliased to python2 
 # BUT NOT aliased to python.  Saying python gives me ancient /usr/bin/python v 2.7.10.
+# As of march 2018, now python gives me v 2.7.14.
 
 import sys
 import os
