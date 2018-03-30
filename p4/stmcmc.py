@@ -200,10 +200,19 @@ class STChain(object):
         gm = ['STChain.__init__()']
 
         self.stMcmc = aSTMcmc
-        self.tempNum = chNum  # 'temp'erature, not 'temp'orary
+        self.chNum = chNum    # Does not change.  Used with fastspa only
+        self.tempNum = chNum  # 'temp'erature, not 'temp'orary;  changes when swapped.
 
-        self.curTree = aSTMcmc.tree.dupe()
-        self.propTree = aSTMcmc.tree.dupe()
+        if aSTMcmc.fixedBigT:
+            self.curTree = aSTMcmc.tree.dupe()
+            self.propTree = aSTMcmc.tree.dupe()
+        else:
+            rTree = aSTMcmc.tree.dupe()
+            rTree.randomizeTopology(randomBrLens = False)
+            rTree.stripBrLens()
+            rTree.setPreAndPostOrder()
+            self.curTree = rTree
+            self.propTree = rTree.dupe()
 
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
@@ -238,7 +247,7 @@ class STChain(object):
             self.getTreeLogLike_spa_bitarray()
             if var.stmcmc_useFastSpa:
                 #print("Here E.  bitarray propTree.logLike is %f" % self.propTree.logLike)
-                fspaLike = self.stMcmc.fspa.calcLogLike(self.tempNum)
+                fspaLike = self.stMcmc.fspa.calcLogLike(self.chNum)
                 diff = math.fabs(self.propTree.logLike - fspaLike)
                 #print("Got fspaLike %f, diff %g" % (fspaLike, diff))
                 if diff > 1e-13:
@@ -520,7 +529,7 @@ class STChain(object):
                 else:
                     theSpl = n.ss.spl.to01()
                     theSpl2 = n.ss.spl2.to01()
-                self.stMcmc.fspa.setBigTNoSpl(self.tempNum, nNum, theSpl, theSpl2)
+                self.stMcmc.fspa.setBigTNoSpl(self.chNum, nNum, theSpl, theSpl2)
 
 
     def refreshBitarrayPropTree(self):
@@ -554,7 +563,7 @@ class STChain(object):
                 else:
                     theSpl = n.ss.spl.to01()
                     theSpl2 = n.ss.spl2.to01()
-                self.stMcmc.fspa.setBigTNoSpl(self.tempNum, nNum, theSpl, theSpl2)
+                self.stMcmc.fspa.setBigTNoSpl(self.chNum, nNum, theSpl, theSpl2)
 
     def startFrrf(self):
         # if using self.stMcmc.stRFCalc= 'fastReducedRF'
@@ -1237,14 +1246,15 @@ class STChain(object):
                 if 0:  # check
                     self.getTreeLogLike_spa_bitarray()
                     #print("Here F.  bitarray propTree.logLike is %f" % self.propTree.logLike)
-                    fspaLike = self.stMcmc.fspa.calcLogLike(self.tempNum)
+                    fspaLike = self.stMcmc.fspa.calcLogLike(self.chNum)
                     diff = math.fabs(self.propTree.logLike - fspaLike)
                     #print("Got fspaLike %f, diff %g" % (fspaLike, diff))
                     if diff > 1e-13:
-                        gm.append("bad fastspa likelihood calc, %f vs %f, diff %f" % (self.propTree.logLike, fspaLike, diff))
+                        gm.append("gen %i bad fastspa likelihood calc, %f vs %f, diff %f" % (
+                            self.stMcmc.gen, self.propTree.logLike, fspaLike, diff))
                         raise P4Error(gm)
                 else:
-                    self.propTree.logLike = self.stMcmc.fspa.calcLogLike(self.tempNum)
+                    self.propTree.logLike = self.stMcmc.fspa.calcLogLike(self.chNum)
             else:
                 self.getTreeLogLike_spa_bitarray()
 
@@ -1908,7 +1918,7 @@ class STMcmc(object):
                  beta=1.0, spaQ=0.5, stRFCalc='purePython1',
                  nChains=1, runNum=0, sampleInterval=100,
                  checkPointInterval=None, useSplitSupport=False, verbose=True,
-                 checkForOutputFiles=True, swapTuner=250):
+                 checkForOutputFiles=True, swapTuner=250, fixedBigT=False):
 
         import p4.func  # This should not be needed, but it is.  Why?
         #print(p4.func)
@@ -1924,6 +1934,8 @@ class STMcmc(object):
             for n in bigT.iterInternalsNoRoot():
                 n.name = None
 
+        self.fixedBigT = fixedBigT
+
         goodModelNames = ['SR2008_rf_ia', 'SR2008_rf_aZ', 'SR2008_rf_aZ_fb',
                           'SPA', 'QPA']
         if modelName not in goodModelNames:
@@ -1931,6 +1943,7 @@ class STMcmc(object):
             gm.append("Good modelNames are %s" % goodModelNames)
             raise P4Error(gm)
         self.modelName = modelName
+        self.tree = None
 
         self.stRFCalc = None
         if modelName.startswith("SR2008"):
@@ -2565,7 +2578,7 @@ class STMcmc(object):
             for propName in ['nni', 'spr']:
                 p = self.props.proposalsDict.get(propName)
                 if p:
-                    print("'%s' proposal-- topology changes by temperature (chainTemp is %.2f)" % (propName, self.chainTemp))
+                    print("'%s' proposal-- topology changes by temperature" % (propName))
                     print("%s tempNum   nProps nAccepts percent" % spacer)
                     for tNum in range(self.nChains):
                         print("%s" % spacer, end=' ')
@@ -2635,10 +2648,10 @@ class STMcmc(object):
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
         #print("    The current tunings.chainTemp is %5.3f\n" % self.chainTemp)
-        if var.mcmc_swapVector:
-            print("    The chainTemp is continuously tuned for each chain\n")
-        else:
-            print("    The overall chainTemp is continuously tuned.\n")
+        #if var.mcmc_swapVector:
+        #    print("    The chainTemp is continuously tuned for each chain\n")
+        #else:
+        #    print("    The overall chainTemp is continuously tuned.\n")
 
         print(" " * 10, end=' ')
         for i in range(self.nChains):
@@ -2672,9 +2685,9 @@ class STMcmc(object):
         # Make chains, if needed
         if not self.chains:
             self.chains = []
+            # chNum is used by fastspa; it is also a starting point for tempNum (which changes in swaps)
             for chNum in range(self.nChains):
                 aChain = STChain(self, chNum)
-                # chNum is temperature.  Set this way to start, but it changes.
                 self.chains.append(aChain)
         if not self.props.proposals:
             self._makeProposals()
@@ -2858,9 +2871,10 @@ class STMcmc(object):
             self.startMinusOne = self.gen
         else:
             self.logger.info("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+            self.logger.info("nChains %i" % (self.nChains))
             if verbose:
                 if self.nChains > 1:
-                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %.2f" % (self.nChains, self.chainTemp))
+                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature is continuously tuned." % self.nChains)
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 print("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
@@ -2911,6 +2925,8 @@ class STMcmc(object):
         ##################################################
         ############### Main loop ########################
         ##################################################
+
+        self.swapInterval = 10
 
         for gNum in range(nGensToDo):
             self.gen += 1
@@ -3008,127 +3024,143 @@ class STMcmc(object):
                         ret.doAbort = False
 
             # Do swap, if there is more than 1 chain.
-            if self.nChains == 1:
-                coldChain = 0
-            else:
-                if var.mcmc_swapVector:
-                    rTempNum1 = random.randrange(self.nChains - 1)
-                    rTempNum2 = rTempNum1 + 1
-                    chain1 = None
-                    chain2 = None
-                    for ch in self.chains:
-                        if ch.tempNum == rTempNum1:
-                            chain1 = ch
-                        elif ch.tempNum == rTempNum2:
-                            chain2 = ch
-                    assert chain1 and chain2
-                    
-                    # Use the upper triangle of swapMatrix for nAttempts
-                    self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+            if (self.gen + 1) % self.swapInterval == 0:
+                if self.nChains == 1:
+                    coldChain = 0
+                else:
+                    if var.mcmc_swapVector:
+                        rTempNum1 = random.randrange(self.nChains - 1)
+                        rTempNum2 = rTempNum1 + 1
+                        chain1 = None
+                        chain2 = None
+                        for ch in self.chains:
+                            if ch.tempNum == rTempNum1:
+                                chain1 = ch
+                            elif ch.tempNum == rTempNum2:
+                                chain2 = ch
+                        assert chain1 and chain2
 
-                    lnR = (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
-                            ) * chain2.curTree.logLike
-                    lnR += (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
-                            ) * chain2.curTree.logLike
-
-                    if lnR < -100.0:
-                        r = 0.0
-                    elif lnR >= 0.0:
-                        r = 1.0
-                    else:
-                        r = math.exp(lnR)
-
-                    acceptSwap = 0
-                    if random.random() < r:
-                        acceptSwap = 1
-
-                    # for continuous temperature tuning with self.swapTuner
-                    if self.swapTuner:
-                        # Index the nAttempts and nSwaps with the lower of the two tempNum's, which would be chain1.tempNum
-                        self.swapTuner.nAttempts[chain1.tempNum] += 1
-                        if acceptSwap:
-                            self.swapTuner.nSwaps[chain1.tempNum] += 1
-                        if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
-                            self.swapTuner.tune(chain1.tempNum)
-                            # tune() zeros nAttempts and nSwaps counters
-
-                    if acceptSwap:
-                        # Use the lower triangle of swapMatrix to keep track of
-                        # nAccepted's
-                        assert chain1.tempNum < chain2.tempNum
-                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-
-                        # Do the swap
-                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
-
-                    
-                else:     # swap matrix
-                    # Chain swapping stuff was lifted from MrBayes.  Thanks again.
-                    chain1, chain2 = random.sample(self.chains, 2)
-
-                    # Use the upper triangle of swapMatrix for nProposed's
-                    if chain1.tempNum < chain2.tempNum:
+                        # Use the upper triangle of swapMatrix for nAttempts
                         self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
-                        thisCh1Temp = chain1.tempNum
-                        thisCh2Temp = chain2.tempNum
-                    else:
-                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-                        thisCh1Temp = chain2.tempNum
-                        thisCh2Temp = chain1.tempNum
 
-                    lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                            ) * chain2.curTree.logLike
-                    lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                            ) * chain2.curTree.logLike
+                        lnR = (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                                ) * chain2.curTree.logLike
+                        lnR += (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                                ) * chain1.curTree.logLike
+                        lnR -= (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                                ) * chain1.curTree.logLike
+                        lnR -= (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                                ) * chain2.curTree.logLike
 
-                    if lnR < -100.0:
-                        r = 0.0
-                    elif lnR >= 0.0:
-                        r = 1.0
-                    else:
-                        r = math.exp(lnR)
+                        # # An alternative calculation
+                        # heatBeta1 = 1.0 / (1.0 + self.chainTemps[chain1.tempNum])
+                        # heatBeta2 = 1.0 / (1.0 + self.chainTemps[chain2.tempNum])
+                        # likeRatio12 = (chain2.curTree.logLike - chain1.curTree.logLike) * heatBeta1
+                        # likeRatio21 = (chain1.curTree.logLike - chain2.curTree.logLike) * heatBeta2
+                        # lnR2 = likeRatio12 + likeRatio21
+                        # rDiff = math.fabs(lnR - lnR2)
+                        # if rDiff > 1e-12:
+                        #     print("bad swap rDiff %f (%g)   lnR=%f, lnR2=%f" % (rDiff, rDiff, lnR, lnR2))
+                        # lnR = lnR2
 
-                    acceptSwap = 0
-                    if random.random() < r:
-                        acceptSwap = 1
-
-                    # for continuous temperature tuning with self.swapTuner
-                    if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
-                        self.swapTuner.swaps01_nAttempts += 1
-                        if acceptSwap:
-                            self.swapTuner.swaps01_nSwaps += 1
-                        if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
-                            self.swapTuner.tune(self)
-                            # tune() zeros nAttempts and nSwaps counters
-
-                    if acceptSwap:
-                        # Use the lower triangle of swapMatrix to keep track of
-                        # nAccepted's
-                        if chain1.tempNum < chain2.tempNum:
-                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                        if lnR < -100.0:
+                            r = 0.0
+                        elif lnR >= 0.0:
+                            r = 1.0
                         else:
+                            r = math.exp(lnR)
+
+                        acceptSwap = 0
+                        if random.random() < r:
+                            acceptSwap = 1
+
+                        self.logger.info("swap proposed gen=%i between tempNum1=%i chNum1=%i temp1=%f and tempNum2=%i chNum2=%i temp2=%f acceptSwap=%s" % (
+                            self.gen, rTempNum1, chain1.chNum, self.chainTemps[chain1.tempNum], 
+                            rTempNum2, chain2.chNum, self.chainTemps[chain2.tempNum], acceptSwap))
+
+                        # for continuous temperature tuning with self.swapTuner
+                        if self.swapTuner:
+                            # Index the nAttempts and nSwaps with the lower of the two tempNum's, which would be chain1.tempNum
+                            self.swapTuner.nAttempts[chain1.tempNum] += 1
+                            if acceptSwap:
+                                self.swapTuner.nSwaps[chain1.tempNum] += 1
+                            if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
+                                self.swapTuner.tune(chain1.tempNum)
+                                # tune() zeros nAttempts and nSwaps counters
+
+                        if acceptSwap:
+                            # Use the lower triangle of swapMatrix to keep track of
+                            # nAccepted's
+                            assert chain1.tempNum < chain2.tempNum
+                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+
+                            # Do the swap
+                            chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+
+
+                    else:     # swap matrix
+                        # Chain swapping stuff was lifted from MrBayes.  Thanks again.
+                        chain1, chain2 = random.sample(self.chains, 2)
+
+                        # Use the upper triangle of swapMatrix for nProposed's
+                        if chain1.tempNum < chain2.tempNum:
                             self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                            thisCh1Temp = chain1.tempNum
+                            thisCh2Temp = chain2.tempNum
+                        else:
+                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                            thisCh1Temp = chain2.tempNum
+                            thisCh2Temp = chain1.tempNum
 
-                        # Do the swap
-                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+                        lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                                ) * chain2.curTree.logLike
+                        lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                                ) * chain1.curTree.logLike
+                        lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                                ) * chain1.curTree.logLike
+                        lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                                ) * chain2.curTree.logLike
 
-                # Find the cold chain, the one where tempNum is 0
-                coldChainNum = -1
-                for i in range(len(self.chains)):
-                    if self.chains[i].tempNum == 0:
-                        coldChainNum = i
-                        break
-                if coldChainNum == -1:
-                    gm.append("Unable to find which chain is the cold chain.  Bad.")
-                    raise P4Error(gm)
+                        if lnR < -100.0:
+                            r = 0.0
+                        elif lnR >= 0.0:
+                            r = 1.0
+                        else:
+                            r = math.exp(lnR)
+
+                        acceptSwap = 0
+                        if random.random() < r:
+                            acceptSwap = 1
+
+                        # for continuous temperature tuning with self.swapTuner
+                        if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
+                            self.swapTuner.swaps01_nAttempts += 1
+                            if acceptSwap:
+                                self.swapTuner.swaps01_nSwaps += 1
+                            if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
+                                self.swapTuner.tune(self)
+                                # tune() zeros nAttempts and nSwaps counters
+
+                        if acceptSwap:
+                            # Use the lower triangle of swapMatrix to keep track of
+                            # nAccepted's
+                            if chain1.tempNum < chain2.tempNum:
+                                self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                            else:
+                                self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+
+                            # Do the swap
+                            chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+
+                    # Find the cold chain, the one where tempNum is 0
+                    coldChainNum = -1
+                    for i in range(len(self.chains)):
+                        if self.chains[i].tempNum == 0:
+                            coldChainNum = i
+                            break
+                    if coldChainNum == -1:
+                        gm.append("Unable to find which chain is the cold chain.  Bad.")
+                        raise P4Error(gm)
 
             # If it is a writeInterval, write stuff
             if (self.gen + 1) % self.sampleInterval == 0:
