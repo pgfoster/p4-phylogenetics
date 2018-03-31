@@ -1137,7 +1137,7 @@ class STChain(object):
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
                 print("-" * 30)
             self.logPriorRatio = ((theProposal.logBigT[self.curTree.nInternalNodes] +
-                                   self.stMcmc.tunings.polytomyPriorLogBigC) -
+                                   theProposal.polytomyPriorLogBigC) -
                                   theProposal.logBigT[pTree.nInternalNodes])
 
         else:
@@ -2818,7 +2818,7 @@ class STMcmc(object):
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
 
-        coldChainNum = 0
+        coldChainNum = 0            
 
         # If polytomy is turned on, then it is possible to get a star
         # tree, in which case local will not work.  So if we have both
@@ -2872,6 +2872,16 @@ class STMcmc(object):
         else:
             self.logger.info("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
             self.logger.info("nChains %i" % (self.nChains))
+
+            ret = self.props.proposalsDict.get('polytomy')
+            if ret:
+                message = "Doing polytomy proposal, with doPolytomyResolutionClassPrior=%s" % ret.doPolytomyResolutionClassPrior
+                print(message)
+                self.logger.info(message)
+                message = "polytomy: polytomyPriorLogBigC=%f" % ret.polytomyPriorLogBigC
+                print(message)
+                self.logger.info(message)
+
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains.  Temperature is continuously tuned." % self.nChains)
