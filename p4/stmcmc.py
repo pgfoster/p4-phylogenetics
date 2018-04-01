@@ -203,10 +203,10 @@ class STChain(object):
         self.chNum = chNum    # Does not change.  Used with fastspa only
         self.tempNum = chNum  # 'temp'erature, not 'temp'orary;  changes when swapped.
 
-        if aSTMcmc.fixedBigT:
+        if chNum == 0:
             self.curTree = aSTMcmc.tree.dupe()
             self.propTree = aSTMcmc.tree.dupe()
-        else:
+        else:                                      # heated chains are randomized
             rTree = aSTMcmc.tree.dupe()
             rTree.randomizeTopology(randomBrLens = False)
             rTree.stripBrLens()
@@ -1918,7 +1918,7 @@ class STMcmc(object):
                  beta=1.0, spaQ=0.5, stRFCalc='purePython1',
                  nChains=1, runNum=0, sampleInterval=100,
                  checkPointInterval=None, useSplitSupport=False, verbose=True,
-                 checkForOutputFiles=True, swapTuner=250, fixedBigT=False):
+                 checkForOutputFiles=True, swapTuner=250):
 
         import p4.func  # This should not be needed, but it is.  Why?
         #print(p4.func)
@@ -1933,8 +1933,6 @@ class STMcmc(object):
             bigT.stripBrLens()
             for n in bigT.iterInternalsNoRoot():
                 n.name = None
-
-        self.fixedBigT = fixedBigT
 
         goodModelNames = ['SR2008_rf_ia', 'SR2008_rf_aZ', 'SR2008_rf_aZ_fb',
                           'SPA', 'QPA']
@@ -3890,10 +3888,15 @@ class SpaML(object):
         
                 
     def calcP(self, Q):
+        #if not isinstance(Q, np.ndarray):
+        #    Q = np.array([Q])
         if Q >= 1.:
             return 10000000.
         if Q <= 0.:
             return 10000000.
+
+        if not isinstance(Q, np.ndarray):
+            Q = np.array([Q])
         self.ch.propTree.spaQ = Q
         self.ch.getTreeLogLike_spa_bitarray()
         return -self.ch.propTree.logLike
