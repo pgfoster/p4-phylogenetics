@@ -206,13 +206,17 @@ class STChain(object):
         if chNum == 0:
             self.curTree = aSTMcmc.tree.dupe()
             self.propTree = aSTMcmc.tree.dupe()
-        else:                                      # heated chains are randomized
-            rTree = aSTMcmc.tree.dupe()
-            rTree.randomizeTopology(randomBrLens = False)
-            rTree.stripBrLens()
-            rTree.setPreAndPostOrder()
-            self.curTree = rTree
-            self.propTree = rTree.dupe()
+        else:      # heated chains are randomized, unless var.mcmc_sameBigTToStartOnAllChains is set.
+            if var.mcmc_sameBigTToStartOnAllChains:  # False by default
+                self.curTree = aSTMcmc.tree.dupe()
+                self.propTree = aSTMcmc.tree.dupe()
+            else:
+                rTree = aSTMcmc.tree.dupe()
+                rTree.randomizeTopology(randomBrLens = False)
+                rTree.stripBrLens()
+                rTree.setPreAndPostOrder()
+                self.curTree = rTree
+                self.propTree = rTree.dupe()
 
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
@@ -2380,20 +2384,20 @@ class STMcmc(object):
         #self.heatingHackProposalNames = ['nni', 'spr']
 
         if verbose:
-            print("Initializing STMcmc")
-            print("%-16s: %s" % ('modelName', modelName))
+            self.loggerPrinter.info("Initializing STMcmc")
+            self.loggerPrinter.info("%-16s: %s" % ('modelName', modelName))
             if self.modelName.startswith("SR2008"):
-                print("%-16s: %s" % ('stRFCalc', self.stRFCalc))
+                self.loggerPrinter.info("%-16s: %s" % ('stRFCalc', self.stRFCalc))
             if self.modelName in ["SPA", "QPA"]:
-                print("%-16s: %s" % ('useSplitSupport', self.useSplitSupport))
-            print("%-16s: %s" % ('inTrees', len(self.trees)))
-            print("%-16s: %s" % ('nTax', self.nTax))
+                self.loggerPrinter.info("%-16s: %s" % ('useSplitSupport', self.useSplitSupport))
+            self.loggerPrinter.info("%-16s: %s" % ('inTrees', len(self.trees)))
+            self.loggerPrinter.info("%-16s: %s" % ('nTax', self.nTax))
             if self.nChains == 1:
-                print("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
+                self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
             elif self.nChains > 1:
-                print("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
+                self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
                 if var.mcmc_swapVector:
-                    print("%-16s: %s" % ('swapVector', "on"))
+                    self.loggerPrinter.info("%-16s: %s" % ('swapVector', "on"))
                 # Don't say the temperature here, as it will likely be re-set later.
 
 
@@ -2420,16 +2424,28 @@ class STMcmc(object):
     spaQ = property(_get_spaQ, _set_spaQ, _del_nothing)
 
     def _setLogger(self):
-        myLogFileName = "mcmc_log_%i" % self.runNum
-        # if os.path.isfile(myLogFileName):
-        #     gm.append("Log file '%s' exists, and I am refusing to over-write it.  Deal with it." % myLogFileName)
-        #     raise P4Error(gm)
-        self.logger = logging.getLogger()
-        handler = logging.FileHandler(myLogFileName, mode='a')
-        formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='[%Y-%m-%d %H:%M]')
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.INFO)
+        """Make two loggers; one that writes to a file and to stderr, and one that writes only to a file."""
+
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s %(message)s',
+                            datefmt='[%Y-%m-%d %H:%M]',
+                            filename="mcmc_log_%i" % self.runNum,
+                            filemode='a')
+
+        # define a Handler which writes INFO messages or higher to the sys.stderr
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        # set a format which is simpler for console use
+        formatter = logging.Formatter('%(message)s')
+        # tell the handler to use this format
+        console.setFormatter(formatter)
+        # add the handler to the root logger
+        # Using named loggers allows me to keep them separate.
+        self.loggerPrinter = logging.getLogger('withPrint')
+        self.loggerPrinter.addHandler(console)
+        # This logger only logs to the file, not to stderr.
+        self.logger = logging.getLogger("logFileOnly")
+
 
 
     def _makeProposals(self):
@@ -3082,9 +3098,9 @@ class STMcmc(object):
                         if random.random() < r:
                             acceptSwap = 1
 
-                        self.logger.info("swap proposed gen=%i between tempNum1=%i chNum1=%i temp1=%f and tempNum2=%i chNum2=%i temp2=%f acceptSwap=%s" % (
-                            self.gen, rTempNum1, chain1.chNum, self.chainTemps[chain1.tempNum], 
-                            rTempNum2, chain2.chNum, self.chainTemps[chain2.tempNum], acceptSwap))
+                        # self.logger.info("swap proposed gen=%i between tempNum1=%i chNum1=%i temp1=%f and tempNum2=%i chNum2=%i temp2=%f acceptSwap=%s" % (
+                        #     self.gen, rTempNum1, chain1.chNum, self.chainTemps[chain1.tempNum], 
+                        #     rTempNum2, chain2.chNum, self.chainTemps[chain2.tempNum], acceptSwap))
 
                         # for continuous temperature tuning with self.swapTuner
                         if self.swapTuner:
