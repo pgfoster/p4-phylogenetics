@@ -3381,6 +3381,8 @@ class STMcmc(object):
         # The logger does not pickle
         savedLogger = self.logger
         self.logger = None
+        savedLoggerPrinter = self.loggerPrinter
+        self.loggerPrinter = None
 
         # The FastSpa stuff does not pickle
         if self.modelName.startswith("SPA") and var.stmcmc_useFastSpa:
@@ -3398,6 +3400,7 @@ class STMcmc(object):
         theCopy = copy.deepcopy(self)
 
         self.logger = savedLogger
+        self.loggerPrinter = savedLoggerPrinter
 
         theCopy.treePartitions._finishSplits()
         # assert theCopy.treeFile == None
