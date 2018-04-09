@@ -2348,6 +2348,39 @@ def unPickleSTMcmc(runNum, verbose=True):
             ch = m.chains[chNum]
             ch.startFrrf()
 
+    if m.modelName == 'SPA' and var.stmcmc_useFastSpa:
+        import p4.fastspa as fastspa
+        m.fspa = fastspa.FastSpa(m.useSplitSupport)
+        for tNum, t in enumerate(m.trees):
+            m.fspa.setInTr(tNum, t.nTax, m.nTax, t.baTaxBits.to01(), t.firstTax)
+            for n in t.internals:
+                if n.br and hasattr(n.br, "support"):
+                    support = n.br.support
+                else:
+                    support = -1.0
+                m.fspa.setInTrNo(tNum, n.stSplitKey.to01(), support)
+        #m.fspa.summarizeInTrs()
+
+        for chNum in range(m.nChains):
+            ch = m.chains[chNum]
+            ch.setupBitarrayCalcs()
+
+
+
+
+            ch.getTreeLogLike_spa_bitarray()
+            if var.stmcmc_useFastSpa:
+                #print("Here E.  bitarray propTree.logLike is %f" % self.propTree.logLike)
+                fspaLike = ch.stMcmc.fspa.calcLogLike(ch.chNum)
+                diff = math.fabs(ch.propTree.logLike - fspaLike)
+                #print("Got fspaLike %f, diff %g" % (fspaLike, diff))
+                if diff > 1e-13:
+                    gm.append("bad fastspa likelihood calc, %f vs %f, diff %f" % (ch.propTree.logLike, fspaLike, diff))
+                    raise P4Error(gm)
+
+            ch.curTree.logLike = ch.propTree.logLike
+        
+
     m._setLogger()
     return m
 
