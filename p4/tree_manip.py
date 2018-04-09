@@ -1981,6 +1981,43 @@ if True:
 
         self.setPreAndPostOrder()
 
+    def nni2(self, upperSubTreeNode, lowerSubTreeNode):
+        """Simple nearest-neighbor interchange, with specified nodes to interchange.
+
+        You specify an 'upper' node, via upperSubTreeNode, which as usual can be
+        a node name, node number, or node object.  You also specify a 'lower'
+        node, via lowerSubTreeNode.
+
+        The grand-parent of the upperSubTreeNode must exist and must be the
+        parent of the lowerSubTreeNode.
+
+        This works on biRooted trees also, preserving the biRoot.
+
+        """
+
+        gm = ["Tree.nni2()"]
+
+        # This makes sure that the two nodes are part of self.
+        upperSubTreeNode = self.node(upperSubTreeNode)
+        lowerSubTreeNode = self.node(lowerSubTreeNode)
+
+        assert upperSubTreeNode.parent
+        upperNode = upperSubTreeNode.parent
+        assert upperSubTreeNode.parent.parent
+        lowerNode = upperSubTreeNode.parent.parent
+        assert lowerSubTreeNode.parent
+        assert upperSubTreeNode.parent.parent == lowerSubTreeNode.parent
+
+        upperSubTree = self.pruneSubTreeWithoutParent(
+            upperSubTreeNode, allowSingleChildNode=True)
+        lowerSubTree = self.pruneSubTreeWithoutParent(
+            lowerSubTreeNode, allowSingleChildNode=True)
+
+        self.reconnectSubTreeWithoutParent(upperSubTree, lowerNode)
+        self.reconnectSubTreeWithoutParent(lowerSubTree, upperNode)
+
+        self.setPreAndPostOrder()
+
     def checkThatAllSelfNodesAreInTheTree(self, verbose=False, andRemoveThem=False):
         """Check that all self.nodes are actually part of the tree.
 
