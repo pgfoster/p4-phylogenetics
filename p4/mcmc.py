@@ -789,7 +789,10 @@ class Mcmc(object):
         #             self.swapTuner = None
         else:
             self.swapMatrix = None
+
         self.swapTuner = None
+        self.stickyRootComp = False
+
 
         # check the tree, and tree+model+data
         if not aTree.taxNames:
@@ -1899,6 +1902,16 @@ class Mcmc(object):
         if verbose:
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
+
+            if self.stickyRootComp:
+                print("stickyRootComp is turned on.")
+                # compLocation should be turned off.  Is it?
+                if self.prob.compLocation > 0.0:
+                    gm.append("If stickyRootComp is turned on, then compLocation should be off.")
+                    gm.append("Turn it off, by eg (for Mcmc object m)")
+                    gm.append("m.prob.compLocation = 0.0")
+                    raise P4Error(gm)
+                    
 
         coldChainNum = 0
 

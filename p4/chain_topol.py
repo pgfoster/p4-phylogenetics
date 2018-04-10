@@ -12,12 +12,24 @@ import sys
 if True:
     def proposeRoot3(self, theProposal):
         """For non-biRooted trees.  Root on another internal node."""
+
         internalsNoRoot = [n for n in self.propTree.iterInternalsNoRoot()]
         if len(internalsNoRoot):
+            oldRoot = self.propTree.root
             newRoot = random.choice(internalsNoRoot)
             self.propTree.reRoot(
                 newRoot, moveInternalName=False, 
                 fixRawSplitKeys=self.mcmc.constraints)
+            if self.mcmc.stickyRootComp:
+                # move the compNum's too
+                nParts = len(oldRoot.parts)
+                for mpNum in range(nParts):
+                    mpOld = oldRoot.parts[mpNum]
+                    mpNew = newRoot.parts[mpNum]
+                    # ... the switch
+                    savedOldCompNum = mpOld.compNum
+                    mpOld.compNum = mpNew.compNum
+                    mpNew.compNum = savedOldCompNum
         else:
             print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
         self.logProposalRatio = 0.0
