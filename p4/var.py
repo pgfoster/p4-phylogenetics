@@ -314,11 +314,10 @@ class Var(object):
         self._excepthookEditor = None
         self.allowEmptyCharSetsAndTaxSets = False
 
-        self.mcmc_swapVector = False  # (old) matrix or (new) vector, both mcmc and stmcmc
+        #self.mcmc_swapVector = False  # (old) matrix or (new) vector, both mcmc and stmcmc
         self.mcmc_swapTunerSampleSize = 250  # mcmc and stmcmc
         self.stmcmc_useFastSpa = False
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
-        self.mcmc_initialChainTemp = 0.5
         self.mcmc_doTuneChainTemp = False
 
 
