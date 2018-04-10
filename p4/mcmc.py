@@ -79,8 +79,6 @@ class McmcTunings(object):
         self.default['brLenPriorLambda'] = 10.0
         self.default['brLenPriorLambdaForInternals'] = 1000.0
         self.default['doInternalBrLenPrior'] = False
-        self.default['doPolytomyResolutionClassPrior'] = False
-        self.default['polytomyPriorLogBigC'] = 0.0
         self.default['brLenPriorType'] = 'exponential'
         self.default['allBrLens'] = 2.0 * math.log(1.02)
 
@@ -633,15 +631,6 @@ class Mcmc(object):
                     gm.append("Mcmc is not implemented for roots that have less than 3 children.")
                     raise P4Error(gm)
 
-        if 0:  # Muck with polytomies
-            nn = [n for n in aTree.iterInternalsNoRoot()]
-            for n in nn:
-                r = random.random()
-                if r < 0.4:
-                    aTree.collapseNode(n)
-            aTree.draw()
-            # sys.exit()
-
         self.tree = aTree
         self.constraints = constraints
         if self.constraints:
@@ -807,6 +796,8 @@ class Mcmc(object):
 
         # Default tunings
         self._tunings = McmcTunings(self.tree.model.nParts)
+        self.doPolytomyResolutionClassPrior = False
+        self.polytomyPriorLogBigC = 0.0
 
         self.prob = McmcProposalProbs()
 
@@ -1075,8 +1066,8 @@ class Mcmc(object):
             p.name = 'polytomy'
             p.brLenPriorType = self._tunings.default['brLenPriorType']
             p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
-            p.doPolytomyResolutionClassPrior = self._tunings.default['doPolytomyResolutionClassPrior']
-            p.polytomyPriorLogBigC = self._tunings.default['polytomyPriorLogBigC']
+            p.doPolytomyResolutionClassPrior = self.doPolytomyResolutionClassPrior
+            p.polytomyPriorLogBigC = self.polytomyPriorLogBigC
             p.weight = self.prob.polytomy * \
                 (len(self.tree.nodes) - 1) * fudgeFactor['polytomy']
             self.props.proposals.append(p)
@@ -1755,7 +1746,7 @@ class Mcmc(object):
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
             p = self.props.proposalsDict.get('polytomy')
-            if p and p.doPolytomyResolutionClassPrior:
+            if p and self.doPolytomyResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):

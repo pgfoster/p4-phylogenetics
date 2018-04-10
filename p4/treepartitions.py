@@ -1739,8 +1739,7 @@ something like this::
                         else:
                             print("%6i  " % n.nodeNum, end=' ')
                             #theCompCounts = maxRootNodes[0].br.split.rootModelUsage.parts[pNum].compCounts
-                            theCompCounts = conTree.root.rootModelUsage.parts[
-                                pNum].compCounts
+                            theCompCounts = conTree.root.rootModelUsage.parts[pNum].compCounts
                             for cNum in range(self.modelInfo.parts[pNum].nComps):
                                 print("%4i " % theCompCounts[cNum], end=' ')
                             print()
