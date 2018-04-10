@@ -360,6 +360,7 @@ class SwapTuner(object):
 
 
     def tune(self, theMcmc):
+        """A bad idea, at least as implemented.  It is unstable."""
         assert self.swaps01_nAttempts >= self.sampleSize
         acc = float(self.swaps01_nSwaps) / self.swaps01_nAttempts    # float() for Py2
         #print("SwapTuner.tune() nSwaps %i, nAttemps %i, acc %s" % (
@@ -438,7 +439,6 @@ class SwapTunerV(object):
             doMessage = True
             direction = 'Increase'
         elif acc < self.tnAccLo:
-            oldTn = self.mcmc.chainTemp
             if acc == 0.0:   # no swaps at all
                 self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
             elif acc < self.tnAccVeryLo:
@@ -612,7 +612,7 @@ class Mcmc(object):
 
     """
 
-    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, swapTuner=250):
+    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True):
         gm = ['Mcmc.__init__()']
 
         self.verbose = verbose
@@ -671,15 +671,9 @@ class Mcmc(object):
         self.chains = []
         self.gen = -1
         self.startMinusOne = -1
-        self.chainTemp = 0.15
-        if var.mcmc_swapVector and self.nChains > 1:
-            # These are differences in temperatures between adjacent chains.  The last one is not used.
-            self.chainTempDiffs = [self.chainTemp] * self.nChains 
-            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
-            self.chainTemps = [0.0]
-            for dNum in range(self.nChains - 1):
-                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
+        self.chainTemp = 1.0
 
+        # Check that branch lengths are neither too short nor too long
         for n in self.tree.iterNodesNoRoot():
             if n.br.len < var.BRLEN_MIN:
                 gm.append("node %i brlen (%g)is too short." %
@@ -690,6 +684,7 @@ class Mcmc(object):
                           (n.nodeNum, n.br.len))
                 raise P4Error(gm)
 
+        # Get the run number
         try:
             runNum = int(runNum)
         except (ValueError, TypeError):
@@ -780,33 +775,35 @@ class Mcmc(object):
             self.swapMatrix = []
             for i in range(self.nChains):
                 self.swapMatrix.append([0] * self.nChains)
-            if var.mcmc_swapVector:
-                self.swapTuner = SwapTunerV(self)
-            else:
-                if swapTuner:             # a kwarg
-                    myST = int(swapTuner)
-                    if myST >= 100:
-                        self.swapTuner = SwapTuner(myST)
-                    else:
-                        gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
-                        raise P4Error(gm)
-                else:
-                    self.swapTuner = None
+        #     if var.mcmc_swapVector:
+        #         self.swapTuner = SwapTunerV(self)
+        #     else:
+        #         if swapTuner:             # a kwarg
+        #             myST = int(swapTuner)
+        #             if myST >= 100:
+        #                 self.swapTuner = SwapTuner(myST)
+        #             else:
+        #                 gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
+        #                 raise P4Error(gm)
+        #         else:
+        #             self.swapTuner = None
         else:
             self.swapMatrix = None
-            self.swapTuner = None
 
-        # check the tree
+        self.swapTuner = None
+        self.stickyRootComp = False
+
+
+        # check the tree, and tree+model+data
+        if not aTree.taxNames:
+            gm.append("The tree that you supply should have a 'taxNames' attribute.")
+            gm.append("The taxNames should be in the same order as the data.")
+            raise P4Error(gm)
         aTree.calcLogLike(verbose=False)
 
         if 0:
             # print complaintHead
             print("    logLike of the input tree is %s" % aTree.logLike)
-
-        if not aTree.taxNames:
-            gm.append("The tree that you supply should have a 'taxNames' attribute.")
-            gm.append("The taxNames should be in the same order as the data.")
-            raise P4Error(gm)
 
         # Default tunings
         self._tunings = McmcTunings(self.tree.model.nParts)
@@ -940,7 +937,8 @@ class Mcmc(object):
         for aLine in splash:
             self.logger.info(aLine)
 
-        if var.mcmc_swapVector:
+        self.swapVector = True
+        if self.nChains > 1:
             print("%-16s: %s" % ('swapVector', "on"))
 
         # Hidden experimental hacking
@@ -1711,10 +1709,7 @@ class Mcmc(object):
         #print("    Swaps are presented as a square matrix, nChains * nChains.")
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
-        if var.mcmc_swapVector:
-            print("    The chainTemp is continuously tuned for each chain\n")
-        else:
-            print("    The overall chainTemp is continuously tuned.\n")
+        print("    The chainTemp is %s\n" % self.chainTemp)
         print(" " * 10, end=' ')
         for i in range(self.nChains):
             print("%7i" % i, end=' ')
@@ -1834,6 +1829,7 @@ class Mcmc(object):
             #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
         if self.checkPointInterval:
+            # Check that checkPointInterval makes sense.
             # We want a couple of things:
             #  1.  The last gen should be on checkPointInterval.  For
             #      example, if the checkPointInterval is 200, then doing
@@ -1858,6 +1854,15 @@ class Mcmc(object):
                 gm.append("The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
+
+        # The swap vector is just the diagonal of the swap matrix
+        if self.swapVector and self.nChains > 1:
+            # These are differences in temperatures between adjacent chains.  The last one is not used.
+            self.chainTempDiffs = [self.chainTemp] * self.nChains 
+            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+            self.chainTemps = [0.0]
+            for dNum in range(self.nChains - 1):
+                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         if self.props.proposals:
             # Its either a re-start, or it has been thru autoTune().
@@ -1897,6 +1902,16 @@ class Mcmc(object):
         if verbose:
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
+
+            if self.stickyRootComp:
+                print("stickyRootComp is turned on.")
+                # compLocation should be turned off.  Is it?
+                if self.prob.compLocation > 0.0:
+                    gm.append("If stickyRootComp is turned on, then compLocation should be off.")
+                    gm.append("Turn it off, by eg (for Mcmc object m)")
+                    gm.append("m.prob.compLocation = 0.0")
+                    raise P4Error(gm)
+                    
 
         coldChainNum = 0
 
@@ -2121,7 +2136,7 @@ class Mcmc(object):
             if self.nChains == 1:
                 coldChain = 0
             else:
-                if var.mcmc_swapVector:
+                if self.swapVector:
                     rTempNum1 = random.randrange(self.nChains - 1)
                     rTempNum2 = rTempNum1 + 1
                     chain1 = None
@@ -2212,14 +2227,14 @@ class Mcmc(object):
                     if random.random() < r:
                         acceptSwap = 1
 
-                    # for continuous temperature tuning with self.swapTuner
-                    if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
-                        self.swapTuner.swaps01_nAttempts += 1
-                        if acceptSwap:
-                            self.swapTuner.swaps01_nSwaps += 1
-                        if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
-                            self.swapTuner.tune(self)
-                            # tune() zeros nAttempts and nSwaps counters
+                    # # for continuous temperature tuning with self.swapTuner
+                    # if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
+                    #     self.swapTuner.swaps01_nAttempts += 1
+                    #     if acceptSwap:
+                    #         self.swapTuner.swaps01_nSwaps += 1
+                    #     if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
+                    #         self.swapTuner.tune(self)
+                    #         # tune() zeros nAttempts and nSwaps counters
 
                     if acceptSwap:
                         # Use the lower triangle of swapMatrix to keep track of

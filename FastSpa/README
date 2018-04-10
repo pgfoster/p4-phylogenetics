@@ -1,0 +1,47 @@
+This makes a module for fast likelihood calculations using the SPA supertree model.
+
+It needs boost-python and boost-numpy installed.  For that, Homebrew worked on my mac.  After installing, I could do
+
+: python3 setup.py build_ext -i
+
+and I got the compiled module.  See below for what to do with it.
+
+For my old linux box, I installed the newest boost from source; that was slightly involved.  For that I had to make sure that the python headers were visible (eg apt-get install python3-dev) and that numpy was installed.  I made copy of
+
+: boost_1_66_0/tools/build/example/user-config.jam
+
+and put it in my home directory.  I modified the end of it as shown here, specific for my (old!) python3.
+
+# ---------------------
+# Python configuration.
+# ---------------------
+
+# Configure specific Python version.
+# using python : 3.1 : /usr/bin/python3 : /usr/include/python3.1 : /usr/lib ;
+using python : 3.4 : /usr/bin/python3.4 : /usr/include/python3.4m : /usr/lib ;
+
+Then 
+
+: ./bootstrap.sh --with-libraries=python --with-python=/usr/bin/python3.4 --with-python-version=3.4 --with-python-root=/usr/lib/python3.4
+
+(although I am not sure all of that was needed ...)
+
+Then, as instructed, 
+
+: ./b2
+
+... and it built with boost-python and boost-numpy libs.  I did not "install" boost further, and so I had to tell Python where the includes and libs were, as described in "setup.py".
+
+At this point I can do
+
+: python3 setup.py build_ext -i
+
+And I get a compiled fastspa module.
+
+Move that module into your python path; an obvious place would be in the p4 python libs directory.
+
+To tell python to use it, say
+
+: var.stmcmc_useFastSpa = True
+
+

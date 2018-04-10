@@ -341,7 +341,7 @@ class Trees(object):
                         raise P4Error(gm)
         return foundTrees
 
-    def topologyDistanceMatrix(self, metric='sd'):
+    def topologyDistanceMatrix(self, metric='sd', resetSplitKeySet=False):
         """Returns a DistanceMatrix object showing topology distances.
 
         Uses the :meth:`Tree.Tree.topologyDistance` method to compare
@@ -370,7 +370,7 @@ class Trees(object):
             t1 = self.trees[i]
             for j in range(i + 1, d.dim):
                 t2 = self.trees[j]
-                theDist = t1.topologyDistance(t2, metric=metric)
+                theDist = t1.topologyDistance(t2, metric=metric, resetSplitKeySet=resetSplitKeySet)
                 d.matrix[i][j] = theDist
                 d.matrix[j][i] = theDist
         return d

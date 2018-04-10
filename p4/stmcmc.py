@@ -196,14 +196,27 @@ def slowQuartetDistance(st, inputTree):
 
 class STChain(object):
 
-    def __init__(self, aSTMcmc):
+    def __init__(self, aSTMcmc, chNum):
         gm = ['STChain.__init__()']
 
         self.stMcmc = aSTMcmc
-        self.tempNum = -1  # 'temp'erature, not 'temp'orary
+        self.chNum = chNum    # Does not change.  Used with fastspa only
+        self.tempNum = chNum  # 'temp'erature, not 'temp'orary;  changes when swapped.
 
-        self.curTree = aSTMcmc.tree.dupe()
-        self.propTree = aSTMcmc.tree.dupe()
+        if chNum == 0:
+            self.curTree = aSTMcmc.tree.dupe()
+            self.propTree = aSTMcmc.tree.dupe()
+        else:      # heated chains are randomized, unless var.mcmc_sameBigTToStartOnAllChains is set.
+            if var.mcmc_sameBigTToStartOnAllChains:  # False by default
+                self.curTree = aSTMcmc.tree.dupe()
+                self.propTree = aSTMcmc.tree.dupe()
+            else:
+                rTree = aSTMcmc.tree.dupe()
+                rTree.randomizeTopology(randomBrLens = False)
+                rTree.stripBrLens()
+                rTree.setPreAndPostOrder()
+                self.curTree = rTree
+                self.propTree = rTree.dupe()
 
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
@@ -228,14 +241,23 @@ class STChain(object):
 
             self.curTree.logLike = self.propTree.logLike
         elif self.stMcmc.modelName.startswith('SPA'):
-            self.curTree.spaQ = self.stMcmc.spaQ
-            self.propTree.spaQ = self.stMcmc.spaQ
+            self.curTree.spaQ = np.array([self.stMcmc.spaQ])
+            self.propTree.spaQ = np.array([self.stMcmc.spaQ])
 
             # for t in self.stMcmc.trees:
             #    self.nInTreeSplits += len(t.splSet)
             # print "Got nInTreeSplits %s" % self.nInTreeSplits
             self.setupBitarrayCalcs()
             self.getTreeLogLike_spa_bitarray()
+            if var.stmcmc_useFastSpa:
+                #print("Here E.  bitarray propTree.logLike is %f" % self.propTree.logLike)
+                fspaLike = self.stMcmc.fspa.calcLogLike(self.chNum)
+                diff = math.fabs(self.propTree.logLike - fspaLike)
+                #print("Got fspaLike %f, diff %g" % (fspaLike, diff))
+                if diff > 1e-13:
+                    gm.append("bad fastspa likelihood calc, %f vs %f, diff %f" % (self.propTree.logLike, fspaLike, diff))
+                    raise P4Error(gm)
+
             self.curTree.logLike = self.propTree.logLike
         elif self.stMcmc.modelName.startswith('QPA'):
             self.curTree.spaQ = self.stMcmc.spaQ
@@ -307,7 +329,7 @@ class STChain(object):
 
     def getTreeLogLike_spa_bitarray(self):
         gm = ["STChain.getTreeLogLike_spa_bitarray"]
-        if self.propTree.spaQ > 1. or self.propTree.spaQ <= 0.0:
+        if self.propTree.spaQ[0] > 1. or self.propTree.spaQ[0] <= 0.0:
             gm.append("bad propTree.spaQ value %f" % self.propTree.spaQ)
             raise P4Error(gm)
         slowCheck = False
@@ -381,6 +403,10 @@ class STChain(object):
                 for ss in nonRedundantStSplitDict:
                     ss.dump()
                 print("There are %i non-redundant splits in the st for this it." % len(nonRedundantStSplitDict))
+            if 0:
+                if(len(relevantStSplits) != len(nonRedundantStSplitDict)):
+                    print("Gen %12i: Got %i relevantStSplits; %i in nonRedundantStSplitDict" % (
+                        self.stMcmc.gen, len(relevantStSplits),len(nonRedundantStSplitDict)))
 
             # S_st is the number of splits in the reduced supertree
             S_st = len(nonRedundantStSplitDict)
@@ -394,8 +420,8 @@ class STChain(object):
             S = 2 ** (it.nTax - 1) - (it.nTax + 1)
             # print("    S=%i, S_st=%i, S_x=%i" % (S, S_st, S-S_st))
             if S_st:
-                q = self.propTree.spaQ / S_st
-                R = 1. - self.propTree.spaQ
+                q = self.propTree.spaQ[0] / S_st
+                R = 1. - self.propTree.spaQ[0]
                 r = R / (S - S_st)
                 #print("q=%g" % q)
                 logq = math.log(q)
@@ -468,7 +494,7 @@ class STChain(object):
 
     def setupBitarrayCalcs(self):
         # Prepare self.propTree (ie bigT).  First make n.stSplitKeys.  These
-        # are temporary.
+        # are temporary; the info is held more permanently in n.ss, a BigTSplitStuff object
         for n in self.propTree.iterPostOrder():
             if n == self.propTree.root:
                 break
@@ -494,6 +520,22 @@ class STChain(object):
         # be used after supertree rearrangements.
         self.propTree.root.ss = BigTSplitStuff()
 
+        if self.stMcmc.modelName.startswith('SPA') and var.stmcmc_useFastSpa:
+            self.stMcmc.fspa.setBigT(len(self.propTree.nodes), self.propTree.nTax, 
+                                     self.propTree.postOrder, self.propTree.spaQ)
+            for nNum in self.propTree.postOrder:
+                if nNum == -10000:
+                    break
+                n = self.propTree.nodes[nNum]
+                if n == self.propTree.root or n.isLeaf:
+                    theSpl = '0'
+                    theSpl2 = '0'
+                else:
+                    theSpl = n.ss.spl.to01()
+                    theSpl2 = n.ss.spl2.to01()
+                self.stMcmc.fspa.setBigTNoSpl(self.chNum, nNum, theSpl, theSpl2)
+
+
     def refreshBitarrayPropTree(self):
         # Refresh self.propTree (ie bigT) after a topology change.
         for n in self.propTree.iterPostOrder():
@@ -513,6 +555,19 @@ class STChain(object):
             n.ss.spl = n.stSplitKey
             n.ss.spl2 = n.ss.spl.copy()
             n.ss.spl2.invert()
+
+        if self.stMcmc.modelName.startswith('SPA') and var.stmcmc_useFastSpa:
+            for nNum in self.propTree.postOrder:
+                if nNum == -10000:
+                    break
+                n = self.propTree.nodes[nNum]
+                if n == self.propTree.root or n.isLeaf:
+                    theSpl = '0'
+                    theSpl2 = '0'
+                else:
+                    theSpl = n.ss.spl.to01()
+                    theSpl2 = n.ss.spl2.to01()
+                self.stMcmc.fspa.setBigTNoSpl(self.chNum, nNum, theSpl, theSpl2)
 
     def startFrrf(self):
         # if using self.stMcmc.stRFCalc= 'fastReducedRF'
@@ -1086,7 +1141,7 @@ class STChain(object):
                 # print math.exp(theProposal.logBigT[pTree.nInternalNodes])
                 print("-" * 30)
             self.logPriorRatio = ((theProposal.logBigT[self.curTree.nInternalNodes] +
-                                   self.stMcmc.tunings.polytomyPriorLogBigC) -
+                                   theProposal.polytomyPriorLogBigC) -
                                   theProposal.logBigT[pTree.nInternalNodes])
 
         else:
@@ -1100,7 +1155,7 @@ class STChain(object):
 
     def propose(self, theProposal):
         gm = ['STChain.propose()']
-        # print "propose() About to propose %s" % theProposal.name
+        #print("propose() About to propose %s" % theProposal.name)
 
         if theProposal.name == 'nni':
             # self.proposeNni(theProposal)
@@ -1139,7 +1194,7 @@ class STChain(object):
             self.logProposalRatio = 0.0
             self.logPriorRatio = 0.0
         elif theProposal.name == 'spaQ_uniform':
-            mt = self.propTree.spaQ
+            mt = self.propTree.spaQ[0]
             originally = mt
             # Slider proposal
             mt += (random.random() - 0.5) * theProposal.tuning[self.tempNum]
@@ -1155,7 +1210,7 @@ class STChain(object):
                     mt = myMAX - (mt - myMAX)
                 else:
                     isGood = True
-            self.propTree.spaQ = mt
+            self.propTree.spaQ[0] = mt
             self.logProposalRatio = 0.0
             if theProposal.spaQPriorType == 'flat':
                 self.logPriorRatio = 0.0
@@ -1191,7 +1246,22 @@ class STChain(object):
                 self.getTreeLogLike_bitarray()
         elif self.stMcmc.modelName == 'SPA':
             self.refreshBitarrayPropTree()
-            self.getTreeLogLike_spa_bitarray()
+            if var.stmcmc_useFastSpa:
+                if 0:  # check
+                    self.getTreeLogLike_spa_bitarray()
+                    #print("Here F.  bitarray propTree.logLike is %f" % self.propTree.logLike)
+                    fspaLike = self.stMcmc.fspa.calcLogLike(self.chNum)
+                    diff = math.fabs(self.propTree.logLike - fspaLike)
+                    #print("Got fspaLike %f, diff %g" % (fspaLike, diff))
+                    if diff > 1e-13:
+                        gm.append("gen %i bad fastspa likelihood calc, %f vs %f, diff %f" % (
+                            self.stMcmc.gen, self.propTree.logLike, fspaLike, diff))
+                        raise P4Error(gm)
+                else:
+                    self.propTree.logLike = self.stMcmc.fspa.calcLogLike(self.chNum)
+            else:
+                self.getTreeLogLike_spa_bitarray()
+
         elif self.stMcmc.modelName == 'QPA':
             self.getTreeLogLike_qpa_slow()
         else:
@@ -1199,8 +1269,8 @@ class STChain(object):
             raise P4Error(gm)
 
         # if theProposal.name == 'polytomy':
-        # print "propTree logLike is %f, curTree logLike is %f" % (
-        #    self.propTree.logLike, self.curTree.logLike)
+        #print("propTree logLike is %f, curTree logLike is %f" % (
+        #    self.propTree.logLike, self.curTree.logLike))
         #myDist = self.propTree.topologyDistance(self.curTree)
         # print "myDist %2i, propTree.logLike %.3f  curTree.logLike %.3f "
         # % (myDist, self.propTree.logLike, self.curTree.logLike)
@@ -1244,6 +1314,8 @@ class STChain(object):
 
         # print "Doing %s" % aProposal.name
         pRet = self.propose(aProposal)
+        #if self.tempNum == 0:
+        #    print(self.propTree.postOrder)
 
         # print "pRet = %.6f" % pRet,
         if not aProposal.doAbort:
@@ -1292,7 +1364,7 @@ class STChain(object):
             b.beta = a.beta
         elif aProposal.name in ['spaQ_uniform']:
             b.logLike = a.logLike
-            b.spaQ = a.spaQ
+            b.spaQ[0] = a.spaQ[0]
 
         else:
             gm.append('Unlisted proposal.name = %s  Fix me.' % aProposal.name)
@@ -1318,56 +1390,6 @@ class STMcmcTunings(object):
         #self.default['spaQPriorType'] = 'flat'
         #self.default['spaQExpPriorLambda'] = 100.0
         
-
-
-# class STMcmcTunings(object):
-
-#     def __init__(self):
-#         object.__setattr__(self, 'chainTemp', 1.)
-#         object.__setattr__(self, 'nni', None)
-#         object.__setattr__(self, 'spr', None)
-#         object.__setattr__(self, 'SR2008beta_uniform', 0.2)
-#         object.__setattr__(self, 'spaQ_uniform', 0.1)
-#         object.__setattr__(self, 'doPolytomyResolutionClassPrior', False)
-#         object.__setattr__(self, 'polytomyPriorLogBigC', 0.0)
-#         object.__setattr__(self, 'spaQPriorType', 'flat')
-#         object.__setattr__(self, 'spaQExpPriorLambda', 100.0)
-
-#     def __setattr__(self, item, val):
-#         # print "Got request to set %s to %s" % (item, val)
-#         if item in self.__dict__:
-#             # Here is where I should do the sanity checking of the new vals.  Some day.
-#             # print "    Setting tuning '%s' to %s" % (item, val)
-#             if item == 'spaQPriorType':
-#                 validVals = ['flat', 'exponential']
-#                 assert val in validVals, "set spaQPriorType to one of %s" % validVals
-#             object.__setattr__(self, item, val)
-#         else:
-#             print(self.dump())
-#             gm = ["\nSTMcmcTunings.__setattr__()"]
-#             gm.append("Can't set tuning '%s'-- no such tuning." % item)
-#             raise P4Error(gm)
-
-#     def reprString(self, advice=True):
-#         lst = ["\nSTMcmc.tunings:"]
-#         spacer = ' ' * 4
-#         lst.append("%s%32s: %s" % (spacer, 'chainTemp', self.chainTemp))
-#         lst.append("%s%32s: %s" % (spacer, 'nni', self.nni))
-#         lst.append("%s%32s: %s" % (spacer, 'spr', self.spr))
-#         lst.append("%s%32s: %s" % (spacer, 'SR2008beta_uniform', self.SR2008beta_uniform))
-#         lst.append("%s%32s: %s" % (spacer, 'spaQ_uniform', self.spaQ_uniform))
-#         lst.append("%s%32s: %s" % (spacer, 'doPolytomyResolutionClassPrior', self.doPolytomyResolutionClassPrior))
-#         lst.append("%s%32s: %s" % (spacer, 'polytomyPriorLogBigC', self.polytomyPriorLogBigC))
-#         lst.append("%s%32s: %s" % (spacer, 'spaQPriorType', self.spaQPriorType))
-#         lst.append("%s%32s: %s" % (spacer, 'spaQExpPriorLambda', self.spaQExpPriorLambda))
-#         return '\n'.join(lst)
-
-#     def dump(self):
-#         print(self.reprString())
-
-#     def __repr__(self):
-#         return self.reprString()
-
 
 class STMcmcProposalProbs(dict):
 
@@ -1712,7 +1734,6 @@ class STSwapTunerV(object):
             doMessage = True
             direction = 'Increase'
         elif acc < self.tnAccLo:
-            oldTn = self.mcmc.chainTemp
             if acc == 0.0:   # no swaps at all
                 self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
             elif acc < self.tnAccVeryLo:
@@ -1924,6 +1945,7 @@ class STMcmc(object):
             gm.append("Good modelNames are %s" % goodModelNames)
             raise P4Error(gm)
         self.modelName = modelName
+        self.tree = None
 
         self.stRFCalc = None
         if modelName.startswith("SR2008"):
@@ -1975,6 +1997,8 @@ class STMcmc(object):
         self.constraints = None
         self.simulate = None
 
+
+        # spaQ is a property.  Whenever it is set, it is propagated to all the chains.
         self._spaQ = None
         if modelName in ['SPA', 'QPA']:
             try:
@@ -2083,12 +2107,12 @@ class STMcmc(object):
         #         n.name = None
 
         if not bigT:
-            allNames = []
+            allNames = set()
             for t in inTrees:
                 t.unsorted_taxNames = [n.name for n in t.iterLeavesNoRoot()]
-                # Efficient?  Probably does not matter.
-                allNames += t.unsorted_taxNames
-            self.taxNames = list(set(allNames))
+                # Get the union of a set and other stuff using set.update(stuff).
+                allNames.update(t.unsorted_taxNames)
+            self.taxNames = list(allNames)
             # not needed, but nice for debugging
             self.taxNames.sort()
         else:
@@ -2164,6 +2188,20 @@ class STMcmc(object):
                         # bytes so that I can use it as a set element
                         n.stSplitKeyBytes = n.stSplitKey.tobytes()
                         t.internals.append(n)
+
+        self.fspa = None
+        if self.modelName == 'SPA' and var.stmcmc_useFastSpa:
+            import p4.fastspa as fastspa
+            self.fspa = fastspa.FastSpa(useSplitSupport)
+            for tNum, t in enumerate(inTrees):
+                self.fspa.setInTr(tNum, t.nTax, self.nTax, t.baTaxBits.to01(), t.firstTax)
+                for n in t.internals:
+                    if n.br and hasattr(n.br, "support"):
+                        support = n.br.support
+                    else:
+                        support = -1.0
+                    self.fspa.setInTrNo(tNum, n.stSplitKey.to01(), support)
+            #self.fspa.summarizeInTrs()
 
         if self.modelName in ['QPA']:
             for t in inTrees:
@@ -2346,20 +2384,20 @@ class STMcmc(object):
         #self.heatingHackProposalNames = ['nni', 'spr']
 
         if verbose:
-            print("Initializing STMcmc")
-            print("%-16s: %s" % ('modelName', modelName))
+            self.loggerPrinter.info("Initializing STMcmc")
+            self.loggerPrinter.info("%-16s: %s" % ('modelName', modelName))
             if self.modelName.startswith("SR2008"):
-                print("%-16s: %s" % ('stRFCalc', self.stRFCalc))
+                self.loggerPrinter.info("%-16s: %s" % ('stRFCalc', self.stRFCalc))
             if self.modelName in ["SPA", "QPA"]:
-                print("%-16s: %s" % ('useSplitSupport', self.useSplitSupport))
-            print("%-16s: %s" % ('inTrees', len(self.trees)))
-            print("%-16s: %s" % ('nTax', self.nTax))
+                self.loggerPrinter.info("%-16s: %s" % ('useSplitSupport', self.useSplitSupport))
+            self.loggerPrinter.info("%-16s: %s" % ('inTrees', len(self.trees)))
+            self.loggerPrinter.info("%-16s: %s" % ('nTax', self.nTax))
             if self.nChains == 1:
-                print("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
+                self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
             elif self.nChains > 1:
-                print("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
+                self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
                 if var.mcmc_swapVector:
-                    print("%-16s: %s" % ('swapVector', "on"))
+                    self.loggerPrinter.info("%-16s: %s" % ('swapVector', "on"))
                 # Don't say the temperature here, as it will likely be re-set later.
 
 
@@ -2386,16 +2424,28 @@ class STMcmc(object):
     spaQ = property(_get_spaQ, _set_spaQ, _del_nothing)
 
     def _setLogger(self):
-        myLogFileName = "mcmc_log_%i" % self.runNum
-        # if os.path.isfile(myLogFileName):
-        #     gm.append("Log file '%s' exists, and I am refusing to over-write it.  Deal with it." % myLogFileName)
-        #     raise P4Error(gm)
-        self.logger = logging.getLogger()
-        handler = logging.FileHandler(myLogFileName, mode='a')
-        formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='[%Y-%m-%d %H:%M]')
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.INFO)
+        """Make two loggers; one that writes to a file and to stderr, and one that writes only to a file."""
+
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s %(message)s',
+                            datefmt='[%Y-%m-%d %H:%M]',
+                            filename="mcmc_log_%i" % self.runNum,
+                            filemode='a')
+
+        # define a Handler which writes INFO messages or higher to the sys.stderr
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        # set a format which is simpler for console use
+        formatter = logging.Formatter('%(message)s')
+        # tell the handler to use this format
+        console.setFormatter(formatter)
+        # add the handler to the root logger
+        # Using named loggers allows me to keep them separate.
+        self.loggerPrinter = logging.getLogger('withPrint')
+        self.loggerPrinter.addHandler(console)
+        # This logger only logs to the file, not to stderr.
+        self.logger = logging.getLogger("logFileOnly")
+
 
 
     def _makeProposals(self):
@@ -2542,7 +2592,7 @@ class STMcmc(object):
             for propName in ['nni', 'spr']:
                 p = self.props.proposalsDict.get(propName)
                 if p:
-                    print("'%s' proposal-- topology changes by temperature (chainTemp is %.2f)" % (propName, self.chainTemp))
+                    print("'%s' proposal-- topology changes by temperature" % (propName))
                     print("%s tempNum   nProps nAccepts percent" % spacer)
                     for tNum in range(self.nChains):
                         print("%s" % spacer, end=' ')
@@ -2612,10 +2662,10 @@ class STMcmc(object):
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
         #print("    The current tunings.chainTemp is %5.3f\n" % self.chainTemp)
-        if var.mcmc_swapVector:
-            print("    The chainTemp is continuously tuned for each chain\n")
-        else:
-            print("    The overall chainTemp is continuously tuned.\n")
+        #if var.mcmc_swapVector:
+        #    print("    The chainTemp is continuously tuned for each chain\n")
+        #else:
+        #    print("    The overall chainTemp is continuously tuned.\n")
 
         print(" " * 10, end=' ')
         for i in range(self.nChains):
@@ -2649,10 +2699,9 @@ class STMcmc(object):
         # Make chains, if needed
         if not self.chains:
             self.chains = []
+            # chNum is used by fastspa; it is also a starting point for tempNum (which changes in swaps)
             for chNum in range(self.nChains):
-                aChain = STChain(self)
-                # Temperature.  Set this way to start, but it changes.
-                aChain.tempNum = chNum
+                aChain = STChain(self, chNum)
                 self.chains.append(aChain)
         if not self.props.proposals:
             self._makeProposals()
@@ -2783,7 +2832,7 @@ class STMcmc(object):
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
 
-        coldChainNum = 0
+        coldChainNum = 0            
 
         # If polytomy is turned on, then it is possible to get a star
         # tree, in which case local will not work.  So if we have both
@@ -2836,9 +2885,20 @@ class STMcmc(object):
             self.startMinusOne = self.gen
         else:
             self.logger.info("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+            self.logger.info("nChains %i" % (self.nChains))
+
+            ret = self.props.proposalsDict.get('polytomy')
+            if ret:
+                message = "Doing polytomy proposal, with doPolytomyResolutionClassPrior=%s" % ret.doPolytomyResolutionClassPrior
+                print(message)
+                self.logger.info(message)
+                message = "polytomy: polytomyPriorLogBigC=%f" % ret.polytomyPriorLogBigC
+                print(message)
+                self.logger.info(message)
+
             if verbose:
                 if self.nChains > 1:
-                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %.2f" % (self.nChains, self.chainTemp))
+                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature is continuously tuned." % self.nChains)
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 print("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
@@ -2889,6 +2949,8 @@ class STMcmc(object):
         ##################################################
         ############### Main loop ########################
         ##################################################
+
+        self.swapInterval = 10
 
         for gNum in range(nGensToDo):
             self.gen += 1
@@ -2986,127 +3048,143 @@ class STMcmc(object):
                         ret.doAbort = False
 
             # Do swap, if there is more than 1 chain.
-            if self.nChains == 1:
-                coldChain = 0
-            else:
-                if var.mcmc_swapVector:
-                    rTempNum1 = random.randrange(self.nChains - 1)
-                    rTempNum2 = rTempNum1 + 1
-                    chain1 = None
-                    chain2 = None
-                    for ch in self.chains:
-                        if ch.tempNum == rTempNum1:
-                            chain1 = ch
-                        elif ch.tempNum == rTempNum2:
-                            chain2 = ch
-                    assert chain1 and chain2
-                    
-                    # Use the upper triangle of swapMatrix for nAttempts
-                    self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+            if (self.gen + 1) % self.swapInterval == 0:
+                if self.nChains == 1:
+                    coldChain = 0
+                else:
+                    if var.mcmc_swapVector:
+                        rTempNum1 = random.randrange(self.nChains - 1)
+                        rTempNum2 = rTempNum1 + 1
+                        chain1 = None
+                        chain2 = None
+                        for ch in self.chains:
+                            if ch.tempNum == rTempNum1:
+                                chain1 = ch
+                            elif ch.tempNum == rTempNum2:
+                                chain2 = ch
+                        assert chain1 and chain2
 
-                    lnR = (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
-                            ) * chain2.curTree.logLike
-                    lnR += (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
-                            ) * chain2.curTree.logLike
-
-                    if lnR < -100.0:
-                        r = 0.0
-                    elif lnR >= 0.0:
-                        r = 1.0
-                    else:
-                        r = math.exp(lnR)
-
-                    acceptSwap = 0
-                    if random.random() < r:
-                        acceptSwap = 1
-
-                    # for continuous temperature tuning with self.swapTuner
-                    if self.swapTuner:
-                        # Index the nAttempts and nSwaps with the lower of the two tempNum's, which would be chain1.tempNum
-                        self.swapTuner.nAttempts[chain1.tempNum] += 1
-                        if acceptSwap:
-                            self.swapTuner.nSwaps[chain1.tempNum] += 1
-                        if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
-                            self.swapTuner.tune(chain1.tempNum)
-                            # tune() zeros nAttempts and nSwaps counters
-
-                    if acceptSwap:
-                        # Use the lower triangle of swapMatrix to keep track of
-                        # nAccepted's
-                        assert chain1.tempNum < chain2.tempNum
-                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-
-                        # Do the swap
-                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
-
-                    
-                else:     # swap matrix
-                    # Chain swapping stuff was lifted from MrBayes.  Thanks again.
-                    chain1, chain2 = random.sample(self.chains, 2)
-
-                    # Use the upper triangle of swapMatrix for nProposed's
-                    if chain1.tempNum < chain2.tempNum:
+                        # Use the upper triangle of swapMatrix for nAttempts
                         self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
-                        thisCh1Temp = chain1.tempNum
-                        thisCh2Temp = chain2.tempNum
-                    else:
-                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-                        thisCh1Temp = chain2.tempNum
-                        thisCh2Temp = chain1.tempNum
 
-                    lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                            ) * chain2.curTree.logLike
-                    lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                            ) * chain2.curTree.logLike
+                        lnR = (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                                ) * chain2.curTree.logLike
+                        lnR += (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                                ) * chain1.curTree.logLike
+                        lnR -= (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                                ) * chain1.curTree.logLike
+                        lnR -= (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                                ) * chain2.curTree.logLike
 
-                    if lnR < -100.0:
-                        r = 0.0
-                    elif lnR >= 0.0:
-                        r = 1.0
-                    else:
-                        r = math.exp(lnR)
+                        # # An alternative calculation
+                        # heatBeta1 = 1.0 / (1.0 + self.chainTemps[chain1.tempNum])
+                        # heatBeta2 = 1.0 / (1.0 + self.chainTemps[chain2.tempNum])
+                        # likeRatio12 = (chain2.curTree.logLike - chain1.curTree.logLike) * heatBeta1
+                        # likeRatio21 = (chain1.curTree.logLike - chain2.curTree.logLike) * heatBeta2
+                        # lnR2 = likeRatio12 + likeRatio21
+                        # rDiff = math.fabs(lnR - lnR2)
+                        # if rDiff > 1e-12:
+                        #     print("bad swap rDiff %f (%g)   lnR=%f, lnR2=%f" % (rDiff, rDiff, lnR, lnR2))
+                        # lnR = lnR2
 
-                    acceptSwap = 0
-                    if random.random() < r:
-                        acceptSwap = 1
-
-                    # for continuous temperature tuning with self.swapTuner
-                    if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
-                        self.swapTuner.swaps01_nAttempts += 1
-                        if acceptSwap:
-                            self.swapTuner.swaps01_nSwaps += 1
-                        if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
-                            self.swapTuner.tune(self)
-                            # tune() zeros nAttempts and nSwaps counters
-
-                    if acceptSwap:
-                        # Use the lower triangle of swapMatrix to keep track of
-                        # nAccepted's
-                        if chain1.tempNum < chain2.tempNum:
-                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                        if lnR < -100.0:
+                            r = 0.0
+                        elif lnR >= 0.0:
+                            r = 1.0
                         else:
+                            r = math.exp(lnR)
+
+                        acceptSwap = 0
+                        if random.random() < r:
+                            acceptSwap = 1
+
+                        # self.logger.info("swap proposed gen=%i between tempNum1=%i chNum1=%i temp1=%f and tempNum2=%i chNum2=%i temp2=%f acceptSwap=%s" % (
+                        #     self.gen, rTempNum1, chain1.chNum, self.chainTemps[chain1.tempNum], 
+                        #     rTempNum2, chain2.chNum, self.chainTemps[chain2.tempNum], acceptSwap))
+
+                        # for continuous temperature tuning with self.swapTuner
+                        if self.swapTuner:
+                            # Index the nAttempts and nSwaps with the lower of the two tempNum's, which would be chain1.tempNum
+                            self.swapTuner.nAttempts[chain1.tempNum] += 1
+                            if acceptSwap:
+                                self.swapTuner.nSwaps[chain1.tempNum] += 1
+                            if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
+                                self.swapTuner.tune(chain1.tempNum)
+                                # tune() zeros nAttempts and nSwaps counters
+
+                        if acceptSwap:
+                            # Use the lower triangle of swapMatrix to keep track of
+                            # nAccepted's
+                            assert chain1.tempNum < chain2.tempNum
+                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+
+                            # Do the swap
+                            chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+
+
+                    else:     # swap matrix
+                        # Chain swapping stuff was lifted from MrBayes.  Thanks again.
+                        chain1, chain2 = random.sample(self.chains, 2)
+
+                        # Use the upper triangle of swapMatrix for nProposed's
+                        if chain1.tempNum < chain2.tempNum:
                             self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                            thisCh1Temp = chain1.tempNum
+                            thisCh2Temp = chain2.tempNum
+                        else:
+                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                            thisCh1Temp = chain2.tempNum
+                            thisCh2Temp = chain1.tempNum
 
-                        # Do the swap
-                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+                        lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                                ) * chain2.curTree.logLike
+                        lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                                ) * chain1.curTree.logLike
+                        lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                                ) * chain1.curTree.logLike
+                        lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                                ) * chain2.curTree.logLike
 
-                # Find the cold chain, the one where tempNum is 0
-                coldChainNum = -1
-                for i in range(len(self.chains)):
-                    if self.chains[i].tempNum == 0:
-                        coldChainNum = i
-                        break
-                if coldChainNum == -1:
-                    gm.append("Unable to find which chain is the cold chain.  Bad.")
-                    raise P4Error(gm)
+                        if lnR < -100.0:
+                            r = 0.0
+                        elif lnR >= 0.0:
+                            r = 1.0
+                        else:
+                            r = math.exp(lnR)
+
+                        acceptSwap = 0
+                        if random.random() < r:
+                            acceptSwap = 1
+
+                        # for continuous temperature tuning with self.swapTuner
+                        if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
+                            self.swapTuner.swaps01_nAttempts += 1
+                            if acceptSwap:
+                                self.swapTuner.swaps01_nSwaps += 1
+                            if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
+                                self.swapTuner.tune(self)
+                                # tune() zeros nAttempts and nSwaps counters
+
+                        if acceptSwap:
+                            # Use the lower triangle of swapMatrix to keep track of
+                            # nAccepted's
+                            if chain1.tempNum < chain2.tempNum:
+                                self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                            else:
+                                self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+
+                            # Do the swap
+                            chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+
+                    # Find the cold chain, the one where tempNum is 0
+                    coldChainNum = -1
+                    for i in range(len(self.chains)):
+                        if self.chains[i].tempNum == 0:
+                            coldChainNum = i
+                            break
+                    if coldChainNum == -1:
+                        gm.append("Unable to find which chain is the cold chain.  Bad.")
+                        raise P4Error(gm)
 
             # If it is a writeInterval, write stuff
             if (self.gen + 1) % self.sampleInterval == 0:
@@ -3303,6 +3381,13 @@ class STMcmc(object):
         # The logger does not pickle
         savedLogger = self.logger
         self.logger = None
+        savedLoggerPrinter = self.loggerPrinter
+        self.loggerPrinter = None
+
+        # The FastSpa stuff does not pickle
+        if self.modelName.startswith("SPA") and var.stmcmc_useFastSpa:
+            savedFspa = self.fspa
+            self.fspa = None
 
 
         # _io.TextIOWrapper objects (as returned by open(fileName)) cannot be
@@ -3315,6 +3400,7 @@ class STMcmc(object):
         theCopy = copy.deepcopy(self)
 
         self.logger = savedLogger
+        self.loggerPrinter = savedLoggerPrinter
 
         theCopy.treePartitions._finishSplits()
         # assert theCopy.treeFile == None
@@ -3332,6 +3418,10 @@ class STMcmc(object):
                 ch = self.chains[chNum]
                 ch.frrf = savedFrrfs[chNum]
                 ch.bigTr = savedBigTrs[chNum]
+
+        if self.modelName.startswith("SPA") and var.stmcmc_useFastSpa:
+            self.fspa = savedFspa
+
 
 
     def writeProposalProbs(self):
@@ -3714,7 +3804,7 @@ class QpaML(object):
                      nChains=1, runNum=0, sampleInterval=100,
                      checkPointInterval=None, useSplitSupport=False, verbose=False,
                      checkForOutputFiles=False)
-        self.ch = STChain(stm)
+        self.ch = STChain(stm, 0)
 
 
 
@@ -3800,7 +3890,7 @@ class SpaML(object):
                      nChains=1, runNum=0, sampleInterval=100,
                      checkPointInterval=None, useSplitSupport=False, verbose=False, 
                      checkForOutputFiles=False)
-        self.ch = STChain(stm)
+        self.ch = STChain(stm, 0)
 
 
     def setSuperTree(self, st):
@@ -3817,10 +3907,15 @@ class SpaML(object):
         
                 
     def calcP(self, Q):
+        #if not isinstance(Q, np.ndarray):
+        #    Q = np.array([Q])
         if Q >= 1.:
             return 10000000.
         if Q <= 0.:
             return 10000000.
+
+        if not isinstance(Q, np.ndarray):
+            Q = np.array([Q])
         self.ch.propTree.spaQ = Q
         self.ch.getTreeLogLike_spa_bitarray()
         return -self.ch.propTree.logLike
@@ -3856,7 +3951,7 @@ class SR2008ML(object):
                      nChains=1, runNum=0, sampleInterval=100,
                      checkPointInterval=None, useSplitSupport=False, verbose=False, 
                      checkForOutputFiles=False)
-        self.ch = STChain(stm)
+        self.ch = STChain(stm, 0)
 
 
     def setSuperTree(self, st):
