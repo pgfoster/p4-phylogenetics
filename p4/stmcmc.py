@@ -1984,15 +1984,6 @@ class STMcmc(object):
         self.gen = -1
         self.startMinusOne = -1
         self.chainTemp = 1.0
-        if var.mcmc_swapVector and self.nChains > 1:
-            # These are differences in temperatures between adjacent chains.  The last one is not used.
-            self.chainTempDiffs = [self.chainTemp] * self.nChains 
-            #self.chainTempDiffs = [100.] * self.nChains 
-            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
-            self.chainTemps = [0.0]
-            for dNum in range(self.nChains - 1):
-                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
-            
 
         self.constraints = None
         self.simulate = None
@@ -2665,7 +2656,7 @@ class STMcmc(object):
         #if var.mcmc_swapVector:
         #    print("    The chainTemp is continuously tuned for each chain\n")
         #else:
-        #    print("    The overall chainTemp is continuously tuned.\n")
+        print("    The chainTemp is %f.\n" % self.chainTemp)
 
         print(" " * 10, end=' ')
         for i in range(self.nChains):
@@ -2792,6 +2783,15 @@ class STMcmc(object):
                     "The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
+
+        # The swap vector is just the diagonal of the swap matrix
+        if self.swapVector and self.nChains > 1:
+            # These are differences in temperatures between adjacent chains.  The last one is not used.
+            self.chainTempDiffs = [self.chainTemp] * self.nChains 
+            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+            self.chainTemps = [0.0]
+            for dNum in range(self.nChains - 1):
+                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         if self.props.proposals:
             # Its either a re-start, or it has been thru autoTune().
