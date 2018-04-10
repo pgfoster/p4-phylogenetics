@@ -1283,7 +1283,7 @@ class STChain(object):
 
         # Mcmcmc
         if self.stMcmc.nChains > 1:
-            if var.mcmc_swapVector:
+            if self.stMcmc.swapVector:
                 heatBeta = 1.0 / (1.0 + self.stMcmc.chainTemps[self.tempNum])
             else:
                 heatBeta = 1.0 / (1.0 + self.stMcmc.chainTemp * self.tempNum)
@@ -2069,22 +2069,22 @@ class STMcmc(object):
             self.swapMatrix = []
             for i in range(self.nChains):
                 self.swapMatrix.append([0] * self.nChains)
-            if var.mcmc_swapVector:
-                self.swapTuner = STSwapTunerV(self)
-            else:
-                if swapTuner:             # a kwarg
-                    myST = int(swapTuner)
-                    if myST >= 100:
-                        self.swapTuner = SwapTuner(myST)
-                    else:
-                        gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
-                        raise P4Error(gm)
-                else:
-                    self.swapTuner = None
+            # if self.swapVector:
+            #     self.swapTuner = STSwapTunerV(self)
+            # else:
+            #     if swapTuner:             # a kwarg
+            #         myST = int(swapTuner)
+            #         if myST >= 100:
+            #             self.swapTuner = SwapTuner(myST)
+            #         else:
+            #             gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
+            #             raise P4Error(gm)
+            #     else:
+            #         self.swapTuner = None
 
         else:
             self.swapMatrix = None
-            self.swapTuner = None
+        self.swapTuner = None
 
         self._tunings = STMcmcTunings()
         self.prob = STMcmcProposalProbs()
@@ -2368,6 +2368,8 @@ class STMcmc(object):
         for aLine in splash:
             self.logger.info(aLine)
 
+        self.swapVector = True
+
 
         # Hidden experimental hacking
         self.doHeatingHack = False
@@ -2387,9 +2389,9 @@ class STMcmc(object):
                 self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
             elif self.nChains > 1:
                 self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
-                if var.mcmc_swapVector:
+                if self.swapVector:
                     self.loggerPrinter.info("%-16s: %s" % ('swapVector', "on"))
-                # Don't say the temperature here, as it will likely be re-set later.
+                    self.loggerPrinter.info("%-16s: %f" % ('chainTemp', self.chainTemp))
 
 
 
@@ -3052,7 +3054,7 @@ class STMcmc(object):
                 if self.nChains == 1:
                     coldChain = 0
                 else:
-                    if var.mcmc_swapVector:
+                    if self.swapVector:
                         rTempNum1 = random.randrange(self.nChains - 1)
                         rTempNum2 = rTempNum1 + 1
                         chain1 = None
