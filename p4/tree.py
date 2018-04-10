@@ -431,9 +431,11 @@ class Tree(object):
         savedPos = flob.tell()
         while 1:
             beforeSafeNextTokPosn = flob.tell()
+            #print('mnop var.nexus_getAllCommandComments = %s' % var.nexus_getAllCommandComments)
+
             tok = safeNextTok(flob, gm[0])          # skips [&U] if there is one
-            # print("parseNexus: tok after '=' is '%s'.  Before pos %i, after pos %i" % (
-            #     tok, beforeSafeNextTokPosn, flob.tell()))
+            #print("parseNexus: tok after '=' is '%s'.  Before pos %i, after pos %i" % (
+            #    tok, beforeSafeNextTokPosn, flob.tell()))
 
             # This next bit will only happen if either var.nexus_getWeightCommandComments
             # or var nexus_getAllCommandComments is set.
@@ -441,7 +443,7 @@ class Tree(object):
                 self.getWeightCommandComment(tok)
             elif tok == '(':
                 flob.seek(beforeSafeNextTokPosn)
-                # print("wxy var.nexus_getAllCommandComments is %s" % var.nexus_getAllCommandComments)
+                #print("wxy var.nexus_getAllCommandComments is %s" % var.nexus_getAllCommandComments)
                 self.parseNewick(flob, translationHash, doModelComments)
                 # self._initFinish()
                 break
@@ -549,10 +551,6 @@ class Tree(object):
             self.fName = flob.name
             gm[0] += ", File %s" % self.fName
 
-        if 0 and doModelComments:   # For the RAxML ugly hack, below?  Or why?
-            # restore at end
-            savedP4Nexus_getAllCommandComments = var.nexus_getAllCommandComments
-            var.nexus_getAllCommandComments = 1
 
         stack = []
         isAfterParen = 1  # to start, even tho its not true
@@ -561,8 +559,9 @@ class Tree(object):
         lastPopped = None
 
         
-        tok = nextTok(flob)
-        # print("xx Got tok %s" % tok)
+        tok = safeNextTok(flob)       # safeNextTok to skip over [&U] if there is one.
+        #print("xx Got tok %s" % tok)
+
         if not tok:
             return
         isQuotedTok = False
@@ -571,9 +570,17 @@ class Tree(object):
         # Should generally be the opening paren, except if its a single-node
         # tree.
         tok = p4.func.nexusUnquoteName(tok)
-        while tok != ';':
-            # print("top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0]))
 
+        if doModelComments:
+            # Turn on var.nexus_getAllCommandComments in order 
+            # to be able to read model info on nodes, eg [& c0.1]
+            # restore at end
+            # We need this after the safeNextTok() above, in case there is a [&U] to be ignored.
+            savedP4Nexus_getAllCommandComments = var.nexus_getAllCommandComments
+            var.nexus_getAllCommandComments = 1
+
+        while tok != ';':
+            #print("top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0]))
             if tok == '(':
                 # print "Got '(': new node (%i)." % len(self.nodes)
                 if not (isAfterParen or isAfterComma):
@@ -685,8 +692,7 @@ class Tree(object):
                             #lastPopped.label = tok
                             lastPopped.name = tok
                         else:
-                            gm.append(
-                                "Badly placed token '%s' in tree description." % tok)
+                            gm.append("Badly placed token '%s' in tree description." % tok)
                             raise P4Error(gm)
 
                 else:
@@ -738,7 +744,7 @@ class Tree(object):
                                 #    gm.append('Problem token %s' % tok)
                                 #    raise P4Error(gm)
 
-                    # print "Got terminal node '%s'" % tok
+                    #print("Got terminal node '%s'" % tok)
                     newNode = Node()
                     if doModelComments:
                         for pNum in range(doModelComments):
@@ -790,7 +796,7 @@ class Tree(object):
                     # finished.
                     # Won't work if it ends in 'e'
                     stack[-1].br.len = float(theNum)
-                    # print '  Successfully got br.len %f' % stack[-1].br.len
+                    #print('  Successfully got br.len %f' % stack[-1].br.len)
                 except ValueError:
                     # The first bit after the colon is hopefully something like
                     # +1.23e
@@ -857,8 +863,7 @@ class Tree(object):
                         else:
                             flob.seek(positionBeforeRead)
                             break
-                    # print "  At this point, theNum='%s' and theExp='%s'" %
-                    # (theNum, theExp)
+                    #print("  At this point, theNum='%s' and theExp='%s'" % (theNum, theExp))
                     try:
                         # print "  Trying to see if theExp '%s' can be
                         # converted to an int." % theExp
@@ -882,13 +887,13 @@ class Tree(object):
                         raise P4Error(gm)
 
             elif tok[0] == '[':
-                # print "openSquareBracket.  Got tok '%s'" % tok
+                #print("openSquareBracket.  Got tok '%s'" % tok)
                 # if doModelComments is set, it should be set to nParts.
                 if doModelComments:
                     # eg [& c0.1 r0.0]
                     n = stack[-1]
-                    # print 'got comment %s, node %i' % (tok, n.nodeNum)
-                    cFlob = io.BytesIO(tok)
+                    # print('got comment %s, node %i' % (tok, n.nodeNum))
+                    cFlob = io.StringIO(tok)
                     cFlob.seek(2)
                     tok2 = safeNextTok(cFlob)
                     while 1:
@@ -987,7 +992,7 @@ class Tree(object):
             else:
                 isQuotedTok = False
             tok = p4.func.nexusUnquoteName(sTok)
-            # print 'got tok for next round = %s' % tok
+            #print('got tok for next round = %s' % tok)
             # This is the end of the "while tok != ';':" loop
 
         # print '\n*** Stack len = %i ***' % len(stack)
@@ -1035,7 +1040,7 @@ class Tree(object):
         # self.draw()
         #self.dump(tree=0, node=1, treeModel=0)
 
-        if 0 and doModelComments:
+        if doModelComments:
             # restore the value of var.nexus_getAllCommandComments, which was
             # saved above.
             var.nexus_getAllCommandComments = savedP4Nexus_getAllCommandComments

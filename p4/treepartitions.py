@@ -203,7 +203,8 @@ def _getModelInfo(theComment):
     # or [&&p4 models p2 c0.2 r0.2 g0.1 c1.1 r1.1 g1.1]
     gm = ['TreePartitions._getModelInfo()']
     # print "_getModelInfo(), from theComment = %s" % theComment
-    flob = io.BytesIO(theComment)
+    #flob = io.BytesIO(theComment)
+    flob = io.StringIO(theComment)
     flob.seek(1, 0)  # past the [
 
     tok = nextTok(flob)
@@ -555,14 +556,10 @@ something like this::
                         self.taxNames.append(translationHash['%s' % (i + 1)])
                 except KeyError:
                     #self.taxNames = translationHash.values()
-                    gm.append(
-                        "No taxNames were supplied, so I am getting the taxNames from the translation.")
-                    gm.append(
-                        "However, the keys of the translation do not appear to be numbers from 1 to nTax.")
-                    gm.append(
-                        "I am easily confused, and I don't want to make taxNames in an arbitrary order.")
-                    gm.append(
-                        "So you should supply a taxNames list when you invoke a TreePartitions object.")
+                    gm.append("No taxNames were supplied, so I am getting the taxNames from the translation.")
+                    gm.append("However, the keys of the translation do not appear to be numbers from 1 to nTax.")
+                    gm.append("I am easily confused, and I don't want to make taxNames in an arbitrary order.")
+                    gm.append("So you should supply a taxNames list when you invoke a TreePartitions object.")
                     raise P4Error(gm)
                 self.nTax = len(self.taxNames)
 
@@ -573,7 +570,7 @@ something like this::
             while lowTok != 'tree':
                 tok = safeNextTok(f)
                 if tok[0] == '[':
-                    # print "got comment: %s" % tok
+                    # print("got comment: %s" % tok)
                     self.modelInfo = _getModelInfo(tok)
                     if self.modelInfo:
                         # self.modelInfo.check() returns
@@ -584,6 +581,7 @@ something like this::
                             pass  # self.doModelComments remains 0
                         elif ret == 2:
                             self.doModelComments = 1
+                        # print("doModelComments set to %s" % self.doModelComments)
                 else:
                     lowTok = tok.lower()
             var.nexus_getP4CommandComments = savedState
@@ -597,12 +595,10 @@ something like this::
         # At this point, lowTok should be 'tree'
         if lowTok != 'tree':
             if lowTok in ['end', 'endblock']:
-                gm.append(
-                    "Got %s, expecting 'tree' command.  No trees in %s?" % (tok, fName))
+                gm.append("Got %s, expecting 'tree' command.  No trees in %s?" % (tok, fName))
                 raise P4Error(gm)
             else:
-                gm.append(
-                    "I can't grok %s.  I was expecting a 'trees' command." % tok)
+                gm.append("I can't grok %s.  I was expecting a 'trees' command." % tok)
                 raise P4Error(gm)
 
         # Skip over trees
@@ -623,8 +619,7 @@ something like this::
                 # if self.taxNames and not translationHash:
                 #    t._taxNames = self.taxNames
                 if self.doModelComments:
-                    t.parseNexus(
-                        f, translationHash=translationHash, doModelComments=self.modelInfo.nParts)
+                    t.parseNexus(f, translationHash=translationHash, doModelComments=self.modelInfo.nParts)
                 else:
                     t.parseNexus(f, translationHash=translationHash)
                 # if t.taxNames:
