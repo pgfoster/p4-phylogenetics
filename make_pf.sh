@@ -8,8 +8,11 @@
 
 rm -f p4/pf.so
 
-# Python2 or Python3?
-python setup.py build_ext -i
+# Python2
+python2 setup.py build_ext -i
+
+# and python3:
+python3 setup.py build_ext -i
 
 # Default -Wunreachable-code is noisy, because I have such a lot of it.
 # CFLAGS="-Wno-unreachable-code" python3 setup.py build_ext -i
