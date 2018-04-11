@@ -3625,8 +3625,8 @@ if True:
                                     if n.br.parts[pNum].gdasrvNum == mtNum:
                                         if n not in nodesToRemove:
                                             nodesToRemove.append(n)
-            # print "There are %i nodesWithInternalEdges, and I need to remove %i nodes" % (
-            #    len(nodesWithInternalEdges) ,len(nodesToRemove))
+            # print("There are %i nodesWithInternalEdges, and I need to remove %i nodes" % (
+            #     len(nodesWithInternalEdges) ,len(nodesToRemove)))
             for n in nodesToRemove:
                 nodesWithInternalEdges.remove(n)
         return nodesWithInternalEdges

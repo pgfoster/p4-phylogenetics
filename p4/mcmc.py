@@ -1829,6 +1829,15 @@ class Mcmc(object):
             print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
             #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
+        if self.prob.polytomy:
+            for pNum in range(self.tree.model.nParts):
+                mp = self.tree.model.parts[pNum]
+                if mp.ndch2:
+                    gm.append("Part %i uses ndch2" % pNum)
+                    gm.append("Ndch2 does not work with the polytomy move.")
+                    raise P4Error(gm)
+                
+
         if self.checkPointInterval:
             # Check that checkPointInterval makes sense.
             # We want a couple of things:
