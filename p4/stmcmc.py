@@ -2891,19 +2891,18 @@ class STMcmc(object):
             ret = self.props.proposalsDict.get('polytomy')
             if ret:
                 message = "Doing polytomy proposal, with usePolytomyResolutionClassPrior=%s" % ret.usePolytomyResolutionClassPrior
-                print(message)
-                self.logger.info(message)
+                self.loggerPrinter.info(message)
                 message = "polytomy: polytomyPriorLogBigC=%f" % ret.polytomyPriorLogBigC
                 print(message)
-                self.logger.info(message)
+                self.loggerPrinter.info(message)
 
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %f." % (self.nChains, self.chainTemp))
                 else:
                     print("Not using Metropolis-coupled MCMC.")
-                print("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
-                print("Set to do %i generations." % nGensToDo)
+                self.loggerPrinter.info("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+                self.loggerPrinter.info("Set to do %i generations." % nGensToDo)
                 if self.writePrams:
                     # if self.chains[0].curTree.model.nFreePrams == 0:
                     #     print "There are no free prams in the model, so I am turning writePrams off."

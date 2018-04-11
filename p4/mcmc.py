@@ -717,8 +717,7 @@ class Mcmc(object):
                         gm.append("There are no mcmc_trees_%i.nex files to show that run %i has been done." % (
                             runNum2, runNum2))
                         gm.append("Set the runNum to that, first.")
-                        gm.append(
-                            "(To get rid of this requirement, turn off var.strictRunNumberChecking.)")
+                        gm.append("(To get rid of this requirement, turn off var.strictRunNumberChecking.)")
                         raise P4Error(gm)
 
         self.sampleInterval = sampleInterval
@@ -926,7 +925,7 @@ class Mcmc(object):
 
         splash = p4.func.splash2(verbose=False)
         for aLine in splash:
-            self.logger.info(aLine)
+            self.loggerPrinter.info(aLine)
 
         self.swapVector = True
         if self.nChains > 1:
@@ -939,16 +938,27 @@ class Mcmc(object):
         
 
     def _setLogger(self):
-        myLogFileName = "mcmc_log_%i" % self.runNum
-        # if os.path.isfile(myLogFileName):
-        #     gm.append("Log file '%s' exists, and I am refusing to over-write it.  Deal with it." % myLogFileName)
-        #     raise P4Error(gm)
-        self.logger = logging.getLogger()
-        handler = logging.FileHandler(myLogFileName, mode='a')
-        formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='[%Y-%m-%d %H:%M]')
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.INFO)
+        """Make two loggers; one that writes to a file and to stderr, and one that writes only to a file."""
+
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s %(message)s',
+                            datefmt='[%Y-%m-%d %H:%M]',
+                            filename="mcmc_log_%i" % self.runNum,
+                            filemode='a')
+
+        # define a Handler which writes INFO messages or higher to the sys.stderr
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        # set a format which is simpler for console use
+        formatter = logging.Formatter('%(message)s')
+        # tell the handler to use this format
+        console.setFormatter(formatter)
+        # add the handler to the root logger
+        # Using named loggers allows me to keep them separate.
+        self.loggerPrinter = logging.getLogger('withPrint')
+        self.loggerPrinter.addHandler(console)
+        # This logger only logs to the file, not to stderr.
+        self.logger = logging.getLogger("logFileOnly")
         
 
     def _makeProposals(self):
