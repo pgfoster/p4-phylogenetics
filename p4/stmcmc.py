@@ -1385,8 +1385,8 @@ class STMcmcTunings(object):
         self.default = {}
         self.default['SR2008beta_uniform'] = 0.2
         self.default['spaQ_uniform'] = 0.1
-        self.default['doPolytomyResolutionClassPrior'] = False
-        self.default['polytomyPriorLogBigC'] = 0.0
+        #self.default['doPolytomyResolutionClassPrior'] = False
+        #self.default['polytomyPriorLogBigC'] = 0.0
         #self.default['spaQPriorType'] = 'flat'
         #self.default['spaQExpPriorLambda'] = 100.0
         
@@ -2087,6 +2087,9 @@ class STMcmc(object):
         self.swapTuner = None
 
         self._tunings = STMcmcTunings()
+        self.doPolytomyResolutionClassPrior = False
+        self.polytomyPriorLogBigC = 0.0
+
         self.prob = STMcmcProposalProbs()
         if self.modelName in ['SPA', 'QPA']:
             self.prob.polytomy = 1.0
@@ -2509,8 +2512,8 @@ class STMcmc(object):
             if self.prob.polytomy:
                 p = STProposal(self)
                 p.name = 'polytomy'
-                p.doPolytomyResolutionClassPrior = self._tunings.default['doPolytomyResolutionClassPrior']
-                p.polytomyPriorLogBigC = self._tunings.default['polytomyPriorLogBigC']
+                p.doPolytomyResolutionClassPrior = self.doPolytomyResolutionClassPrior
+                p.polytomyPriorLogBigC = self.polytomyPriorLogBigC
                 p.weight = self.prob.polytomy * fudgeFactor['polytomy']
                 self.props.proposals.append(p)
 
@@ -2704,7 +2707,7 @@ class STMcmc(object):
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
             p = self.props.proposalsDict.get('polytomy')
-            if p and p.doPolytomyResolutionClassPrior:
+            if p and self.doPolytomyResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
@@ -2900,7 +2903,7 @@ class STMcmc(object):
 
             if verbose:
                 if self.nChains > 1:
-                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature is continuously tuned." % self.nChains)
+                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %f." % (self.nChains, self.chainTemp))
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 print("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
