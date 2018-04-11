@@ -3548,7 +3548,7 @@ if True:
         self.logPriorRatio = 0.0
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
-        if theProposal.usePolytomyResolutionClassPrior:
+        if theProposal.polytomyUseResolutionClassPrior:
             # We are gaining a node.  So the prior ratio is T_{n,m + 1} /
             # (T_{n,m} * C) .  We have the logs, and the result is the
             # log.
@@ -3748,7 +3748,7 @@ if True:
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
 
-        if theProposal.usePolytomyResolutionClassPrior:
+        if theProposal.polytomyUseResolutionClassPrior:
             # We are losing a node.  So the prior ratio is (T_{n,m} * C) /
             # T_{n,m - 1}.  We have the logs, and the result is the log.
             if 0:

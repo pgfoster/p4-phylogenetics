@@ -987,7 +987,7 @@ class STChain(object):
         self.logPriorRatio = 0.0
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
-        if theProposal.usePolytomyResolutionClassPrior:
+        if theProposal.polytomyUseResolutionClassPrior:
             # We are gaining a node.  So the prior ratio is T_{n,m + 1} /
             # (T_{n,m} * C) .  We have the logs, and the result is the
             # log.
@@ -1126,7 +1126,7 @@ class STChain(object):
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
 
-        if theProposal.usePolytomyResolutionClassPrior:
+        if theProposal.polytomyUseResolutionClassPrior:
             # We are losing a node.  So the prior ratio is (T_{n,m} * C) /
             # T_{n,m - 1}.  We have the logs, and the result is the log.
             if 0:
@@ -2083,7 +2083,7 @@ class STMcmc(object):
         self.swapTuner = None
 
         self._tunings = STMcmcTunings()
-        self.usePolytomyResolutionClassPrior = False
+        self.polytomyUseResolutionClassPrior = False
         self.polytomyPriorLogBigC = 0.0
 
         self.prob = STMcmcProposalProbs()
@@ -2508,7 +2508,7 @@ class STMcmc(object):
             if self.prob.polytomy:
                 p = STProposal(self)
                 p.name = 'polytomy'
-                p.usePolytomyResolutionClassPrior = self.usePolytomyResolutionClassPrior
+                p.polytomyUseResolutionClassPrior = self.polytomyUseResolutionClassPrior
                 p.polytomyPriorLogBigC = self.polytomyPriorLogBigC
                 p.weight = self.prob.polytomy * fudgeFactor['polytomy']
                 self.props.proposals.append(p)
@@ -2703,7 +2703,7 @@ class STMcmc(object):
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
             p = self.props.proposalsDict.get('polytomy')
-            if p and self.usePolytomyResolutionClassPrior:
+            if p and self.polytomyUseResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
@@ -2890,7 +2890,7 @@ class STMcmc(object):
 
             ret = self.props.proposalsDict.get('polytomy')
             if ret:
-                message = "Doing polytomy proposal, with usePolytomyResolutionClassPrior=%s" % ret.usePolytomyResolutionClassPrior
+                message = "Doing polytomy proposal, with polytomyUseResolutionClassPrior=%s" % ret.polytomyUseResolutionClassPrior
                 self.loggerPrinter.info(message)
                 message = "polytomy: polytomyPriorLogBigC=%f" % ret.polytomyPriorLogBigC
                 print(message)

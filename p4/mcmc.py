@@ -795,7 +795,7 @@ class Mcmc(object):
 
         # Default tunings
         self._tunings = McmcTunings(self.tree.model.nParts)
-        self.usePolytomyResolutionClassPrior = False
+        self.polytomyUseResolutionClassPrior = False
         self.polytomyPriorLogBigC = 0.0
 
         self.prob = McmcProposalProbs()
@@ -1076,7 +1076,7 @@ class Mcmc(object):
             p.name = 'polytomy'
             p.brLenPriorType = self._tunings.default['brLenPriorType']
             p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
-            p.usePolytomyResolutionClassPrior = self.usePolytomyResolutionClassPrior
+            p.polytomyUseResolutionClassPrior = self.polytomyUseResolutionClassPrior
             p.polytomyPriorLogBigC = self.polytomyPriorLogBigC
             p.weight = self.prob.polytomy * \
                 (len(self.tree.nodes) - 1) * fudgeFactor['polytomy']
@@ -1756,7 +1756,7 @@ class Mcmc(object):
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
             p = self.props.proposalsDict.get('polytomy')
-            if p and self.usePolytomyResolutionClassPrior:
+            if p and self.polytomyUseResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
