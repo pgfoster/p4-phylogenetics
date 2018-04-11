@@ -79,8 +79,6 @@ class McmcTunings(object):
         self.default['brLenPriorLambda'] = 10.0
         self.default['brLenPriorLambdaForInternals'] = 1000.0
         self.default['doInternalBrLenPrior'] = False
-        self.default['doPolytomyResolutionClassPrior'] = False
-        self.default['polytomyPriorLogBigC'] = 0.0
         self.default['brLenPriorType'] = 'exponential'
         self.default['allBrLens'] = 2.0 * math.log(1.02)
 
@@ -633,15 +631,6 @@ class Mcmc(object):
                     gm.append("Mcmc is not implemented for roots that have less than 3 children.")
                     raise P4Error(gm)
 
-        if 0:  # Muck with polytomies
-            nn = [n for n in aTree.iterInternalsNoRoot()]
-            for n in nn:
-                r = random.random()
-                if r < 0.4:
-                    aTree.collapseNode(n)
-            aTree.draw()
-            # sys.exit()
-
         self.tree = aTree
         self.constraints = constraints
         if self.constraints:
@@ -728,8 +717,7 @@ class Mcmc(object):
                         gm.append("There are no mcmc_trees_%i.nex files to show that run %i has been done." % (
                             runNum2, runNum2))
                         gm.append("Set the runNum to that, first.")
-                        gm.append(
-                            "(To get rid of this requirement, turn off var.strictRunNumberChecking.)")
+                        gm.append("(To get rid of this requirement, turn off var.strictRunNumberChecking.)")
                         raise P4Error(gm)
 
         self.sampleInterval = sampleInterval
@@ -807,6 +795,8 @@ class Mcmc(object):
 
         # Default tunings
         self._tunings = McmcTunings(self.tree.model.nParts)
+        self.polytomyUseResolutionClassPrior = False
+        self.polytomyPriorLogBigC = 0.0
 
         self.prob = McmcProposalProbs()
 
@@ -935,7 +925,7 @@ class Mcmc(object):
 
         splash = p4.func.splash2(verbose=False)
         for aLine in splash:
-            self.logger.info(aLine)
+            self.loggerPrinter.info(aLine)
 
         self.swapVector = True
         if self.nChains > 1:
@@ -948,16 +938,27 @@ class Mcmc(object):
         
 
     def _setLogger(self):
-        myLogFileName = "mcmc_log_%i" % self.runNum
-        # if os.path.isfile(myLogFileName):
-        #     gm.append("Log file '%s' exists, and I am refusing to over-write it.  Deal with it." % myLogFileName)
-        #     raise P4Error(gm)
-        self.logger = logging.getLogger()
-        handler = logging.FileHandler(myLogFileName, mode='a')
-        formatter = logging.Formatter('%(asctime)s %(message)s', datefmt='[%Y-%m-%d %H:%M]')
-        handler.setFormatter(formatter)
-        self.logger.addHandler(handler)
-        self.logger.setLevel(logging.INFO)
+        """Make two loggers; one that writes to a file and to stderr, and one that writes only to a file."""
+
+        logging.basicConfig(level=logging.INFO,
+                            format='%(asctime)s %(message)s',
+                            datefmt='[%Y-%m-%d %H:%M]',
+                            filename="mcmc_log_%i" % self.runNum,
+                            filemode='a')
+
+        # define a Handler which writes INFO messages or higher to the sys.stderr
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
+        # set a format which is simpler for console use
+        formatter = logging.Formatter('%(message)s')
+        # tell the handler to use this format
+        console.setFormatter(formatter)
+        # add the handler to the root logger
+        # Using named loggers allows me to keep them separate.
+        self.loggerPrinter = logging.getLogger('withPrint')
+        self.loggerPrinter.addHandler(console)
+        # This logger only logs to the file, not to stderr.
+        self.logger = logging.getLogger("logFileOnly")
         
 
     def _makeProposals(self):
@@ -1075,8 +1076,8 @@ class Mcmc(object):
             p.name = 'polytomy'
             p.brLenPriorType = self._tunings.default['brLenPriorType']
             p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
-            p.doPolytomyResolutionClassPrior = self._tunings.default['doPolytomyResolutionClassPrior']
-            p.polytomyPriorLogBigC = self._tunings.default['polytomyPriorLogBigC']
+            p.polytomyUseResolutionClassPrior = self.polytomyUseResolutionClassPrior
+            p.polytomyPriorLogBigC = self.polytomyPriorLogBigC
             p.weight = self.prob.polytomy * \
                 (len(self.tree.nodes) - 1) * fudgeFactor['polytomy']
             self.props.proposals.append(p)
@@ -1755,7 +1756,7 @@ class Mcmc(object):
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
             p = self.props.proposalsDict.get('polytomy')
-            if p and p.doPolytomyResolutionClassPrior:
+            if p and self.polytomyUseResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
@@ -2550,8 +2551,13 @@ class Mcmc(object):
         # But we don't want to copy data or logger.  So detach them.
         savedData = self.tree.data
         self.tree.data = None
+
+        # The logger does not pickle
         savedLogger = self.logger
         self.logger = None
+        savedLoggerPrinter = self.loggerPrinter
+        self.loggerPrinter = None
+
         if self.simulate:
             savedSimData = self.simTree.data
             self.simTree.data = None
@@ -2560,14 +2566,12 @@ class Mcmc(object):
             ch.curTree.data = None
             ch.propTree.data = None
         
-        
-
-
         theCopy = copy.deepcopy(self)
 
         # Re-attach data and logger to self.
         self.tree.data = savedData
         self.logger = savedLogger
+        self.loggerPrinter = savedLoggerPrinter
         self.tree.calcLogLike(verbose=False, resetEmpiricalComps=False)
         if self.simulate:
             self.simTree.data = savedSimData

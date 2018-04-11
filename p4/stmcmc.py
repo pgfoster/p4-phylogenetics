@@ -987,7 +987,7 @@ class STChain(object):
         self.logPriorRatio = 0.0
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
-        if theProposal.doPolytomyResolutionClassPrior:
+        if theProposal.polytomyUseResolutionClassPrior:
             # We are gaining a node.  So the prior ratio is T_{n,m + 1} /
             # (T_{n,m} * C) .  We have the logs, and the result is the
             # log.
@@ -1126,7 +1126,7 @@ class STChain(object):
         #self.logJacobian = 0.0
         # That was easy, wasn't it?
 
-        if theProposal.doPolytomyResolutionClassPrior:
+        if theProposal.polytomyUseResolutionClassPrior:
             # We are losing a node.  So the prior ratio is (T_{n,m} * C) /
             # T_{n,m - 1}.  We have the logs, and the result is the log.
             if 0:
@@ -1283,7 +1283,7 @@ class STChain(object):
 
         # Mcmcmc
         if self.stMcmc.nChains > 1:
-            if var.mcmc_swapVector:
+            if self.stMcmc.swapVector:
                 heatBeta = 1.0 / (1.0 + self.stMcmc.chainTemps[self.tempNum])
             else:
                 heatBeta = 1.0 / (1.0 + self.stMcmc.chainTemp * self.tempNum)
@@ -1385,10 +1385,6 @@ class STMcmcTunings(object):
         self.default = {}
         self.default['SR2008beta_uniform'] = 0.2
         self.default['spaQ_uniform'] = 0.1
-        self.default['doPolytomyResolutionClassPrior'] = False
-        self.default['polytomyPriorLogBigC'] = 0.0
-        #self.default['spaQPriorType'] = 'flat'
-        #self.default['spaQExpPriorLambda'] = 100.0
         
 
 class STMcmcProposalProbs(dict):
@@ -1984,15 +1980,6 @@ class STMcmc(object):
         self.gen = -1
         self.startMinusOne = -1
         self.chainTemp = 1.0
-        if var.mcmc_swapVector and self.nChains > 1:
-            # These are differences in temperatures between adjacent chains.  The last one is not used.
-            self.chainTempDiffs = [self.chainTemp] * self.nChains 
-            #self.chainTempDiffs = [100.] * self.nChains 
-            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
-            self.chainTemps = [0.0]
-            for dNum in range(self.nChains - 1):
-                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
-            
 
         self.constraints = None
         self.simulate = None
@@ -2078,24 +2065,27 @@ class STMcmc(object):
             self.swapMatrix = []
             for i in range(self.nChains):
                 self.swapMatrix.append([0] * self.nChains)
-            if var.mcmc_swapVector:
-                self.swapTuner = STSwapTunerV(self)
-            else:
-                if swapTuner:             # a kwarg
-                    myST = int(swapTuner)
-                    if myST >= 100:
-                        self.swapTuner = SwapTuner(myST)
-                    else:
-                        gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
-                        raise P4Error(gm)
-                else:
-                    self.swapTuner = None
+            # if self.swapVector:
+            #     self.swapTuner = STSwapTunerV(self)
+            # else:
+            #     if swapTuner:             # a kwarg
+            #         myST = int(swapTuner)
+            #         if myST >= 100:
+            #             self.swapTuner = SwapTuner(myST)
+            #         else:
+            #             gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
+            #             raise P4Error(gm)
+            #     else:
+            #         self.swapTuner = None
 
         else:
             self.swapMatrix = None
-            self.swapTuner = None
+        self.swapTuner = None
 
         self._tunings = STMcmcTunings()
+        self.polytomyUseResolutionClassPrior = False
+        self.polytomyPriorLogBigC = 0.0
+
         self.prob = STMcmcProposalProbs()
         if self.modelName in ['SPA', 'QPA']:
             self.prob.polytomy = 1.0
@@ -2377,6 +2367,8 @@ class STMcmc(object):
         for aLine in splash:
             self.logger.info(aLine)
 
+        self.swapVector = True
+
 
         # Hidden experimental hacking
         self.doHeatingHack = False
@@ -2396,9 +2388,9 @@ class STMcmc(object):
                 self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "off: 1 chain"))
             elif self.nChains > 1:
                 self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
-                if var.mcmc_swapVector:
+                if self.swapVector:
                     self.loggerPrinter.info("%-16s: %s" % ('swapVector', "on"))
-                # Don't say the temperature here, as it will likely be re-set later.
+                    self.loggerPrinter.info("%-16s: %f" % ('chainTemp', self.chainTemp))
 
 
 
@@ -2516,8 +2508,8 @@ class STMcmc(object):
             if self.prob.polytomy:
                 p = STProposal(self)
                 p.name = 'polytomy'
-                p.doPolytomyResolutionClassPrior = self._tunings.default['doPolytomyResolutionClassPrior']
-                p.polytomyPriorLogBigC = self._tunings.default['polytomyPriorLogBigC']
+                p.polytomyUseResolutionClassPrior = self.polytomyUseResolutionClassPrior
+                p.polytomyPriorLogBigC = self.polytomyPriorLogBigC
                 p.weight = self.prob.polytomy * fudgeFactor['polytomy']
                 self.props.proposals.append(p)
 
@@ -2665,7 +2657,7 @@ class STMcmc(object):
         #if var.mcmc_swapVector:
         #    print("    The chainTemp is continuously tuned for each chain\n")
         #else:
-        #    print("    The overall chainTemp is continuously tuned.\n")
+        print("    The chainTemp is %f.\n" % self.chainTemp)
 
         print(" " * 10, end=' ')
         for i in range(self.nChains):
@@ -2711,7 +2703,7 @@ class STMcmc(object):
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
             p = self.props.proposalsDict.get('polytomy')
-            if p and p.doPolytomyResolutionClassPrior:
+            if p and self.polytomyUseResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
                 for i in range(1, self.tree.nTax - 1):
@@ -2792,6 +2784,15 @@ class STMcmc(object):
                     "The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
+
+        # The swap vector is just the diagonal of the swap matrix
+        if self.swapVector and self.nChains > 1:
+            # These are differences in temperatures between adjacent chains.  The last one is not used.
+            self.chainTempDiffs = [self.chainTemp] * self.nChains 
+            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+            self.chainTemps = [0.0]
+            for dNum in range(self.nChains - 1):
+                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         if self.props.proposals:
             # Its either a re-start, or it has been thru autoTune().
@@ -2889,20 +2890,19 @@ class STMcmc(object):
 
             ret = self.props.proposalsDict.get('polytomy')
             if ret:
-                message = "Doing polytomy proposal, with doPolytomyResolutionClassPrior=%s" % ret.doPolytomyResolutionClassPrior
-                print(message)
-                self.logger.info(message)
+                message = "Doing polytomy proposal, with polytomyUseResolutionClassPrior=%s" % ret.polytomyUseResolutionClassPrior
+                self.loggerPrinter.info(message)
                 message = "polytomy: polytomyPriorLogBigC=%f" % ret.polytomyPriorLogBigC
                 print(message)
-                self.logger.info(message)
+                self.loggerPrinter.info(message)
 
             if verbose:
                 if self.nChains > 1:
-                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature is continuously tuned." % self.nChains)
+                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %f." % (self.nChains, self.chainTemp))
                 else:
                     print("Not using Metropolis-coupled MCMC.")
-                print("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
-                print("Set to do %i generations." % nGensToDo)
+                self.loggerPrinter.info("Starting the ST MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+                self.loggerPrinter.info("Set to do %i generations." % nGensToDo)
                 if self.writePrams:
                     # if self.chains[0].curTree.model.nFreePrams == 0:
                     #     print "There are no free prams in the model, so I am turning writePrams off."
@@ -3052,7 +3052,7 @@ class STMcmc(object):
                 if self.nChains == 1:
                     coldChain = 0
                 else:
-                    if var.mcmc_swapVector:
+                    if self.swapVector:
                         rTempNum1 = random.randrange(self.nChains - 1)
                         rTempNum2 = rTempNum1 + 1
                         chain1 = None
