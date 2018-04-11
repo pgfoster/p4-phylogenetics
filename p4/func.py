@@ -2271,28 +2271,6 @@ def unPickleMcmc(runNum, theData, verbose=True):
     m = pickle.load(f)
     f.close()
 
-    # 30 Aug 2011.  Fix for backward compatibility.  Need to add
-    # modelPart.rjComp_k, comp.rj_f, and comp.rj_isInPool for pickles
-    # from before those attributes were added.
-    # for myPart in m.tree.model.parts:
-    #     if not hasattr(myPart, 'rjComp_k'):
-    #         myPart.rjComp_k = 1
-    #     for myComp in myPart.comps:
-    #         if not hasattr(myComp, 'rj_f'):
-    #             myComp.rj_f = 0.0
-    #         if not hasattr(myComp, 'rj_isInPool'):
-    #             myComp.rj_isInPool = False
-    # for myChain in m.chains:
-    #     for myTree in [myChain.curTree, myChain.propTree]:
-    #         for myPart in myTree.model.parts:
-    #             if not hasattr(myPart, 'rjComp_k'):
-    #                 myPart.rjComp_k = 1
-    #             for myComp in myPart.comps:
-    #                 if not hasattr(myComp, 'rj_f'):
-    #                     myComp.rj_f = 0.0
-    #                 if not hasattr(myComp, 'rj_isInPool'):
-    #                     myComp.rj_isInPool = False
-
     m.tree.data = theData
     m.tree.calcLogLike(verbose=False, resetEmpiricalComps=False)
     if m.simulate:

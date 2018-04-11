@@ -2551,8 +2551,13 @@ class Mcmc(object):
         # But we don't want to copy data or logger.  So detach them.
         savedData = self.tree.data
         self.tree.data = None
+
+        # The logger does not pickle
         savedLogger = self.logger
         self.logger = None
+        savedLoggerPrinter = self.loggerPrinter
+        self.loggerPrinter = None
+
         if self.simulate:
             savedSimData = self.simTree.data
             self.simTree.data = None
@@ -2561,14 +2566,12 @@ class Mcmc(object):
             ch.curTree.data = None
             ch.propTree.data = None
         
-        
-
-
         theCopy = copy.deepcopy(self)
 
         # Re-attach data and logger to self.
         self.tree.data = savedData
         self.logger = savedLogger
+        self.loggerPrinter = savedLoggerPrinter
         self.tree.calcLogLike(verbose=False, resetEmpiricalComps=False)
         if self.simulate:
             self.simTree.data = savedSimData
