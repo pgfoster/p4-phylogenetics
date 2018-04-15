@@ -824,7 +824,7 @@ class NexusData:
                     gm.append("Read %s block" % lowCommandName)
                     gm.append("ntax must be defined before reading characters")
                     raise P4Error(gm)
-                if not self.nChar:
+                if self.nChar is None:
                     gm.append("Read %s block" % lowCommandName)
                     gm.append(
                         "nChar must be defined before reading characters")
@@ -1296,7 +1296,7 @@ class NexusData:
         tokensLen = 0
         counter = 0
         while tok != None and tok != ';':
-            # print "readNonInterleaveMatrix().  Got tok %s" % tok
+            #print("readNonInterleaveMatrix().  Got tok %s" % tok)
             if not p4.func.nexusCheckName(tok):
                 gm.append(
                     "Problem with nexus name '%s': it does not appear to be nexus-compliant." % tok)
@@ -1311,10 +1311,13 @@ class NexusData:
                         gm.append("\t%s does not match %s" %
                                   (self.taxNames[counter], tok))
                         raise P4Error(gm)
-            # print "got taxname %s" % tok
+            #print("got taxname %s" % tok)
             # get sequence
-            tok = p4.func.nexusUnquoteName(nextTok(flob))
-            # print "got token: '%s'" % tok
+            if self.nChar:
+                tok = p4.func.nexusUnquoteName(nextTok(flob))
+            else:
+                tok = ''
+            #print("got token: '%s'" % tok)
             while tok != ';':
                 tokensLen += len(tok)
                 tokens.append(tok)
@@ -1326,8 +1329,7 @@ class NexusData:
                     tok = p4.func.nexusUnquoteName(nextTok(flob))
                     break
                 elif tokensLen > self.nChar:
-                    gm.append(
-                        "Sequence for taxon %s appears to be too long" % self.taxNames[counter])
+                    gm.append("Sequence for taxon %s appears to be too long" % self.taxNames[counter])
                     gm.append("%s" % tokens)
                     raise P4Error(gm, 'nexus_badSequenceLength')
                 else:
