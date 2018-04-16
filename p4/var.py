@@ -318,7 +318,7 @@ class Var(object):
         self.mcmc_swapTunerSampleSize = 250  # mcmc and stmcmc
         self.stmcmc_useFastSpa = False
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
-        self.mcmc_doTuneChainTemp = False
+        #self.mcmc_doTuneChainTemp = False
 
 
     def _del_nothing(self):
