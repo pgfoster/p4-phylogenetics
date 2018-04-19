@@ -2377,7 +2377,7 @@ class STMcmc(object):
 
         self.swapVector = True
         if self.nChains > 1:
-            self.swapTuner = SwapTunerV(self)
+            self.swapTuner = STSwapTunerV(self)
 
 
         # Hidden experimental hacking
