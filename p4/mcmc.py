@@ -442,7 +442,7 @@ class SwapTunerV(object):
                 doMessage = True
                 direction = 'Increase'
         elif acc < self.tnAccLo:
-            if  self.mcmc.chainTempDiffs[theTempNum] <= self.tnLimitLo:
+            if self.mcmc.chainTempDiffs[theTempNum] <= self.tnLimitLo:
                 direction = "no change"
             else:
                 if acc == 0.0:   # no swaps at all
