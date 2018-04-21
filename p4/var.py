@@ -300,8 +300,6 @@ class Var(object):
 
         self.doMcmcSp = True  # speedier like calcs in mcmc
 
-        self.mcmcMaxCompAndRMatrixTuning = 0.9
-
         # # Modify behavior of NexusToken.nextTok() function.
         # # write, but do not get, all [!...]
         # self._nexus_writeVisibleComments = 0

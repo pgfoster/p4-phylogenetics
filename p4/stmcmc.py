@@ -2793,14 +2793,6 @@ class STMcmc(object):
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
 
-        # The swap vector is just the diagonal of the swap matrix
-        if self.swapVector and self.nChains > 1:
-            # These are differences in temperatures between adjacent chains.  The last one is not used.
-            self.chainTempDiffs = [self.chainTemp] * self.nChains 
-            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
-            self.chainTemps = [0.0]
-            for dNum in range(self.nChains - 1):
-                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         if self.props.proposals:
             # Its either a re-start, or it has been thru autoTune().
@@ -2837,6 +2829,18 @@ class STMcmc(object):
             self._setOutputTreeFile()
             # if self.simulate:
             #    self.writeSimFileHeader(self.tree)
+
+            # The swap vector is just the diagonal of the swap matrix
+            if self.swapVector and self.nChains > 1:
+                # These are differences in temperatures between adjacent chains.  The last one is not used.
+                self.chainTempDiffs = [self.chainTemp] * self.nChains 
+                # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+                self.chainTemps = [0.0]
+                for dNum in range(self.nChains - 1):
+                    self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
+
+
+
         if verbose:
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
@@ -2901,7 +2905,6 @@ class STMcmc(object):
                 message = "Doing polytomy proposal, with polytomyUseResolutionClassPrior=%s" % ret.polytomyUseResolutionClassPrior
                 self.loggerPrinter.info(message)
                 message = "polytomy: polytomyPriorLogBigC=%f" % ret.polytomyPriorLogBigC
-                print(message)
                 self.loggerPrinter.info(message)
 
             if verbose:
