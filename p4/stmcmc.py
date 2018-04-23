@@ -1700,8 +1700,8 @@ class STSwapTunerV(object):
         self.nAttempts = [0] * self.nChains
         self.nSwaps = [0] * self.nChains
 
-        self.tnAccVeryHi = 0.25
-        self.tnAccHi = 0.20
+        self.tnAccVeryHi = 0.30
+        self.tnAccHi = 0.25
         self.tnAccLo = 0.10
         self.tnAccVeryLo = 0.05
         self.tnFactorVeryHi = 1.4
@@ -1709,7 +1709,8 @@ class STSwapTunerV(object):
         self.tnFactorLo = 0.9
         self.tnFactorVeryLo = 0.6
         self.tnFactorZero = 0.4
-
+        self.tnLimitHi = 5.0
+        self.tnLimitLo = 0.2
 
     def tune(self, theTempNum):
         assert self.nAttempts[theTempNum] >= var.mcmc_swapTunerSampleSize
@@ -1723,38 +1724,45 @@ class STSwapTunerV(object):
         direction = None
         oldTn = self.mcmc.chainTempDiffs[theTempNum]
         if acc > self.tnAccHi:
-            if acc > self.tnAccVeryHi:
-                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryHi
+            if self.mcmc.chainTempDiffs[theTempNum] >= self.tnLimitHi:
+                direction = "no change"
             else:
-                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorHi
-            doMessage = True
-            direction = 'Increase'
+                if acc > self.tnAccVeryHi:
+                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryHi
+                else:
+                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorHi
+                doMessage = True
+                direction = 'Increase'
         elif acc < self.tnAccLo:
-            if acc == 0.0:   # no swaps at all
-                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
-            elif acc < self.tnAccVeryLo:
-                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryLo
+            if self.mcmc.chainTempDiffs[theTempNum] <= self.tnLimitLo:
+                direction = "no change"
             else:
-                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorLo
-            doMessage = True
-            direction = 'Decrease'
+                if acc == 0.0:   # no swaps at all
+                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
+                elif acc < self.tnAccVeryLo:
+                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryLo
+                else:
+                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorLo
+                doMessage = True
+                direction = 'Decrease'
         self.nAttempts[theTempNum] = 0
         self.nSwaps[theTempNum] = 0
-        if doMessage:
-            message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % ('chainTemp', self.mcmc.gen, theTempNum, acc)
-            message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
-            message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.mcmc.chainTempDiffs[theTempNum])
-            #print(message)
-            self.mcmc.logger.info(message)
-        # Make chainTemps from chainTempDiffs
-        self.mcmc.chainTemps = [0.0]
-        for dNum in range(self.mcmc.nChains - 1):
-            self.mcmc.chainTemps.append(self.mcmc.chainTempDiffs[dNum] + self.mcmc.chainTemps[-1])
-        if doMessage:
-            message = "new chainTemps gen=%i " % (self.mcmc.gen)
-            for cT in self.mcmc.chainTemps:
-                message += "%10.2f" % cT
-            self.mcmc.logger.info(message)
+        if direction != "no change":
+            if doMessage:
+                message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % ('chainTemp', self.mcmc.gen, theTempNum, acc)
+                message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
+                message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.mcmc.chainTempDiffs[theTempNum])
+                #print(message)
+                self.mcmc.logger.info(message)
+            # Make chainTemps from chainTempDiffs
+            self.mcmc.chainTemps = [0.0]
+            for dNum in range(self.mcmc.nChains - 1):
+                self.mcmc.chainTemps.append(self.mcmc.chainTempDiffs[dNum] + self.mcmc.chainTemps[-1])
+            if doMessage:
+                message = "new chainTemps gen=%i " % (self.mcmc.gen)
+                for cT in self.mcmc.chainTemps:
+                    message += "%10.2f" % cT
+                self.mcmc.logger.info(message)
 
 
 class BigTSplitStuff(object):
@@ -2368,6 +2376,8 @@ class STMcmc(object):
             self.logger.info(aLine)
 
         self.swapVector = True
+        if self.nChains > 1:
+            self.swapTuner = STSwapTunerV(self)
 
 
         # Hidden experimental hacking
@@ -2390,9 +2400,7 @@ class STMcmc(object):
                 self.loggerPrinter.info("%-16s: %s" % ('mcmcmc', "on -- %i chains" % self.nChains))
                 if self.swapVector:
                     self.loggerPrinter.info("%-16s: %s" % ('swapVector', "on"))
-                    self.loggerPrinter.info("%-16s: %f" % ('chainTemp', self.chainTemp))
-
-
+                    self.loggerPrinter.info("%-16s: %s" % ('swapTuner', "on"))
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
@@ -2785,14 +2793,6 @@ class STMcmc(object):
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
 
-        # The swap vector is just the diagonal of the swap matrix
-        if self.swapVector and self.nChains > 1:
-            # These are differences in temperatures between adjacent chains.  The last one is not used.
-            self.chainTempDiffs = [self.chainTemp] * self.nChains 
-            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
-            self.chainTemps = [0.0]
-            for dNum in range(self.nChains - 1):
-                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         if self.props.proposals:
             # Its either a re-start, or it has been thru autoTune().
@@ -2829,6 +2829,18 @@ class STMcmc(object):
             self._setOutputTreeFile()
             # if self.simulate:
             #    self.writeSimFileHeader(self.tree)
+
+            # The swap vector is just the diagonal of the swap matrix
+            if self.swapVector and self.nChains > 1:
+                # These are differences in temperatures between adjacent chains.  The last one is not used.
+                self.chainTempDiffs = [self.chainTemp] * self.nChains 
+                # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+                self.chainTemps = [0.0]
+                for dNum in range(self.nChains - 1):
+                    self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
+
+
+
         if verbose:
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
@@ -2893,7 +2905,6 @@ class STMcmc(object):
                 message = "Doing polytomy proposal, with polytomyUseResolutionClassPrior=%s" % ret.polytomyUseResolutionClassPrior
                 self.loggerPrinter.info(message)
                 message = "polytomy: polytomyPriorLogBigC=%f" % ret.polytomyPriorLogBigC
-                print(message)
                 self.loggerPrinter.info(message)
 
             if verbose:

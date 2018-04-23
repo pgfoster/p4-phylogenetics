@@ -300,8 +300,6 @@ class Var(object):
 
         self.doMcmcSp = True  # speedier like calcs in mcmc
 
-        self.mcmcMaxCompAndRMatrixTuning = 0.9
-
         # # Modify behavior of NexusToken.nextTok() function.
         # # write, but do not get, all [!...]
         # self._nexus_writeVisibleComments = 0
@@ -318,7 +316,7 @@ class Var(object):
         self.mcmc_swapTunerSampleSize = 250  # mcmc and stmcmc
         self.stmcmc_useFastSpa = False
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
-        self.mcmc_doTuneChainTemp = False
+        #self.mcmc_doTuneChainTemp = False
 
 
     def _del_nothing(self):

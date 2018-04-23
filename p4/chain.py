@@ -1104,7 +1104,7 @@ class Chain(object):
                 else:
                     # print "ok"
                     pass
-
+            #print("proposal %s aborting." % aProposal.name)
             return True  # ie failure
 
         # print "pRet = %.6f" % pRet,

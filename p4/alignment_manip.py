@@ -805,9 +805,9 @@ if True:
         elif self.length > 0 and not alig.length:
             gm.append("self has sequence, but arg does not")
             raise P4Error(gm)
-        elif alig.length > 0 and not self.length:
-            gm.append("Arg has sequence, but self does not")
-            raise P4Error(gm)
+        # elif alig.length > 0 and not self.length:
+        #     gm.append("Arg has sequence, but self does not")
+        #     raise P4Error(gm)
         if self.parts and len(self.parts):
             self.resetSequencesFromParts()
             self.parts = []
