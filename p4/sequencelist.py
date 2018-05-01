@@ -738,6 +738,7 @@ class SequenceList(object):
         if seqNum == None:
             for i in range(len(self.sequences)):
                 s = self.sequences[i]
+                #print("SequenceList.writeFasta() s.name %s, type(s.name) %s" % (s.name, type(s.name)))
                 f.write('>%s' % s.name)
                 if comment and s.comment:
                     f.write(' %s' % s.comment)
@@ -907,12 +908,12 @@ class SequenceList(object):
 
         """
         flob = io.BytesIO()
-        self.writeFasta(fName=flob)
+        self.writeFastaToBytesFlob(flob)
         p = Popen(["muscle"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         ret = p.communicate(input=flob.getvalue())
         flob.close()
         try:
-            a = p4.func.readAndPop(ret[0])
+            a = p4.func.readAndPop(ret[0].decode())
         except P4Error:
             print(ret)
             raise P4Error("Something didn't work ...")
@@ -935,8 +936,8 @@ class SequenceList(object):
         the same as the order in self.
 
         """
-        flob = io.BytesIO()
-        self.writeFasta(fName=flob)
+        flob = io.BytesIO()          # gotta be Bytes for subprocess
+        self.writeFastaToBytesFlob(flob)
         p = Popen(["clustalo", "-i", "-"], stdin=PIPE, stdout=PIPE, stderr=PIPE)
         ret = p.communicate(input=flob.getvalue())
         #ret = p.communicate()
@@ -944,10 +945,43 @@ class SequenceList(object):
             print(ret)
             raise P4Error("clustalo()  Something wrong here ...")
         flob.close()
-        a = p4.func.readAndPop(ret[0])
+        #print(ret)      # it is a bytes string
+        a = p4.func.readAndPop(ret[0].decode())
         a.makeSequenceForNameDict()
         newSequenceList = []
         for sSelf in self.sequences:
             newSequenceList.append(a.sequenceForNameDict[sSelf.name])
         a.sequences = newSequenceList
         return a
+
+    def writeFastaToBytesFlob(self, flob):
+        """For subprocesses, eg muscle and clustalo
+
+        No comment, no extra new line.  Width 60.
+        """
+        assert isinstance(flob, io.BytesIO)
+        width = 60
+        for s in self.sequences:
+            st = '>%s\n' % s.name
+            flob.write(str.encode(st))
+            left = len(s.sequence)
+            pos = 0
+            while left >= width:
+                if var.writeFastaUppercase:
+                    st = '%s\n' % s.sequence[pos: pos + width].upper()
+                    flob.write(str.encode(st))
+                else:
+                    st = '%s\n' % s.sequence[pos: pos + width]
+                    flob.write(str.encode(st))
+                pos = pos + width
+                left = left - width
+            if left > 0:
+                if var.writeFastaUppercase:
+                    st = '%s\n' % s.sequence[pos:].upper()
+                    flob.write(str.encode(st))
+                else:
+                    st = '%s\n' % s.sequence[pos:]
+                    flob.write(str.encode(st))
+
+
+        
