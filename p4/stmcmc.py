@@ -1709,7 +1709,7 @@ class STSwapTunerV(object):
         self.tnFactorLo = 0.9
         self.tnFactorVeryLo = 0.6
         self.tnFactorZero = 0.4
-        self.tnLimitHi = 5.0
+        self.tnLimitHi = 10.0
         self.tnLimitLo = 0.2
 
     def tune(self, theTempNum):
@@ -2961,7 +2961,7 @@ class STMcmc(object):
         ############### Main loop ########################
         ##################################################
 
-        self.swapInterval = 10
+        self.swapInterval = 2
 
         for gNum in range(nGensToDo):
             self.gen += 1
