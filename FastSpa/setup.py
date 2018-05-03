@@ -19,6 +19,6 @@ setup(name="fastSpa",
                   # find the boost libs.  A related reason might be if you are
                   # using more than one boost.
                   #extra_link_args = ['-Wl,-rpath=/usr/local/src/Boost/boost_1_66_0/stage/lib' ],  # static build
-                  libraries = ["boost_python3", "boost_numpy3"]   # needed and worked on both linux and mac
+                  libraries = ["boost_python36", "boost_numpy36"]   # needed and worked on both linux and mac
         )
     ])

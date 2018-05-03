@@ -1818,7 +1818,9 @@ if True:
         n.sibling = oldSibling
         self.nodes.append(n)
         if self.taxNames:
-            self.taxNames.append(n.name)
+            # taxnames can be shared among trees, so check whether it has already been added
+            if n.name not in self.taxNames:
+                self.taxNames.append(n.name)
         self.preAndPostOrderAreValid = False
         self.preOrder = None
         self.postOrder = None
@@ -1856,7 +1858,9 @@ if True:
         n.parent = aNode
         self.nodes.append(n)
         if self.taxNames:
-            self.taxNames.append(n.name)
+            # taxnames can be shared among trees, so check whether it has already been added
+            if n.name not in self.taxNames:
+                self.taxNames.append(n.name)
         self.preAndPostOrderAreValid = False
         self.preOrder = None
         self.postOrder = None
