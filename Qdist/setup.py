@@ -20,7 +20,7 @@ setup(name="PackageName",
                     # Might not need atlas?  Might be blas rather than cblas?
                     # libraries = ["cblas", "atlas", "boost_python"]) 
                     # libraries = ["cblas", "boost_python"]             # this worked on ubuntu 16.04 with Py2
-                    # libraries = ["cblas", "boost_python-py34"]         # this worked on ubuntu 16.04 with Py3
+                    # libraries = ["blas", "boost_python-py34"]         # this worked on ubuntu 16.04 with Py3
                     # libraries = ["cblas", "boost_python"]             # this worked on my mac with Py2
                     libraries = ["cblas", "boost_python36"]             # this worked on my mac with Py3.6
           )
