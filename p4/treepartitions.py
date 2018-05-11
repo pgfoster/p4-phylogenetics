@@ -471,6 +471,11 @@ something like this::
         # Read in the trees
         while 1:
             t = Tree()
+            if 0:
+                curPos = f.tell()
+                fileSize = f.seek(0, 2)  # go to the end of the file.  Seek returns the position.
+                f.seek(curPos)
+                print("About to t.parseNewick, curPos %i, fileSize %i" % (curPos, fileSize))
             t.parseNewick(f, translationHash=None)
             if not t.nodes:
                 break
