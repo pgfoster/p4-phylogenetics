@@ -557,11 +557,9 @@ class Tree(object):
         isAfterComma = 0
         parenNestLevel = 0
         lastPopped = None
-
         
-        tok = safeNextTok(flob)       # safeNextTok to skip over [&U] if there is one.
-        #print("xx Got tok %s" % tok)
-
+        tok = nextTok(flob)          # skip over [&U] if there is one.
+        # print("xx Got tok %s" % tok)
         if not tok:
             return
         isQuotedTok = False
