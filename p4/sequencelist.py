@@ -696,15 +696,16 @@ class SequenceList(object):
         complaintHead = '\nSequenceList.writeFasta()'
 
         isFlob = False
-        originalTell = None
+        #originalTell = None
         if fName == None or fName == sys.stdout:
             f = sys.stdout
             isFlob = True
         elif hasattr(fName, 'write'):  # an open, file-like object
             f = fName
-            originalTell = f.tell()
+            #originalTell = f.tell()
             isFlob = True
         else:
+            assert isinstance(fName, str)  # a file name
             if append:
                 if os.path.isfile(fName):
                     try:
@@ -794,10 +795,9 @@ class SequenceList(object):
             if writeExtraNewline:
                 f.write('\n')
 
-        # f.read()
-        if isFlob and f != sys.stdout:
-            if hasattr(f, 'seek'):
-                f.seek(originalTell)
+        if isFlob:
+            if f != sys.stdout:
+                f.close()
         else:
             f.close()
 
