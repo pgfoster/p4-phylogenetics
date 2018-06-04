@@ -885,7 +885,7 @@ class Tree(object):
                         raise P4Error(gm)
 
             elif tok[0] == '[':
-                #print("openSquareBracket.  Got tok '%s'" % tok)
+                # print("openSquareBracket.  Got tok '%s'" % tok)
                 # if doModelComments is set, it should be set to nParts.
                 if doModelComments:
                     # eg [& c0.1 r0.0]
@@ -948,7 +948,7 @@ class Tree(object):
                                 if tok[j] == ',':
                                     break
                         substring = tok[i:j]
-                        # print substring
+                        # print(substring)
                         splSS = substring.split('=')
                         theNameString = splSS[0].strip()
                         if '%' in theNameString:
@@ -966,7 +966,16 @@ class Tree(object):
                         assert isinstance(theVal, (float, tuple, bool))
                         n.__setattr__(theNameString, theVal)
                         i = j + 1
+                elif 0:
+                    # branch colours, after the branch length, eg '[&!color=#8caaf4]'
+                    if tok.startswith("[&!color="):
+                        myNode = stack[-1]
+                        theColour = tok[9:-1]
+                        #print(theColour)
+                        myNode.br.colour = theColour
 
+                    
+                    
             else:
                 gm.append("I can't make sense of the token '%s'" % tok)
                 if len(tok) == 1:
@@ -2893,3 +2902,86 @@ class Tree(object):
             n = treeB.splitKeyHash[spl]
             n.br.color = 'orange'
 
+    ##################################################
+
+    def readPhyloXmlFile(self, fName, verbose=False):
+        """Start with an empty Tree, read in a phyloxml file"""
+
+        assert not self.nodes, "The tree should be empty, with no nodes"
+        import xml.etree.ElementTree as ET
+        xAll = ET.parse(fName)
+        for el in xAll.iter():
+            if '}' in el.tag:
+                el.tag = el.tag.split('}', 1)[1]  # strip all namespaces
+
+        xroot = xAll.getroot()
+        xphylogeny = xroot.find('phylogeny')
+        assert xphylogeny
+        rootclade = xphylogeny.find('clade')
+        assert rootclade
+
+        def recurseClade(theClade):
+            global currentNode
+            for el in theClade:
+                #print(el.tag)
+                if el.tag == 'clade':
+                    n = Node()
+                    n.nodeNum = len(self.nodes)
+                    el.attrib['p4Node'] = n
+                    n.parent = theClade.attrib['p4Node']
+                    if n.parent:
+                        if n.parent.leftChild == None:
+                            n.parent.leftChild = n
+                        else:
+                            rmCh = n.parent.rightmostChild()
+                            assert rmCh, "Can't get rightmostChild"
+                            rmCh.sibling = n
+
+                    self.nodes.append(n)
+                    currentNode = n
+                    recurseClade(el)
+                elif el.tag == "branch_length":
+                    currentNode.br.len = float(el.text)
+                elif el.tag == 'name':
+                    #print(el.text)
+                    currentNode.name = el.text
+                    if verbose:
+                        print("Got node name", el.text)
+                elif el.tag == 'width':
+                    currentNode.br.width = float(el.text)
+                    if verbose:
+                        print("Got node width, as node.br.width", el.text)
+                elif el.tag == 'color':
+                    thiscol = {}
+                    for el2 in el:
+                        thiscol[el2.tag] = int(el2.text)
+                    cols = ['red', 'green', 'blue']
+                    for col in cols:
+                        assert thiscol.get(col)
+                    myHexString = ""
+                    for col in cols:
+                        bit = thiscol.get(col)
+                        hx = hex(bit)[2:].upper()
+                        myHexString += hx
+                    #print(myHexString)
+                    currentNode.br.hexColor = myHexString
+                    if verbose:
+                        print("Got node color (as attribute node.br.hexColor)", currentNode.br.hexColor)
+                else:
+                    print("Fixme. Unhandled/unused element with tag %s" % el.tag)
+
+
+        n = Node()
+        n.nodeNum = 0
+        n.br = None
+        self.root = n
+        self.nodes.append(n)
+
+        rootclade.attrib['p4Node'] = n
+
+        recurseClade(rootclade)
+
+        for n in self.nodes:
+            if not n.leftChild:
+                n.isLeaf = 1
+        self.setPreAndPostOrder()
