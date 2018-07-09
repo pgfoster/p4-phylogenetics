@@ -273,6 +273,7 @@ class Tree(object):
 
     @property
     def taxNames(self):
+        """(property) taxNames"""
         return self._taxNames
 
     @taxNames.setter
@@ -325,6 +326,7 @@ class Tree(object):
             return nTax
 
     nTax = property(_getNTax)
+    """(property) nTax"""
 
     def _getNInternalNodes(self):
         if self._nInternalNodes >= 0:
@@ -347,8 +349,8 @@ class Tree(object):
     def _delNInternalNodes(self):
         self._nInternalNodes = -1
 
-    nInternalNodes = property(
-        _getNInternalNodes, _setNInternalNodes, _delNInternalNodes)
+    nInternalNodes = property(_getNInternalNodes, _setNInternalNodes, _delNInternalNodes)
+    """(property) nInternalNodes"""
 
     ##################################################
     ##################################################
@@ -390,10 +392,12 @@ class Tree(object):
 
         Args:
             flob: an open file or file-like object
-            translationHash (dict): associates short names or numbers with 
-                long proper taxon names
-            doModelComments (bool): whether to parse p4-specific model 
-                command comments in the tree description
+
+            translationHash (dict): associates short names or numbers with long
+            proper taxon names
+
+            doModelComments (bool): whether to parse p4-specific model command
+            comments in the tree description
 
         Returns:
             None

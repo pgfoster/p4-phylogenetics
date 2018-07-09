@@ -341,6 +341,7 @@ class Var(object):
 
     nexus_writeVisibleComments = property(_get_nexus_writeVisibleComments,
                                           _set_nexus_writeVisibleComments, _del_nothing)
+    """(property) nexus_writeVisibleComments (int)"""
 
     def _get_nexus_getP4CommandComments(self):
         return self._nexus_getP4CommandComments[0]
@@ -400,6 +401,7 @@ class Var(object):
 
     nexus_getLineEndingsAsTokens = property(_get_nexus_getLineEndingsAsTokens,
                                             _set_nexus_getLineEndingsAsTokens, _del_nothing)
+    """(property) Whether line endings get returned as nexus tokens (int)"""
 
     def _get_rMatrixNormalizeTo1(self):
         return self._rMatrixNormalizeTo1[0]
@@ -421,6 +423,7 @@ class Var(object):
 
     rMatrixNormalizeTo1 = property(_get_rMatrixNormalizeTo1,
                                    _set_rMatrixNormalizeTo1, _del_nothing)
+    """(property) not user-settable"""
 
     def _get_interactiveHelper(self):
         return self._interactiveHelper

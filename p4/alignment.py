@@ -142,8 +142,6 @@ class Alignment(SequenceList):
 
     """A SequenceList where all the sequences are the same length and dataType.
 
-    .. This should be a comment.  See http://sphinx-doc.org/domains.html#cross-referencing-syntax
-
     From SequenceList, this inherits
 
     * ``sequences``, a list of :class:`~p4.sequencelist.Sequence` objects
@@ -165,7 +163,7 @@ class Alignment(SequenceList):
     * ``symbols``, the character symbols, not including equates or ambiguities
     * ``equates``, a dictionary of NEXUS-style ambiguities, eg ``'r':['a','g']`` for DNA
     * ``dim``, the dimension, ie the number of symbols
-    * ``nexusSets``, a :class:`NexusSets.NexusSets` object, usually
+    * ``nexusSets``, a :class:`~p4.nexussets.NexusSets` object, usually
       made from a copy of ``var.nexusSets``, but made specific to self
 
     **Various checks are made when alignments are read in from files**
@@ -340,14 +338,17 @@ class Alignment(SequenceList):
 
     @property
     def nTax(self):
+        """Return the number of sequences"""
         return len(self.sequences)
 
     @property
     def nChar(self):
+        """Return the length of the alignment"""
         return self.length
 
     @property
     def nEquates(self):
+        """Return the number of equates"""
         return len(self.equates)
 
     def _getTaxNames(self):

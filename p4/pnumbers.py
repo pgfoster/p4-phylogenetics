@@ -60,6 +60,7 @@ class Numbers(object):
 
     @property
     def binSize(self):
+        """(property) Return the bin size"""
         return self._binSize
 
     @binSize.setter

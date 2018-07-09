@@ -36,6 +36,7 @@ class Sequence(object):
             return 0
 
     nChar = property(_getNChar)
+    """(property) return the length of the sequence, or zero"""
 
     # See the comment in alignment.py, for the same redefinition of __bool__().
     def __bool__(self):
