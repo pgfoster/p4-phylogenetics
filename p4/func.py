@@ -3354,7 +3354,7 @@ def newtonRaftery94_eqn16(logLikes, delta=0.1, verbose=False):
     # int(verbose))
 
 def readJplace(fName, verbose=False):
-    """Read *.jplace files for phylogenetic placement of short reads
+    """Read ``*.jplace`` files for phylogenetic placement of short reads
 
     It returns a tuple --- (tree, heatSum).
     The tree is decorated with a 'heat' attribute on each node.br.
