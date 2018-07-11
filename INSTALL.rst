@@ -82,7 +82,7 @@ To get a description of the various installation options, do::
 
 To install it in your home directory, say::
 
-    python3 setup.py install --home=~
+    python3 setup.py install --prefix=~
 
 Or some unusual place in your home directory::
 
