@@ -1,4 +1,4 @@
-versionNumberString = '1.2.0'
-versionNumberModifier = ' [2016-05-03]'    # a string
+versionNumberString = '1.3.0'
+versionNumberModifier = ' [2018-07-28]'    # a string
 versionString = '%s%s' % (versionNumberString, versionNumberModifier)
-dateString = "3 May, 2016"
+dateString = "28 July, 2018"

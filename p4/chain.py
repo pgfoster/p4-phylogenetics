@@ -437,11 +437,13 @@ class Chain(object):
         #     # print "theProposal.name = cmd1_alpha, pNum=%i" % theProposal.pNum
         #     self.proposeCmd1Alpha(theProposal)
 
-        elif theProposal.name in ['rMatrix', 'rMatrixDir']:
+        elif theProposal.name in ['rMatrix', 'rMatrixDir', 'allRMatricesDir']:
             if theProposal.name == 'rMatrix':
                 self.proposeRMatrixWithSlider(theProposal)
-            else:
+            elif theProposal.name == 'rMatrixDir':
                 self.proposeRMatrixDirichlet(theProposal)
+            else:
+                self.proposeAllRMatricesDir(theProposal)
 
             self.propTree.model.setCStuff(partNum=theProposal.pNum)
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
@@ -1172,7 +1174,7 @@ class Chain(object):
             if aProposal.name in ['comp', 'compDir', 'allCompsDir',
                                   'ndch2_leafCompsDir', 'ndch2_internalCompsDir',
                                   'ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha', 'rMatrix', 
-                                  'rMatrixDir', 'gdasrv', 'pInvar', 
+                                  'rMatrixDir', 'allRMatricesDir', 'gdasrv', 'pInvar', 
                                   'cmd1_compDir', 'cmd1_allCompDir']:
                 b.logLike = a.logLike
                 pNum = aProposal.pNum
@@ -1332,31 +1334,31 @@ class Chain(object):
                 pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)  # 1 means do all
                 pf.p4_copyModelPrams(a.cTree, b.cTree)
 
-            elif aProposal.name in ['rjComp', 'rjRMatrix']:
-                b.logLike = a.logLike
-                pNum = aProposal.pNum
-                b.partLikes[pNum] = a.partLikes[pNum]
-                a.model.parts[pNum].copyValsTo(b.model.parts[pNum])
-                a.copyToTree(b)
-                a.model.parts[pNum].copyNNodesTo(
-                    b.model.parts[pNum])  # only one part
-                a.model.parts[pNum].copyBQETneedsResetTo(
-                    b.model.parts[pNum])  # only one part
-                b.model.setCStuff(partNum=pNum)
-                b.setCStuff()
+            # elif aProposal.name in ['rjComp', 'rjRMatrix']:
+            #     b.logLike = a.logLike
+            #     pNum = aProposal.pNum
+            #     b.partLikes[pNum] = a.partLikes[pNum]
+            #     a.model.parts[pNum].copyValsTo(b.model.parts[pNum])
+            #     a.copyToTree(b)
+            #     a.model.parts[pNum].copyNNodesTo(
+            #         b.model.parts[pNum])  # only one part
+            #     a.model.parts[pNum].copyBQETneedsResetTo(
+            #         b.model.parts[pNum])  # only one part
+            #     b.model.setCStuff(partNum=pNum)
+            #     b.setCStuff()
 
-                # These three could be faster, but they need to be re-written
-                # to be part-specific.
-                pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
-                pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)
-                pf.p4_copyModelPrams(a.cTree, b.cTree)
+            #     # These three could be faster, but they need to be re-written
+            #     # to be part-specific.
+            #     pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
+            #     pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)
+            #     pf.p4_copyModelPrams(a.cTree, b.cTree)
 
-            elif aProposal.name == 'cmd1_comp0Dir':
-                b.model.parts[aProposal.pNum].cmd1_pi0 = a.model.parts[
-                    aProposal.pNum].cmd1_pi0
-            elif aProposal.name == 'cmd1_alpha':
-                b.model.parts[aProposal.pNum].cmd1_alpha = a.model.parts[
-                    aProposal.pNum].cmd1_alpha
+            # elif aProposal.name == 'cmd1_comp0Dir':
+            #     b.model.parts[aProposal.pNum].cmd1_pi0 = a.model.parts[
+            #         aProposal.pNum].cmd1_pi0
+            # elif aProposal.name == 'cmd1_alpha':
+            #     b.model.parts[aProposal.pNum].cmd1_alpha = a.model.parts[
+            #         aProposal.pNum].cmd1_alpha
 
             else:
                 gm.append('Unlisted proposal.name = %s  Fix me.' %
@@ -1831,7 +1833,7 @@ class Chain(object):
                         newVal[i] += (1.0 + random.random()) * var.RATE_MIN
                     if newVal[i] > var.RATE_MAX:
                         newVal[i] = var.RATE_MAX - ((1.0 + random.random()) * var.RATE_MIN)
-                    newVal = newVal / newVal.sum()
+                newVal = newVal / newVal.sum()
                     
             # Calculate the proposal ratio
             # We can re-use myProposer to get the log pdf
@@ -2086,6 +2088,41 @@ class Chain(object):
                 mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
             reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
                 mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
+            self.logProposalRatio += reverseLnPdf - forwardLnPdf
+
+        # prior ratio
+        self.logPriorRatio = 0.0
+
+    def proposeAllRMatricesDir(self, theProposal):
+        gm = ['Chain.proposeAllRMatricesDir()']
+        # all the rMatrices in one go.
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+
+        assert not mpCur.ndch2, "allRMatricesDir proposal is not for ndch2"  # Why not?
+
+        # Make proposals, accumulate log proposal ratios in the same loop
+        self.logProposalRatio = 0.0
+        for mtNum in range(mpCur.nRMatrices):
+            mtCur = mpCur.rMatrices[mtNum]
+            mtProp = mpProp.rMatrices[mtNum]
+            assert mtProp.spec != '2p', "proposeAllRMatricesDir is not set up for 2p models yet.  To do."
+            # Result of the proposal goes into mtProp.val
+            assert isinstance(mtProp.val, numpy.ndarray)
+            p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            #assert isinstance(mtProp.val, numpy.ndarray)
+            while  mtProp.val.min() < var.RATE_MIN or mtProp.val.max() > var.RATE_MAX :
+                for i in range(mtProp.val):
+                    if mtProp.val[i] < var.RATE_MIN:
+                        mtProp.val[i] += (1.0 + random.random()) * var.RATE_MIN
+                    if mtProp.val[i] > var.RATE_MAX:
+                        mtProp.val[i] = var.RATE_MAX - ((1.0 + random.random()) * var.RATE_MIN)
+                thisSum = mtProp.val.sum()
+                mtProp.val /= thisSum
+
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
         # prior ratio
