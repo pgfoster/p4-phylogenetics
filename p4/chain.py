@@ -2112,8 +2112,8 @@ class Chain(object):
             assert isinstance(mtProp.val, numpy.ndarray)
             p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
             #assert isinstance(mtProp.val, numpy.ndarray)
-            while  mtProp.val.min() < var.RATE_MIN or mtProp.val.max() > var.RATE_MAX :
-                for i in range(mtProp.val):
+            while  mtProp.val.min() < var.RATE_MIN or mtProp.val.max() > var.RATE_MAX:
+                for i in range(len(mtProp.val)):
                     if mtProp.val[i] < var.RATE_MIN:
                         mtProp.val[i] += (1.0 + random.random()) * var.RATE_MIN
                     if mtProp.val[i] > var.RATE_MAX:
