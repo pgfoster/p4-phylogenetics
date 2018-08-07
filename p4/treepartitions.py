@@ -1577,6 +1577,7 @@ something like this::
             for n in conTree.iterNodesNoRoot():
                 # The single child of the root will never have a rootCount2.
                 if n.br.split.rootCount2:
+                    #print("node %i rootCount2 %i added to node %i" % (n.nodeNum, n.br.split.rootCount2, n.parent.nodeNum))
                     n.parent.br.split.rootCount += n.br.split.rootCount2
 
         # Get br.lens
