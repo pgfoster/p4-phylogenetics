@@ -17,7 +17,6 @@ import p4.pf as pf
 from p4.model import Model
 from p4.data import Data
 from p4.alignment import Part
-from p4.trees import Trees
 import random
 
 
@@ -897,6 +896,9 @@ if True:
                 t.name = 'r%i' % n.nodeNum
                 tList.append(t)
 
+        # This import needs to be here --- if it is up top as usual, it leads to circular grief.
+        from p4.trees import Trees
+        
         tt = Trees(trees=tList, taxNames=self.taxNames)
         return tt
 
