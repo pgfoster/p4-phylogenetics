@@ -246,7 +246,9 @@ if True:
             # is made and attached to self.  If we have got here, it is
             # because the model has subsequently been lost.  So just
             # re-instate it.
-            self._setData(self.data)
+            #self._setData(self.data)
+            gm.append("No model.  Set the model first.  Or FIXME?")
+            raise P4Error(gm)
 
         if partNum < 0 or partNum >= self.model.nParts:
             gm.append("Zero-based partNum (%s) is out of range (of %s parts)" %
