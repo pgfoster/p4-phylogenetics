@@ -30,6 +30,7 @@ fudgeFactor['compLocation'] = 0.01
 fudgeFactor['rMatrixLocation'] = 0.01
 fudgeFactor['gdasrvLocation'] = 0.01
 fudgeFactor['allCompsDir'] = 1.0
+fudgeFactor['allRMatricesDir'] = 1.0
 fudgeFactor['ndch2comp'] = 0.2
 fudgeFactor['ndch2alpha'] = 0.04
 
@@ -53,6 +54,7 @@ class McmcTuningsPart(object):
         self.default['rMatrix'] = 0.3
         # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
         self.default['rMatrixDir'] = 200.
+        self.default['allRMatricesDir'] = 500.
         self.default['twoP'] = 50.
         self.default['gdasrv'] = 2.0 * math.log(1.5)  # 0.811
         self.default['pInvar'] = 0.5
@@ -115,6 +117,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'ndch2_internalCompsDirAlpha', 0.0)
         #object.__setattr__(self, 'rMatrix', 1.0)
         object.__setattr__(self, 'rMatrixDir', 0.0)
+        object.__setattr__(self, 'allRMatricesDir', 0.0)
         object.__setattr__(self, 'gdasrv', 1.0)
         object.__setattr__(self, 'pInvar', 1.0)
         object.__setattr__(self, 'local', 1.0)
@@ -736,7 +739,7 @@ class Mcmc(object):
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     gdasrv local ndch2_internalCompsDir 
                     ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    ndch2_leafCompsDirAlpha pInvar rMatrixDir relRate """.split()
+                    ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
         # maybeTunableButNotNow  compLocation eTBR polytomy root3 rMatrixLocation
 
 
@@ -819,6 +822,7 @@ class Mcmc(object):
             self._tunings.parts[pNum].default['ndch2_leafCompsDir'] = 2000. * theDim
             self._tunings.parts[pNum].default['ndch2_internalCompsDir'] = 500. * theDim
             self._tunings.parts[pNum].default['rMatrixDir'] = 50. * nRates
+            self._tunings.parts[pNum].default['allRMatricesDir'] = 100. * nRates
             
 
         # Zap internal node names
@@ -1342,6 +1346,33 @@ class Mcmc(object):
 
                     self.props.proposals.append(p)
 
+            # allRMatricesDir
+            if self.prob.allRMatricesDir:
+                if mp.rMatrices and mp.rMatrices[0].free:
+                    for mtNum in range(mp.nRMatrices):
+                        assert mp.rMatrices[mtNum].free
+                    p = Proposal(self)
+                    p.name = 'allRMatricesDir'
+                    if mp.rMatrices[mtNum].spec == '2p':
+                        raise P4Error("Proposal allRMatricesDir is not yet working for 2p.  Fixme.")
+                    else:
+                        p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                        p.weight = self.prob.allRMatricesDir * mp.nRMatrices * \
+                            (((mp.dim * mp.dim) - mp.dim) / 2) * fudgeFactor['allRMatricesDir']
+                    p.pNum = pNum
+
+                    p.tnAccVeryHi = 0.4
+                    p.tnAccHi = 0.15
+                    p.tnAccLo = 0.05
+                    p.tnAccVeryLo = 0.03
+
+                    p.tnFactorVeryHi = 0.7
+                    p.tnFactorHi = 0.8
+                    p.tnFactorLo = 1.2
+                    p.tnFactorVeryLo = 1.4
+
+                    self.props.proposals.append(p)
+
             # gdasrv
             if self.prob.gdasrv:
                 if mp.nGdasrvs and mp.gdasrvs[0].free:
@@ -1525,6 +1556,15 @@ class Mcmc(object):
                 else:
                     p.weight = self.prob.rMatrixDir * mp.nRMatrices * \
                         ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
+
+            # allRMatricesDir
+            if p.name == 'allRMatricesDir':
+                mp = self.tree.model.parts[p.pNum]
+                #if mp.rMatrices[0].spec == '2p':
+                #    p.weight = self.prob.rMatrixDir
+                #else:
+                p.weight = self.prob.rMatrixDir * mp.nRMatrices * \
+                        ((((mp.dim * mp.dim) - mp.dim) / 2) - 1) * fudgeFactor['allRMatricesDir']
 
             # gdasrv
             if p.name == 'gdasrv':
@@ -2138,7 +2178,7 @@ class Mcmc(object):
                     # tunables = """allBrLens allCompsDir brLen compDir 
                     # gdasrv local ndch2_internalCompsDir 
                     # ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    # ndch2_leafCompsDirAlpha pInvar rMatrixDir relRate """.split()
+                    # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
 
                     # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation
 

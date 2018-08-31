@@ -362,7 +362,7 @@ class Codon(object):
         elif i == 3:
             return self.v3
         else:
-            raise IndexError, "A codon has only 3 positions."
+            raise IndexError("A codon has only 3 positions.")
 
     def decomposition(self):
         """returns the list of non-degenerate codons that are contained in *self*."""

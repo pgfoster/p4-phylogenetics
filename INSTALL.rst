@@ -4,7 +4,7 @@ Installation
 
 The source code is hosted at `<https://github.com/pgfoster/p4-phylogenetics>`_
 
-P4 needs Python 2; it is not yet ported to Python3.
+P4 needs Python 3; it no longer works with Python 2.
 
 I've installed it on Linux and Mac OS X.  In either case, you need to
 have the basic C-language programming tools, including a compiler,
@@ -13,10 +13,14 @@ libraries, headers, and so on.
 **Preparations for the full install on the Mac**
 
 
-You need Xcode, available from the Apple App Store.
+You need Xcode, available from the Apple App Store, or theCommand Line Tools (CLT) for Xcode.
 
-You need ``scipy``, a python module, and the ``gsl`` library (Gnu
-Scientific Library).  For these, `Homebrew <http://brew.sh>`_ is recommended.
+You probably want to install `Homebrew <http://brew.sh>`_ and install Python3 from there.
+
+You need the ``gsl`` library (Gnu
+Scientific Library).  For this, `Homebrew <http://brew.sh>`_ is recommended.
+
+You can install ``scipy`` with ``pip3``; it will install ``numpy`` as well.
 
 
  
@@ -27,9 +31,10 @@ need what on Ubuntu would be called 'python-dev'.
 
 I have recently installed p4 on Ubuntu 16.04, and had to::
 
-    sudo apt-get install python-scipy
     sudo apt-get install libgsl-dev
     sudo apt-get install python-dev
+
+You can use ``pip3`` to install ``scipy``.
 
 And if you want to use the GUI tree-drawing::
 
@@ -56,7 +61,7 @@ the file ``setup.py``.  That file controls the build and installation.
 
 First you can build it, without installing it, by saying::
 
-    python setup.py build
+    python3 setup.py build
 
 (no need to be root or use sudo for the above step)
 
@@ -66,22 +71,22 @@ JoeUser may not have file-writing permission to put files there, so
 you may need to be root or use sudo for the next step.  Eg if you sudo
 it, you can say::
 
-    sudo python setup.py install
+    sudo python3 setup.py install
 
 
 **Installation variations**
 
 To get a description of the various installation options, do::
     
-    python setup.py install --help. 
+    python3 setup.py install --help. 
 
 To install it in your home directory, say::
 
-    python setup.py install --home=~
+    python3 setup.py install --prefix=~
 
 Or some unusual place in your home directory::
 
-    python setup.py install --prefix=~/Unusual
+    python3 setup.py install --prefix=~/Unusual
 
 If you install it in your home directory, 
     
@@ -119,7 +124,7 @@ The default installation location has a "root", which might be ``/usr`` or
 ``/usr/local``, or your home directory.  These three things are installed:
 
     1.  **The p4 package.**          Goes where 3rd party packages go
-        Eg ``/usr/local/lib/python2.7/site-packages``
+        Eg ``/usr/local/lib/python3.6/site-packages``
 
     2.  **The p4 script.**           Goes somewhere in your path
         Eg ``/usr/local/bin``
@@ -129,11 +134,11 @@ The default installation location has a "root", which might be ``/usr`` or
 
 The default location for installation of the modules is something like::
 
-    /usr/lib/python2.7/site-packages
+    /usr/lib/python3.6/site-packages
 
 or::
 
-    ~/lib/python2.7
+    ~/lib/python3.6
 
 depending on the "root" of the installation, of course.
 
@@ -187,7 +192,7 @@ depending on where your P4 git directory is, and what it is called.
 
 To build the ``pf`` module, say::
 
-   python setup.py build_ext -i
+   python3 setup.py build_ext -i
 
 It might actually work.  If it doesn't, note the error messages that
 flew by.  The earliest error message is usually a clue.

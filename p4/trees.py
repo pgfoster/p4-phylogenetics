@@ -83,6 +83,7 @@ class Trees(object):
 
     @property
     def nTax(self):
+        """(property) nTax"""
         return len(self.taxNames)
 
     def setTaxNames(self, theTaxNames=None):

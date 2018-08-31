@@ -22,6 +22,7 @@ import random
 if True:
     @property
     def data(self):
+        """(property) The data object"""
         return self._data
 
     @data.setter
@@ -204,6 +205,7 @@ if True:
 
     @property
     def model(self):
+        """(property) The model object"""
         return self._model
 
     @model.setter

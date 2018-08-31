@@ -3352,3 +3352,85 @@ def newtonRaftery94_eqn16(logLikes, delta=0.1, verbose=False):
     # theHarmMean = n.harmonicMeanOfLogs()  # better
     # return pf.newtonRaftery94_eqn16(lla, len(logLikes), theHarmMean, delta,
     # int(verbose))
+
+def readJplace(fName, verbose=False):
+    """Read ``*.jplace`` files for phylogenetic placement of short reads
+
+    It returns a tuple --- (tree, heatSum).
+    The tree is decorated with a 'heat' attribute on each node.br.
+    The heatSum is the sum of all the heats.
+    """
+    
+    import json
+
+    assert fName.endswith("jplace"), "Is %s a jplace file? --- it does not end with '.jplace'" % fName
+
+    # read with json
+    flob = open(fName)
+    jobj = json.load(flob)
+    flob.close()
+
+    # Read the tree
+    inBraces = False
+    tLst2 = []
+    tStr = jobj['tree']
+    #print(tStr)
+    tLst = list(tStr)
+    for c in tLst:
+        if inBraces:
+            if c == '}':
+                inBraces = False
+        else:
+            if c == '{':
+                inBraces = True
+            else:
+                tLst2.append(c)
+    tStr = ''.join(tLst2)
+    #print(tStr)
+    t = readAndPop(tStr)
+
+    if verbose:
+        print("Got tree with %i nodes" % len(t.nodes))
+
+    # JPlace files use postorder node numbering. P4 uses preorder.
+    # Po is PostOrder.
+    nodeForPoNumDict = {}
+    for poNum, nNum in enumerate(t.postOrder):
+        #print("post-order =", poNum, "node num = ",nNum)
+        nodeForPoNumDict[poNum] = t.nodes[nNum]
+
+    placements = jobj['placements']
+    #n_p is the number of placement lines
+    n_p = len(placements)
+    if verbose:
+        print("There are %i placement lines (n_p)" % n_p)
+
+    pResults = [0.0] * len(t.nodes)
+
+    for pLine in placements:
+        #print(type(pLine))     # a dict
+        nn = pLine['n']
+        assert len(nn) == 1
+
+        pp = pLine['p']
+        pLine['S_lwr'] = sum([it[2] for it in pp])
+        #print("Got sum of lwr's %f" % pLine['S_lwr'])
+        for pNode in pp:
+            nNum = pNode[0]
+            contrib = pNode[2] / pLine['S_lwr']
+            pResults[nNum] += contrib
+
+    heatSum = 0.0
+    for poNum, pR in enumerate(pResults):
+        n = nodeForPoNumDict[poNum]
+        if n == t.root:
+            assert math.fabs(pR) < 1.e-14, "Something wrong. Root has placement result %g" % pR
+        else:
+            n.br.heat = pR
+            if verbose:
+                print("Got node.br 'heat'", pR)
+            heatSum += pR
+    if verbose:
+        print("Sum of heats", heatSum)
+        print("returning a tuple of the heat-decorated Tree from %s, and heatSum..." % fName)
+    return (t, heatSum)

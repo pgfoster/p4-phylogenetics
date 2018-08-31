@@ -2422,6 +2422,7 @@ class STMcmc(object):
                 ch.curTree.spaQ = newVal
 
     spaQ = property(_get_spaQ, _set_spaQ, _del_nothing)
+    """(property) The current spaQ"""
 
     def _setLogger(self):
         """Make two loggers; one that writes to a file and to stderr, and one that writes only to a file."""

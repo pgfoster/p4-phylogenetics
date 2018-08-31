@@ -1045,7 +1045,7 @@ if True:
         if f != sys.stdout:
             f.close()
 
-    def writePhylip(self, fName=None, interleave=True, whitespaceSeparatesNames=True, flat=False, offset=1):
+    def writePhylip(self, fName=None, interleave=True, whitespaceSeparatesNames=True, flat=False, offset=1, uppercase=False):
         """Write the alignment in Phylip format.
 
         If interleave is turned off, then sequences are
@@ -1097,8 +1097,8 @@ if True:
 
         """
 
-        gm = ['Alignment.writePhylip(fName=%s, interleave=%s, whitespaceSeparatesNames=%s, flat=%s)' % (
-            fName, interleave, whitespaceSeparatesNames, flat)]
+        gm = ['Alignment.writePhylip(fName=%s, interleave=%s, whitespaceSeparatesNames=%s, flat=%s, uppercase=%s)' % (
+            fName, interleave, whitespaceSeparatesNames, flat, uppercase)]
 
         # Find the maxNameLen.
         maxNameLen = 0
@@ -1127,14 +1127,12 @@ if True:
             doStrictOkAnyway = True
 
         if interleave and flat:
-            gm.append(
-                "Both 'interleave' and 'flat' are turned on -- does not work.")
+            gm.append("Both 'interleave' and 'flat' are turned on -- does not work.")
             raise P4Error(gm)
 
         # Check and complain if any taxNames will be truncated.
         if not whitespaceSeparatesNames and maxNameLen > var.phylipDataMaxNameLength:
-            gm.append(
-                'The longest name length in this alignment is %i' % maxNameLen)
+            gm.append('The longest name length in this alignment is %i' % maxNameLen)
             gm.append('var.phylipDataMaxNameLength is now %i' %
                       var.phylipDataMaxNameLength)
             gm.append('Sequence names will be truncated.  Fix it.')
@@ -1171,13 +1169,12 @@ if True:
             else:
                 upper = self.length
             for k in self.sequences:
-                #theFormat = "%-" + "%is" % (var.phylipDataMaxNameLength + 1)
-                #f.write(theFormat % k.name[0:var.phylipDataMaxNameLength])
                 theFormat = "%-" + "%is" % (nameWid)
-                #sys.stdout.write(theFormat % k.name[0:nameWid])
-                #sys.stdout.write('%s\n' % k.sequence[0:upper])
                 f.write(theFormat % k.name[0:nameWid])
-                f.write('%s\n' % k.sequence[0:upper])
+                if uppercase:
+                    f.write('%s\n' % k.sequence[0:upper].upper())
+                else:
+                    f.write('%s\n' % k.sequence[0:upper])
             lower = upper
             f.write('\n')
             # do subsequent rows
@@ -1188,10 +1185,11 @@ if True:
                 else:
                     upper = self.length
                 for k in self.sequences:
-                    #f.write('             ')
-                    #f.write(' ' * (var.phylipDataMaxNameLength + 1))
                     f.write(' ' * spacer1)
-                    f.write('%s\n' % k.sequence[lower:upper])
+                    if uppercase:
+                        f.write('%s\n' % k.sequence[lower:upper].upper())
+                    else:
+                        f.write('%s\n' % k.sequence[lower:upper])
                 lower = upper
                 f.write('\n')
         if not interleave:
@@ -1200,7 +1198,10 @@ if True:
                 theFormat = "%-" + "%is" % nameWid
                 for s in self.sequences:
                     f.write(theFormat % s.name[:nameWid])
-                    f.write('%s\n' % s.sequence)
+                    if uppercase:
+                        f.write('%s\n' % s.sequence.upper())
+                    else:
+                        f.write('%s\n' % s.sequence)
             else:
                 #wid = 50
                 if nameWid < 50:
@@ -1210,25 +1211,35 @@ if True:
                 wid2 = 50
                 theFormat = "%-" + "%is" % nameWid
                 for s in self.sequences:
-                    #theFormat = "%-" + "%is   " % var.phylipDataMaxNameLength
-                    #f.write(theFormat % s.name[:var.phylipDataMaxNameLength])
                     f.write(theFormat % s.name[:nameWid])
                     left = len(s.sequence)
                     pos = 0
                     if left >= wid1:
-                        f.write('%s\n' % s.sequence[pos: pos + wid1])
+                        if uppercase:
+                            f.write('%s\n' % s.sequence[pos: pos + wid1].upper())
+                        else:
+                            f.write('%s\n' % s.sequence[pos: pos + wid1])
                         pos = pos + wid1
                         left = left - wid1
                     else:
-                        f.write('%s\n' % s.sequence[pos:])
+                        if uppercase:
+                            f.write('%s\n' % s.sequence[pos:].upper())
+                        else:
+                            f.write('%s\n' % s.sequence[pos:])
                     while left >= wid2:
                         f.write(' ' * spacer1)
-                        f.write('%s\n' % s.sequence[pos: pos + wid2])
+                        if uppercase:
+                            f.write('%s\n' % s.sequence[pos: pos + wid2].upper())
+                        else:
+                            f.write('%s\n' % s.sequence[pos: pos + wid2])
                         pos = pos + wid2
                         left = left - wid2
                     if left > 0:
                         f.write(' ' * spacer1)
-                        f.write('%s\n' % s.sequence[pos:])
+                        if uppercase:
+                            f.write('%s\n' % s.sequence[pos:].upper())
+                        else:
+                            f.write('%s\n' % s.sequence[pos:])
                     f.write('\n')
 
         if f != sys.stdout:

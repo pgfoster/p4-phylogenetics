@@ -317,10 +317,12 @@ class QuartetJoining(object):
 
     @property
     def nTrees(self):
+        """(property) Return the number of input trees"""
         return len(self.trees)
 
     @property
     def nTax(self):
+        """(property) Return the number of taxa"""
         return len(self.taxNames)
 
     def dump(self, fName=None):
