@@ -13,7 +13,7 @@ Introduction
      find out where they are.  Hopefully they work as advertised.  Copy
      them to a working directory, and shake 'em 'til you break 'em.
 
-   * The class and module descriptions :ref:`here
+   * The :ref:`class and module descriptions
      <classes_and_modules>`.  It should be fairly comprehensive and
      definitive.
 
@@ -154,14 +154,14 @@ out how different they are, by doing something like the following::
      p4> print t1.topologyDistance(t2) # Symmetric difference
      0                                 # Zero means they are the same
 
-The default metric for the ``topologyDistance()`` method is the symmetric
-difference, aka the unweighted Robinson-Foulds distance, which is the
+The default metric for the :meth:`p4.tree.Tree.topologyDistance` method is the symmetric
+difference, *aka* the unweighted Robinson-Foulds distance, which is the
 number of splits in one tree that are not in the other, plus the number
 of splits in the other tree that are not in the one.  In this example,
 the trees are the same, and so the difference is zero.  If the two
 trees had only one difference, the symmetric difference would be 2.
 
-See also :meth:`Tree.Tree.tvTopologyCompare`
+See also :meth:`p4.tree.Tree.tvTopologyCompare`
 
 
 A very simple likelihood calculation

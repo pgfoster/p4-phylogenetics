@@ -99,10 +99,10 @@ like::
 
      myAlignment = readNexus('myData.nex') # Doesn't work
 
-would not always work.  The ``read()`` function does not return anything;
+would not always work.  The :func:`~p4.func.read` function does not return anything;
 rather, when you read in alignments from files, Alignment objects are
-made and stuffed into var.alignments, a list, as explained above 
-in :ref:`tut_using_var_bucket_label`.  So a typical script
+made and stuffed into ``var.alignments``, a list, as explained above 
+in the section :ref:`tut_using_var_bucket_label`.  So a typical script
 might start out by reading in data and trees, like this::
 
      read('myAlignment.nex')
@@ -117,8 +117,8 @@ get the first one, say something like::
 
      firstTree = var.trees[0]
 
-When you read in files from the command line using the p4 script, you
-can use file name globbing, ie use wildcards, as::
+When you read in files from the command line using the ``p4`` script, you
+can use file name **globbing**, *ie* use wildcards, as::
 
      p4 *.phy
 
@@ -151,7 +151,7 @@ object and gets put in ``var.alignments``.  If you use
         except IndexError:
             sl = var.alignments[0]
        
-    # easier using readAndPop()
+    # easier using func.readAndPop()
     for fName in myFileList:
         sl = func.readAndPop(fName)   # SequenceList or Alignment
 
@@ -162,7 +162,7 @@ The ``dump()`` function and methods
 There is a function, :func:`p4.func.dump` that gives a quick summary of files
 that you have read, and objects that have been made and placed in
 ``var.trees``, ``var.alignments``, and so on.  It does not know about alignments
-and such that are not in var.\*.
+and such that are not in ``var.*``.
 
 Several classes have ``dump()`` methods as well.  For example, to see inside
 trees in fine detail, you can use the :meth:`p4.tree.Tree.dump` method, for example::
@@ -173,7 +173,7 @@ or::
 
      t.dump(all=True)
 
-To see details about models, use Model.dump(), for example::
+To see details about models, use :meth:`p4.model.Model.dump`, for example::
 
      t.model.dump()
 
