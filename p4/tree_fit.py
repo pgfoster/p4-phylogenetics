@@ -873,6 +873,9 @@ if True:
             #        All Sequences     0.0140  
             #   (Chi-Squared Prob)    (0.9933) 
 
+            # It returns the P-value for the sims for the first data 
+            # partition.
+
         It is often the case, as above, that this test will show
         significance while the Chi-square test does not.
 
@@ -1040,8 +1043,8 @@ if True:
         # Since we are replacing an exisiting data, this triggers
         # self.deleteCStuff()
         self.data = savedData
-
-        return partTaps[0]
+        #print(partTaps, "\n" * 2)   # one for each data part
+        return partTaps[0]    # only the first part
 
     def bigXSquaredSubM(self, verbose=False):
         """Calculate the X^2_m stat
