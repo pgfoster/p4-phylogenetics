@@ -323,6 +323,9 @@ class Numbers(object):
         To make a png, you could call it with::
  
           term='png', output='myPlot.png'
+
+        To plot to the terminal, say term='dumb'.
+
         """
 
         weirdName = 'tmPFoRGnUPloT'
