@@ -2362,7 +2362,11 @@ if True:
             for txNumB in range(txNumA + 1, self.nTax):
                 # print txNumA, txNumB
                 bigF = self.getSimpleBigF(txNumA, txNumB)
-                # print bigF
+                if 0:
+                    print(bigF) # it is a numpy array
+                    print("sum of columns", bigF.sum(axis=0))
+                    print("sum of rows", bigF.sum(axis=1))
+
                 if doProbs:
                     QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(
                         bigF, self.dim, txNumA, txNumB, doProbs=True)
