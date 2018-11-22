@@ -747,6 +747,8 @@ def _tryToReadFastaFile(fName, flob, firstLine=None):
                             if var.verboseRead:
                                 print("Its not an alignment, even tho the sequences are all the same length.")
                                 print("    Maybe p4 (erroneously?) thinks that the sequences are different dataTypes.")
+                                print("    If you are reading protein sequences, check whether there is a sequence of")
+                                print("    all gaps as this will be assumed to be DNA by p4")
                             var.sequenceLists.append(sl)
                             if var.verboseRead:
                                 print("Got fasta file '%s'." % fName)
