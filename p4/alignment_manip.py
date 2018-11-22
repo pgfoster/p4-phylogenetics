@@ -2276,7 +2276,7 @@ if True:
         QB = 0.0
         zcount = 0                       # The number of double zeros in bigF
         # dof to start.  Half of off-diags of bigF
-        dof = ((dim * dim) - dim) / 2
+        dof = int(((dim * dim) - dim) / 2)
         for i in range(dim - 1):
             for j in range(i + 1, dim):
                 # Any double zeros?
@@ -2339,7 +2339,7 @@ if True:
             # The dof should be an int.
             PB = p4.func.chiSquaredProb(QB, dof2)
             PS = p4.func.chiSquaredProb(QS, dim - 1)
-            dof_R = (dim - 1) * (dim - 2) / 2
+            dof_R = int((dim - 1) * (dim - 2) / 2)
             PR = p4.func.chiSquaredProb(QR, dof_R)
             return (QB, QS, QR, PB, PS, PR)
         else:
@@ -2380,7 +2380,11 @@ if True:
             for txNumB in range(txNumA + 1, self.nTax):
                 # print txNumA, txNumB
                 bigF = self.getSimpleBigF(txNumA, txNumB)
-                # print bigF
+                if 0:
+                    print(bigF) # it is a numpy array
+                    print("sum of columns", bigF.sum(axis=0))
+                    print("sum of rows", bigF.sum(axis=1))
+
                 if doProbs:
                     QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(
                         bigF, self.dim, txNumA, txNumB, doProbs=True)

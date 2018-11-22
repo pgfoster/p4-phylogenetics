@@ -696,6 +696,8 @@ class Mcmc(object):
             raise P4Error(gm)
         self.runNum = runNum
 
+        self.loggerPrinter = None
+        self.logger = None
         self._setLogger()
 
         # Check that we are not going to over-write good stuff
@@ -812,7 +814,7 @@ class Mcmc(object):
 
         self.prob = McmcProposalProbs()
 
-        # Two new tunings --- compDir and rMatrixDir, seem to depend on the dim.
+        # New tunings --- compDir and rMatrixDir, seem to depend on the dim.
         # And now allCompsDir
         for pNum in range(self._tunings.nParts):
             theDim = self.tree.model.parts[pNum].dim
@@ -938,7 +940,8 @@ class Mcmc(object):
 
         splash = p4.func.splash2(verbose=False)
         for aLine in splash:
-            self.loggerPrinter.info(aLine)
+            print(aLine)
+            self.logger.info(aLine)
 
         self.swapVector = True
         if self.nChains > 1:
@@ -953,7 +956,12 @@ class Mcmc(object):
         
 
     def _setLogger(self):
-        """Make two loggers; one that writes to a file and to stderr, and one that writes only to a file."""
+        """Make a logger."""
+
+        # Need to reset, or else basicConfig will be ignored
+        log = logging.getLogger()  # root logger
+        for hdlr in log.handlers[:]:  # remove all old handlers
+            log.removeHandler(hdlr)
 
         logging.basicConfig(level=logging.INFO,
                             format='%(asctime)s %(message)s',
@@ -961,19 +969,24 @@ class Mcmc(object):
                             filename="mcmc_log_%i" % self.runNum,
                             filemode='a')
 
-        # define a Handler which writes INFO messages or higher to the sys.stderr
-        console = logging.StreamHandler()
-        console.setLevel(logging.INFO)
-        # set a format which is simpler for console use
-        formatter = logging.Formatter('%(message)s')
-        # tell the handler to use this format
-        console.setFormatter(formatter)
-        # add the handler to the root logger
-        # Using named loggers allows me to keep them separate.
-        self.loggerPrinter = logging.getLogger('withPrint')
-        self.loggerPrinter.addHandler(console)
+        # if self.loggerPrinter:
+        #     pass
+        # else:
+        #     # define a Handler which writes INFO messages or higher to the sys.stderr
+        #     console = logging.StreamHandler()
+        #     console.setLevel(logging.INFO)
+        #     # set a format which is simpler for console use
+        #     formatter = logging.Formatter('%(message)s')
+        #     # tell the handler to use this format
+        #     console.setFormatter(formatter)
+        #     # add the handler to the root logger
+        #     # Using named loggers allows me to keep them separate.
+        #     self.loggerPrinter = logging.getLogger('withPrint')
+        #     self.loggerPrinter.addHandler(console)
+
         # This logger only logs to the file, not to stderr.
         self.logger = logging.getLogger("logFileOnly")
+        
         
 
     def _makeProposals(self):

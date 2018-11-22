@@ -1,6 +1,8 @@
 News
 ====
 
+* 2018 Moved to Python 3.
+
 * 2016-05-30 :doc:`tutorial/partitionCompositionDifferences`
 
 * 2016-05-05  Alignment methods 

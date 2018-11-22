@@ -1577,6 +1577,7 @@ something like this::
             for n in conTree.iterNodesNoRoot():
                 # The single child of the root will never have a rootCount2.
                 if n.br.split.rootCount2:
+                    #print("node %i rootCount2 %i added to node %i" % (n.nodeNum, n.br.split.rootCount2, n.parent.nodeNum))
                     n.parent.br.split.rootCount += n.br.split.rootCount2
 
         # Get br.lens
@@ -1629,9 +1630,25 @@ something like this::
             print("%12s %12s %12s %12s %12s %12s" % (
                 'nodeNum', '', 'n.br.len', 'n.br.support', 'n.rootCount', 'n.br.biRtCnt'))
             for n in conTree.iterNodesNoRoot():
-                print("%12s %12s %12s %12s %12s %12s" % (
-                    n.nodeNum, n.br.split.string, n.br.len, n.br.support, n.rootCount, n.br.biRootCount))
-            # sys.exit()
+                print("%12s %12s %12s" % (
+                    n.nodeNum, n.br.split.string, "%.6f" % n.br.len), end=' ')
+
+                if hasattr(n.br, "support"):
+                    print("%12s" % n.br.support, end=' ')
+                else:
+                    print("%12s" % "    -   ", end=' ')
+
+                if hasattr(n, "rootCount"):
+                    print("%12s" % n.rootCount, end=' ')
+                else:
+                    print("%12s" % "    -   ", end=' ')
+
+                if hasattr(n.br, "biRootCount"):
+                    print("%12s" % n.br.biRootCount, end=' ')
+                else:
+                    print("%12s" % "    -   ", end=' ')
+                print()
+            #sys.exit()
 
         ######################
         # Re-root

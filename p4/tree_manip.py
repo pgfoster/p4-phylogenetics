@@ -896,7 +896,9 @@ if True:
                 t.name = 'r%i' % n.nodeNum
                 tList.append(t)
 
-        from trees import Trees
+        # This import needs to be here --- if it is up top as usual, it leads to circular grief.
+        from p4.trees import Trees
+        
         tt = Trees(trees=tList, taxNames=self.taxNames)
         return tt
 
