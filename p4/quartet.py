@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 class QuartetSet(object):
 
     def __init__(self):

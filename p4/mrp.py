@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Matrix representation / parsimony.
 
 from p4.tree import Tree

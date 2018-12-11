@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from p4.sequencelist import SequenceList, Sequence
 from p4.nexussets import NexusSets
 from p4.p4exceptions import P4Error

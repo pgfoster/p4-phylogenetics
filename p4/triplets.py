@@ -1,4 +1,3 @@
-from __future__ import print_function
 import string
 from p4.tree import Tree
 from p4.node import Node

@@ -1,4 +1,3 @@
-from __future__ import print_function
 from p4.p4exceptions import P4Error
 from p4.treepartitions import TreePartitions
 from p4.tree import Tree

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import p4.pf as pf
 import sys
 import random

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import p4.pf as pf
 import p4.func
 from p4.var import var

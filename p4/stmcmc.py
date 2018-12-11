@@ -1,4 +1,3 @@
-from __future__ import print_function
 # This is STMcmc, for super tree mcmc.
 # Started 18 March 2011, first commit 22 March 2011.
 
