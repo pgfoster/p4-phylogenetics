@@ -792,8 +792,7 @@ class TaxOrCharSet(object):
                             mask[first - 1] = '1'
                         else:
                             # This will have been checked before.
-                            gm.append(
-                                "Component '%s' is out of range of mask len (%s)" % (first, thisMask))
+                            gm.append("Component '%s' is out of range of mask len (%s)" % (first, thisMask))
                             raise P4Error(gm)
                 elif first and second:
                     # Its a range.
