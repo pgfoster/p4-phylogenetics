@@ -424,10 +424,11 @@ class NexusSets(object):
 
         cs = CharSet(self)
         cs.name = newName
-        cs.name = newName.lower()
+        cs.lowName = newName.lower()
         cs.num = len(self.charSets)
         self.charSets.append(cs)
         self.charSetsDict[cs.name] = cs
+        self.charSetLowNames.append(cs.lowName)
 
         cs.format = theCS.format
         cs.triplets = copy.deepcopy(theCS.triplets)  # its a list of lists
