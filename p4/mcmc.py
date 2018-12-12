@@ -243,7 +243,7 @@ class Proposal(object):
 class Proposals(object):
     def __init__(self):
         self.proposals = []
-        self.proposalsDict = {}
+        self.topologyProposalsDict = {}
         self.propWeights = []
         self.cumPropWeights = []
         self.totalPropWeights = 0.0
@@ -1465,7 +1465,8 @@ class Mcmc(object):
             gm.append("No proposals?")
             raise P4Error(gm)
         for p in self.props.proposals:
-            self.props.proposalsDict[p.name] = p
+            if p.name in ['local', 'eTBR', 'polytomy']:
+                self.props.topologyProposalsDict[p.name] = p
         self.props.calculateWeights()
 
     def _refreshProposalProbsAndTunings(self):
@@ -1658,7 +1659,7 @@ class Mcmc(object):
 
         # Tabulate topology changes for 'local', if any were attempted.
         doTopol = 0
-        p = self.props.proposalsDict.get('local')
+        p = self.props.topologyProposalsDict.get('local')
         if p:
             for tNum in range(self.nChains):
                 if p.nTopologyChangeAttempts[tNum]:
@@ -1682,7 +1683,7 @@ class Mcmc(object):
 
         # do the same for eTBR
         doTopol = 0
-        p = self.props.proposalsDict.get('eTBR')
+        p = self.props.topologyProposalsDict.get('eTBR')
         if p:
             for tNum in range(self.nChains):
                 if p.nTopologyChangeAttempts[tNum]:
@@ -1705,7 +1706,7 @@ class Mcmc(object):
                 print("%stopology changes in any of the chains." % spacer)
 
         # Check for aborts.
-        p = self.props.proposalsDict.get('local')
+        p = self.props.topologyProposalsDict.get('local')
         if p:
             if hasattr(p, 'nAborts'):
                 if p.nAborts[0]:
@@ -1717,7 +1718,7 @@ class Mcmc(object):
                     print("The 'local' proposal had no aborts (either due to brLen proposals")
                     print("too big or too small, or due to violated constraints).")
 
-        p = self.props.proposalsDict.get('eTBR')
+        p = self.props.topologyProposalsDict.get('eTBR')
         if p:
             if hasattr(p, 'nAborts'):
                 if p.nAborts[0]:
@@ -1728,11 +1729,16 @@ class Mcmc(object):
                     if self.constraints:
                         print("The 'eTBR' proposal had no aborts (due to violated constraints).")
 
-        for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-            p = self.props.proposalsDict.get(pN)
-            if p:
-                if hasattr(p, 'nAborts'):
-                    print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+        for pN in ['polytomy']:
+            for p in self.props.proposals:
+                if p.name == pN:
+                    if hasattr(p, 'nAborts'):
+                        print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+        for pN in ['compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+            for p in self.props.proposals:
+                if p.name == pN:
+                    if hasattr(p, 'nAborts'):
+                        print("The %15s proposal (part %i) had %5i aborts." % (p.name, p.pNum, p.nAborts[0]))
 
         if self.nChains > 1:
             print("\n\nAcceptances and tunings by temperature")
@@ -1818,7 +1824,7 @@ class Mcmc(object):
             # in the polytomy move, we want to pre-compute the logs of
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
-            p = self.props.proposalsDict.get('polytomy')
+            p = self.props.topologyProposalsDict.get('polytomy')
             if p and self.polytomyUseResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
@@ -2200,10 +2206,9 @@ class Mcmc(object):
                             aProposal.tune(tempNum)
 
                 # print "   Mcmc.run(). finished a gen on chain %i" % (chNum)
-                for prNm in abortableProposals:
-                    ret = self.props.proposalsDict.get(prNm)
-                    if ret:
-                        ret.doAbort = False
+                for p in self.props.proposals:
+                    if p.name in abortableProposals:
+                        p.doAbort = False
 
             # Do swap, if there is more than 1 chain.
             if self.nChains == 1:
