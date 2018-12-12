@@ -2532,9 +2532,9 @@ class Tree(object):
             print('    Pre- or postOrder do not match.')
             return var.DIFFERENT
 
-        if self._nInternalNodes != otherTree._nInternalNodes:
+        if self.nInternalNodes != otherTree.nInternalNodes:
             print(complaintHead)
-            print('    _nInternalNodes differ.')
+            print('    nInternalNodes differ.')
             return var.DIFFERENT
 
         # partLikes
