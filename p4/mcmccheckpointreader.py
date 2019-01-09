@@ -99,14 +99,35 @@ class McmcCheckPointReader(object):
         if verbose:
             self.dump()
 
-    def dump(self):
+    def dump(self, extras=False):
         print("McmcCheckPoints (%i checkPoints read)" % len(self.mm))
-        print("%12s %12s %12s %12s" % (" ", "index", "run", "gen+1"))
-        print("%12s %12s %12s %12s" % (" ", "-----", "---", "-----"))
-        for i in range(len(self.mm)):
-            m = self.mm[i]
-            # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
-            print("%12s %12s %12s %12s" % (" ", i, m.runNum, m.gen + 1))
+        if extras:
+            print("%12s %12s %12s %12s %12s %12s %12s" % (
+                " ", "index", "run", "gen+1", "cpInterval", "sampInterv", "nSamps"))
+            print("%12s %12s %12s %12s %12s %12s %12s" % (
+                " ", "-----", "---", "-----", "----------", "----------", "------"))
+            for i in range(len(self.mm)):
+                m = self.mm[i]
+                assert m.checkPointInterval % m.sampleInterval == 0
+                thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
+                assert thisNSamps == m.treePartitions.nTrees
+                # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
+                print("%12s %12s %12s %12s %12s %12s %12s" % (
+                    " ", i, m.runNum, m.gen + 1, m.checkPointInterval, m.sampleInterval, thisNSamps))
+        else:
+            print("%12s %12s %12s %12s %12s" % (
+                " ", "index", "run", "gen+1", "nSamps"))
+            print("%12s %12s %12s %12s %12s" % (
+                " ", "-----", "---", "-----", "------"))
+            for i in range(len(self.mm)):
+                m = self.mm[i]
+                assert m.checkPointInterval % m.sampleInterval == 0
+                thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
+                assert thisNSamps == m.treePartitions.nTrees
+                # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
+                print("%12s %12s %12s %12s %12s" % (
+                    " ", i, m.runNum, m.gen + 1, thisNSamps))
+            
 
     def compareSplits(self, mNum1, mNum2, verbose=True, minimumProportion=0.1):
         """Do the TreePartitions.compareSplits() method between two checkpoints 
