@@ -2641,6 +2641,7 @@ class Mcmc(object):
         for chNum in range(self.nChains):
             ch = self.chains[chNum]
             ch.curTree.data = None
+            ch.curTree.savedLogLike = ch.curTree.logLike
             ch.propTree.data = None
         
         theCopy = copy.deepcopy(self)
@@ -2658,6 +2659,11 @@ class Mcmc(object):
             ch.curTree.data = savedData
             #print("After restoring data", end=' ')
             ch.curTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
+            theDiff = math.fabs(ch.curTree.savedLogLike - ch.curTree.logLike)
+            if theDiff > 0.1:
+                gm = ["Mcmc._checkPoint(), chainNum %i" % chainNum]
+                gm.append("Old curTree.logLike %g, new curTree.logLike %g, diff %g" % (ch.curTree.savedLogLike, ch.curTree.logLike, theDiff))
+                raise P4Error(gm)
             ch.propTree.data = savedData
             ch.propTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
 
