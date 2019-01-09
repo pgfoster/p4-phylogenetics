@@ -19,6 +19,5 @@ cpr.writeProposalAcceptances()
 # Get a single Mcmc object ..
 if 0:
     m = cpr.mm[0]
-    print(m.tunings)
 
 
