@@ -12,6 +12,10 @@ import sys
 import os
 import shutil
 
+if (sys.version_info < (3, 0)):
+    print('P4 uses Python3')
+    sys.exit(1)
+
 sys.path.insert(0, "p4")
 import version
 
@@ -25,11 +29,11 @@ try:
 except ImportError:
     print("P4 needs scipy")
     sys.exit()
-try:
-    import readline
-except ImportError:
-    print("P4 wants a Python built with 'readline', and your Python does not appear to have it.")
-    sys.exit()
+# try:
+#     import readline
+# except ImportError:
+#     print("P4 wants a Python built with 'readline', and your Python does not appear to have it.")
+#     sys.exit()
 
 ############################################################
 
@@ -192,7 +196,7 @@ setup(name="p4",
       #             'install_scripts':P4_install_scripts},
       scripts = ["bin/p4"],
       #data_files= ['share/Examples', 'share/sphinxdoc'],
-      packages=["p4"],
+      packages=["p4", "p4.interactive"],
       ext_package="p4",
       ext_modules=[Extension("pf",
                              pfSources,
