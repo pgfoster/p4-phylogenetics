@@ -861,14 +861,14 @@ def recode_sequence(sequence, converter, positions=None, code="Standard"):
         try:
             # Make a Codon instance (to convert it afterwards).
             codon = Codon(sequence[(subst_size * i):(subst_size * (i+1))], code)
-        except CodonTranslationError, e:
+        except CodonTranslationError(e):
             sys.stderr.write(
                 "%s\nProblem at sequence slice %i:%i\n" % (
                     e, subst_size * i, subst_size * (i+1)))
             warnings.warn("We will replace the codon by indels.\n")
             try:
                 codon = Codon("-" * subst_size, code)
-            except CodonTranslationError, e:
+            except CodonTranslationError(e):
                 sys.stderr.write("We still don't know how to translate the codon. "
                                  "Bad implementation?\n")
                 sys.exit(1)
