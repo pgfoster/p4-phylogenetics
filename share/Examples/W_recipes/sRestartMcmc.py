@@ -2,12 +2,20 @@
 read("d.nex")
 d = Data()
 m = func.unPickleMcmc(0, d)
+
 if 0:
-    m.tunings.chainTemp = 0.15
-    m.tunings.relRate = 1.2
-    #m.tunings.parts[0].rMatrix = 1000.0
-    #m.tunings.parts[0].comp = 50.
-    #m.prob.comp = 0
-m.run(4000)
+    # You probably don't want to do this, but 
+    # it is possible here to change the mcmc here.
+    # eg
+    # m.sampleInterval = 200
+
+# Restart the run with a set number of generations, eg
+# m.run(100000)
+
+# Or set the number of gens in terms of the checkPointInterval
+print("The checkpoint interval is currently %i" % m.checkPointInterval)
+
+# For example, say to do two more checkpoints' worth of gens.
+# m.run(m.checkPointInterval * 2)
 
 
