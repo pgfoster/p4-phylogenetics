@@ -5,7 +5,7 @@ m = func.unPickleMcmc(0, d)
 
 if 0:
     # You probably don't want to do this, but 
-    # it is possible here to change the mcmc here.
+    # it is possible to change the mcmc here.
     # eg
     # m.sampleInterval = 200
 

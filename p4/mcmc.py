@@ -2660,10 +2660,14 @@ class Mcmc(object):
             #print("After restoring data", end=' ')
             ch.curTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
             theDiff = math.fabs(ch.curTree.savedLogLike - ch.curTree.logLike)
-            if theDiff > 0.1:
-                gm = ["Mcmc._checkPoint(), chainNum %i" % chainNum]
-                gm.append("Old curTree.logLike %g, new curTree.logLike %g, diff %g" % (ch.curTree.savedLogLike, ch.curTree.logLike, theDiff))
-                raise P4Error(gm)
+            if theDiff > 0.01:
+                theMessage = "Mcmc._checkPoint(), chainNum %i. " % chNum
+                theMessage += "Bad likelihood calculation just before writing the checkpoint. "
+                theMessage += "Old curTree.logLike %g, new curTree.logLike %g, diff %g" % (ch.curTree.savedLogLike, ch.curTree.logLike, theDiff)
+                self.logger.info(theMessage)
+                print()
+                print(theMessage)
+                sys.stdout.flush()
             ch.propTree.data = savedData
             ch.propTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
 
