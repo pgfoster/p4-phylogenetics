@@ -258,7 +258,7 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
 
             // print the simCats, root sequence, and pInvar.
             // Note we have dp from refTree->data, and we have d->parts[pNum] where the sim results are.
-            if(0) {
+            if((0)) {
                 if(d->parts[pNum]->simCats) {
                     //printf("part %i dp->simCats.  nCat=%i\n", pNum, refTree->model->parts[pNum]->nCat);
                     for(i = 0; i < dp->nChar; i++) {
@@ -302,7 +302,7 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
                 }
             }
             
-            if(0) {
+            if((0)) {
                 printf("part %i dp->simCats.  nCat=%i\n", pNum, mp->nCat);
                 for(i = 0; i < dp->nChar; i++) {
                     printf("%1i", dp->simCats[i]);
@@ -322,7 +322,7 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
             }
             mp->charStatePicker[mp->dim -1] = 1.0;
 
-            if(0) {
+            if((0)) {
                 printf("Part %i mp->charStatePicker is\n", pNum);
                 for(j = 0; j < mp->dim; j++) {
                     printf("%7.4f", mp->charStatePicker[j]);
@@ -694,7 +694,7 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
         //printf("\n");
     }
 
-    if(0) {
+    if((0)) {
         // Some diagnostics ...
         for(i = 0; i <  (mp->dim * (mp->nCat + 1)); i++) {
             printf("    %3i  %10.8f \n", i, mp->ancStPicker[i]);
@@ -833,7 +833,7 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
         dp->drawAncStResults->catNum = -1;
         dp->drawAncStResults->chStNum = -1;
     }
-    if(0) {
+    if((0)) {
         printf("chStNum %i, catNum %i, isInvar %i, invarChNum %i\n", 
                dp->drawAncStResults->chStNum,
                dp->drawAncStResults->catNum,
@@ -876,7 +876,7 @@ PyObject *p4_expectedCompositionCounts(p4_tree *t, int partNum)
 
     //printf("p4_treeSim.c: p4_expectedCompositionCounts here\n");
 
-    if(0) {
+    if((0)) {
         printf("    %15s ", "preOrder");
         for(i = 0; i < t->nNodes; i++) {
             printf("%i ", t->preOrder[i]);
@@ -968,7 +968,7 @@ PyObject *p4_expectedComposition(p4_tree *t)
 
     //printf("p4_treeSim.c: p4_expectedCompositionC here\n");
 
-    if(0) {
+    if((0)) {
         printf("    %15s ", "preOrder");
         for(i = 0; i < t->nNodes; i++) {
             printf("%i ", t->preOrder[i]);

@@ -819,7 +819,7 @@ void setGlobalInvarSitesVec(part *thePart)
 	
 
 
-    if(0){
+    if((0)){
         printf("globalInvarSitesVec.\n");
         printf("    A small positive int means possibly constant.\n");  
         printf("    Zero means varied\n");
@@ -835,7 +835,7 @@ void setGlobalInvarSitesVec(part *thePart)
         }
 
     }
-    if(0){
+    if((0)){
         int nInvarSites = 0;
 
         for(p = 0; p < thePart->nPatterns; p++) {

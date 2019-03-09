@@ -61,7 +61,7 @@ void logDetFillFxy(int *nUnambig, int *nAmbig, int *nDoubleGap, char *seq, int s
     for(i = 0; i < dimSquared; i++) {
         normUnambig[i] = refUnambigCountMatrix[i] / nUnambigD;
     }
-    if(0) {
+    if((0)) {
         printf("refUnambigCountMatrix = \n");
         for(i = 0; i < dim; i++) {
             for(j = 0; j < dim; j++) {
@@ -70,7 +70,7 @@ void logDetFillFxy(int *nUnambig, int *nAmbig, int *nDoubleGap, char *seq, int s
             printf("\n");
         }
     }
-    if(0) {
+    if((0)) {
         printf("normUnambig = \n");
         for(i = 0; i < dim; i++) {
             for(j = 0; j < dim; j++) {
@@ -79,7 +79,7 @@ void logDetFillFxy(int *nUnambig, int *nAmbig, int *nDoubleGap, char *seq, int s
             printf("\n");
         }
     }
-    if(0) {
+    if((0)) {
         printf("refAmbigCountMatrix = \n");
         for(i = 0; i < bigDim; i++) {
             for(j = 0; j < bigDim; j++) {
@@ -317,7 +317,7 @@ void logDetFillFxy(int *nUnambig, int *nAmbig, int *nDoubleGap, char *seq, int s
                             }
                         }
                     } // end else fsum is not zero
-                    if(0) {
+                    if((0)) {
                         printf("bigFxy, after partial ambig resolution\n");
                         for(i1 = 0; i1 < dim; i1++) {
                             for(j1 = 0; j1 < dim; j1++) {

@@ -125,7 +125,7 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
     }
 	
     // summary
-    if(0) {
+    if((0)) {
         pos = 0;
         for(i = 0; i < aTree->model->nFreePrams; i++) {
             printf("parameters[%i] = %f\n", i, parameters[i]);
@@ -259,7 +259,7 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                         c->val[i] = c->val[i] / sum;
                     }
                 }
-                if(0) {
+                if((0)) {
                     sum2 = 0.0;
                     for(i = 0; i < mp->dim; i++) {
                         sum2 += c->val[i];
@@ -567,7 +567,7 @@ void p4_allBrentPowellOptimize(p4_tree *aTree)
         nPrams = aTree->model->nFreePrams;
     }
 
-    if(0) {
+    if((0)) {
         printf("Starting p4_allBrentPowellOptimize: nPrams is %i\n", nPrams);
         printf("...about to windUpParameters.\n");
     }
@@ -577,13 +577,13 @@ void p4_allBrentPowellOptimize(p4_tree *aTree)
         exit(1);
     }
     p4_windUpParameters(aTree, parameters, NULL, NULL, NULL);
-    if(0) {
+    if((0)) {
         printf("p4_treeOptimize.c: allBrentPowellOptimize() starting with these params\n");
         printf("nPrams is %i\n", nPrams);
         for(i = 0; i < nPrams; i++) {
             printf("         parameters[%i] is %.12f\n", i, parameters[i]);
         }
-        if(0) {
+        if((0)) {
             printf("\n");
             for(i = 0; i < aTree->nNodes; i++) {
                 if(aTree->nodes[i] != aTree->root) {
@@ -651,7 +651,7 @@ void p4_allBrentPowellOptimize(p4_tree *aTree)
     logLike = p4_treeLogLike(aTree, 0);
 
 #if 1
-    if(0) {
+    if((0)) {
         printf("     logLike %f\n", logLike);
         printf("     %i total likelihood evaluations\n", totalLikelihoodEvals);
         printf("Starting the opt again.  About to windUpParameters.\n");
@@ -862,7 +862,7 @@ void p4_newtAndBrentPowellOpt(p4_tree *aTree)
         p4_unWindParameters(thisTree, parameters);
         p4_setPrams(thisTree);
         diff = logLike - previousLogLike;
-        if(0) {
+        if((0)) {
             if(diff < -1.0e-6) {
                 printf("    p4_newtAndBrentPowellOpt().  logLike=%f, diff=%f, got worse! (%i likelihoodEvaluations)\n", 
                        logLike, diff, likelihoodEvaluations);
@@ -888,7 +888,7 @@ void p4_newtAndBrentPowellOpt(p4_tree *aTree)
 
     logLike = p4_treeLogLike(aTree, 0);
     totalLikelihoodEvals++;
-    if(0) {
+    if((0)) {
         printf("     p4_newtAndBrentPowellOpt().  logLike %f\n", logLike);
         printf("     %i total likelihood evaluations\n", totalLikelihoodEvals);
         //printf("Starting the opt again.  About to windUpParameters.\n");

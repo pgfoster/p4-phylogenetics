@@ -239,7 +239,7 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
                 // working space for internal calcs by
                 // DiscreteGamma, but boringly ends up as all 1.0/K
                 DiscreteGamma(g->freqs, g->rates, g->val[0], g->val[0], mp->nCat, 0);
-                if(0) {
+                if((0)) {
                     printf("gdasrv[%i] = %f, free=%i\n", mNum, g->val[0], g->free);
                     for(i = 0; i < mp->nCat; i++) {
                         printf("  %i  %f   %f\n", i, g->freqs[i], g->rates[i]);
@@ -1084,7 +1084,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         if(getSiteLikes) patternLikes[seqPos] = like;
     }
 
-    if(0) {
+    if((0)) {
         if(getSiteLikes) {
             printf("tree.c: treeLogLike: patternLikes\n");
             for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
@@ -1318,7 +1318,7 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
 
     }
 
-    if(0) {
+    if((0)) {
         if(getSiteLikes) {
             printf("tree.c: treeLogLike: patternLikes\n");
             for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {

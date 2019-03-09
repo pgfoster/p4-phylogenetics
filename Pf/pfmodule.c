@@ -1569,7 +1569,7 @@ pf_gdasrvCalcRates(PyObject *self, PyObject *args)
 
     //printf("about to DiscreteGamma. g->val[0]=%f\n", g->val[0]);
     DiscreteGamma(g->freqs, g->rates, g->val[0], g->val[0], g->nCat, 0);
-    if(0){
+    if((0)){
         int i;
         printf("pfmodule: pf_gdasrvCalcRates: shape=%f, free=%i\n", g->val[0], g->free);
         for(i = 0; i < g->nCat; i++) {
