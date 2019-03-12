@@ -590,8 +590,7 @@ PyObject *singleSequenceBaseCounts(part *thePart, int sequenceNum)
 			
     thePyList = PyList_New(thePart->dim);
     for(i = 0; i < thePart->dim; i++) {
-        //PyList_SetItem(thePyList, i, PyFloat_FromDouble(totals[i]));
-        PyList_SetItem(thePyList, i, PyInt_FromLong((long int)totals[i]));
+        PyList_SetItem(thePyList, i, PyLong_FromLong((long int)totals[i]));
     }
 	
     free(totals);
