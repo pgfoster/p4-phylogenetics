@@ -74,6 +74,7 @@ p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, doub
     aTree->simSequences = NULL;
     aTree->internalSequences = NULL;
 	
+    aTree->mcmcTreeCallback = NULL;
 
 
 #if 0 
@@ -167,6 +168,12 @@ void p4_freeTree(p4_tree *aTree)
     aTree->ints = NULL;
     free(aTree->stack);
     aTree->stack = NULL;
+    
+    if(aTree->mcmcTreeCallback) {
+        Py_XDECREF(aTree->mcmcTreeCallback);
+        aTree->mcmcTreeCallback = NULL;
+    }
+
     free(aTree);
     aTree = NULL;
     //printf("p4_tree.c: finished free-ing tree\n");

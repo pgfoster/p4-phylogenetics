@@ -952,6 +952,7 @@ class Mcmc(object):
         self.doHeatingHack = False
         self.heatingHackTemperature = 5.0
         #self.heatingHackProposalNames = ['local', 'eTBR']
+
         
 
     def _setLogger(self):
@@ -986,6 +987,18 @@ class Mcmc(object):
         # This logger only logs to the file, not to stderr.
         self.logger = logging.getLogger("logFileOnly")
         
+    def _logFromPfModule(self, treeAddress, message):
+        tinfo = None
+        for chNum,ch in enumerate(self.chains):
+            if ch.curTree.cTree == treeAddress:
+                tinfo = "chain %i (tempNum %i), curTree " % (chNum, ch.tempNum)
+            elif ch.propTree.cTree == treeAddress:
+                tinfo = "chain %i (tempNum %i), propTree " % (chNum, ch.tempNum)
+        if not tinfo:
+            tinfo = "unknown tree "
+        message = tinfo + message
+        #print(treeAddress, message)
+        self.logger.info(message)
         
 
     def _makeProposals(self):
@@ -1943,15 +1956,18 @@ class Mcmc(object):
             for dNum in range(self.nChains - 1):
                 self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
-        if self.props.proposals:
-            # Its either a re-start, or it has been thru autoTune().
-            # I can tell the difference by self.gen, which is -1 after
-            # autoTune()
-            if self.gen == -1:
-                self._makeChainsAndProposals()
-                self._setOutputTreeFile()
-                if self.simulate:
-                    self._writeSimFileHeader(self.tree)
+        if self.props.proposals:  # It is a re-start
+
+            # # autoTune() is gone now, so I don't need this any more, right?
+            # # Its either a re-start, or it has been thru autoTune().
+            # # I can tell the difference by self.gen, which is -1 after
+            # # autoTune()
+            # if self.gen == -1:
+            #     self._makeChainsAndProposals()
+            #     self._setOutputTreeFile()
+            #     if self.simulate:
+            #         self._writeSimFileHeader(self.tree)
+
             # The probs and tunings may have been changed by the user.
             self._refreshProposalProbsAndTunings()
 
@@ -1978,6 +1994,12 @@ class Mcmc(object):
             self._setOutputTreeFile()
             if self.simulate:
                 self._writeSimFileHeader(self.tree)
+
+        for ch in self.chains:
+            pf.setMcmcTreeCallback(ch.curTree.cTree, self._logFromPfModule)
+            pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
+        # Should I do self.tree and self.simTree as well?
+
         if verbose:
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()

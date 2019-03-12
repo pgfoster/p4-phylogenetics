@@ -2379,6 +2379,36 @@ pf_newtonRaftery94_eqn16(PyObject *self, PyObject *args)
     return Py_BuildValue("d", newtonRaftery94_eqn16(logLikes, len, harmMean, delta, verbose));
 }
 
+// ==================
+// callback
+// ==================
+
+// static PyObject *mcmcTreeCallback = NULL;
+
+static PyObject *
+pf_setMcmcTreeCallback(PyObject *dummy, PyObject *args)
+{
+    p4_tree  *aTree;
+    PyObject *result = NULL;
+    PyObject *temp;
+
+    if (!PyArg_ParseTuple(args, "lO:setMcmcTreeCallback", &aTree, &temp)) {
+        printf("Error pf_setMcmcTreeCallback: couldn't parse tuple\n");
+        return NULL;
+    }
+    if (!PyCallable_Check(temp)) {
+            PyErr_SetString(PyExc_TypeError, "pf_setMcmcTreeCallback(): parameter must be callable");
+            return NULL;
+    }
+    Py_XINCREF(temp);              /* Add a reference to new callback */
+    Py_XDECREF(aTree->mcmcTreeCallback);  /* Dispose of previous callback */
+    aTree->mcmcTreeCallback = temp;       /* Remember new callback */
+    /* Boilerplate to return "None" */
+    Py_INCREF(Py_None);
+    result = Py_None;
+    
+    return result;
+}
 
 
 #if 0
@@ -2652,6 +2682,7 @@ static PyMethodDef pfMethods[] = {
     {"logDetFillFxy", pf_logDetFillFxy, METH_VARARGS},
     {"effectiveSampleSize", pf_effectiveSampleSize, METH_VARARGS},
     {"newtonRaftery94_eqn16", pf_newtonRaftery94_eqn16, METH_VARARGS},
+    {"setMcmcTreeCallback", pf_setMcmcTreeCallback, METH_VARARGS},
 
     {"test", pf_test, METH_VARARGS},
 
