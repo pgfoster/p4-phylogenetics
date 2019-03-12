@@ -96,7 +96,7 @@ PyObject *rell(int nBoots, rellStuff *rStuff)
 	   
 	thePyList = PyList_New(rStuff->nTrees);
 	for(i = 0; i < rStuff->nTrees; i++) {
-		PyList_SetItem(thePyList, i, PyInt_FromLong((long int)winners[i]));
+            PyList_SetItem(thePyList, i, PyLong_FromLong((long int)winners[i]));
 	}
 	free(winners);
 	free(indxs);
