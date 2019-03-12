@@ -344,7 +344,57 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
             }
         }
     }
+
+
+    // This is a hack to find and correct rare negative values in the bigPDecks.
+    // Find them, and set them to half of the smallest positive value.
+    if ((1)) {
+        int row, col, has_negs;
+        double smallest;
+        for(rate = 0; rate < mp->nCat; rate++) {
+            for(row=0; row< mp->dim; row++) {
+                has_negs = 0;
+                for(col=0; col< mp->dim; col++) {
+                    if(aNode->bigPDecks[pNum][rate][row][col] < 0.0) {
+                        has_negs += 1;
+                        printf("node %i, bigP[pNum=%i][rate=%i][%i][%i] %g\n", 
+                               aNode->nodeNum, pNum, rate, row, col, aNode->bigPDecks[pNum][rate][row][col]);
+                    }
+                }
+                if(has_negs) {
+                    smallest = 1.0;
+                    for(col=0; col< mp->dim; col++) {
+                        if(aNode->bigPDecks[pNum][rate][row][col] >= 0.0 && aNode->bigPDecks[pNum][rate][row][col] < smallest) {
+                            smallest = aNode->bigPDecks[pNum][rate][row][col];
+                        }
+                    }
+                    for(col=0; col< mp->dim; col++) {
+                        if(aNode->bigPDecks[pNum][rate][row][col] < 0.0) {
+                            aNode->bigPDecks[pNum][rate][row][col] = smallest / 2.;
+                        }
+                    }
+                } 
+            }
+        }
+    }
     
+    if ((0)) {
+        int row, col;
+        rate = 0;
+        if(aNode->nodeNum == 16) {
+            printf("aNode->bigPDecks[pNum=%i][rate=%i][17][18] = %g\n", 
+                   pNum, rate, aNode->bigPDecks[pNum][rate][17][18]);
+            printf("aNode->bigPDecks[pNum=%i][rate=%i][18][17] = %g\n", 
+                   pNum, rate, aNode->bigPDecks[pNum][rate][18][17]);
+
+            row = 17;
+            for(col=0; col< mp->dim; col++) {
+                printf("[%i]%g ", col, aNode->bigPDecks[pNum][rate][row][col]);
+            }
+            printf("\n");
+
+        }
+    }    
 }
 
 
