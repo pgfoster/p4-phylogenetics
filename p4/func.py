@@ -2829,7 +2829,28 @@ def reseedCRandomizer(newSeed):
     duplicate runs of something come out different.  This is not for
     the GSL random stuff.  Confusing to have 2 systems, innit?  And
     then there is the 3rd system that Python uses in the random
-    module.  Sorry!"""
+    module.  Sorry!
+
+    If you wanted for example to repeat an MCMC, there are four random
+    number generators to contend with.  You could do something like
+    this (where I am using a seed of zero for all -- you could use
+    your own seed, and they do not need to be the same)::
+
+        # for C random() function
+        func.reseedCRandomizer(0)
+        
+        # for gsl
+        var.gsl_rng = pf.get_gsl_rng()
+        pf.gsl_rng_set(var.gsl_rng, 0)
+        
+        # for the Python random library
+        random.seed(0)
+        
+        # for Numpy and Scipy.  Possiby should use "random_state" parameter insted; see docs,
+        # https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html
+        numpy.random.seed(0)
+
+    """
 
     pf.reseedCRandomizer(newSeed)
 
