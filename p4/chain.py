@@ -2105,7 +2105,7 @@ class Chain(object):
         mpCur = self.curTree.model.parts[theProposal.pNum]
         mpProp = self.propTree.model.parts[theProposal.pNum]
 
-        assert not mpCur.ndch2, "allRMatricesDir proposal is not for ndch2"  # Why not?
+        #assert not mpCur.ndch2, "allRMatricesDir proposal is not for ndch2"  # Why not?
 
         # Make proposals, accumulate log proposal ratios in the same loop
         self.logProposalRatio = 0.0
@@ -2126,8 +2126,8 @@ class Chain(object):
                 thisSum = mtProp.val.sum()
                 mtProp.val /= thisSum
 
-            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
-            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(len(mtCur.val), theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(len(mtCur.val), theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
         # prior ratio
