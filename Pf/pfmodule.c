@@ -2410,6 +2410,21 @@ pf_setMcmcTreeCallback(PyObject *dummy, PyObject *args)
     return result;
 }
 
+static PyObject *
+pf_unsetMcmcTreeCallback(PyObject *dummy, PyObject *args)
+{
+    p4_tree  *aTree;
+
+    if (!PyArg_ParseTuple(args, "l", &aTree)) {
+        printf("Error pf_unsetMcmcTreeCallback: couldn't parse tuple\n");
+        return NULL;
+    }
+    Py_XDECREF(aTree->mcmcTreeCallback);  /* Dispose of previous callback */
+    aTree->mcmcTreeCallback = NULL; 
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 
 #if 0
 static PyObject *
@@ -2683,21 +2698,13 @@ static PyMethodDef pfMethods[] = {
     {"effectiveSampleSize", pf_effectiveSampleSize, METH_VARARGS},
     {"newtonRaftery94_eqn16", pf_newtonRaftery94_eqn16, METH_VARARGS},
     {"setMcmcTreeCallback", pf_setMcmcTreeCallback, METH_VARARGS},
+    {"unsetMcmcTreeCallback", pf_unsetMcmcTreeCallback, METH_VARARGS},
 
     {"test", pf_test, METH_VARARGS},
 
     {NULL, NULL}
 };
 
-#if PY_MAJOR_VERSION < 3
-
-PyMODINIT_FUNC
-initpf(void)
-{
-    (void) Py_InitModule("pf", pfMethods);
-}
-
-#else
 
 static struct PyModuleDef pfmodule = {
    PyModuleDef_HEAD_INIT,
@@ -2714,4 +2721,3 @@ PyInit_pf(void)
     return PyModule_Create(&pfmodule);
 }
 
-#endif
