@@ -348,20 +348,24 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
 
     // This is a hack to find and correct rare negative values in the bigPDecks.
     // Find them, and set them to half of the smallest positive value.
-    if ((1)) {
-        int row, col, has_negs;
+    if ((0)) {
+        int row, col, has_negs, totalNegs;
         double smallest;
         for(rate = 0; rate < mp->nCat; rate++) {
+            totalNegs = 0;
             for(row=0; row< mp->dim; row++) {
                 has_negs = 0;
                 for(col=0; col< mp->dim; col++) {
                     if(aNode->bigPDecks[pNum][rate][row][col] < 0.0) {
                         has_negs += 1;
-                        printf("node %i, bigP[pNum=%i][rate=%i][%i][%i] %g\n", 
-                               aNode->nodeNum, pNum, rate, row, col, aNode->bigPDecks[pNum][rate][row][col]);
+                        if(aNode->bigPDecks[pNum][rate][row][col] < -1.e-15) {
+                            printf("node %i, bigP[pNum=%i][rate=%i][%i][%i] %g\n", 
+                                   aNode->nodeNum, pNum, rate, row, col, aNode->bigPDecks[pNum][rate][row][col]);
+                        }
                     }
                 }
                 if(has_negs) {
+                    totalNegs += has_negs;
                     smallest = 1.0;
                     for(col=0; col< mp->dim; col++) {
                         if(aNode->bigPDecks[pNum][rate][row][col] >= 0.0 && aNode->bigPDecks[pNum][rate][row][col] < smallest) {
@@ -375,6 +379,70 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
                     }
                 } 
             }
+            if(totalNegs) {
+                //printf("Got %i totalNegs, and mcmcTreeCallback is %li\n", totalNegs, (long int)aNode->tree->mcmcTreeCallback);
+                if(aNode->tree->mcmcTreeCallback) {
+                    PyObject *arglist;
+                    PyObject *result;
+                    char message[256];
+                    snprintf(message, sizeof(message), 
+                             "Corrected %i negative values in bigP, node %i, part %i, rate %i", 
+                             totalNegs, aNode->nodeNum, pNum, rate);
+                    
+                    arglist = Py_BuildValue("(ls)", (long *)aNode->tree, message);
+                    result = PyObject_CallObject(aNode->tree->mcmcTreeCallback, arglist);
+                    Py_DECREF(arglist);
+                    //if (result == NULL)
+                    //    return NULL; 
+                    Py_DECREF(result);
+
+                } else {
+                    printf("Corrected %i negative values in bigP, node %i, part %i, rate %i\n", totalNegs, aNode->nodeNum, pNum, rate);
+                }
+            }
+        }
+    }
+    
+    if ((0)) {
+        // Check that rows sum to unity
+        int row, col;
+        double rowSum = 0.0;
+        double epsi = 1.0e-14;
+        double diff = 0.0;
+        int bads = 0;
+        for(rate = 0; rate < mp->nCat; rate++) {
+            for(row=0; row< mp->dim; row++) {
+                rowSum = 0.0;
+                for(col=0; col< mp->dim; col++) {
+                    rowSum += aNode->bigPDecks[pNum][rate][row][col];
+                }
+                diff = fabs(1.0 - rowSum);
+                if(diff > epsi) {
+                    bads += 1;
+                } 
+                for(col=0; col< mp->dim; col++) {
+                    aNode->bigPDecks[pNum][rate][row][col] /= rowSum;
+                }
+            }
+
+            if(bads) {
+                if(aNode->tree->mcmcTreeCallback) {
+                    PyObject *arglist;
+                    PyObject *result;
+                    char message[256];
+                    snprintf(message, sizeof(message), "Corrected %i bad row sums in bigP, node %i, part %i, rate %i", bads, aNode->nodeNum, pNum, rate);
+
+                    arglist = Py_BuildValue("(ls)", (long *)aNode->tree, message);
+                    result = PyObject_CallObject(aNode->tree->mcmcTreeCallback, arglist);
+                    Py_DECREF(arglist);
+                    //if (result == NULL)
+                    //    return NULL; 
+                    Py_DECREF(result);
+
+                } else {
+                    printf("Corrected %i bad row sums in bigP, node %i, part %i, rate %i\n", bads, aNode->nodeNum, pNum, rate);
+                }
+            } 
         }
     }
     
