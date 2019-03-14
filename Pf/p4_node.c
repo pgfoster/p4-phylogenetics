@@ -402,12 +402,32 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
             }
         }
     }
-    
+
+    if ((0)) {
+        // test the callback
+        printf("The callback is %li\n", (long int)aNode->tree->mcmcTreeCallback);
+        if(aNode->tree->mcmcTreeCallback) {
+            PyObject *arglist;
+            PyObject *result;
+            char message[256];
+            snprintf(message, sizeof(message), "mcmcTreeCallback is set.");
+            arglist = Py_BuildValue("(ls)", (long *)aNode->tree, message);
+            result = PyObject_CallObject(aNode->tree->mcmcTreeCallback, arglist);
+            Py_DECREF(arglist);
+            //if (result == NULL)
+            //    return NULL; 
+            Py_DECREF(result);
+            
+        } else {
+            printf("mcmcTreeCallback is not set.\n");
+        }
+    }
+
     if ((0)) {
         // Check that rows sum to unity
         int row, col;
         double rowSum = 0.0;
-        double epsi = 1.0e-14;
+        double epsi = 1.0e-13;  // 1.0e-14 appeared to be too small.
         double diff = 0.0;
         int bads = 0;
         for(rate = 0; rate < mp->nCat; rate++) {
