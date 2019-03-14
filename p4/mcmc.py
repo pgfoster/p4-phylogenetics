@@ -953,6 +953,9 @@ class Mcmc(object):
         self.heatingHackTemperature = 5.0
         #self.heatingHackProposalNames = ['local', 'eTBR']
 
+        # Whether logging from the Pf module is turned on.
+        # When it is turned on, a callback is set up to self._logFromPfModule()
+        self.setupPfLogging = False
         
 
     def _setLogger(self):
@@ -977,11 +980,11 @@ class Mcmc(object):
         tinfo = None
         for chNum,ch in enumerate(self.chains):
             if ch.curTree.cTree == treeAddress:
-                tinfo = "gen %i, chain %i, curTree " % (self.gen, chNum)
+                tinfo = "gen %i, chain %i, curTree; " % (self.gen, chNum)
             elif ch.propTree.cTree == treeAddress:
-                tinfo = "gen %i, chain %i, propTree " % (self.gen, chNum)
+                tinfo = "gen %i, chain %i, propTree; " % (self.gen, chNum)
         if not tinfo:
-            tinfo = "unknown tree "
+            tinfo = "unknown tree; "
         message = tinfo + message
         #print(treeAddress, message)
         self.logger.info(message)
@@ -1982,10 +1985,11 @@ class Mcmc(object):
             if self.simulate:
                 self._writeSimFileHeader(self.tree)
 
-        # for ch in self.chains:
-        #     pf.setMcmcTreeCallback(ch.curTree.cTree, self._logFromPfModule)
-        #     pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
-        # Should I do self.tree and self.simTree as well?
+        if self.setupPfLogging:
+            for ch in self.chains:
+                pf.setMcmcTreeCallback(ch.curTree.cTree, self._logFromPfModule)
+                pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
+                # Should I do self.tree and self.simTree as well?
 
         if verbose:
             self.props.writeProposalIntendedProbs()
@@ -2644,10 +2648,11 @@ class Mcmc(object):
         savedLoggerPrinter = self.loggerPrinter
         self.loggerPrinter = None
 
-        # Get rid of the mcmcTreeCallbacks
-        # for ch in self.chains:
-        #     pf.unsetMcmcTreeCallback(ch.curTree.cTree)
-        #     pf.unsetMcmcTreeCallback(ch.propTree.cTree)
+        if self.setupPfLogging:
+            # Get rid of the mcmcTreeCallbacks
+            for ch in self.chains:
+                pf.unsetMcmcTreeCallback(ch.curTree.cTree)
+                pf.unsetMcmcTreeCallback(ch.propTree.cTree)
 
         if self.simulate:
             savedSimData = self.simTree.data
@@ -2686,9 +2691,10 @@ class Mcmc(object):
                 sys.stdout.flush()
             ch.propTree.data = savedData
             ch.propTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
-        # for ch in self.chains:
-        #     pf.setMcmcTreeCallback(ch.curTree.cTree, self._logFromPfModule)
-        #     pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
+        if self.setupPfLogging:
+            for ch in self.chains:
+                pf.setMcmcTreeCallback(ch.curTree.cTree, self._logFromPfModule)
+                pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
 
         # Get rid of c-pointers in the copy
         theCopy.tree.deleteCStuff()
