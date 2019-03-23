@@ -392,6 +392,7 @@ pf_getSiteLikes(PyObject *self, PyObject *args)
     return thePyList;
 }
 
+/*
 static PyObject *
 pf_getSiteRates(PyObject *self, PyObject *args)
 {
@@ -424,7 +425,7 @@ pf_getSiteRates(PyObject *self, PyObject *args)
     return Py_None;
 	
 }
-
+*/
 
 static PyObject *
 pf_getUnconstrainedLogLike(PyObject *self, PyObject *args)
@@ -2589,7 +2590,7 @@ static PyMethodDef pfMethods[] = {
     {"partComposition", pf_partComposition, METH_VARARGS},
     {"partSequenceSitesCount", pf_partSequenceSitesCount, METH_VARARGS},
     {"getSiteLikes", pf_getSiteLikes, METH_VARARGS},
-    {"getSiteRates", pf_getSiteRates, METH_VARARGS},
+    //{"getSiteRates", pf_getSiteRates, METH_VARARGS},
     {"getUnconstrainedLogLike", pf_getUnconstrainedLogLike, METH_VARARGS},
     {"calcEmpiricalRMatrixViaMatrixLog", pf_calcEmpiricalRMatrixViaMatrixLog, METH_VARARGS},
 
