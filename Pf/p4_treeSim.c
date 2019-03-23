@@ -959,7 +959,7 @@ PyObject *p4_expectedComposition(p4_tree *t)
     double    **expPi = NULL;
     //int nGaps;
     p4_modelPart  *mp = NULL;
-    part          *dp = NULL;
+    //part          *dp = NULL;
 	
     // We want the expected comp of the terminal nodes only.  They
     // should be in the order of the sequences.  Ie the first set
@@ -995,7 +995,7 @@ PyObject *p4_expectedComposition(p4_tree *t)
     bigTup = PyTuple_New(t->model->nParts);
     for(partNum = 0; partNum < t->model->nParts; partNum++) {
         mp = t->model->parts[partNum];
-        dp = t->data->parts[partNum];
+        //dp = t->data->parts[partNum];
         expPi = pdmatrix(t->nNodes, mp->dim);
         for(nNum = 0; nNum < t->nNodes; nNum++) {
             for(j = 0; j < mp->dim; j++) {
