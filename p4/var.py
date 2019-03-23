@@ -279,8 +279,9 @@ class Var(object):
         self._rMatrixNormalizeTo1 = numpy.array([1], numpy.int32)
 
         # see Pf/defines.h for c-language defines, which should be the same.
-        self.PIVEC_MIN = 1e-18
-        self.RATE_MIN = 1.0e-14    # ie for rMatrices, changed from 1.0e-8 nov 2016, because self._rMatrixNormalizeTo1 is set
+        self.PIVEC_MIN = 1.0e-13      # Changed from 1e-18 March 2019, to avoid getting negative bigP values
+        #self.RATE_MIN = 1.0e-14    # ie for rMatrices, changed from 1.0e-8 nov 2016, because self._rMatrixNormalizeTo1 is set
+        self.RATE_MIN = 1.0e-13    # changed from 1.e-14 March 2019, to avoid getting negative bigP values
         self.RATE_MAX = 0.9999999  # changed from 1.0e8 nov 2016, also because self._rMatrixNormalizeTo1 is set
         self.GAMMA_SHAPE_MIN = 0.000001
         self.GAMMA_SHAPE_MAX = 300.0
