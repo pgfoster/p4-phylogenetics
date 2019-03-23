@@ -345,59 +345,41 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
         }
     }
 
+    if ((1)) {
+        // Find any negative values in the bigPDecks.  If any are found
+        // that would be a serious problem, and so the program should give
+        // an error message and die.  The most likely reason, I think, is
+        // a combination of small comp values and small rate matrix
+        // values.
 
-    // This is a hack to find and correct rare negative values in the bigPDecks.
-    // Find them, and set them to half of the smallest positive value.
-    if ((0)) {
-        int row, col, has_negs, totalNegs;
-        double smallest;
+        int row, col, i;
+        FILE *fout;
         for(rate = 0; rate < mp->nCat; rate++) {
-            totalNegs = 0;
             for(row=0; row< mp->dim; row++) {
-                has_negs = 0;
                 for(col=0; col< mp->dim; col++) {
                     if(aNode->bigPDecks[pNum][rate][row][col] < 0.0) {
-                        has_negs += 1;
-                        if(aNode->bigPDecks[pNum][rate][row][col] < -1.e-15) {
-                            printf("node %i, bigP[pNum=%i][rate=%i][%i][%i] %g\n", 
-                                   aNode->nodeNum, pNum, rate, row, col, aNode->bigPDecks[pNum][rate][row][col]);
+                        // Write a report, then rudely crash.   Would be more gentle with a callback to python.
+                        if ((fout = fopen("p4_CRASH", "a+")) == NULL) {
+                            printf("p4_calculateBigPDecksPart error: Couldn't open crash report file for appending \n");
+                            return;
                         }
-                    }
-                }
-                if(has_negs) {
-                    totalNegs += has_negs;
-                    smallest = 1.0;
-                    for(col=0; col< mp->dim; col++) {
-                        if(aNode->bigPDecks[pNum][rate][row][col] >= 0.0 && aNode->bigPDecks[pNum][rate][row][col] < smallest) {
-                            smallest = aNode->bigPDecks[pNum][rate][row][col];
+                        fprintf(fout, "p4_calculateBigPDecksPart error.  Negative value.\n");
+                        fprintf(fout, "node %i, bigP[pNum=%i][rate=%i][%i][%i] %g\n", 
+                                aNode->nodeNum, pNum, rate, row, col, aNode->bigPDecks[pNum][rate][row][col]);
+                        fprintf(fout, "branch len %g\n", aNode->brLen[0]);
+                        fprintf(fout, "comp vector\n");
+                        for(i=0; i < mp->dim; i++) { 
+                            fprintf(fout, "%g, ", mp->comps[cNum]->val[i]);
                         }
+                        fprintf(fout, "\n");
+                        fprintf(fout, "May be due to var.PIVEC_MIN or var.RATE_MIN (or both) being too small.\n");
+                        fprintf(fout, "eg if var.PIVEC_MIN is 1e-16, you could try setting it to 1e-15,\n");
+                        fprintf(fout, "or if var.RATE_MIN is 1e-14, you could try setting it to 1e-13.\n");
+                        fprintf(fout, "Or possibly both.\n");
+                        fclose(fout);
+                        printf("Got a serious problem; see the file p4_CRASH \n");
+                        exit(1);
                     }
-                    for(col=0; col< mp->dim; col++) {
-                        if(aNode->bigPDecks[pNum][rate][row][col] < 0.0) {
-                            aNode->bigPDecks[pNum][rate][row][col] = smallest / 2.;
-                        }
-                    }
-                } 
-            }
-            if(totalNegs) {
-                //printf("Got %i totalNegs, and mcmcTreeCallback is %li\n", totalNegs, (long int)aNode->tree->mcmcTreeCallback);
-                if(aNode->tree->mcmcTreeCallback) {
-                    PyObject *arglist;
-                    PyObject *result;
-                    char message[256];
-                    snprintf(message, sizeof(message), 
-                             "Corrected %i negative values in bigP, node %i, part %i, rate %i", 
-                             totalNegs, aNode->nodeNum, pNum, rate);
-                    
-                    arglist = Py_BuildValue("(ls)", (long *)aNode->tree, message);
-                    result = PyObject_CallObject(aNode->tree->mcmcTreeCallback, arglist);
-                    Py_DECREF(arglist);
-                    //if (result == NULL)
-                    //    return NULL; 
-                    Py_DECREF(result);
-
-                } else {
-                    printf("Corrected %i negative values in bigP, node %i, part %i, rate %i\n", totalNegs, aNode->nodeNum, pNum, rate);
                 }
             }
         }
@@ -422,67 +404,6 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
             printf("mcmcTreeCallback is not set.\n");
         }
     }
-
-    if ((0)) {
-        // Check that rows sum to unity
-        int row, col;
-        double rowSum = 0.0;
-        double epsi = 1.0e-13;  // 1.0e-14 appeared to be too small.
-        double diff = 0.0;
-        int bads = 0;
-        for(rate = 0; rate < mp->nCat; rate++) {
-            for(row=0; row< mp->dim; row++) {
-                rowSum = 0.0;
-                for(col=0; col< mp->dim; col++) {
-                    rowSum += aNode->bigPDecks[pNum][rate][row][col];
-                }
-                diff = fabs(1.0 - rowSum);
-                if(diff > epsi) {
-                    bads += 1;
-                } 
-                for(col=0; col< mp->dim; col++) {
-                    aNode->bigPDecks[pNum][rate][row][col] /= rowSum;
-                }
-            }
-
-            if(bads) {
-                if(aNode->tree->mcmcTreeCallback) {
-                    PyObject *arglist;
-                    PyObject *result;
-                    char message[256];
-                    snprintf(message, sizeof(message), "Corrected %i bad row sums in bigP, node %i, part %i, rate %i", bads, aNode->nodeNum, pNum, rate);
-
-                    arglist = Py_BuildValue("(ls)", (long *)aNode->tree, message);
-                    result = PyObject_CallObject(aNode->tree->mcmcTreeCallback, arglist);
-                    Py_DECREF(arglist);
-                    //if (result == NULL)
-                    //    return NULL; 
-                    Py_DECREF(result);
-
-                } else {
-                    printf("Corrected %i bad row sums in bigP, node %i, part %i, rate %i\n", bads, aNode->nodeNum, pNum, rate);
-                }
-            } 
-        }
-    }
-    
-    if ((0)) {
-        int row, col;
-        rate = 0;
-        if(aNode->nodeNum == 16) {
-            printf("aNode->bigPDecks[pNum=%i][rate=%i][17][18] = %g\n", 
-                   pNum, rate, aNode->bigPDecks[pNum][rate][17][18]);
-            printf("aNode->bigPDecks[pNum=%i][rate=%i][18][17] = %g\n", 
-                   pNum, rate, aNode->bigPDecks[pNum][rate][18][17]);
-
-            row = 17;
-            for(col=0; col< mp->dim; col++) {
-                printf("[%i]%g ", col, aNode->bigPDecks[pNum][rate][row][col]);
-            }
-            printf("\n");
-
-        }
-    }    
 }
 
 
