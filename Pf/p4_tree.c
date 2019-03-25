@@ -1083,10 +1083,9 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
                 }
                 fprintf(fout, "p4_partLogLike error.  Negative like value.\n");
                 fprintf(fout, "p4_tree.c: treeLogLike: (zero-based) seqPos %i, site like %g\n", seqPos, like);
-                fprintf(fout, "May be due to var.PIVEC_MIN or var.RATE_MIN (or both) being too small.\n");
-                fprintf(fout, "eg if var.PIVEC_MIN is 1e-16, you could try setting it to 1e-15,\n");
-                fprintf(fout, "or if var.RATE_MIN is 1e-14, you could try setting it to 1e-13.\n");
-                fprintf(fout, "Or possibly both.\n");
+                fprintf(fout, "May be due to var.PIVEC_MIN, var.RATE_MIN, or var.BRLEN_MIN being too small.\n");
+                fprintf(fout, "eg if var.PIVEC_MIN is 1e-14, you could try setting it to 1e-13,\n");
+                fprintf(fout, "or if var.RATE_MIN is 1e-13, you could try setting it to 1e-12.\n");
                 fclose(fout);
                 printf("Got a serious problem; see the file p4_CRASH \n");
                 exit(1);
