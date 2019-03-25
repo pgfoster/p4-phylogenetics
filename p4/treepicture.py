@@ -1,4 +1,3 @@
-from __future__ import print_function
 import string
 import os
 from p4.var import var

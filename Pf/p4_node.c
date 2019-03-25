@@ -344,7 +344,65 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
             }
         }
     }
-    
+
+    if ((1)) {
+        // Find any negative values in the bigPDecks.  If any are found
+        // that would be a serious problem, and so the program should give
+        // an error message and die.  The most likely reason, I think, is
+        // a combination of small comp values and small rate matrix
+        // values.
+
+        int row, col, i;
+        FILE *fout;
+        for(rate = 0; rate < mp->nCat; rate++) {
+            for(row=0; row< mp->dim; row++) {
+                for(col=0; col< mp->dim; col++) {
+                    if(aNode->bigPDecks[pNum][rate][row][col] < 0.0) {
+                        // Write a report, then rudely crash.   Would be more gentle with a callback to python.
+                        if ((fout = fopen("p4_CRASH", "a+")) == NULL) {
+                            printf("p4_calculateBigPDecksPart error: Couldn't open crash report file for appending \n");
+                            return;
+                        }
+                        fprintf(fout, "p4_calculateBigPDecksPart error.  Negative value.\n");
+                        fprintf(fout, "node %i, bigP[pNum=%i][rate=%i][%i][%i] %g\n", 
+                                aNode->nodeNum, pNum, rate, row, col, aNode->bigPDecks[pNum][rate][row][col]);
+                        fprintf(fout, "branch len %g\n", aNode->brLen[0]);
+                        fprintf(fout, "comp vector\n");
+                        for(i=0; i < mp->dim; i++) { 
+                            fprintf(fout, "%g, ", mp->comps[cNum]->val[i]);
+                        }
+                        fprintf(fout, "\n");
+                        fprintf(fout, "May be due to one of var.PIVEC_MIN, var.RATE_MIN, or var.BRLEN_MIN being too small.\n");
+                        fprintf(fout, "eg if var.PIVEC_MIN is 1e-14, you could try setting it to 1e-13,\n");
+                        fprintf(fout, "or if var.RATE_MIN is 1e-13, you could try setting it to 1e-12.\n");
+                        fclose(fout);
+                        printf("Got a serious problem; see the file p4_CRASH \n");
+                        exit(1);
+                    }
+                }
+            }
+        }
+    }
+
+    if ((0)) {
+        // test the callback
+        printf("The callback is %li\n", (long int)aNode->tree->mcmcTreeCallback);
+        if(aNode->tree->mcmcTreeCallback) {
+            PyObject *arglist;
+            PyObject *result;
+            char message[256];
+            snprintf(message, sizeof(message), "mcmcTreeCallback is set.");
+            arglist = Py_BuildValue("(ls)", (long *)aNode->tree, message);
+            result = PyObject_CallObject(aNode->tree->mcmcTreeCallback, arglist);
+            Py_DECREF(arglist);
+            //if (result == NULL)
+            //    return NULL; 
+            Py_DECREF(result);
+            
+        } else {
+            printf("mcmcTreeCallback is not set.\n");
+        }
+    }
 }
 
 

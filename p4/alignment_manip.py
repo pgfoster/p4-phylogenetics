@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 from p4.sequencelist import SequenceList, Sequence
 from p4.nexussets import NexusSets
 from p4.p4exceptions import P4Error
@@ -2043,9 +2041,11 @@ if True:
         cs.num = len(self.nexusSets.charSets)
         cs.format = 'vector'
         cs.mask = myMask
+        cs.aligNChar = self.length
         cs.standardize()
         self.nexusSets.charSets.append(cs)
         self.nexusSets.charSetsDict[theGName] = cs
+        self.nexusSets.charSetLowNames.append(cs.lowName)
         # self.nexusSets.dump()
 
         myNames = []
@@ -2063,18 +2063,7 @@ if True:
             lastOne = endBits.pop()
             theMyName = 'myblocks_%i' % (lastOne + 1)
 
-        if 0:
-            cs = CharSet(self.nexusSets)
-            cs.name = theMyName
-            cs.lowName = theMyName
-            cs.num = len(self.nexusSets.charSets)
-            cs.format = 'vector'
-            cs.mask = myMask
-            cs.standardize()
-            self.nexusSets.charSets.append(cs)
-            self.nexusSets.charSetsDict[theMyName] = cs
-        if 1:
-            self.nexusSets.dupeCharSet(theGName, theMyName)
+        self.nexusSets.dupeCharSet(theGName, theMyName)
 
     def meanNCharsPerSite(self, includeConstantSites=True, showDistribution=True):
         """Mean number of different chars per site.

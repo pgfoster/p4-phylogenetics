@@ -1,4 +1,6 @@
 #include <gsl/gsl_rng.h>
+#include <Python.h>
+
 
 typedef struct dataStruct data;
 typedef struct partStruct part;
@@ -106,6 +108,7 @@ struct p4_treeStruct {
     double    *partLikes;
     int     ***simSequences;
     int     ***internalSequences;
+    PyObject *mcmcTreeCallback;
 };
 
 
@@ -220,7 +223,7 @@ struct p4_drawAncStStruct {
     int invarChNum;
 };
 
-#if PY_MAJOR_VERSION >= 3
-    #define PyInt_FromLong PyLong_FromLong
-#endif
+// #if PY_MAJOR_VERSION >= 3
+//     #define PyInt_FromLong PyLong_FromLong
+// #endif
 

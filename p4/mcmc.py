@@ -1,4 +1,3 @@
-from __future__ import print_function
 import p4.pf as pf
 import p4.func
 from p4.var import var
@@ -110,14 +109,14 @@ class McmcProposalProbs(dict):
     def __init__(self):
         #object.__setattr__(self, 'comp', 1.0)
         object.__setattr__(self, 'compDir', 0.0)
-        object.__setattr__(self, 'allCompsDir', 0.0)
+        object.__setattr__(self, 'allCompsDir', 1.0)
         object.__setattr__(self, 'ndch2_leafCompsDir', 0.0)
         object.__setattr__(self, 'ndch2_internalCompsDir', 0.0)
         object.__setattr__(self, 'ndch2_leafCompsDirAlpha', 0.0)
         object.__setattr__(self, 'ndch2_internalCompsDirAlpha', 0.0)
         #object.__setattr__(self, 'rMatrix', 1.0)
         object.__setattr__(self, 'rMatrixDir', 0.0)
-        object.__setattr__(self, 'allRMatricesDir', 0.0)
+        object.__setattr__(self, 'allRMatricesDir', 1.0)
         object.__setattr__(self, 'gdasrv', 1.0)
         object.__setattr__(self, 'pInvar', 1.0)
         object.__setattr__(self, 'local', 1.0)
@@ -244,7 +243,7 @@ class Proposal(object):
 class Proposals(object):
     def __init__(self):
         self.proposals = []
-        self.proposalsDict = {}
+        self.topologyProposalsDict = {}
         self.propWeights = []
         self.cumPropWeights = []
         self.totalPropWeights = 0.0
@@ -953,6 +952,10 @@ class Mcmc(object):
         self.doHeatingHack = False
         self.heatingHackTemperature = 5.0
         #self.heatingHackProposalNames = ['local', 'eTBR']
+
+        # Whether logging from the Pf module is turned on.
+        # When it is turned on, a callback is set up to self._logFromPfModule()
+        self.setupPfLogging = False
         
 
     def _setLogger(self):
@@ -969,24 +972,22 @@ class Mcmc(object):
                             filename="mcmc_log_%i" % self.runNum,
                             filemode='a')
 
-        # if self.loggerPrinter:
-        #     pass
-        # else:
-        #     # define a Handler which writes INFO messages or higher to the sys.stderr
-        #     console = logging.StreamHandler()
-        #     console.setLevel(logging.INFO)
-        #     # set a format which is simpler for console use
-        #     formatter = logging.Formatter('%(message)s')
-        #     # tell the handler to use this format
-        #     console.setFormatter(formatter)
-        #     # add the handler to the root logger
-        #     # Using named loggers allows me to keep them separate.
-        #     self.loggerPrinter = logging.getLogger('withPrint')
-        #     self.loggerPrinter.addHandler(console)
-
         # This logger only logs to the file, not to stderr.
         self.logger = logging.getLogger("logFileOnly")
         
+    def _logFromPfModule(self, treeAddress, message):
+        
+        tinfo = None
+        for chNum,ch in enumerate(self.chains):
+            if ch.curTree.cTree == treeAddress:
+                tinfo = "gen %i, chain %i, curTree; " % (self.gen, chNum)
+            elif ch.propTree.cTree == treeAddress:
+                tinfo = "gen %i, chain %i, propTree; " % (self.gen, chNum)
+        if not tinfo:
+            tinfo = "unknown tree; "
+        message = tinfo + message
+        #print(treeAddress, message)
+        self.logger.info(message)
         
 
     def _makeProposals(self):
@@ -1019,6 +1020,7 @@ class Mcmc(object):
         # local using a fudgeFactor.  So the weight will be
         # p.weight = self.prob.local * len(self.tree.nodes) * fudgeFactor['local']
         # brLen
+
         if self.prob.brLen:
             p = Proposal(self)
             p.name = 'brLen'
@@ -1466,7 +1468,8 @@ class Mcmc(object):
             gm.append("No proposals?")
             raise P4Error(gm)
         for p in self.props.proposals:
-            self.props.proposalsDict[p.name] = p
+            if p.name in ['local', 'eTBR', 'polytomy']:
+                self.props.topologyProposalsDict[p.name] = p
         self.props.calculateWeights()
 
     def _refreshProposalProbsAndTunings(self):
@@ -1659,7 +1662,7 @@ class Mcmc(object):
 
         # Tabulate topology changes for 'local', if any were attempted.
         doTopol = 0
-        p = self.props.proposalsDict.get('local')
+        p = self.props.topologyProposalsDict.get('local')
         if p:
             for tNum in range(self.nChains):
                 if p.nTopologyChangeAttempts[tNum]:
@@ -1683,7 +1686,7 @@ class Mcmc(object):
 
         # do the same for eTBR
         doTopol = 0
-        p = self.props.proposalsDict.get('eTBR')
+        p = self.props.topologyProposalsDict.get('eTBR')
         if p:
             for tNum in range(self.nChains):
                 if p.nTopologyChangeAttempts[tNum]:
@@ -1706,7 +1709,7 @@ class Mcmc(object):
                 print("%stopology changes in any of the chains." % spacer)
 
         # Check for aborts.
-        p = self.props.proposalsDict.get('local')
+        p = self.props.topologyProposalsDict.get('local')
         if p:
             if hasattr(p, 'nAborts'):
                 if p.nAborts[0]:
@@ -1718,7 +1721,7 @@ class Mcmc(object):
                     print("The 'local' proposal had no aborts (either due to brLen proposals")
                     print("too big or too small, or due to violated constraints).")
 
-        p = self.props.proposalsDict.get('eTBR')
+        p = self.props.topologyProposalsDict.get('eTBR')
         if p:
             if hasattr(p, 'nAborts'):
                 if p.nAborts[0]:
@@ -1729,11 +1732,16 @@ class Mcmc(object):
                     if self.constraints:
                         print("The 'eTBR' proposal had no aborts (due to violated constraints).")
 
-        for pN in ['polytomy', 'compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-            p = self.props.proposalsDict.get(pN)
-            if p:
-                if hasattr(p, 'nAborts'):
-                    print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+        for pN in ['polytomy']:
+            for p in self.props.proposals:
+                if p.name == pN:
+                    if hasattr(p, 'nAborts'):
+                        print("The %15s proposal had %5i aborts." % (p.name, p.nAborts[0]))
+        for pN in ['compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+            for p in self.props.proposals:
+                if p.name == pN:
+                    if hasattr(p, 'nAborts'):
+                        print("The %15s proposal (part %i) had %5i aborts." % (p.name, p.pNum, p.nAborts[0]))
 
         if self.nChains > 1:
             print("\n\nAcceptances and tunings by temperature")
@@ -1819,7 +1827,7 @@ class Mcmc(object):
             # in the polytomy move, we want to pre-compute the logs of
             # T_{n,m}.  Its a vector with indices (ie m) from zero to
             # nTax-2 inclusive.
-            p = self.props.proposalsDict.get('polytomy')
+            p = self.props.topologyProposalsDict.get('polytomy')
             if p and self.polytomyUseResolutionClassPrior:
                 bigT = p4.func.nUnrootedTreesWithMultifurcations(self.tree.nTax)
                 p.logBigT = [0.0] * (self.tree.nTax - 1)
@@ -1938,15 +1946,18 @@ class Mcmc(object):
             for dNum in range(self.nChains - 1):
                 self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
-        if self.props.proposals:
-            # Its either a re-start, or it has been thru autoTune().
-            # I can tell the difference by self.gen, which is -1 after
-            # autoTune()
-            if self.gen == -1:
-                self._makeChainsAndProposals()
-                self._setOutputTreeFile()
-                if self.simulate:
-                    self._writeSimFileHeader(self.tree)
+        if self.props.proposals:  # It is a re-start
+
+            # # autoTune() is gone now, so I don't need this any more, right?
+            # # Its either a re-start, or it has been thru autoTune().
+            # # I can tell the difference by self.gen, which is -1 after
+            # # autoTune()
+            # if self.gen == -1:
+            #     self._makeChainsAndProposals()
+            #     self._setOutputTreeFile()
+            #     if self.simulate:
+            #         self._writeSimFileHeader(self.tree)
+
             # The probs and tunings may have been changed by the user.
             self._refreshProposalProbsAndTunings()
 
@@ -1973,6 +1984,13 @@ class Mcmc(object):
             self._setOutputTreeFile()
             if self.simulate:
                 self._writeSimFileHeader(self.tree)
+
+        if self.setupPfLogging:
+            for ch in self.chains:
+                pf.setMcmcTreeCallback(ch.curTree.cTree, self._logFromPfModule)
+                pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
+                # Should I do self.tree and self.simTree as well?
+
         if verbose:
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
@@ -2201,10 +2219,9 @@ class Mcmc(object):
                             aProposal.tune(tempNum)
 
                 # print "   Mcmc.run(). finished a gen on chain %i" % (chNum)
-                for prNm in abortableProposals:
-                    ret = self.props.proposalsDict.get(prNm)
-                    if ret:
-                        ret.doAbort = False
+                for p in self.props.proposals:
+                    if p.name in abortableProposals:
+                        p.doAbort = False
 
             # Do swap, if there is more than 1 chain.
             if self.nChains == 1:
@@ -2631,13 +2648,22 @@ class Mcmc(object):
         savedLoggerPrinter = self.loggerPrinter
         self.loggerPrinter = None
 
+        if self.setupPfLogging:
+            # Get rid of the mcmcTreeCallbacks
+            for ch in self.chains:
+                pf.unsetMcmcTreeCallback(ch.curTree.cTree)
+                pf.unsetMcmcTreeCallback(ch.propTree.cTree)
+
         if self.simulate:
             savedSimData = self.simTree.data
             self.simTree.data = None
         for chNum in range(self.nChains):
             ch = self.chains[chNum]
             ch.curTree.data = None
+            ch.curTree.savedLogLike = ch.curTree.logLike
             ch.propTree.data = None
+
+        
         
         theCopy = copy.deepcopy(self)
 
@@ -2654,8 +2680,21 @@ class Mcmc(object):
             ch.curTree.data = savedData
             #print("After restoring data", end=' ')
             ch.curTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
+            theDiff = math.fabs(ch.curTree.savedLogLike - ch.curTree.logLike)
+            if theDiff > 0.01:
+                theMessage = "Mcmc._checkPoint(), chainNum %i. " % chNum
+                theMessage += "Bad likelihood calculation just before writing the checkpoint. "
+                theMessage += "Old curTree.logLike %g, new curTree.logLike %g, diff %g" % (ch.curTree.savedLogLike, ch.curTree.logLike, theDiff)
+                self.logger.info(theMessage)
+                print()
+                print(theMessage)
+                sys.stdout.flush()
             ch.propTree.data = savedData
             ch.propTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
+        if self.setupPfLogging:
+            for ch in self.chains:
+                pf.setMcmcTreeCallback(ch.curTree.cTree, self._logFromPfModule)
+                pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
 
         # Get rid of c-pointers in the copy
         theCopy.tree.deleteCStuff()

@@ -590,8 +590,7 @@ PyObject *singleSequenceBaseCounts(part *thePart, int sequenceNum)
 			
     thePyList = PyList_New(thePart->dim);
     for(i = 0; i < thePart->dim; i++) {
-        //PyList_SetItem(thePyList, i, PyFloat_FromDouble(totals[i]));
-        PyList_SetItem(thePyList, i, PyInt_FromLong((long int)totals[i]));
+        PyList_SetItem(thePyList, i, PyLong_FromLong((long int)totals[i]));
     }
 	
     free(totals);
@@ -819,7 +818,7 @@ void setGlobalInvarSitesVec(part *thePart)
 	
 
 
-    if(0){
+    if((0)){
         printf("globalInvarSitesVec.\n");
         printf("    A small positive int means possibly constant.\n");  
         printf("    Zero means varied\n");
@@ -835,7 +834,7 @@ void setGlobalInvarSitesVec(part *thePart)
         }
 
     }
-    if(0){
+    if((0)){
         int nInvarSites = 0;
 
         for(p = 0; p < thePart->nPatterns; p++) {

@@ -362,7 +362,7 @@ class Codon(object):
         elif i == 3:
             return self.v3
         else:
-            raise IndexError("A codon has only 3 positions.")
+            raise P4Error("A codon has only 3 positions.")
 
     def decomposition(self):
         """returns the list of non-degenerate codons that are contained in *self*."""
@@ -414,7 +414,7 @@ class Codon(object):
             else:
                 self.aas = set([code[str(self)]])
         except KeyError:
-            raise CodonTranslationError("The code does not say what the translation "
+            raise P4Error("The code does not say what the translation "
                                         "of %s should be.\n" % str(self))
 
     def distance(self, other):
@@ -629,7 +629,7 @@ class MutationGraph(object):
                 msg = CAT(["%s is already a degenerate codon." % codon,
                            "More thinking will be necessary in order to decide ",
                            "how to deal with such a case.\n"])
-                raise NotImplementedError, msg
+                raise P4Error(msg)
             for degenerate in list(self.degen_by_aa[aa][pos]):
                 if codon in degenerate:
                     self.cod2degen[pos][codon] = degenerate
@@ -643,7 +643,7 @@ class MutationGraph(object):
                        "having the same nucleotide at position %d " % pos,
                        "cannot be found.\nIt could be that %s " % codon,
                        "is already degenerate and spans several degeneracy classes.\n"])
-            raise NotImplementedError, msg
+            raise P4Error(msg)
     
     def colour(self, codon):
         """This method returns the colour to be associated to the codon *codon*.
@@ -659,7 +659,7 @@ class MutationGraph(object):
     def calculate_distance(self, cod1, cod2):
         """This method calculates the distance between codons that can be degenerated."""
         # TODO
-        raise NotImplementedError, "This method has not been implemented yet."
+        raise P4Error("This method has not been implemented yet.")
 
 standard_mutation_graph = MutationGraph()
 
@@ -861,14 +861,14 @@ def recode_sequence(sequence, converter, positions=None, code="Standard"):
         try:
             # Make a Codon instance (to convert it afterwards).
             codon = Codon(sequence[(subst_size * i):(subst_size * (i+1))], code)
-        except CodonTranslationError, e:
+        except CodonTranslationError(e):
             sys.stderr.write(
                 "%s\nProblem at sequence slice %i:%i\n" % (
                     e, subst_size * i, subst_size * (i+1)))
             warnings.warn("We will replace the codon by indels.\n")
             try:
                 codon = Codon("-" * subst_size, code)
-            except CodonTranslationError, e:
+            except CodonTranslationError(e):
                 sys.stderr.write("We still don't know how to translate the codon. "
                                  "Bad implementation?\n")
                 sys.exit(1)

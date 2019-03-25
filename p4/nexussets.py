@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import sys
 import string
@@ -424,10 +423,11 @@ class NexusSets(object):
 
         cs = CharSet(self)
         cs.name = newName
-        cs.name = newName.lower()
+        cs.lowName = newName.lower()
         cs.num = len(self.charSets)
         self.charSets.append(cs)
         self.charSetsDict[cs.name] = cs
+        self.charSetLowNames.append(cs.lowName)
 
         cs.format = theCS.format
         cs.triplets = copy.deepcopy(theCS.triplets)  # its a list of lists
@@ -792,8 +792,7 @@ class TaxOrCharSet(object):
                             mask[first - 1] = '1'
                         else:
                             # This will have been checked before.
-                            gm.append(
-                                "Component '%s' is out of range of mask len (%s)" % (first, thisMask))
+                            gm.append("Component '%s' is out of range of mask len (%s)" % (first, thisMask))
                             raise P4Error(gm)
                 elif first and second:
                     # Its a range.

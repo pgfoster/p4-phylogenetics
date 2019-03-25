@@ -1,4 +1,3 @@
-from __future__ import print_function
 import os
 import sys
 import math
@@ -310,11 +309,11 @@ class Numbers(object):
         print("binSize=%s, " % self.binSize, end=' ')
         print("nBins=%s" % self.nBins)
 
-    def plot(self, term='x11', output=None):
+    def plot(self, term='qt', output=None):
         """A horrible hack to plot stuff with GnuPlot.
 
         A file, gnuplot_instructs, is written.  Then gnuplot is
-        called.  This of course needs X-windows.
+        called.  The default terminal type is 'qt', so that is needed.
 
         Couldn't this be done in a clever way with (existing) proper
         python hooks into GnuPlot?  -yes, but it would require installing
@@ -342,7 +341,7 @@ class Numbers(object):
         f1.write('plot "%s" notitle\n' % weirdName)
         f1.close()
 
-        if term == 'x11':
+        if term == 'qt':
             os.system('gnuplot --persist %s' % instructionsFileName)
         else:
             os.system('gnuplot %s' % instructionsFileName)

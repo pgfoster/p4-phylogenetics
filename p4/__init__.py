@@ -29,7 +29,6 @@ from the command line.  To see if it is installed and works, try
 Documentation is at <http://p4.nhm.ac.uk>
 
 """
-#from __future__ import print_function
 
 import sys
 import os

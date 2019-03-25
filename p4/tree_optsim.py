@@ -1,4 +1,3 @@
-from __future__ import print_function
 import sys
 import string
 import math
@@ -454,76 +453,76 @@ if True:
         for p in self.data.parts:
             self.siteLikes += pf.getSiteLikes(p.cPart)
 
-    def getSiteRates(self):
-        """Get posterior mean site rate, and gamma category.
+    # def getSiteRates(self):
+    #     """Get posterior mean site rate, and gamma category.
 
-        This says two things --
-        1. The posterior mean site rate, calculated like PAML
-        2. Which GDASRV category contributes most to the likelihood.
+    #     This says two things --
+    #     1. The posterior mean site rate, calculated like PAML
+    #     2. Which GDASRV category contributes most to the likelihood.
 
-        The posterior mean site rate calculation requires that there be
-        only one gdasrv over the tree, which will usually be the case.
+    #     The posterior mean site rate calculation requires that there be
+    #     only one gdasrv over the tree, which will usually be the case.
 
-        For placement in categories, if its a tie score, then it is placed
-        in the first one.
+    #     For placement in categories, if its a tie score, then it is placed
+    #     in the first one.
 
-        The list of site rates, and the list of categories, both with one
-        value for each site, are put into separate numpy arrays, returned
-        as a list, ie [siteRatesArray, categoriesArray]
+    #     The list of site rates, and the list of categories, both with one
+    #     value for each site, are put into separate numpy arrays, returned
+    #     as a list, ie [siteRatesArray, categoriesArray]
 
-        There is one of these lists for each data partition, and the results as a
-        whole are returned as a list.  So if you only have one data
-        partition, then you get a 1-item list, and that single item is a list with 2
-        numpy arrays.  Ie [[siteRatesArray, categoriesArray]]
+    #     There is one of these lists for each data partition, and the results as a
+    #     whole are returned as a list.  So if you only have one data
+    #     partition, then you get a 1-item list, and that single item is a list with 2
+    #     numpy arrays.  Ie [[siteRatesArray, categoriesArray]]
 
-        If nGammaCat for a partition is 1, it will give that partition an
-        array of ones for the site rates and zeros for the categories.
+    #     If nGammaCat for a partition is 1, it will give that partition an
+    #     array of ones for the site rates and zeros for the categories.
 
-        """
+    #     """
 
-        self._commonCStuff()
-        # second arg is getSiteLikes
-        self.logLike = pf.p4_treeLogLike(self.cTree, 0)
-        #self.winningGammaCats = []
-        # for p in self.data.parts:
-        #    self.winningGammaCats += pf.getWinningGammaCats(p.cPart)
-        results = []
+    #     self._commonCStuff()
+    #     # second arg is getSiteLikes
+    #     self.logLike = pf.p4_treeLogLike(self.cTree, 0)
+    #     #self.winningGammaCats = []
+    #     # for p in self.data.parts:
+    #     #    self.winningGammaCats += pf.getWinningGammaCats(p.cPart)
+    #     results = []
 
-        for partNum in range(len(self.data.parts)):
-            if len(self.model.parts[partNum].gdasrvs) > 1:
-                gm = ['Tree.getSiteRates()']
-                gm.append("Part %i has %i gdasrvs.  Maximum 1 allowed." % (
-                    partNum, len(self.model.parts[partNum].gdasrvs)))
-                raise P4Error(gm)
+    #     for partNum in range(len(self.data.parts)):
+    #         if len(self.model.parts[partNum].gdasrvs) > 1:
+    #             gm = ['Tree.getSiteRates()']
+    #             gm.append("Part %i has %i gdasrvs.  Maximum 1 allowed." % (
+    #                 partNum, len(self.model.parts[partNum].gdasrvs)))
+    #             raise P4Error(gm)
 
-        for partNum in range(len(self.data.parts)):
-            p = self.data.parts[partNum]
-            if self.model.parts[partNum].nGammaCat == 1:
-                siteRates = numpy.ones(p.nChar, numpy.float)
-                gammaCats = numpy.zeros(p.nChar, numpy.int32)
-            elif self.model.parts[partNum].nGammaCat > 1:
-                siteRates = numpy.zeros(p.nChar, numpy.float)
-                gammaCats = numpy.zeros(p.nChar, numpy.int32)
-                work = numpy.zeros(
-                    self.model.parts[partNum].nGammaCat, numpy.float)
-                for charNum in range(p.nChar):
-                    gammaCats[charNum] = -1
-                #pf.getWinningGammaCats(self.cTree, p.cPart, i, gammaCats, work)
-                pf.getSiteRates(
-                    self.cTree, p.cPart, partNum, siteRates, gammaCats, work)
-                # print siteRates
-                # print gammaCats
-                # print work
-                if 0:
-                    counts = numpy.zeros(
-                        self.model.parts[partNum].nGammaCat, numpy.int32)
-                    for charNum in range(p.nChar):
-                        counts[winningGammaCats[charNum]] += 1
-                    print(counts)
+    #     for partNum in range(len(self.data.parts)):
+    #         p = self.data.parts[partNum]
+    #         if self.model.parts[partNum].nGammaCat == 1:
+    #             siteRates = numpy.ones(p.nChar, numpy.float)
+    #             gammaCats = numpy.zeros(p.nChar, numpy.int32)
+    #         elif self.model.parts[partNum].nGammaCat > 1:
+    #             siteRates = numpy.zeros(p.nChar, numpy.float)
+    #             gammaCats = numpy.zeros(p.nChar, numpy.int32)
+    #             work = numpy.zeros(
+    #                 self.model.parts[partNum].nGammaCat, numpy.float)
+    #             for charNum in range(p.nChar):
+    #                 gammaCats[charNum] = -1
+    #             #pf.getWinningGammaCats(self.cTree, p.cPart, i, gammaCats, work)
+    #             pf.getSiteRates(
+    #                 self.cTree, p.cPart, partNum, siteRates, gammaCats, work)
+    #             # print siteRates
+    #             # print gammaCats
+    #             # print work
+    #             if 0:
+    #                 counts = numpy.zeros(
+    #                     self.model.parts[partNum].nGammaCat, numpy.int32)
+    #                 for charNum in range(p.nChar):
+    #                     counts[winningGammaCats[charNum]] += 1
+    #                 print(counts)
 
-            else:
-                raise P4Error("This should not happen.")
-            results.append([siteRates, gammaCats])
-        return results
+    #         else:
+    #             raise P4Error("This should not happen.")
+    #         results.append([siteRates, gammaCats])
+    #     return results
 
 

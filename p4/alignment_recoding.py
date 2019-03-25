@@ -2,7 +2,6 @@ u"""
 Module for recoding matrices.
 date: 25/08/2016
 """
-from __future__ import print_function
 import sys
 import os
 import subprocess

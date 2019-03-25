@@ -1,4 +1,3 @@
-from __future__ import print_function
 from p4.p4exceptions import P4Error
 import p4.func
 from p4.func import read

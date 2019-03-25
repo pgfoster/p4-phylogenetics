@@ -392,6 +392,7 @@ pf_getSiteLikes(PyObject *self, PyObject *args)
     return thePyList;
 }
 
+/*
 static PyObject *
 pf_getSiteRates(PyObject *self, PyObject *args)
 {
@@ -424,7 +425,7 @@ pf_getSiteRates(PyObject *self, PyObject *args)
     return Py_None;
 	
 }
-
+*/
 
 static PyObject *
 pf_getUnconstrainedLogLike(PyObject *self, PyObject *args)
@@ -1569,7 +1570,7 @@ pf_gdasrvCalcRates(PyObject *self, PyObject *args)
 
     //printf("about to DiscreteGamma. g->val[0]=%f\n", g->val[0]);
     DiscreteGamma(g->freqs, g->rates, g->val[0], g->val[0], g->nCat, 0);
-    if(0){
+    if((0)){
         int i;
         printf("pfmodule: pf_gdasrvCalcRates: shape=%f, free=%i\n", g->val[0], g->free);
         for(i = 0; i < g->nCat; i++) {
@@ -2379,6 +2380,51 @@ pf_newtonRaftery94_eqn16(PyObject *self, PyObject *args)
     return Py_BuildValue("d", newtonRaftery94_eqn16(logLikes, len, harmMean, delta, verbose));
 }
 
+// ==================
+// callback
+// ==================
+
+// static PyObject *mcmcTreeCallback = NULL;
+
+static PyObject *
+pf_setMcmcTreeCallback(PyObject *dummy, PyObject *args)
+{
+    p4_tree  *aTree;
+    PyObject *result = NULL;
+    PyObject *temp;
+
+    if (!PyArg_ParseTuple(args, "lO:setMcmcTreeCallback", &aTree, &temp)) {
+        printf("Error pf_setMcmcTreeCallback: couldn't parse tuple\n");
+        return NULL;
+    }
+    if (!PyCallable_Check(temp)) {
+            PyErr_SetString(PyExc_TypeError, "pf_setMcmcTreeCallback(): parameter must be callable");
+            return NULL;
+    }
+    Py_XINCREF(temp);              /* Add a reference to new callback */
+    Py_XDECREF(aTree->mcmcTreeCallback);  /* Dispose of previous callback */
+    aTree->mcmcTreeCallback = temp;       /* Remember new callback */
+    /* Boilerplate to return "None" */
+    Py_INCREF(Py_None);
+    result = Py_None;
+    
+    return result;
+}
+
+static PyObject *
+pf_unsetMcmcTreeCallback(PyObject *dummy, PyObject *args)
+{
+    p4_tree  *aTree;
+
+    if (!PyArg_ParseTuple(args, "l", &aTree)) {
+        printf("Error pf_unsetMcmcTreeCallback: couldn't parse tuple\n");
+        return NULL;
+    }
+    Py_XDECREF(aTree->mcmcTreeCallback);  /* Dispose of previous callback */
+    aTree->mcmcTreeCallback = NULL; 
+    Py_INCREF(Py_None);
+    return Py_None;
+}
 
 
 #if 0
@@ -2544,7 +2590,7 @@ static PyMethodDef pfMethods[] = {
     {"partComposition", pf_partComposition, METH_VARARGS},
     {"partSequenceSitesCount", pf_partSequenceSitesCount, METH_VARARGS},
     {"getSiteLikes", pf_getSiteLikes, METH_VARARGS},
-    {"getSiteRates", pf_getSiteRates, METH_VARARGS},
+    //{"getSiteRates", pf_getSiteRates, METH_VARARGS},
     {"getUnconstrainedLogLike", pf_getUnconstrainedLogLike, METH_VARARGS},
     {"calcEmpiricalRMatrixViaMatrixLog", pf_calcEmpiricalRMatrixViaMatrixLog, METH_VARARGS},
 
@@ -2652,21 +2698,14 @@ static PyMethodDef pfMethods[] = {
     {"logDetFillFxy", pf_logDetFillFxy, METH_VARARGS},
     {"effectiveSampleSize", pf_effectiveSampleSize, METH_VARARGS},
     {"newtonRaftery94_eqn16", pf_newtonRaftery94_eqn16, METH_VARARGS},
+    {"setMcmcTreeCallback", pf_setMcmcTreeCallback, METH_VARARGS},
+    {"unsetMcmcTreeCallback", pf_unsetMcmcTreeCallback, METH_VARARGS},
 
     {"test", pf_test, METH_VARARGS},
 
     {NULL, NULL}
 };
 
-#if PY_MAJOR_VERSION < 3
-
-PyMODINIT_FUNC
-initpf(void)
-{
-    (void) Py_InitModule("pf", pfMethods);
-}
-
-#else
 
 static struct PyModuleDef pfmodule = {
    PyModuleDef_HEAD_INIT,
@@ -2683,4 +2722,3 @@ PyInit_pf(void)
     return PyModule_Create(&pfmodule);
 }
 
-#endif

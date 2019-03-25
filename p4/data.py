@@ -1,4 +1,3 @@
-from __future__ import print_function
 from p4.alignment import Alignment
 import sys
 import time

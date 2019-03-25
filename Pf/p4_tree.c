@@ -74,6 +74,7 @@ p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, doub
     aTree->simSequences = NULL;
     aTree->internalSequences = NULL;
 	
+    aTree->mcmcTreeCallback = NULL;
 
 
 #if 0 
@@ -167,6 +168,12 @@ void p4_freeTree(p4_tree *aTree)
     aTree->ints = NULL;
     free(aTree->stack);
     aTree->stack = NULL;
+    
+    if(aTree->mcmcTreeCallback) {
+        Py_XDECREF(aTree->mcmcTreeCallback);
+        aTree->mcmcTreeCallback = NULL;
+    }
+
     free(aTree);
     aTree = NULL;
     //printf("p4_tree.c: finished free-ing tree\n");
@@ -239,7 +246,7 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
                 // working space for internal calcs by
                 // DiscreteGamma, but boringly ends up as all 1.0/K
                 DiscreteGamma(g->freqs, g->rates, g->val[0], g->val[0], mp->nCat, 0);
-                if(0) {
+                if((0)) {
                     printf("gdasrv[%i] = %f, free=%i\n", mNum, g->val[0], g->free);
                     for(i = 0; i < mp->nCat; i++) {
                         printf("  %i  %f   %f\n", i, g->freqs[i], g->rates[i]);
@@ -1060,19 +1067,44 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         }
 
         if(like <= 0.0) {
-            //printf("p4_tree.c: treeLogLike: (zero-based) seqPos %i, site like %g\n", seqPos, like);
-            //printf("    Its <= 0.0, so returning -1.0e99\n");
-            //printf("    dp->globalInvarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);
-            if(getSiteLikes) {
-                if(patternLikes) {
-                    free(patternLikes);
-                    patternLikes = NULL;
-                    printf("Site likelihoods requested, but one likelihood is zero or less,\n");
-                    printf("    so getSiteLikes is not on.\n");
+
+            if ((1)) {
+                // Catch any likes that are less than zero.  If any are found
+                // that would be a serious problem, and so the program should give
+                // an error message and die.  The most likely reason, I think, is
+                // a combination of small comp values and small rate matrix
+                // values.
+
+                FILE *fout;
+                // Write a report, then rudely crash.   Would be more gentle with a callback to python.
+                if ((fout = fopen("p4_CRASH", "a+")) == NULL) {
+                    printf("p4_partLogLike() error: Couldn't open crash report file for appending \n");
+                    exit(1);
                 }
+                fprintf(fout, "p4_partLogLike error.  Negative like value.\n");
+                fprintf(fout, "p4_tree.c: treeLogLike: (zero-based) seqPos %i, site like %g\n", seqPos, like);
+                fprintf(fout, "May be due to var.PIVEC_MIN, var.RATE_MIN, or var.BRLEN_MIN being too small.\n");
+                fprintf(fout, "eg if var.PIVEC_MIN is 1e-14, you could try setting it to 1e-13,\n");
+                fprintf(fout, "or if var.RATE_MIN is 1e-13, you could try setting it to 1e-12.\n");
+                fclose(fout);
+                printf("Got a serious problem; see the file p4_CRASH \n");
+                exit(1);
             }
 
-            return -1.0e99;
+
+            // //printf("p4_tree.c: treeLogLike: (zero-based) seqPos %i, site like %g\n", seqPos, like);
+            // //printf("    Its <= 0.0, so returning -1.0e99\n");
+            // //printf("    dp->globalInvarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);
+            // if(getSiteLikes) {
+            //     if(patternLikes) {
+            //         free(patternLikes);
+            //         patternLikes = NULL;
+            //         printf("Site likelihoods requested, but one likelihood is zero or less,\n");
+            //         printf("    so getSiteLikes is not on.\n");
+            //     }
+            // }
+
+            // return -1.0e99;
         }
         //printf("finished rate cats: seqPos = %i, lnL = %7.4f, like = %7.4f\n", seqPos, lnL, like);
         //printf("site=%i, like=%f, logLike=%f\n", seqPos, like, log(like));
@@ -1084,7 +1116,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         if(getSiteLikes) patternLikes[seqPos] = like;
     }
 
-    if(0) {
+    if((0)) {
         if(getSiteLikes) {
             printf("tree.c: treeLogLike: patternLikes\n");
             for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
@@ -1318,7 +1350,7 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *dp, int pNum, int getSiteLi
 
     }
 
-    if(0) {
+    if((0)) {
         if(getSiteLikes) {
             printf("tree.c: treeLogLike: patternLikes\n");
             for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {

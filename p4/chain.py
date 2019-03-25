@@ -1,4 +1,3 @@
-from __future__ import print_function
 import p4.func
 import p4.pf as pf
 from p4.var import var
@@ -1109,7 +1108,7 @@ class Chain(object):
             #print("proposal %s aborting." % aProposal.name)
             return True  # ie failure
 
-        # print "pRet = %.6f" % pRet,
+        #print("pRet = %10.6f" % pRet, end=' ')
         if not aProposal.doAbort:
             if pRet < -100.0:  # math.exp(-100.) is 3.7200759760208361e-44
                 r = 0.0
@@ -1137,8 +1136,13 @@ class Chain(object):
         # if aProposal.name in ['rMatrix', 'comp', 'gdasrv']:
         #    acceptMove = False
 
-        #if self.mcmc.gen > 0 and self.mcmc.gen < 200:
-        #    print("-------------- (gen %5i, %20s) acceptMove = %s" % (self.mcmc.gen, aProposal.name, acceptMove))
+        if 0 and self.mcmc.gen > 0 and self.mcmc.gen < 1000:
+            print("-------------- (gen %5i, %20s) acceptMove = %6s" % (self.mcmc.gen, aProposal.name, acceptMove), end=' ')
+            if acceptMove:
+                logLikeDiff = self.propTree.logLike - self.curTree.logLike
+            else:
+                logLikeDiff = 0.0
+            #print("logLikeChange = %8.4f" % logLikeDiff, end=' ')
 
         aProposal.nProposals[self.tempNum] += 1
         aProposal.tnNSamples[self.tempNum] += 1
@@ -1399,6 +1403,7 @@ class Chain(object):
             diffEpsi = 0.01
             if myDiff > diffEpsi or myDiff < -diffEpsi:
                 raise P4Error("diff too big")
+        #print("curTree.logLike %12.6f" % self.curTree.logLike)
 
         if 0:
             if 1 and not var.doMcmcSp:
@@ -2100,7 +2105,7 @@ class Chain(object):
         mpCur = self.curTree.model.parts[theProposal.pNum]
         mpProp = self.propTree.model.parts[theProposal.pNum]
 
-        assert not mpCur.ndch2, "allRMatricesDir proposal is not for ndch2"  # Why not?
+        #assert not mpCur.ndch2, "allRMatricesDir proposal is not for ndch2"  # Why not?
 
         # Make proposals, accumulate log proposal ratios in the same loop
         self.logProposalRatio = 0.0
@@ -2121,8 +2126,8 @@ class Chain(object):
                 thisSum = mtProp.val.sum()
                 mtProp.val /= thisSum
 
-            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
-            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(len(mtCur.val), theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(len(mtCur.val), theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
         # prior ratio

@@ -1,4 +1,3 @@
-from __future__ import print_function
 import sys
 import string
 import io
@@ -146,7 +145,6 @@ class Tree(object):
         ~Tree.simulate
         ~Tree.getSiteLikes
         ~Tree.ancestralStateDraw
-        ~Tree.getSiteRates
         ~Tree.bigXSquaredSubM
         ~Tree.compStatFromCharFreqs
         ~Tree.compoTestUsingSimulations
@@ -227,7 +225,7 @@ class Tree(object):
     """
 
     from p4.tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, nni2, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
-    from p4.tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, ancestralStateDraw, getSiteLikes, getSiteRates
+    from p4.tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, ancestralStateDraw, getSiteLikes
     from p4.tree_model import data, model, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setRjComp, setRjRMatrix, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
     from p4.tree_write import patristicDistanceMatrix, tPickle, writeNexus, write, writePhylip, writeNewick, _getMcmcCommandComment, draw, textDrawList, eps
     from p4.tree_fit import simsForModelFitTests, modelFitTests, compoTestUsingSimulations, bigXSquaredSubM, compStatFromCharFreqs, getEuclideanDistanceFromSelfDataToExpectedComposition
@@ -2550,9 +2548,9 @@ class Tree(object):
             print('    Pre- or postOrder do not match.')
             return var.DIFFERENT
 
-        if self._nInternalNodes != otherTree._nInternalNodes:
+        if self.nInternalNodes != otherTree.nInternalNodes:
             print(complaintHead)
-            print('    _nInternalNodes differ.')
+            print('    nInternalNodes differ.')
             return var.DIFFERENT
 
         # partLikes
