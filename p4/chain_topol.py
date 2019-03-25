@@ -703,32 +703,32 @@ if True:
             complain = True
             if c.br.len < var.BRLEN_MIN:
                 if complain:
-                    print("c  %i  too short" % self.mcmc.gen)
+                    self.mcmc.logger.info("proposeLocal() tempNum=%i gen=%i  br c too short" % (self.tempNum, self.mcmc.gen))
                 theProposal.doAbort = True
                 return
             if v.br.len < var.BRLEN_MIN:
                 if complain:
-                    print("v  %i  too short" % self.mcmc.gen)
+                    self.mcmc.logger.info("proposeLocal() tempNum=%i gen=%i  br v too short" % (self.tempNum, self.mcmc.gen))
                 theProposal.doAbort = True
                 return
             if u.br.len < var.BRLEN_MIN:
                 if complain:
-                    print("u  %i  too short" % self.mcmc.gen)
+                    self.mcmc.logger.info("proposeLocal() tempNum=%i gen=%i  br u too short" % (self.tempNum, self.mcmc.gen))
                 theProposal.doAbort = True
                 return
             if c.br.len > var.BRLEN_MAX:
                 if complain:
-                    print("c  %i  too long" % self.mcmc.gen)
+                    self.mcmc.logger.info("proposeLocal() tempNum=%i gen=%i  br c too long" % (self.tempNum, self.mcmc.gen))
                 theProposal.doAbort = True
                 return
             if v.br.len > var.BRLEN_MAX:
                 if complain:
-                    print("v  %i  too long" % self.mcmc.gen)
+                    self.mcmc.logger.info("proposeLocal() tempNum=%i gen=%i  br v too long" % (self.tempNum, self.mcmc.gen))
                 theProposal.doAbort = True
                 return
             if u.br.len > var.BRLEN_MAX:
                 if complain:
-                    print("u  %i  too long" % self.mcmc.gen)
+                    self.mcmc.logger.info("proposeLocal() tempNum=%i gen=%i  br u too long" % (self.tempNum, self.mcmc.gen))
                 theProposal.doAbort = True
                 return
 
