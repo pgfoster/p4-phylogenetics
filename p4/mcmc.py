@@ -872,6 +872,10 @@ class Mcmc(object):
                     for i in range(mp.dim):
                         mp.ndch2_globalComp[i] /= thisSum
 
+                # ususal comp proposals should not be on if we are doing ndch2
+                self.prob.compDir = 0.0
+                self.prob.allCompsDir = 0.0
+
 
         if self.tree.model.isHet:
             props_on = []
