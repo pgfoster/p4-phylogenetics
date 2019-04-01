@@ -831,7 +831,11 @@ class Model(object):
                     #     for i in range(mp.dim):
                     #         mt.val[i] /= theSum
                     assert math.fabs(1.0 - numpy.sum(mt.val)) < 1.e-15
-                    assert numpy.min(mt.val) > var.PIVEC_MIN
+                    if numpy.min(mt.val) < var.PIVEC_MIN:
+                        gm = [complaintHead]
+                        gm.append("var.PIVEC_MIN is currently %g" % var.PIVEC_MIN)
+                        gm.append("Got comp %i val %g ; too small" % (mNum, numpy.min(mt.val)))
+                        raise P4Error(gm)
                     if 0:
                         theSum = sum(mt.val)
                         print("restoreFreePrams(). pNum %i, comp %i, sum=%g, 1.0 - sum = %g" % (
