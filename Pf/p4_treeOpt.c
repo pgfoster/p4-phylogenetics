@@ -273,6 +273,14 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                         //exit(1);
                     }
                 }
+                if((1)) {
+                    for(i = 0; i < mp->dim; i++) {
+                        if(c->val[i] < PIVEC_MIN) {
+                            printf("%%%% p4_unWindParameters()  part %i, comp %i, val[%i] smaller than PIVEC_MIN %g\n", 
+                               pNum, mtNum, i, PIVEC_MIN);
+                        }
+                    }
+                }
             }
         }
 
