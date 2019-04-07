@@ -1,7 +1,7 @@
 #include "Python.h"
 
 // p4_tree.c
-p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, double *partLikes, data *aData, p4_model *aModel);
+p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, double *partLikes, data *aData, p4_model *aModel, int *newtAndBrentPowellOptPassLimit);
 void p4_freeTree(p4_tree *aTree);
 void p4_dumpTree(p4_tree *aTree);
 void p4_setPrams(p4_tree *aTree);
@@ -15,10 +15,13 @@ double p4_partLogLikeSiteRates(p4_tree *aTree, part *p, int pNum, int getSiteLik
 void p4_getPreOrderNodeNumsAbove(p4_tree *aTree, p4_node *aNode);
 
 // p4_treeOpt.c
-void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, double *uBounds, int *compStarts);
+void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, double *uBounds);
 PyObject *p4_getBrLens(p4_tree *aTree);
 PyObject *p4_getFreePrams(p4_tree *aTree);
 void p4_unWindParameters(p4_tree *aTree, double *parameters);
+double p4_logLikeForNLOpt(unsigned nPrams, const double *parameters, double *grad, void *my_func_data);
+void p4_allBOBYQAOptimize(p4_tree *aTree);
+void p4_newtAndBOBYQAOpt(p4_tree *aTree);
 double p4_minusLogLikeForBrent(double *parameters);
 void p4_allBrentPowellOptimize(p4_tree *aTree);
 void p4_newtAndBrentPowellOpt(p4_tree *aTree);
@@ -41,7 +44,7 @@ PyObject *p4_expectedComposition(p4_tree *t);
 void p4_newtSetup(p4_tree *aTree);
 //void p4_newt(p4_tree *aTree);
 void p4_newtAround(p4_tree *aTree, double epsilon, double likeDelta);
-void p4_newtNode(p4_node *aNode, double epsilon);
+void p4_newtNode(p4_node *aNode, double epsilon, double BRLEN_MIN, double BRLEN_MAX);
 void p4_setNodeCL2(p4_tree *aTree, p4_node *aNode);
 
 

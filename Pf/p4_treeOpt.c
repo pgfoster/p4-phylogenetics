@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <nlopt.h>
 
 static  int	nPrams = 0;
 static	p4_tree *thisTree = NULL;
@@ -15,7 +16,7 @@ static  int likelihoodEvaluations = 0;
 
 
 
-void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, double *uBounds, int *compStarts)
+void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, double *uBounds)
 {
     int pos = 0;
     int i, j, mtNum, pNum;
@@ -36,8 +37,8 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
                 for(i = 0; i < mp->dim - 1; i++) {
                     parameters[pos] = c->val[i];
                     if(lBounds) {
-                        lBounds[pos] = PIVEC_MIN;
-                        uBounds[pos] = PIVEC_MAX;
+                        lBounds[pos] = aTree->model->PIVEC_MIN[0];
+                        uBounds[pos] = aTree->model->PIVEC_MAX[0];
                     }
                     pos++;
                 }
@@ -51,8 +52,8 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
                 if(r->spec == RMATRIX_2P) {
                     parameters[pos] = r->kappa[0];
                     if(lBounds) {
-                        lBounds[pos] = KAPPA_MIN;
-                        uBounds[pos] = KAPPA_MAX;
+                        lBounds[pos] = aTree->model->KAPPA_MIN[0];
+                        uBounds[pos] = aTree->model->KAPPA_MAX[0];
                     }
                     pos++;
                 }
@@ -61,8 +62,8 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
                         for(j = i + 1; j < mp->dim; j++) {
                             parameters[pos] = r->bigR[i][j];
                             if(lBounds) {
-                                lBounds[pos] = RATE_MIN;
-                                uBounds[pos] = RATE_MAX;
+                                lBounds[pos] = aTree->model->RATE_MIN[0];
+                                uBounds[pos] = aTree->model->RATE_MAX[0];
                             }
                             pos++;
                         }
@@ -77,8 +78,8 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
             if(g->free) {
                 parameters[pos] = g->val[0];
                 if(lBounds) {
-                    lBounds[pos] = GAMMA_SHAPE_MIN;
-                    uBounds[pos] = GAMMA_SHAPE_MAX;
+                    lBounds[pos] = aTree->model->GAMMA_SHAPE_MIN[0];
+                    uBounds[pos] = aTree->model->GAMMA_SHAPE_MAX[0];
                 }
                 pos++;
             }
@@ -88,8 +89,8 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
         if(mp->pInvar->free) {
             parameters[pos] = mp->pInvar->val[0];
             if(lBounds) {
-                lBounds[pos] = PINVAR_MIN;
-                uBounds[pos] = PINVAR_MAX;
+                lBounds[pos] = aTree->model->PINVAR_MIN[0];
+                uBounds[pos] = aTree->model->PINVAR_MAX[0];
             }
             pos++;
         }
@@ -102,8 +103,8 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
             mp = aTree->model->parts[pNum];
             parameters[pos] = mp->relRate[0];
             if(lBounds) {
-                lBounds[pos] = RELRATE_MIN;
-                uBounds[pos] = RELRATE_MAX;
+                lBounds[pos] = aTree->model->RELRATE_MIN[0];
+                uBounds[pos] = aTree->model->RELRATE_MAX[0];
             }
             pos++;
         }
@@ -116,8 +117,8 @@ void p4_windUpParameters(p4_tree *aTree, double *parameters, double *lBounds, do
             if(n != aTree->root) {
                 parameters[pos] = n->brLen[0];
                 if(lBounds) {
-                    lBounds[pos] = BRLEN_MIN;
-                    uBounds[pos] = BRLEN_MAX;
+                    lBounds[pos] = aTree->model->BRLEN_MIN[0];
+                    uBounds[pos] = aTree->model->BRLEN_MAX[0];
                 }
                 pos++;
             }
@@ -170,7 +171,7 @@ PyObject *p4_getFreePrams(p4_tree *aTree)
     prams = malloc(aTree->model->nFreePrams * sizeof(double));
     doBranchLengths = 0;
  
-    p4_windUpParameters(aTree, prams, NULL, NULL, NULL);
+    p4_windUpParameters(aTree, prams, NULL, NULL);
     for(i = 0; i < aTree->model->nFreePrams; i++){
         PyList_SetItem(theList, i, PyFloat_FromDouble(prams[i]));
     }
@@ -194,6 +195,9 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
     int i, j, mtNum, pNum, totLen;
     double     sum, sum2;
     double     par;
+    double     reducedUpper;
+    double     diff;
+    double     factor;
     int hit_limit = 0;
     p4_modelPart  *mp = NULL;
     p4_comp       *c = NULL;
@@ -210,15 +214,78 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
         for(mtNum = 0; mtNum < mp->nComps; mtNum++) {
             c = mp->comps[mtNum];
             if(c->free) {
+                // Here we restore the dim-1 parameters, but
+                // effectively we move the zero point to be PIVEC_MIN.
+
+                // loop up to less than dim - 1, not dim
                 sum = 0.0;
                 for(i = 0; i < mp->dim - 1; i++) {
                     par = parameters[pos];
-                    if(par < PIVEC_MIN) {
+                    if(par <= aTree->model->PIVEC_MIN[0]) {
+                        hit_limit = 1;
+                        par = 0.0;
+                    } else {
+                        par = par - aTree->model->PIVEC_MIN[0];
+                    }
+                    c->val[i] = par;
+                    sum += par;
+                    pos++;
+                }
+
+                // Make a new target for the sum, that takes into account our temporary "zero".
+                reducedUpper = 1.0 - (mp->dim * aTree->model->PIVEC_MIN[0]);
+                // Assign a value to c->val[dim-1]
+                diff = reducedUpper - sum;
+                if(diff < 0.0) {
+                    c->val[mp->dim - 1] = 0.0;
+                } else {
+                    c->val[mp->dim - 1] = diff;
+                    sum += diff;
+                }
+
+                // Change all the values in proportion to the sum, and then add back PIVEC_MIN
+                factor = reducedUpper / sum;
+                
+                for(i = 0; i < mp->dim; i++) {
+                    c->val[i] *= factor;
+                    c->val[i] += aTree->model->PIVEC_MIN[0];
+                }
+                
+                if((1)) {
+                    sum2 = 0.0;
+                    for(i = 0; i < mp->dim; i++) {
+                        sum2 += c->val[i];
+                    }
+                    if(fabs(1.0 - sum2) > 1.0e-14) {
+                        printf("%%%% p4_unWindParameters()  part %i, comp %i, values do not sum to 1.0.  sum2=%g\n", 
+                               pNum, mtNum, sum);
+                        printf("%%%%  sum2 - 1.0 = %g\n", sum2 - 1.0);
+                        printf("%%%% sum was %g  %f\n", sum, sum);
+                        printf("%%%% fabs(sum - 1.0) = %g\n", fabs(sum - 1.0));
+                        //exit(1);
+                    }
+                }
+                if((1)) {
+                    for(i = 0; i < mp->dim; i++) {
+                        if(c->val[i] < aTree->model->PIVEC_MIN[0]) {
+                            printf("%%%% p4_unWindParameters()  part %i, comp %i, val[%i] %g smaller than PIVEC_MIN %g\n", 
+                               pNum, mtNum, i, c->val[i], aTree->model->PIVEC_MIN[0]);
+                        }
+                    }
+                }
+            }
+
+#if 0
+            if(c->free) {
+                sum = 0.0;
+                for(i = 0; i < mp->dim - 1; i++) {
+                    par = parameters[pos];
+                    if(par < aTree->model->PIVEC_MIN[0]) {
                         //hit_limit = 1;
-                        par = (PIVEC_MIN * (mp->dim - 1)) + (PIVEC_MIN * ranDoubleUpToOne());
-                    } else if(par > PIVEC_MAX) {
+                        par = (aTree->model->PIVEC_MIN[0] * (mp->dim - 1)) + (aTree->model->PIVEC_MIN[0] * ranDoubleUpToOne());
+                    } else if(par > aTree->model->PIVEC_MAX[0]) {
                         //hit_limit = 1;
-                        par = PIVEC_MAX;
+                        par = aTree->model->PIVEC_MAX[0];
                     }
                     c->val[i] = par;
                     sum += par;
@@ -227,12 +294,12 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                 // At this point, sum might be only a few times PIVEC_MIN, or it might be dim-1 * PIVEC_MAX
                 if(sum < 1.0) {
                     c->val[mp->dim - 1] = 1.0 - sum;
-                    if(c->val[mp->dim - 1] < PIVEC_MIN) {
+                    if(c->val[mp->dim - 1] < aTree->model->PIVEC_MIN[0]) {
                         hit_limit = 1;
-                        c->val[mp->dim - 1] = PIVEC_MIN + (PIVEC_MIN * ranDoubleUpToOne());
-                    } else if(c->val[mp->dim - 1] > PIVEC_MAX) {
+                        c->val[mp->dim - 1] = aTree->model->PIVEC_MIN[0] + (aTree->model->PIVEC_MIN[0] * ranDoubleUpToOne());
+                    } else if(c->val[mp->dim - 1] > aTree->model->PIVEC_MAX[0]) {
                         hit_limit = 1;
-                        c->val[mp->dim - 1] = PIVEC_MAX;
+                        c->val[mp->dim - 1] = aTree->model->PIVEC_MAX[0];
                     }
                     sum += c->val[mp->dim - 1];
                     //printf("    a  %f  %f  %f  %f  %f\n", c->val[0], c->val[1], c->val[2], c->val[3], sum);
@@ -253,13 +320,13 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                     // we multiply PIVEC_MIN by sum, so that it will
                     // not go below PIVEC_MIN when it is divided by
                     // sum, immediately below.
-                    c->val[mp->dim - 1] = (PIVEC_MIN * sum) + (PIVEC_MIN * ranDoubleUpToOne());
+                    c->val[mp->dim - 1] = (aTree->model->PIVEC_MIN[0] * sum) + (aTree->model->PIVEC_MIN[0] * ranDoubleUpToOne());
                     sum += c->val[mp->dim - 1];
                     for(i = 0; i < mp->dim; i++) {
                         c->val[i] = c->val[i] / sum;
                     }
                 }
-                if((0)) {
+                if((1)) {
                     sum2 = 0.0;
                     for(i = 0; i < mp->dim; i++) {
                         sum2 += c->val[i];
@@ -275,13 +342,14 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                 }
                 if((1)) {
                     for(i = 0; i < mp->dim; i++) {
-                        if(c->val[i] < PIVEC_MIN) {
+                        if(c->val[i] < aTree->model->PIVEC_MIN[0]) {
                             printf("%%%% p4_unWindParameters()  part %i, comp %i, val[%i] smaller than PIVEC_MIN %g\n", 
-                               pNum, mtNum, i, PIVEC_MIN);
+                               pNum, mtNum, i, aTree->model->PIVEC_MIN[0]);
                         }
                     }
                 }
             }
+#endif
         }
 
         // rMatrices
@@ -289,13 +357,13 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
             r = mp->rMatrices[mtNum];
             if(r->free) {
                 if(r->spec == RMATRIX_2P) {
-                    if(parameters[pos] < KAPPA_MIN) {
+                    if(parameters[pos] < aTree->model->KAPPA_MIN[0]) {
                         hit_limit = 1;
-                        parameters[pos] = KAPPA_MIN;
+                        parameters[pos] = aTree->model->KAPPA_MIN[0];
                     }
-                    else if(parameters[pos] > KAPPA_MAX) {
+                    else if(parameters[pos] > aTree->model->KAPPA_MAX[0]) {
                         hit_limit = 1;
-                        parameters[pos] = KAPPA_MAX;
+                        parameters[pos] = aTree->model->KAPPA_MAX[0];
                     }
                     r->kappa[0] = parameters[pos];
                     pos++;
@@ -306,8 +374,8 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                         for(i = 0; i < mp->dim - 2; i++) {
                             for(j = i + 1; j < mp->dim; j++) {
                                 par = parameters[pos];
-                                if(par < RATE_MIN) {
-                                    par = RATE_MIN + (RATE_MIN * ranDoubleUpToOne());
+                                if(par < aTree->model->RATE_MIN[0]) {
+                                    par = aTree->model->RATE_MIN[0] + (aTree->model->RATE_MIN[0] * ranDoubleUpToOne());
                                 } else if(par > 0.999) {
                                     par = 0.999;
                                 }
@@ -320,9 +388,9 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                         if(sum < 1.0) {
                             //printf("sum < 1.0 ");
                             par = 1.0 - sum;
-                            if(par < RATE_MIN) {
+                            if(par < aTree->model->RATE_MIN[0]) {
                                 hit_limit = 1;
-                                par = RATE_MIN + (RATE_MIN * ranDoubleUpToOne());
+                                par = aTree->model->RATE_MIN[0] + (aTree->model->RATE_MIN[0] * ranDoubleUpToOne());
                             } else if(par > 0.999) {
                                 hit_limit = 1;
                                 par = 0.999;
@@ -347,7 +415,7 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                             //} else {
                             //	printf("more than  ");
                             //}
-                            par = (RATE_MIN * sum) + (RATE_MIN * ranDoubleUpToOne());
+                            par = (aTree->model->RATE_MIN[0] * sum) + (aTree->model->RATE_MIN[0] * ranDoubleUpToOne());
                             sum += par;
                             r->bigR[mp->dim - 2][mp->dim - 1] = par;
                             for(i = 0; i < mp->dim - 1; i++) {
@@ -375,12 +443,12 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
                     else {  // not normalized to 1
                         for(i = 0; i < mp->dim - 2; i++) {
                             for(j = i + 1; j < mp->dim; j++) {
-                                if(parameters[pos] < RATE_MIN) {
+                                if(parameters[pos] < aTree->model->RATE_MIN[0]) {
                                     hit_limit = 1;
-                                    parameters[pos] = RATE_MIN;
-                                }else if (parameters[pos] > RATE_MAX) {
+                                    parameters[pos] = aTree->model->RATE_MIN[0];
+                                }else if (parameters[pos] > aTree->model->RATE_MAX[0]) {
                                     hit_limit = 1;
-                                    parameters[pos] = RATE_MAX;
+                                    parameters[pos] = aTree->model->RATE_MAX[0];
                                 }
                                 r->bigR[i][j] = parameters[pos];
                                 r->bigR[j][i] = parameters[pos];
@@ -396,14 +464,14 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
         for(mtNum = 0; mtNum < mp->nGdasrvs; mtNum++) {
             g = mp->gdasrvs[mtNum];
             if(g->free) {
-                if(parameters[pos] < GAMMA_SHAPE_MIN) {
+                if(parameters[pos] < aTree->model->GAMMA_SHAPE_MIN[0]) {
                     hit_limit = 1;
                     //printf("    gamma min\n");
-                    parameters[pos] = GAMMA_SHAPE_MIN;
-                } else if(parameters[pos] > GAMMA_SHAPE_MAX) {
+                    parameters[pos] = aTree->model->GAMMA_SHAPE_MIN[0];
+                } else if(parameters[pos] > aTree->model->GAMMA_SHAPE_MAX[0]) {
                     hit_limit = 1;
                     //printf("    gamma max\n");
-                    parameters[pos] = GAMMA_SHAPE_MAX;
+                    parameters[pos] = aTree->model->GAMMA_SHAPE_MAX[0];
                 }
                 g->val[0] = parameters[pos];
                 pos++;
@@ -412,14 +480,14 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
 
         // pInvar
         if(mp->pInvar->free) {
-            if(parameters[pos] < PINVAR_MIN) {
+            if(parameters[pos] < aTree->model->PINVAR_MIN[0]) {
                 hit_limit = 1;
                 //printf("    pInvar min\n");
-                parameters[pos] = PINVAR_MIN;
-            } else if(parameters[pos] > PINVAR_MAX) {
+                parameters[pos] = aTree->model->PINVAR_MIN[0];
+            } else if(parameters[pos] > aTree->model->PINVAR_MAX[0]) {
                 hit_limit = 1;
                 //printf("    pInvar max\n");
-                parameters[pos] = PINVAR_MAX;
+                parameters[pos] = aTree->model->PINVAR_MAX[0];
             }
             mp->pInvar->val[0] = parameters[pos];   
             pos++;
@@ -433,12 +501,12 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
     if(aTree->model->relRatesAreFree) {
         for(pNum = 0; pNum < aTree->nParts - 1; pNum++) {
             mp = aTree->model->parts[pNum];
-            if(parameters[pos] < RELRATE_MIN) {
+            if(parameters[pos] < aTree->model->RELRATE_MIN[0]) {
                 hit_limit = 1;
-                parameters[pos] = RELRATE_MIN;
-            } else if(parameters[pos] > RELRATE_MAX) {
+                parameters[pos] = aTree->model->RELRATE_MIN[0];
+            } else if(parameters[pos] > aTree->model->RELRATE_MAX[0]) {
                 hit_limit = 1;
-                parameters[pos] = RELRATE_MAX;
+                parameters[pos] = aTree->model->RELRATE_MAX[0];
             }
             mp->relRate[0] = parameters[pos];
             pos++;
@@ -484,12 +552,12 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
         for(i = 0; i < aTree->nNodes; i++) {
             n = aTree->nodes[i];
             if(n != aTree->root) {
-                if(parameters[pos] < BRLEN_MIN) {  // this week, its 1.0e-8
+                if(parameters[pos] < aTree->model->BRLEN_MIN[0]) {  // this week, its 1.0e-8
                     hit_limit = 1;
-                    parameters[pos] = BRLEN_MIN - (BRLEN_MIN * 0.1) + ((BRLEN_MIN * 0.1) * ranDoubleUpToOne());
-                } else if(parameters[pos] > BRLEN_MAX) {
+                    parameters[pos] = aTree->model->BRLEN_MIN[0] - (aTree->model->BRLEN_MIN[0] * 0.1) + ((aTree->model->BRLEN_MIN[0] * 0.1) * ranDoubleUpToOne());
+                } else if(parameters[pos] > aTree->model->BRLEN_MAX[0]) {
                     hit_limit = 1;
-                    parameters[pos] = BRLEN_MAX;
+                    parameters[pos] = aTree->model->BRLEN_MAX[0];
                 }
                 n->brLen[0] = parameters[pos];
                 pos++;
@@ -498,11 +566,376 @@ void p4_unWindParameters(p4_tree *aTree, double *parameters)
     }
 	
     if(hit_limit) {
-        p4_windUpParameters(aTree, parameters, NULL, NULL, NULL);
+        //printf("p4_unWindParameters() got hit_limit\n");
+        p4_windUpParameters(aTree, parameters, NULL, NULL);
+    }
+}
+
+//==============================================
+// NLOPT_LN_BOBYQA
+//==============================================
+
+
+double p4_logLikeForNLOpt(unsigned nPrams, const double *parameters, double *grad, void *my_func_data)
+{
+    double logLike;
+
+    p4_unWindParameters(thisTree, (double *)parameters);
+
+#if 0
+    {
+        int i;
+        FILE *dfile;
+
+        if ((dfile = fopen("debugFile", "a+")) == NULL) {
+            printf(" error: Couldn't open debugFile for appending \n");
+            exit(1);
+        }
+
+        fprintf(dfile, "p4_treeOpt.c: p4_logLikeForNLOpt:\n");
+        for(i = 0; i < nPrams; i++) {
+            fprintf(dfile, "         parameters[%i] is %.12f\n", i, parameters[i]);
+        }
+        fprintf(dfile, "\n");
+        for(i = 0; i < thisTree->nNodes; i++) {
+            fprintf(dfile, "         brLen[%i] is %.12f\n", i, 
+                    thisTree->nodes[i]->brLen[0]);
+        }
+        fclose(dfile);
+    }
+#endif
+	
+    //printf("  about to setPrams ... \n");
+    p4_setPrams(thisTree);
+    logLike = p4_treeLogLike(thisTree, 0);
+    likelihoodEvaluations++;
+    //printf("        logLikeForNLOpt finished.  logLike = %12.8f\n", logLike);
+
+    return logLike;
+}
+
+void p4_allBOBYQAOptimize(p4_tree *aTree)
+{
+
+
+    int i;
+    double  logLike = 0.0;
+    //double  previousLogLike = 0.0;
+    //double  diff;
+    //int totalLikelihoodEvals = 0;
+    double	*parameters = NULL;
+    double	*lBounds = NULL;
+    double	*uBounds = NULL;
+    nlopt_result result;
+
+    // You can't pass variables to minusLogLikeForBrent,
+    // so I have to set file-wide variables.
+    thisTree = aTree;
+    doBranchLengths = 1;
+    nPrams = aTree->model->nFreePrams + (aTree->nNodes - 1);
+
+    if((0)) {
+        printf("Starting p4_allBOBYQAOptimize: nPrams is %i\n", nPrams);
+        printf("...about to windUpParameters.  PIVEC_MIN is %g\n", aTree->model->PIVEC_MIN[0]);
+    }
+    parameters = malloc(nPrams * sizeof(double));
+    if(!parameters) {
+        printf("Failed to allocate memory for opt parameters.\n");
+        exit(1);
+    }
+
+
+    lBounds = malloc(nPrams * sizeof(double));
+    if(!lBounds) {
+        printf("Failed to allocate memory for opt lBounds.\n");
+        exit(1);
+    }
+
+    uBounds = malloc(nPrams * sizeof(double));
+    if(!uBounds) {
+        printf("Failed to allocate memory for opt uBounds.\n");
+        exit(1);
+    }
+
+    p4_windUpParameters(aTree, parameters, lBounds, uBounds);
+    if((0)) {
+        printf("p4_treeOptimize.c: allBOBYQAOptimize() starting with these params\n");
+        printf("nPrams is %i\n", nPrams);
+        for(i = 0; i < nPrams; i++) {
+            printf("         parameters[%i] is %.12f\n", i, parameters[i]);
+        }
+        if((0)) {
+            printf("\n");
+            for(i = 0; i < aTree->nNodes; i++) {
+                if(aTree->nodes[i] != aTree->root) {
+                    printf("         branchLength[%i] is %.12f\n", i, aTree->nodes[i]->brLen[0]);
+                }
+            }
+        }
+    }
+	
+    // set up optimizer
+    nlopt_opt opter=nlopt_create(NLOPT_LN_BOBYQA, nPrams);
+    // lower and upper bound
+    nlopt_set_lower_bounds(opter, lBounds);
+    nlopt_set_upper_bounds(opter, uBounds);
+    // objective function; two kinds, min and max.  Here I use max
+    nlopt_set_max_objective(opter, p4_logLikeForNLOpt, NULL);
+    // Stopping criterion, absolute, for like value.  Stop if it does not improve by this much.
+    nlopt_set_ftol_abs(opter, 1.e-6);
+
+    result = nlopt_optimize(opter, parameters, &logLike);
+    if(result < 0 && (result != NLOPT_ROUNDOFF_LIMITED)) {
+        printf("a result %i BOBYQA\n", (int)result);
+    } 
+    //else {
+    //    printf("a result %i OK BOBYQA\n", (int)result);
+    //}
+
+    // repeat
+    if(opter) {
+        nlopt_destroy(opter);
+        opter = NULL;
+    }
+    p4_unWindParameters(aTree, parameters);
+    p4_setPrams(aTree);
+    logLike = p4_treeLogLike(aTree, 0);
+    likelihoodEvaluations++;
+    p4_windUpParameters(aTree, parameters, lBounds, uBounds);
+
+    opter=nlopt_create(NLOPT_LN_BOBYQA, nPrams);
+    // lower and upper bound
+    nlopt_set_lower_bounds(opter, lBounds);
+    nlopt_set_upper_bounds(opter, uBounds);
+    // objective function; two kinds, min and max.  Here I use max
+    nlopt_set_max_objective(opter, p4_logLikeForNLOpt, NULL);
+    // Stopping criterion, absolute, for like value.  Stop if it does not improve by this much.
+    nlopt_set_ftol_abs(opter, 1.e-8);
+
+    result = nlopt_optimize(opter, parameters, &logLike);
+    if(result < 0 && (result != NLOPT_ROUNDOFF_LIMITED)) {
+        printf("b result %i BOBYQA\n", (int)result);
+    } 
+    //else {
+    //    printf("b result %i OK BOBYQA\n", (int)result);
+    //}
+    
+     
+
+    //printf("allBOBYQAOptimize(). %i full likelihood evaluations\n", totalLikelihoodEvals);
+    //printf("allBOBYQAOptimize(). finished\n");
+
+    if(opter) {
+        nlopt_destroy(opter);
+    }
+    if(parameters) {
+        free(parameters);
+        parameters = NULL;
+    }
+    if(lBounds) {
+        free(lBounds);
+        lBounds = NULL;
+    }
+    if(uBounds) {
+        free(uBounds);
+        uBounds = NULL;
+    }
+
+}
+
+
+
+
+void p4_newtAndBOBYQAOpt(p4_tree *aTree)
+{
+    double  logLike = 0.0;
+    double  previousLogLike = 0.0;
+    double  diff;
+    int pass;
+    int totalLikelihoodEvals = 0;
+    double	*parameters = NULL;
+    double	*lBounds = NULL;
+    double	*uBounds = NULL;
+    nlopt_result result;
+    nlopt_opt    opter;
+
+    // Rather than passing aTree to to logLikeForNLOpt,
+    // I set file-wide variables; leftover from Brent
+    thisTree = aTree;
+    doBranchLengths = 0;
+    nPrams = aTree->model->nFreePrams;
+    
+    printf("Starting p4_newtAndBOBYQAOpt().   nPrams is %i\n", nPrams);
+
+    if(nPrams == 0) {
+        p4_newtAround(aTree, 1.0, 10.0);
+        p4_newtAround(aTree, 1.0e-1, 1.0);
+        p4_newtAround(aTree, 1.0e-2, 0.1);
+        p4_newtAround(aTree, 1.0e-5, 1.0e-7);
+        return;
+    }
+
+    // If we are here, then nPrams > 0, so we use BOBYQA with newt.
+    parameters = malloc(nPrams * sizeof(double));
+    if(!parameters) {
+        printf("Failed to allocate memory for opt parameters.\n");
+        exit(1);
+    }
+
+    lBounds = malloc(nPrams * sizeof(double));
+    if(!lBounds) {
+        printf("Failed to allocate memory for opt lBounds.\n");
+        exit(1);
+    }
+
+    uBounds = malloc(nPrams * sizeof(double));
+    if(!uBounds) {
+        printf("Failed to allocate memory for opt uBounds.\n");
+        exit(1);
+    }
+
+    p4_windUpParameters(aTree, parameters, lBounds, uBounds);
+
+
+
+    p4_newtAround(aTree, 1.0, 10.0);
+    p4_newtAround(aTree, 1.0e-1, 1.0);
+    p4_newtAround(aTree, 1.0e-5, 1.0e-7);
+
+    likelihoodEvaluations = 0;
+    previousLogLike = p4_treeLogLike(aTree, 0);
+    printf("  x logLike = %f\n", previousLogLike);
+    totalLikelihoodEvals += 1;	
+    pass = 0;
+
+    while(1) {
+        double prev;
+        double afterNewtLogLike;
+        double diff2;
+
+        likelihoodEvaluations = 0;
+        //printf("....About to newtAround ....\n");
+        prev = p4_treeLogLike(aTree, 0);
+        p4_newtAround(aTree, 1.0e-5, 1.0e-7);
+        afterNewtLogLike = p4_treeLogLike(aTree, 0);
+        diff2 = afterNewtLogLike - prev;
+        //printf("                          newt diff =     %.8f\n", diff2);
+        //printf("....About to BOBYQA.  pass=%i\n", pass);
+        
+
+        // Initializing the optimizer inside the loop is in theory
+        // inefficient; I should intialize it first, and then call
+        // nlopt_optimize repeatedly in the loop.  And I used to do
+        // that.  But I am doing it this way, inside the loop so that
+        // I can "freshen" the paramters via p4_unWindParameters().
+
+        // set up optimizer
+        opter=nlopt_create(NLOPT_LN_BOBYQA, nPrams);
+        // lower and upper bound
+        nlopt_set_lower_bounds(opter, lBounds);
+        nlopt_set_upper_bounds(opter, uBounds);
+        // objective function; two kinds, min and max.  Here I use max
+        nlopt_set_max_objective(opter, p4_logLikeForNLOpt, NULL);
+        // Stopping criterion, absolute, for like value.  Stop if it does not improve by this much.
+        nlopt_set_ftol_abs(opter, 1.e-8);
+
+        result = nlopt_optimize(opter, parameters, &logLike);
+        if((result < 0) && (result != NLOPT_ROUNDOFF_LIMITED)) {
+            printf("result %i Failed newtAndBOBYQA\n", (int)result);
+        } 
+        
+        diff2 = logLike - afterNewtLogLike;
+        //printf("                        BIBYQA diff =     %.8f\n", diff2);
+        //printf("....finished BOBYQA.\n");
+
+        // I suppose that when praxis exits, the best logLike is returned,
+        // and the corresponding best parameters would be in the parameters
+        // vector.  However, the models may not reflect that, and may have the parameters
+        // of the last likelihood that was evaluated, which may not be the best one.
+        // So make the model params reflect the parameters vector, by unwinding the 
+        // parameters vector, and doing a setPrams.
+
+        p4_unWindParameters(thisTree, parameters);
+        p4_setPrams(thisTree);
+        diff = logLike - previousLogLike;
+        if((0)) {
+            if(diff < -1.0e-6) {
+                printf("    p4_newtAndBOBYQAOpt().  logLike=%f, diff=%f, got worse! (%i likelihoodEvaluations)\n", 
+                       logLike, diff, likelihoodEvaluations);
+            } else {
+                printf("    p4_newtAndBOBYQAOpt().  logLike=%f, diff=%f   (%i likelihoodEvaluations)\n", 
+                       logLike, diff, likelihoodEvaluations);
+            }
+        }
+        totalLikelihoodEvals += likelihoodEvaluations;
+        previousLogLike = logLike;
+        if(fabs(diff) < 1.0e-6) {
+            printf("finished loop because the improvement was %.2g\n", diff);
+            break;
+        }
+        pass++;
+        if(pass > 50) {
+            printf("=============================================================\n");
+            printf("p4_newtAndBOBYQAOpt().  Pass limit (50) exceeded without\n");
+            printf("convergence.  Giving up.  This tree is not optimized!\n");
+            break;
+        }
+    }
+				
+
+    logLike = p4_treeLogLike(aTree, 0);
+    totalLikelihoodEvals++;
+    if((0)) {
+        printf("     p4_newtAndBOBYQAOpt().  logLike %f\n", logLike);
+        printf("     %i total likelihood evaluations\n", totalLikelihoodEvals);
+        //printf("Starting the opt again.  About to windUpParameters.\n");
+    }
+
+    //printf("p4_newtAndBOBYQAOpt().  %i full likelihood evaluations\n", totalLikelihoodEvals);
+
+#if 0
+    {
+        int i;
+
+        printf("p4_treeOptimize.c: newtAndBOBYQAOpt() after optimizing\n");
+        printf("nPrams is %i\n", nPrams);
+        for(i = 0; i < nPrams; i++) {
+            printf("         parameters[%i] is %.12f\n", i, parameters[i]);
+        }
+        if(1) {
+            printf("\n");
+            for(i = 0; i < aTree->nNodes; i++) {
+                if(aTree->nodes[i] != aTree->root) {
+                    printf("         branchLength[%i] is %.12f\n", i, aTree->nodes[i]->brLen[0]);
+                }
+            }
+        }
+    }
+#endif
+
+    if(opter) {
+        nlopt_destroy(opter);
+    }
+    if(parameters) {
+        free(parameters);
+        parameters = NULL;
+    }
+    if(lBounds) {
+        free(lBounds);
+        lBounds = NULL;
+    }
+    if(uBounds) {
+        free(uBounds);
+        uBounds = NULL;
     }
 }
 
 
+
+
+//==============================================
+// Brent
+//==============================================
 
 
 double p4_minusLogLikeForBrent(double *parameters)
@@ -584,7 +1017,7 @@ void p4_allBrentPowellOptimize(p4_tree *aTree)
         printf("Failed to allocate memory for opt parameters.\n");
         exit(1);
     }
-    p4_windUpParameters(aTree, parameters, NULL, NULL, NULL);
+    p4_windUpParameters(aTree, parameters, NULL, NULL);
     if((0)) {
         printf("p4_treeOptimize.c: allBrentPowellOptimize() starting with these params\n");
         printf("nPrams is %i\n", nPrams);
@@ -670,7 +1103,7 @@ void p4_allBrentPowellOptimize(p4_tree *aTree)
     // the better optimization.  I don't know what else to do about it
     // except repeat.
 
-    p4_windUpParameters(aTree, parameters, NULL, NULL, NULL);
+    p4_windUpParameters(aTree, parameters, NULL, NULL);
     diff = 1.0;
     while(fabs(diff) > 1.0e-6) {
         likelihoodEvaluations = 0;
@@ -797,7 +1230,7 @@ void p4_newtAndBrentPowellOpt(p4_tree *aTree)
         exit(1);
     }
 
-    p4_windUpParameters(aTree, parameters, NULL, NULL, NULL);
+    p4_windUpParameters(aTree, parameters, NULL, NULL);
     aBrent = newBrent(nPrams);
     p4_newtAround(aTree, 1.0, 10.0);
     p4_newtAround(aTree, 1.0e-1, 1.0);
@@ -867,8 +1300,8 @@ void p4_newtAndBrentPowellOpt(p4_tree *aTree)
         // So make the model params reflect the parameters vector, by unwinding the 
         // parameters vector, and doing a setPrams.
 
-        p4_unWindParameters(thisTree, parameters);
-        p4_setPrams(thisTree);
+        p4_unWindParameters(aTree, parameters);
+        p4_setPrams(aTree);
         diff = logLike - previousLogLike;
         if((0)) {
             if(diff < -1.0e-6) {
@@ -885,10 +1318,13 @@ void p4_newtAndBrentPowellOpt(p4_tree *aTree)
             break;
         }
         pass++;
-        if(pass > 50) {
+        if(pass > aTree->newtAndBrentPowellOptPassLimit[0]) {
             printf("=============================================================\n");
-            printf("p4_newtAndBrentPowellOpt().  Pass limit (50) exceeded without\n");
-            printf("convergence.  Giving up.  This tree is not optimized!\n");
+            printf("p4_newtAndBrentPowellOpt()\n"); 
+            printf("Pass limit (%i) exceeded without convergence.\n", 
+                   aTree->newtAndBrentPowellOptPassLimit[0]);
+            printf("The result may still be useful.\n");
+            printf("You may want to optimize again, and perhaps boost the var.newtAndBrentPowellOptPassLimit.\n");
             break;
         }
     }
@@ -996,7 +1432,7 @@ void p4_newtAnd1DBrent(p4_tree *aTree)
 
 void p4_bracketTheMinimum(p4_tree *aTree, double *guess1, double *guess2, double *lBound, double *uBound, double *pram, double downFactor)
 {
-    p4_windUpParameters(aTree, pram, lBound, uBound, NULL);
+    p4_windUpParameters(aTree, pram, lBound, uBound);
     //printf("p4_bracketTheMinimum(). *pram = %f, *lBound = %f, *uBound = %f\n", *pram, *lBound, *uBound);
     //printf("p4_bracketTheMinimum(). *pram = %f, downFactor= %f\n", *pram, downFactor);
     *guess2 = *pram;

@@ -12,7 +12,7 @@
 
 //static  int anInt = 0;  // for a recursion, below.
 
-p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, double *partLikes, data *aData, p4_model *aModel)
+p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, double *partLikes, data *aData, p4_model *aModel, int *newtAndBrentPowellOptPassLimit)
 {
     p4_tree	*aTree;
     int		i;
@@ -46,6 +46,7 @@ p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, doub
     aTree->preOrder = preOrder;  // numeric array
     aTree->postOrder = postOrder;
     aTree->partLikes = partLikes;
+    aTree->newtAndBrentPowellOptPassLimit = newtAndBrentPowellOptPassLimit;
     //for(i = 0; i < nNodes; i++) {
     //	printf("node %i, ", i);
     //	printf("preOrder = %i\n", preOrder[i]);
@@ -385,7 +386,7 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
         //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+                if(mp->comps[i]->val[j] < (0.5 * aTree->model->PIVEC_MIN[0])) {
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }
@@ -426,11 +427,11 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
         double sum=0.0;
 
         mp = aTree->model->parts[pNum];
-        //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
+        // printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                //if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
-                if(mp->comps[i]->val[j] < PIVEC_MIN) {               // Was half PIVEC_MIN.  Why?
+                //if(mp->comps[i]->val[j] < (0.5 * aTree->model->PIVEC_MIN[0])) {
+                if(mp->comps[i]->val[j] < aTree->model->PIVEC_MIN[0]) {               // Was half PIVEC_MIN.  Why?
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }
@@ -452,7 +453,7 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
 
     // turn on all needsReset
     mp = aTree->model->parts[pNum];
-    //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
+    // printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
     for(i = 0; i < mp->nComps; i++) {
         for(j = 0; j < mp->nRMatrices; j++) {
             mp->bQETneedsReset[(i * mp->nRMatrices) + j] = 1;
@@ -654,7 +655,7 @@ void p4_setPramsPartTest(p4_tree *aTree, int pNum)
         //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+                if(mp->comps[i]->val[j] < (0.5 * aTree->model->PIVEC_MIN[0])) {
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }
@@ -699,7 +700,7 @@ void p4_setPramsPartTest(p4_tree *aTree, int pNum)
         //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+                if(mp->comps[i]->val[j] < (0.5 * aTree->model->PIVEC_MIN[0])) {
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }
