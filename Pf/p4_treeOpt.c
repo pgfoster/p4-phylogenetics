@@ -811,14 +811,14 @@ void p4_newtAndBOBYQAOpt(p4_tree *aTree)
     while(1) {
         double prev;
         double afterNewtLogLike;
-        double diff2;
+        //double diff2;
 
         likelihoodEvaluations = 0;
         //printf("....About to newtAround ....\n");
         prev = p4_treeLogLike(aTree, 0);
         p4_newtAround(aTree, 1.0e-5, 1.0e-7);
         afterNewtLogLike = p4_treeLogLike(aTree, 0);
-        diff2 = afterNewtLogLike - prev;
+        //diff2 = afterNewtLogLike - prev;
         //printf("                          newt diff =     %.8f\n", diff2);
         //printf("....About to BOBYQA.  pass=%i\n", pass);
         
@@ -844,7 +844,7 @@ void p4_newtAndBOBYQAOpt(p4_tree *aTree)
             printf("result %i Failed newtAndBOBYQA\n", (int)result);
         } 
         
-        diff2 = logLike - afterNewtLogLike;
+        //diff2 = logLike - afterNewtLogLike;
         //printf("                        BIBYQA diff =     %.8f\n", diff2);
         //printf("....finished BOBYQA.\n");
 
