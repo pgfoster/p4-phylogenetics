@@ -1786,7 +1786,7 @@ class Mcmc(object):
         #print("    Swaps are presented as a square matrix, nChains * nChains.")
         print("    Upper triangle is the number of swaps proposed between two chains.")
         print("    Lower triangle is the percent swaps accepted.")
-        print("    The chainTemp is %s\n" % self.chainTemp)
+        #print("    The chainTemp is %s\n" % self.chainTemp)
         print(" " * 10, end=' ')
         for i in range(self.nChains):
             print("%7i" % i, end=' ')

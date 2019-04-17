@@ -2665,7 +2665,7 @@ class STMcmc(object):
         #if var.mcmc_swapVector:
         #    print("    The chainTemp is continuously tuned for each chain\n")
         #else:
-        print("    The chainTemp is %f.\n" % self.chainTemp)
+        #print("    The chainTemp is %f.\n" % self.chainTemp)
 
         print(" " * 10, end=' ')
         for i in range(self.nChains):
