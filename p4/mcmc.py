@@ -121,7 +121,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'pInvar', 1.0)
         object.__setattr__(self, 'local', 1.0)
         object.__setattr__(self, 'brLen', 0.0)
-        object.__setattr__(self, 'allBrLens', 0.0)
+        object.__setattr__(self, 'allBrLens', 1.0)
         object.__setattr__(self, 'eTBR', 1.0)
         object.__setattr__(self, 'polytomy', 0.0)
         object.__setattr__(self, 'root3', 0.0)
