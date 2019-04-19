@@ -352,7 +352,8 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
         // a combination of small comp values and small rate matrix
         // values.
 
-        int row, col, i;
+        int row, col, i, j;
+        p4_rMatrix *aRMatrix;
         FILE *fout;
         for(rate = 0; rate < mp->nCat; rate++) {
             for(row=0; row< mp->dim; row++) {
@@ -363,18 +364,50 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
                             printf("p4_calculateBigPDecksPart error: Couldn't open crash report file for appending \n");
                             return;
                         }
+                        fprintf(fout, "=================================================\n");
                         fprintf(fout, "p4_calculateBigPDecksPart error.  Negative value.\n");
                         fprintf(fout, "node %i, bigP[pNum=%i][rate=%i][%i][%i] %g\n", 
                                 aNode->nodeNum, pNum, rate, row, col, aNode->bigPDecks[pNum][rate][row][col]);
                         fprintf(fout, "branch len %g\n", aNode->brLen[0]);
+                        fprintf(fout, "relRate is %g\n",  mp->relRate[0]);
+                        if(mp->nGdasrvs) {
+                            fprintf(fout, "gdasrv alpha is %g\n", aGdasrv->val[0]);
+                            fprintf(fout, "gdasrv at rate %i is %g\n", rate, aGdasrv->rates[rate]);
+                            fprintf(fout, "product (effective brLen) is %g\n", aNode->brLen[0] * aGdasrv->rates[rate] * mp->relRate[0]);
+                        }
+                        else {
+                            fprintf(fout, "product (effective brLen) is %g\n", aNode->brLen[0] * mp->relRate[0]);
+                        }
                         fprintf(fout, "comp vector\n");
                         for(i=0; i < mp->dim; i++) { 
                             fprintf(fout, "%g, ", mp->comps[cNum]->val[i]);
                         }
                         fprintf(fout, "\n");
-                        fprintf(fout, "May be due to one of var.PIVEC_MIN, var.RATE_MIN, or var.BRLEN_MIN being too small.\n");
-                        fprintf(fout, "eg if var.PIVEC_MIN is 1e-14, you could try setting it to 1e-13,\n");
-                        fprintf(fout, "or if var.RATE_MIN is 1e-13, you could try setting it to 1e-12.\n");
+                        aRMatrix = aNode->tree->model->parts[pNum]->rMatrices[rNum];
+                        fprintf(fout, "RMatrix\n");
+                        for(i = 0; i < mp->dim; i++) {
+                            for(j = 0; j < mp->dim; j++) {
+                                fprintf(fout, " %8.3g", aRMatrix->bigR[i][j]);
+                            }
+                            fprintf(fout, "\n");
+                        }
+                        fprintf(fout, "\n");
+
+                        fprintf(fout, "QMatrix\n");
+                        for(i = 0; i < mp->dim; i++) {
+                            for(j = 0; j < mp->dim; j++) {
+                                fprintf(fout, " %8.3g", aQE->bigQ[i][j]);
+                            }
+                            fprintf(fout, "\n");
+                        }
+                        fprintf(fout, "\n");
+                        fprintf(fout, "PIVEC_MIN is now %g\n", aNode->tree->model->PIVEC_MIN[0]);
+                        fprintf(fout, "RATE_MIN is now %g\n", aNode->tree->model->RATE_MIN[0]);
+                        fprintf(fout, "BRLEN_MIN is now  %g\n", aNode->tree->model->BRLEN_MIN[0]);
+                        fprintf(fout, "GAMMA_SHAPE_MIN is now %g\n", aNode->tree->model->GAMMA_SHAPE_MIN[0]);
+                        fprintf(fout, "This problem may be due to one of var.PIVEC_MIN, var.RATE_MIN, "); 
+                        fprintf(fout, "var.BRLEN_MIN, var.GAMMA_SHAPE_MIN being too small.\n");
+                        fprintf(fout, "Try raising one or more?\n");
                         fclose(fout);
                         printf("Got a serious problem; see the file p4_CRASH \n");
                         exit(1);
