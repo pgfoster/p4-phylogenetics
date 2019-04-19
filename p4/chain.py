@@ -364,6 +364,36 @@ class Chain(object):
                               theProposal.pNum, 0)
 
 
+        elif theProposal.name == 'ndch2_root3n_internalCompsDir':
+            #print("theProposal.name = ndch2_internalCompsDir, pNum=%i" % theProposal.pNum)
+            self.proposeNdch2_internalCompsDir(theProposal)
+            # This next line is not needed because comps are numpy arrays
+            # self.propTree.model.setCStuff(partNum=theProposal.pNum)
+            if 0:
+                mpProp = self.propTree.model.parts[theProposal.pNum]
+                for mtProp in mpProp.comps:
+                    mySum = numpy.sum(mtProp.val)
+                    myDiff = math.fabs(1.0 - mySum)
+                    if myDiff > 1e-15:
+                        print("Chain.proposeSp() gen %i, ndch2_internalCompsDir, x myDiff is %g" % (self.mcmc.gen, myDiff)) 
+                for mtPropNum in range(len(mpProp.comps)):
+                    mtProp = mpProp.comps[mtPropNum]
+                    for chNum in range(mpProp.dim):
+                        thisNp = mtProp.val[chNum]
+                        thatNp = pf.test(self.propTree.cTree, theProposal.pNum, mtPropNum, chNum)
+                        if math.fabs(thisNp - thatNp) > 1e-14:
+                           print('++++++ gen %i comp %2i %2i' % (self.mcmc.gen, mtPropNum,chNum), "%17.15f %17.15f %g" % (thisNp, thatNp, (thisNp - thatNp))) 
+            
+            pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
+            for n in self.propTree.iterPostOrder():
+                if not n.isLeaf:
+                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                        n.cNode, theProposal.pNum)
+            pf.p4_partLogLike(self.propTree.cTree,
+                              self.propTree.data.parts[theProposal.pNum].cPart,
+                              theProposal.pNum, 0)
+
+
         elif theProposal.name == 'ndch2_leafCompsDirAlpha':
             # print "theProposal.name = ndch2_leafCompsDirAlpha, pNum=%i" % theProposal.pNum
             self.proposeNdch2_leafCompsDirAlpha(theProposal)
