@@ -104,7 +104,7 @@ class Var(object):
 
         #: Require that MCMC run numbers are in order.
         # Ensure chains are init'ed sequentially
-        self.strictRunNumberChecking = True
+        self.strictRunNumberChecking = False   # changed from True April 2019
 
         self.NO_ORDER = -10000  # pre and postOrder for unused nodes.
 
