@@ -1,7 +1,12 @@
 # Do an MCMC with the NDCH2 model
 # Here I assume only one data partition, part 0
 
-# var.strictRunNumberChecking = False
+# Hopefully these will not be needed, but in the event of 
+# a bad matrix exponentiation these might be useful
+# var.PIVEC_MIN = 1.e-7
+# var.RATE_MIN = 1.e-7
+# var.BRLEN_MIN = 1.e-6
+# var.GAMMA_SHAPE_MIN = 0.1
 
 read("d.nex")
 d = Data()
