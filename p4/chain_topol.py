@@ -12,10 +12,11 @@ if True:
     def proposeRoot3(self, theProposal):
         """For non-biRooted trees.  Root on another internal node."""
 
-        internalsNoRoot = [n for n in self.propTree.iterInternalsNoRoot()]
-        if len(internalsNoRoot):
+        #candidates = [n for n in self.propTree.iterInternalsNoRoot()]
+        candidates = [n for n in self.propTree.root.iterChildren() if not n.isLeaf]
+        if len(candidates):
             oldRoot = self.propTree.root
-            newRoot = random.choice(internalsNoRoot)
+            newRoot = random.choice(candidates)
             self.propTree.reRoot(
                 newRoot, moveInternalName=False, 
                 fixRawSplitKeys=self.mcmc.constraints)
