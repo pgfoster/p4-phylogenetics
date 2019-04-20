@@ -1,6 +1,8 @@
 # Do an MCMC with the NDCH2 model
 # Here I assume only one data partition, part 0
 
+# var.strictRunNumberChecking = False
+
 read("d.nex")
 d = Data()
 t = func.randomTree(taxNames=d.taxNames)
@@ -25,13 +27,14 @@ t.model.parts[0].ndch2_writeComps = False # Usually too many
 nGen = 1000000
 nSamples = 2000
 sInterv = int(nGen / nSamples)
-cpInterv = int(nGen / 2)
+nCheckPoints = 2
+cpInterv = int(nGen / nCheckPoints)
 
 # Instantiate an Mcmc object.  Adjust nChains and runNum appropriately.
 m = Mcmc(t, nChains=4, runNum=0, sampleInterval=sInterv, checkPointInterval=cpInterv)
 
 # Check what proposals are turned on
-print(m.prob)
+# print(m.prob)
 
 m.run(nGen)
 
