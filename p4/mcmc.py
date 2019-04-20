@@ -32,7 +32,7 @@ fudgeFactor['allCompsDir'] = 1.0
 fudgeFactor['allRMatricesDir'] = 1.0
 fudgeFactor['ndch2comp'] = 0.2
 fudgeFactor['ndch2alpha'] = 0.04
-fudgeFactor['ndch2root3nInternalCompsDir'] = 0.1
+fudgeFactor['ndch2root3nInternalCompsDir'] = 0.05
 
 
 class McmcTuningsPart(object):
@@ -116,7 +116,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'ndch2_internalCompsDir', 0.0)
         object.__setattr__(self, 'ndch2_leafCompsDirAlpha', 0.0)
         object.__setattr__(self, 'ndch2_internalCompsDirAlpha', 0.0)
-        object.__setattr__(self, 'ndch2_root3n_internalCompsDir', 0.0)
+        #object.__setattr__(self, 'ndch2_root3n_internalCompsDir', 0.0)
         #object.__setattr__(self, 'rMatrix', 1.0)
         object.__setattr__(self, 'rMatrixDir', 0.0)
         object.__setattr__(self, 'allRMatricesDir', 1.0)
@@ -297,13 +297,13 @@ class Proposals(object):
         spacer = ' ' * 4
         print("\nIntended proposal probabilities (%)")
         print("There are %i proposals" % len(self.proposals))
-        print("%2s %11s %30s %5s %12s" % ('', 'intended(%)', 'proposal', 'part', 'tuning'))
+        print("%2s %11s %35s %5s %12s" % ('', 'intended(%)', 'proposal', 'part', 'tuning'))
         for i in range(len(self.proposals)):
             print("%2i" % i, end=' ')
             p = self.proposals[i]
             print("   %6.2f    " % (100. * self.intended[i]), end=' ')
 
-            print(" %27s" % p.name, end=' ')
+            print(" %32s" % p.name, end=' ')
 
             if p.pNum != -1:
                 print(" %3i " % p.pNum, end=' ')
@@ -741,7 +741,7 @@ class Mcmc(object):
 
         self.props = Proposals()
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
-                    gdasrv local ndch2_internalCompsDir 
+                    gdasrv local ndch2_internalCompsDir ndch2_root3n_internalCompsDir 
                     ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
                     ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
         # maybeTunableButNotNow  compLocation eTBR polytomy root3 rMatrixLocation
@@ -825,6 +825,7 @@ class Mcmc(object):
             self._tunings.parts[pNum].default['allCompsDir'] = 100. * theDim
             self._tunings.parts[pNum].default['ndch2_leafCompsDir'] = 2000. * theDim
             self._tunings.parts[pNum].default['ndch2_internalCompsDir'] = 500. * theDim
+            self._tunings.parts[pNum].default['ndch2_root3n_internalCompsDir'] = 500. * theDim
             self._tunings.parts[pNum].default['rMatrixDir'] = 50. * nRates
             self._tunings.parts[pNum].default['allRMatricesDir'] = 100. * nRates
             
@@ -929,10 +930,12 @@ class Mcmc(object):
                     if thisMString not in props_on:
                         props_on.append(thisMString)
 
-                    self.prob.ndch2_root3n_internalCompsDir = 1.0
-                    thisMString = "ndch2_root3n_internalCompsDir"
-                    if thisMString not in props_on:
-                        props_on.append(thisMString)
+                    if 0:
+                        # experimental.  doesn't work well
+                        self.prob.ndch2_root3n_internalCompsDir = 1.0
+                        thisMString = "ndch2_root3n_internalCompsDir"
+                        if thisMString not in props_on:
+                            props_on.append(thisMString)
 
             self.prob.root3 = 1.0
 
@@ -1274,6 +1277,26 @@ class Mcmc(object):
 
                 self.props.proposals.append(p)
 
+            # # ndch2_root3n_internalCompsDir, only for single data-partition runs
+            # if self.prob.ndch2_root3n_internalCompsDir:
+            #     p = Proposal(self)
+            #     p.name = 'ndch2_root3n_internalCompsDir'
+            #     p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains  
+            #     p.weight = self.prob.ndch2_root3n_internalCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2root3nInternalCompsDir']
+            #     p.pNum = pNum
+
+            #     p.tnAccVeryHi = 0.4
+            #     p.tnAccHi = 0.15
+            #     p.tnAccLo = 0.05
+            #     p.tnAccVeryLo = 0.03
+
+            #     p.tnFactorVeryHi = 0.7
+            #     p.tnFactorHi = 0.8
+            #     p.tnFactorLo = 1.2
+            #     p.tnFactorVeryLo = 1.4
+
+            #     self.props.proposals.append(p)
+
             # ndch2_leafCompsDirAlpha
             if self.prob.ndch2_leafCompsDirAlpha:
                 p = Proposal(self)
@@ -1314,54 +1337,6 @@ class Mcmc(object):
 
                 self.props.proposals.append(p)
 
-            # ndch2_root3n_internalCompsDir, only for single data-partition runs
-            if self.prob.ndch2_root3n_internalCompsDir:
-                p = Proposal(self)
-                p.name = 'ndch2_root3n_internalCompsDir'
-                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
-                p.weight = self.prob.ndch2_root3n_internalCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2root3nInternalCompsDir']
-                p.pNum = pNum
-
-                p.tnAccVeryHi = 0.7
-                p.tnAccHi = 0.6
-                p.tnAccLo = 0.1
-                p.tnAccVeryLo = 0.06
-
-                p.tnFactorVeryHi = 1.6
-                p.tnFactorHi = 1.2
-                p.tnFactorLo = 0.8
-                p.tnFactorVeryLo = 0.7
-
-                self.props.proposals.append(p)
-
-            # # rMatrix
-            # if self.prob.rMatrix:
-            #     if mp.rMatrices and mp.rMatrices[0].free:
-            #         for mtNum in range(mp.nRMatrices):
-            #             assert mp.rMatrices[mtNum].free
-            #         p = Proposal(self)
-            #         p.name = 'rMatrix'
-            #         if mp.rMatrices[mtNum].spec == '2p':
-            #             p.weight = self.prob.rMatrix
-            #             p.variant = '2p'
-            #             p.tuning = self._tunings.parts[pNum].default['twoP']
-            #         else:
-            #             p.tuning = self._tunings.parts[pNum].default[p.name]
-            #             p.weight = self.prob.rMatrix * mp.nRMatrices * \
-            #                 (((mp.dim * mp.dim) - mp.dim) / 2)
-            #         p.pNum = pNum
-
-            #         p.tnAccVeryHi = 0.7
-            #         p.tnAccHi = 0.6
-            #         p.tnAccLo = 0.1
-            #         p.tnAccVeryLo = 0.06
-
-            #         p.tnFactorVeryHi = 1.6
-            #         p.tnFactorHi = 1.2
-            #         p.tnFactorLo = 0.8
-            #         p.tnFactorVeryLo = 0.7
-
-            #         self.props.proposals.append(p)
 
             # rMatrixDir
             if self.prob.rMatrixDir:

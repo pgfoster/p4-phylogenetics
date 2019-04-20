@@ -95,6 +95,15 @@ class Chain(object):
             self.propTree.model.setCStuff(partNum=theProposal.pNum)
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
 
+        elif theProposal.name == 'ndch2_root3n_internalCompsDir':
+            # print("aab Doing proposal ndch2_root3n_internalCompsDir")
+            self.proposeNdch2_root3n_internalCompsDir(theProposal)
+            if not self.propTree.preAndPostOrderAreValid:
+                self.propTree.setPreAndPostOrder()
+            self.propTree.setCStuff()
+            self.propTree.model.setCStuff(partNum=theProposal.pNum)
+            pf.p4_setPrams(self.propTree.cTree, -1)
+
         elif theProposal.name == 'ndch2_leafCompsDirAlpha':
             # print "theProposal.name = ndch2_leafCompsDirAlpha, pNum=%i" % theProposal.pNum
             self.proposeNdch2_leafCompsDirAlpha(theProposal)
@@ -113,7 +122,6 @@ class Chain(object):
             else:
                 self.proposeAllRMatricesDir(theProposal)
 
-            self.proposeRMatrixWithSlider(theProposal)
             self.propTree.model.setCStuff(partNum=theProposal.pNum)
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
 
@@ -214,10 +222,10 @@ class Chain(object):
 
         proposalsWithNoLikeCalcs = ['ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha']
 
-        # print "...about to calculate the likelihood of the propTree."
-        self.propTree.logLike = pf.p4_treeLogLike(self.propTree.cTree, 0)
-        #self.propTree.logLike = self.getTreeLogLike()
-        # print "propTree logLike is", self.propTree.logLike
+        #print("...about to calculate the likelihood of the propTree.")
+        self.propTree.logLike = pf.p4_treeLogLike(self.propTree.cTree, 0)    # second arg is getSiteLikes
+        #self.propTree.calcLogLike()                                         # sets self.propTree.logLike
+        #print("propTree logLike is", self.propTree.logLike)
 
         # slow check
         if 1:
@@ -392,30 +400,18 @@ class Chain(object):
                               theProposal.pNum, 0)
 
         elif theProposal.name == 'ndch2_root3n_internalCompsDir':
-            #print("theProposal.name = ndch2_internalCompsDir, pNum=%i" % theProposal.pNum)
-            self.proposeNdch2_internalCompsDir(theProposal)
+            # This should only be for single-partition data, so we do not need to "do all parts"
+            #print("theProposal.name = ndch2_root3n_internalCompsDir, pNum=%i" % theProposal.pNum)
+            self.proposeNdch2_root3n_internalCompsDir(theProposal)
             # This next line is not needed because comps are numpy arrays
             # self.propTree.model.setCStuff(partNum=theProposal.pNum)
-            if 0:
-                mpProp = self.propTree.model.parts[theProposal.pNum]
-                for mtProp in mpProp.comps:
-                    mySum = numpy.sum(mtProp.val)
-                    myDiff = math.fabs(1.0 - mySum)
-                    if myDiff > 1e-15:
-                        print("Chain.proposeSp() gen %i, ndch2_internalCompsDir, x myDiff is %g" % (self.mcmc.gen, myDiff)) 
-                for mtPropNum in range(len(mpProp.comps)):
-                    mtProp = mpProp.comps[mtPropNum]
-                    for chNum in range(mpProp.dim):
-                        thisNp = mtProp.val[chNum]
-                        thatNp = pf.test(self.propTree.cTree, theProposal.pNum, mtPropNum, chNum)
-                        if math.fabs(thisNp - thatNp) > 1e-14:
-                           print('++++++ gen %i comp %2i %2i' % (self.mcmc.gen, mtPropNum,chNum), "%17.15f %17.15f %g" % (thisNp, thatNp, (thisNp - thatNp))) 
-            
-            pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
+
+            self.propTree.setPreAndPostOrder()
+            self.propTree.setCStuff()
+            pf.p4_setPrams(self.propTree.cTree, -1)  # "-1" means do all parts
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
-                        n.cNode, theProposal.pNum)
+                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
                               theProposal.pNum, 0)
@@ -927,6 +923,7 @@ class Chain(object):
 
         # slow check
         if 0:
+            print("doing slow check ...")
             # There should be no n.br.lenChanged or n.flag set at this point.
             if aProposal.name in ['local', 'brLen', 'eTBR', 'polytomy']:
                 nnBrLenChanged = []
@@ -1234,7 +1231,7 @@ class Chain(object):
                 pf.p4_copyModelPrams(a.cTree, b.cTree)
 
             # Tree topology, so all parts
-            elif aProposal.name in ['local', 'eTBR', 'root3', 'brLen', 'polytomy', 'treeScale', 'allBrLens']:
+            elif aProposal.name in ['local', 'eTBR', 'root3', 'brLen', 'polytomy', 'treeScale', 'allBrLens', 'ndch2_root3n_internalCompsDir']:
                 b.logLike = a.logLike
                 for pNum in range(self.propTree.model.nParts):
                     b.partLikes[pNum] = a.partLikes[pNum]
@@ -1339,7 +1336,7 @@ class Chain(object):
                     "br.lenChanged or flag should not be set at this point.")
                 raise P4Error(gm)
 
-        # if 1:
+        #if 1:
         if (self.mcmc.gen + 1) % 100 == 0:  # every hundred gens
             ret = self.verifyIdentityOfTwoTreesInChain(
                 doSplitKeys=self.mcmc.constraints)
@@ -2126,6 +2123,60 @@ class Chain(object):
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs            
+
+
+
+
+    def proposeNdch2_root3n_internalCompsDir(self, theProposal):
+        gm = ['Chain.proposeNdch2_root3n_internalCompsDir()']
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+        assert mpCur.ndch2
+
+        # Does this work for polytomies?  With that in mind, I iterate over
+        # nodes rather than comps.
+
+        # At the moment, the prior only looks at the global comp, and so I can
+        # make the proposals, proposal ratios, and prior ratio all in one
+        # iterInternals() loop.  If I were to look at local comps (ie neighbours)
+        # then I would need to separate out the prior calc into its own loop.
+
+        self.logProposalRatio = 0.0
+        self.logPriorRatio = 0.0
+
+        for nCur in self.curTree.iterInternals():
+            mtNum = nCur.parts[theProposal.pNum].compNum
+            mtCur = mpCur.comps[mtNum]
+            mtProp = mpProp.comps[mtNum]
+
+            # Make proposals. Result of the proposal goes into mtProp.val
+            p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            while  mtProp.val.min() < var.PIVEC_MIN:
+                for i in range(mpCur.dim):
+                    if mtProp.val[i] < var.PIVEC_MIN:
+                        mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
+                thisSum = mtProp.val.sum()
+                mtProp.val /= thisSum
+
+            # log proposal ratios
+            forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtCur.val, mtProp.val)
+            reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+                mpCur.dim, theProposal.tuning[self.tempNum] * mtProp.val, mtCur.val)
+            self.logProposalRatio += reverseLnPdf - forwardLnPdf
+
+            # prior ratio
+            dirPrams = mpCur.ndch2_internalAlpha * mpCur.ndch2_globalComp  # this is set in Mcmc.__init__()
+            lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
+            lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
+            self.logPriorRatio += lnPdfProps - lnPdfCurrs
+
+        # re-root to a neighbor
+        candidateNodes = [n for n in self.propTree.root.iterChildren() if not n.isLeaf]
+        assert candidateNodes
+        newRoot = random.choice(candidateNodes)
+        self.propTree.reRoot(newRoot, moveInternalName=False,fixRawSplitKeys=self.mcmc.constraints)
 
 
 

@@ -279,7 +279,7 @@ class Var(object):
         #self._RATE_MIN = 1.0e-14                                 # ie for rMatrices, changed from 1.0e-8 nov 2016, because self._rMatrixNormalizeTo1 is set
         self._RATE_MIN = numpy.array([1.0e-13], numpy.float64)    # changed from 1.e-14 March 2019, to avoid getting negative bigP values
         self._RATE_MAX = numpy.array([0.9999999], numpy.float64)  # changed from 1.0e8 nov 2016, also because self._rMatrixNormalizeTo1 is set
-        self._GAMMA_SHAPE_MIN = numpy.array([0.1], numpy.float64)  # changed from 0.000001 april 2019
+        self._GAMMA_SHAPE_MIN = numpy.array([0.1], numpy.float64)  # changed from 0.000001 april 2019, with alpha=0.1, slowest cat is 5.e-7
         self._GAMMA_SHAPE_MAX = numpy.array([300.0], numpy.float64)
         self._PINVAR_MIN = numpy.array([0.0], numpy.float64)
         self._PINVAR_MAX = numpy.array([0.99], numpy.float64)

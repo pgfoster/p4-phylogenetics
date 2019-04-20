@@ -1614,9 +1614,7 @@ class Gdasrv(object):
         if self.c:
             pf.gdasrvCalcRates(self.c)
         else:
-            # this week, this is the one that is used
-            pf.gdasrvCalcRates_np(
-                self.nGammaCat, self._val[0], self.freqs, self.rates)
+            pf.gdasrvCalcRates_np(self.nGammaCat, self._val[0], self.freqs, self.rates)
         # print('xxx self.rates = %s, val=%s' % (self.rates, self._val[0]))
 
 
