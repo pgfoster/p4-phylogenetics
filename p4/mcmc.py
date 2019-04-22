@@ -540,7 +540,7 @@ class Mcmc(object):
 
     To prepare for a run, instantiate an Mcmc object::
 
-        m = Mcmc(t, sampleInterval=1000, checkpointInterval=200000)
+        m = Mcmc(t, sampleInterval=1000, checkPointInterval=200000)
 
     To start it running, do this::
 
