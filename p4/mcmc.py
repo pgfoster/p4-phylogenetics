@@ -1352,7 +1352,7 @@ class Mcmc(object):
                     else:
                         p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
                         p.weight = self.prob.rMatrixDir * mp.nRMatrices * \
-                            (((mp.dim * mp.dim) - mp.dim) / 2)
+                            ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
                     p.pNum = pNum
 
                     p.tnAccVeryHi = 0.4
@@ -1380,7 +1380,7 @@ class Mcmc(object):
                     else:
                         p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
                         p.weight = self.prob.allRMatricesDir * mp.nRMatrices * \
-                            (((mp.dim * mp.dim) - mp.dim) / 2) * fudgeFactor['allRMatricesDir']
+                            ((((mp.dim * mp.dim) - mp.dim) / 2) - 1) * fudgeFactor['allRMatricesDir']
                     p.pNum = pNum
 
                     p.tnAccVeryHi = 0.4
@@ -1479,10 +1479,10 @@ class Mcmc(object):
                 self.props.topologyProposalsDict[p.name] = p
         self.props.calculateWeights()
 
-    def _refreshProposalProbsAndTunings(self):
+    def _refreshProposalProbs(self):
         """Adjust proposals after a restart."""
 
-        gm = ['Mcmc._refreshProposalProbsAndTunings()']
+        gm = ['Mcmc._refreshProposalProbs()']
 
         for p in self.props.proposals:
             # brLen
@@ -1521,55 +1521,55 @@ class Mcmc(object):
                     p.weight = 0.0
                 else:
                     p.weight = self.prob.root3 * \
-                        (len(self.tree.taxNames) - 3) * fudgeFactor['root3']
+                        self.tree.nInternalNodes * fudgeFactor['root3']
 
             # relRate
             if p.name == 'relRate':
                 p.weight = self.prob.relRate * self.tree.model.nParts
 
-            # comp
-            if p.name == 'comp':
-                mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.comp * float(mp.dim - 1) * mp.nComps
+            # # comp
+            # if p.name == 'comp':
+            #     mp = self.tree.model.parts[p.pNum]
+            #     p.weight = self.prob.comp * float(mp.dim - 1) * mp.nComps
 
             # compDir
             if p.name == 'compDir':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.compDir * float(mp.dim - 1) * mp.nComps
+                p.weight = self.prob.compDir * (mp.dim - 1) * mp.nComps
 
             # allCompsDir
             if p.name == 'allCompsDir':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.allCompsDir * float(mp.dim - 1) * mp.nComps * fudgeFactor['allCompsDir']
+                p.weight = self.prob.allCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['allCompsDir']
 
             # ndch2_leafCompsDir
             if p.name == 'ndch2_leafCompsDir':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.ndch2_leafCompsDir * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
+                p.weight = self.prob.ndch2_leafCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
 
             # ndch2_internalCompsDir
             if p.name == 'ndch2_internalCompsDir':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.ndch2_internalCompsDir * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
+                p.weight = self.prob.ndch2_internalCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2comp']
 
             # ndch2_leafCompsDirAlpha
             if p.name == 'ndch2_leafCompsDirAlpha':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.ndch2_leafCompsDirAlpha * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
+                p.weight = self.prob.ndch2_leafCompsDirAlpha * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
 
             # ndch2_internalCompsDirAlpha
             if p.name == 'ndch2_internalCompsDirAlpha':
                 mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.ndch2_internalCompsDirAlpha * float(mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
+                p.weight = self.prob.ndch2_internalCompsDirAlpha * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
 
-            # rMatrix
-            if p.name == 'rMatrix':
-                mp = self.tree.model.parts[p.pNum]
-                if mp.rMatrices[0].spec == '2p':
-                    p.weight = self.prob.rMatrix
-                else:
-                    p.weight = self.prob.rMatrix * mp.nRMatrices * \
-                        ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
+            # # rMatrix
+            # if p.name == 'rMatrix':
+            #     mp = self.tree.model.parts[p.pNum]
+            #     if mp.rMatrices[0].spec == '2p':
+            #         p.weight = self.prob.rMatrix
+            #     else:
+            #         p.weight = self.prob.rMatrix * mp.nRMatrices * \
+            #             ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
 
             # rMatrixDir
             if p.name == 'rMatrixDir':
@@ -1578,7 +1578,7 @@ class Mcmc(object):
                     p.weight = self.prob.rMatrixDir
                 else:
                     p.weight = self.prob.rMatrixDir * mp.nRMatrices * \
-                        ((((mp.dim * mp.dim) - mp.dim) / 2) - 1)
+                        ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1)
 
             # allRMatricesDir
             if p.name == 'allRMatricesDir':
@@ -1586,8 +1586,8 @@ class Mcmc(object):
                 #if mp.rMatrices[0].spec == '2p':
                 #    p.weight = self.prob.rMatrixDir
                 #else:
-                p.weight = self.prob.rMatrixDir * mp.nRMatrices * \
-                        ((((mp.dim * mp.dim) - mp.dim) / 2) - 1) * fudgeFactor['allRMatricesDir']
+                p.weight = self.prob.allRMatricesDir * mp.nRMatrices * \
+                        ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * fudgeFactor['allRMatricesDir']
 
             # gdasrv
             if p.name == 'gdasrv':
@@ -1609,24 +1609,15 @@ class Mcmc(object):
                 p.weight = self.prob.rMatrixLocation * mp.nRMatrices * (len(self.tree.nodes) - 1) * \
                     fudgeFactor['rMatrixLocation']
 
-            # gdasrvLocation
-            if p.name == 'gdasrvLocation':
-                mp = self.tree.model.parts[p.pNum]
-                p.weight = self.prob.gdasrvLocation * mp.nGdasrvs * (len(self.tree.nodes) - 1) * \
-                    fudgeFactor['gdasrvLocation']
+            # # gdasrvLocation
+            # if p.name == 'gdasrvLocation':
+            #     mp = self.tree.model.parts[p.pNum]
+            #     p.weight = self.prob.gdasrvLocation * mp.nGdasrvs * (len(self.tree.nodes) - 1) * \
+            #         fudgeFactor['gdasrvLocation']
 
 
-        self.propWeights = []
-        for p in self.props.proposals:
-            self.propWeights.append(p.weight)
-        self.cumPropWeights = [self.propWeights[0]]
-        for i in range(len(self.propWeights))[1:]:
-            self.cumPropWeights.append(
-                self.cumPropWeights[i - 1] + self.propWeights[i])
-        self.totalPropWeights = sum(self.propWeights)
-        if self.totalPropWeights < 1e-9:
-            gm.append("No proposal weights?")
-            raise P4Error(gm)
+        self.props.calculateWeights()
+
 
     def writeProposalAcceptances(self):
         """Pretty-print the proposal acceptances."""
@@ -1966,7 +1957,7 @@ class Mcmc(object):
             #         self._writeSimFileHeader(self.tree)
 
             # The probs and tunings may have been changed by the user.
-            self._refreshProposalProbsAndTunings()
+            self._refreshProposalProbs()
 
             # This stuff below should be the same as is done after pickling,
             # see below.
