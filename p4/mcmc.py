@@ -25,6 +25,7 @@ fudgeFactor['eTBR'] = 1.0
 fudgeFactor['allBrLens'] = 1.0
 fudgeFactor['polytomy'] = 1.0
 fudgeFactor['root3'] = 0.1
+fudgeFactor['root3n'] = 0.1
 fudgeFactor['compLocation'] = 0.01
 fudgeFactor['rMatrixLocation'] = 0.01
 fudgeFactor['gdasrvLocation'] = 0.01
@@ -128,6 +129,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'eTBR', 1.0)
         object.__setattr__(self, 'polytomy', 0.0)
         object.__setattr__(self, 'root3', 0.0)
+        object.__setattr__(self, 'root3n', 0.0)
         object.__setattr__(self, 'compLocation', 0.0)
         object.__setattr__(self, 'rMatrixLocation', 0.0)
         object.__setattr__(self, 'relRate', 1.0)
@@ -938,9 +940,11 @@ class Mcmc(object):
                             props_on.append(thisMString)
 
             self.prob.root3 = 1.0
+            self.prob.root3n = 1.0
 
             if verbose:
                 props_on.append("root location")
+                props_on.append("root location (neighbours)")
                 print("\n%23s" % "Additional proposals:")
                 for prop in props_on:
                     print("%30s = on" % prop)
@@ -948,6 +952,7 @@ class Mcmc(object):
                 print("  %s" % "off again before Mcmc.run()]\n")
         else:
             self.prob.root3 = 0.0
+            self.prob.root3n = 0.0
             self.prob.compLocation = 0.0
             self.prob.rMatrixLocation = 0.0
             #self.prob.gdasrvLocation = 0.0
@@ -1136,6 +1141,17 @@ class Mcmc(object):
             else:
                 p.weight = self.prob.root3 * \
                            self.tree.nInternalNodes * fudgeFactor['root3']
+            self.props.proposals.append(p)
+
+        # root3n
+        if self.prob.root3n:
+            p = Proposal(self)
+            p.name = 'root3n'
+            if len(self.tree.taxNames) <= 3:
+                p.weight = 0.0
+            else:
+                p.weight = self.prob.root3n * \
+                           self.tree.nInternalNodes * fudgeFactor['root3n']
             self.props.proposals.append(p)
 
         # relRate
@@ -1522,6 +1538,14 @@ class Mcmc(object):
                 else:
                     p.weight = self.prob.root3 * \
                         self.tree.nInternalNodes * fudgeFactor['root3']
+
+            # root3n
+            if p.name == 'root3n':
+                if len(self.tree.taxNames) <= 3:
+                    p.weight = 0.0
+                else:
+                    p.weight = self.prob.root3n * \
+                        self.tree.nInternalNodes * fudgeFactor['root3n']
 
             # relRate
             if p.name == 'relRate':
@@ -2162,8 +2186,8 @@ class Mcmc(object):
                                 #aProposal = self.proposalsHash['brLen']
                                 gotIt = False
 
-                        elif aProposal.name == 'root3':
-                            # Can't do root3 on a star tree.
+                        elif aProposal.name in ['root3', 'root3n']:
+                            # Can't do root3 or root3n on a star tree.
                             if self.chains[chNum].curTree.nInternalNodes == 1:
                                 gotIt = False
 

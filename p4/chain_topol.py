@@ -12,7 +12,31 @@ if True:
     def proposeRoot3(self, theProposal):
         """For non-biRooted trees.  Root on another internal node."""
 
-        #candidates = [n for n in self.propTree.iterInternalsNoRoot()]
+        candidates = [n for n in self.propTree.iterInternalsNoRoot()]
+        if len(candidates):
+            oldRoot = self.propTree.root
+            newRoot = random.choice(candidates)
+            self.propTree.reRoot(
+                newRoot, moveInternalName=False, 
+                fixRawSplitKeys=self.mcmc.constraints)
+            if self.mcmc.stickyRootComp:
+                # move the compNum's too
+                nParts = len(oldRoot.parts)
+                for mpNum in range(nParts):
+                    mpOld = oldRoot.parts[mpNum]
+                    mpNew = newRoot.parts[mpNum]
+                    # ... the switch
+                    savedOldCompNum = mpOld.compNum
+                    mpOld.compNum = mpNew.compNum
+                    mpNew.compNum = savedOldCompNum
+        else:
+            print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
+        self.logProposalRatio = 0.0
+        self.logPriorRatio = 0.0
+
+    def proposeRoot3n(self, theProposal):
+        """For non-biRooted trees.  Root on a neighbouring internal node."""
+
         candidates = [n for n in self.propTree.root.iterChildren() if not n.isLeaf]
         if len(candidates):
             oldRoot = self.propTree.root
@@ -34,9 +58,6 @@ if True:
             print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
-        # if self.mcmc.constraints:
-        #    print "checkSplitKeys() at the end of root3"
-        #    self.propTree.checkSplitKeys()
 
     def proposeBrLen(self, theProposal):
         #gm = ['Chain.proposeBrLen']

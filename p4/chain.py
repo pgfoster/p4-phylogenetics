@@ -15,7 +15,7 @@ import sys
 
 class Chain(object):
 
-    from p4.chain_topol import proposeRoot3, proposeBrLen, proposeAllBrLens, proposeLocal, proposeETBR_Blaise, proposeESPR_Blaise, proposeETBR, proposeESPR, proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
+    from p4.chain_topol import proposeRoot3, proposeRoot3n, proposeBrLen, proposeAllBrLens, proposeLocal, proposeETBR_Blaise, proposeESPR_Blaise, proposeETBR, proposeESPR, proposePolytomy, proposeAddEdge, _getCandidateNodesForDeleteEdge, proposeDeleteEdge
 
 
     def __init__(self, aMcmc):
@@ -190,6 +190,13 @@ class Chain(object):
 
         elif theProposal.name == 'root3':
             self.proposeRoot3(theProposal)
+            if not self.propTree.preAndPostOrderAreValid:
+                self.propTree.setPreAndPostOrder()
+            self.propTree.setCStuff()
+            pf.p4_setPrams(self.propTree.cTree, -1)
+
+        elif theProposal.name == 'root3n':
+            self.proposeRoot3n(theProposal)
             if not self.propTree.preAndPostOrderAreValid:
                 self.propTree.setPreAndPostOrder()
             self.propTree.setCStuff()
@@ -740,6 +747,20 @@ class Chain(object):
                 pf.p4_partLogLike(
                     self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
 
+        elif theProposal.name == 'root3n':
+            self.proposeRoot3n(theProposal)
+            if not self.propTree.preAndPostOrderAreValid:
+                self.propTree.setPreAndPostOrder()
+            self.propTree.setCStuff()
+            pf.p4_setPrams(self.propTree.cTree, -1)
+            for pNum in range(self.propTree.model.nParts):
+                for n in self.propTree.iterPostOrder():
+                    if not n.isLeaf:
+                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                            n.cNode, pNum)
+                pf.p4_partLogLike(
+                    self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
+
         elif theProposal.name == 'relRate':
             # print "theProposal.name = relRate, pNum=%i" % theProposal.pNum
             self.proposeRelRate(theProposal)
@@ -1231,7 +1252,9 @@ class Chain(object):
                 pf.p4_copyModelPrams(a.cTree, b.cTree)
 
             # Tree topology, so all parts
-            elif aProposal.name in ['local', 'eTBR', 'root3', 'brLen', 'polytomy', 'treeScale', 'allBrLens', 'ndch2_root3n_internalCompsDir']:
+            elif aProposal.name in ['local', 'eTBR', 'root3', 'root3n', 
+                                    'brLen', 'polytomy', 'treeScale', 
+                                    'allBrLens', 'ndch2_root3n_internalCompsDir']:
                 b.logLike = a.logLike
                 for pNum in range(self.propTree.model.nParts):
                     b.partLikes[pNum] = a.partLikes[pNum]
