@@ -24,7 +24,7 @@ fudgeFactor['brLen'] = 1.0
 fudgeFactor['eTBR'] = 1.0
 fudgeFactor['allBrLens'] = 1.0
 fudgeFactor['polytomy'] = 1.0
-fudgeFactor['root3'] = 0.1
+fudgeFactor['root3'] = 0.05
 fudgeFactor['root3n'] = 0.1
 fudgeFactor['compLocation'] = 0.01
 fudgeFactor['rMatrixLocation'] = 0.01
@@ -60,7 +60,6 @@ class McmcTuningsPart(object):
         self.default['twoP'] = 50.
         self.default['gdasrv'] = 2.0 * math.log(1.5)  # 0.811
         self.default['pInvar'] = 0.5
-        #self.default['compLocation'] = 0.0
         #self.default['rMatrixLocation'] = 0.0
 
 
@@ -85,6 +84,9 @@ class McmcTunings(object):
         self.default['doInternalBrLenPrior'] = False
         self.default['brLenPriorType'] = 'exponential'
         self.default['allBrLens'] = 2.0 * math.log(1.02)
+        self.default['root3'] = 10.0
+        self.default['root3n'] = 10.0
+
 
 
 class McmcProposalProbs(dict):
@@ -746,7 +748,7 @@ class Mcmc(object):
                     gdasrv local ndch2_internalCompsDir ndch2_root3n_internalCompsDir 
                     ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
                     ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
-        # maybeTunableButNotNow  compLocation eTBR polytomy root3 rMatrixLocation
+        # maybeTunableButNotNow  compLocation eTBR polytomy root3 root3n rMatrixLocation
 
 
         self.treePartitions = None
@@ -976,6 +978,10 @@ class Mcmc(object):
         # Whether logging from the Pf module is turned on.
         # When it is turned on, a callback is set up to self._logFromPfModule()
         self.setupPfLogging = False
+
+        # Whether to do root3 and root3n tuning or not
+        self.doRoot3Tuning = False
+        self.doRoot3nTuning = False
         
 
     def _setLogger(self):
@@ -1134,25 +1140,49 @@ class Mcmc(object):
 
         # root3
         if self.prob.root3:
-            p = Proposal(self)
-            p.name = 'root3'
             if len(self.tree.taxNames) <= 3:
-                p.weight = 0.0
+                pass
             else:
+                p = Proposal(self)
+                p.name = 'root3'
+                p.tuning = [self._tunings.default[p.name]] * self.nChains
                 p.weight = self.prob.root3 * \
                            self.tree.nInternalNodes * fudgeFactor['root3']
-            self.props.proposals.append(p)
+
+                p.tnAccVeryHi = 0.4
+                p.tnAccHi = 0.3
+                p.tnAccLo = 0.05
+                p.tnAccVeryLo = 0.03
+
+                p.tnFactorVeryHi = 0.7
+                p.tnFactorHi = 0.8
+                p.tnFactorLo = 1.2
+                p.tnFactorVeryLo = 1.6
+
+                self.props.proposals.append(p)
 
         # root3n
         if self.prob.root3n:
-            p = Proposal(self)
-            p.name = 'root3n'
             if len(self.tree.taxNames) <= 3:
-                p.weight = 0.0
+                pass
             else:
+                p = Proposal(self)
+                p.name = 'root3n'
+                p.tuning = [self._tunings.default[p.name]] * self.nChains
                 p.weight = self.prob.root3n * \
                            self.tree.nInternalNodes * fudgeFactor['root3n']
-            self.props.proposals.append(p)
+
+                p.tnAccVeryHi = 0.5
+                p.tnAccHi = 0.4
+                p.tnAccLo = 0.1
+                p.tnAccVeryLo = 0.06
+
+                p.tnFactorVeryHi = 0.7
+                p.tnFactorHi = 0.8
+                p.tnFactorLo = 1.2
+                p.tnFactorVeryLo = 1.6
+
+                self.props.proposals.append(p)
 
         # relRate
         if self.prob.relRate:
@@ -1533,19 +1563,13 @@ class Mcmc(object):
 
             # root3
             if p.name == 'root3':
-                if len(self.tree.taxNames) <= 3:
-                    p.weight = 0.0
-                else:
-                    p.weight = self.prob.root3 * \
-                        self.tree.nInternalNodes * fudgeFactor['root3']
+                p.weight = self.prob.root3 * \
+                    self.tree.nInternalNodes * fudgeFactor['root3']
 
             # root3n
             if p.name == 'root3n':
-                if len(self.tree.taxNames) <= 3:
-                    p.weight = 0.0
-                else:
-                    p.weight = self.prob.root3n * \
-                        self.tree.nInternalNodes * fudgeFactor['root3n']
+                p.weight = self.prob.root3n * \
+                    self.tree.nInternalNodes * fudgeFactor['root3n']
 
             # relRate
             if p.name == 'relRate':
@@ -2236,6 +2260,14 @@ class Mcmc(object):
                     # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation
 
                     if aProposal.name in self.tunableProps:
+                        tempNum = self.chains[chNum].tempNum
+                        if aProposal.tnNSamples[tempNum] >= aProposal.tnSampleSize:
+                            aProposal.tune(tempNum)
+                    elif aProposal.name == 'root3' and self.doRoot3Tuning:
+                        tempNum = self.chains[chNum].tempNum
+                        if aProposal.tnNSamples[tempNum] >= aProposal.tnSampleSize:
+                            aProposal.tune(tempNum)
+                    elif aProposal.name == 'root3n' and self.doRoot3nTuning:
                         tempNum = self.chains[chNum].tempNum
                         if aProposal.tnNSamples[tempNum] >= aProposal.tnSampleSize:
                             aProposal.tune(tempNum)
