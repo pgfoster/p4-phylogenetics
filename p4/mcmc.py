@@ -2110,7 +2110,7 @@ class Mcmc(object):
             self.logger.info("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
             if verbose:
                 if self.nChains > 1:
-                    print("Using Metropolis-coupled MCMC, with %i chains.  Temperature %.2f" % (self.nChains, self.chainTemp))
+                    print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 print("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
