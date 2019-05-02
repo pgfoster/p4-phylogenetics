@@ -157,14 +157,6 @@ class Var(object):
         Used by :meth:`Tree.Tree.topologyDistance` and :meth:`Trees.Trees.topologyDistanceMatrix`
         """
 
-        self.interactiveHelper = None
-        """Whether to read the contents of p4.extras
-
-        This directory has modules that may be handy, but are not central to
-        what p4 is about, and so are not imported by default.
-
-        """
-
         # These are used by TreePicture
         self.TEXTDRAW_NONE = 0
         self.TEXTDRAW_COMP = 1
