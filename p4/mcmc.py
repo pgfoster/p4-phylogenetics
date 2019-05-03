@@ -970,11 +970,6 @@ class Mcmc(object):
             self.swapTuner = SwapTunerV(self)
             print("%-16s: %s" % ('swapTuner', "on"))
 
-        # Hidden experimental hacking
-        self.doHeatingHack = False
-        self.heatingHackTemperature = 5.0
-        #self.heatingHackProposalNames = ['local', 'eTBR']
-
         # Whether logging from the Pf module is turned on.
         # When it is turned on, a callback is set up to self._logFromPfModule()
         self.setupPfLogging = False
@@ -1939,13 +1934,6 @@ class Mcmc(object):
 
         # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
-
-        # Hidden experimental hack
-        if self.doHeatingHack:
-            print("Heating hack is turned on.")
-            assert self.nChains == 1, "MCMCMC does not work with the heating hack"
-            print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
-            #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
         if self.prob.polytomy:
             for pNum in range(self.tree.model.nParts):

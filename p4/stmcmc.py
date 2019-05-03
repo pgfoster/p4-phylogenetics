@@ -1291,10 +1291,10 @@ class STChain(object):
             #print("propose().  chainTemp=%s, heatBeta=%f" % (self.stMcmc.chainTemps, heatBeta))
 
         # Experimental Heating hack
-        if self.stMcmc.doHeatingHack: # and theProposal.name in self.stMcmc.heatingHackProposalNames:
-            heatFactor = 1.0 / (1.0 + self.stMcmc.heatingHackTemperature)
-            logLikeRatio *= heatFactor
-            self.logPriorRatio *= heatFactor
+        # if self.stMcmc.doHeatingHack: # and theProposal.name in self.stMcmc.heatingHackProposalNames:
+        #     heatFactor = 1.0 / (1.0 + self.stMcmc.heatingHackTemperature)
+        #     logLikeRatio *= heatFactor
+        #     self.logPriorRatio *= heatFactor
 
         theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
         #theSum = self.logProposalRatio + self.logPriorRatio
@@ -2379,11 +2379,6 @@ class STMcmc(object):
             self.swapTuner = STSwapTunerV(self)
 
 
-        # Hidden experimental hacking
-        self.doHeatingHack = False
-        self.heatingHackTemperature = 5.0
-        #self.heatingHackProposalNames = ['nni', 'spr']
-
         if verbose:
             self.loggerPrinter.info("Initializing STMcmc")
             self.loggerPrinter.info("%-16s: %s" % ('modelName', modelName))
@@ -2754,13 +2749,6 @@ class STMcmc(object):
         """Start the STMcmc running."""
 
         gm = ['STMcmc.run()']
-
-        # Hidden experimental hack
-        if self.doHeatingHack:
-            print("Heating hack is turned on.")
-            assert self.nChains == 1, "MCMCMC does not work with the heating hack"
-            print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
-            #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
 
         # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
