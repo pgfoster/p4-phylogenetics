@@ -2840,7 +2840,7 @@ class Tree(object):
 
         If you have nexus taxsets defined, you can show them.
         """
-        from btv import TV
+        from p4.btv import TV
         #import os
         #os.environ['PYTHONINSPECT'] = '1'
         TV(self)
