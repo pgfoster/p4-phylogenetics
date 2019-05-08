@@ -84,8 +84,8 @@ class McmcTunings(object):
         self.default['doInternalBrLenPrior'] = False
         self.default['brLenPriorType'] = 'exponential'
         self.default['allBrLens'] = 2.0 * math.log(1.02)
-        self.default['root3'] = 10.0
-        self.default['root3n'] = 10.0
+        #self.default['root3'] = 10.0
+        #self.default['root3n'] = 10.0
 
 
 
@@ -1140,7 +1140,7 @@ class Mcmc(object):
             else:
                 p = Proposal(self)
                 p.name = 'root3'
-                p.tuning = [self._tunings.default[p.name]] * self.nChains
+                #p.tuning = [self._tunings.default[p.name]] * self.nChains
                 p.weight = self.prob.root3 * \
                            self.tree.nInternalNodes * fudgeFactor['root3']
 
@@ -1163,7 +1163,7 @@ class Mcmc(object):
             else:
                 p = Proposal(self)
                 p.name = 'root3n'
-                p.tuning = [self._tunings.default[p.name]] * self.nChains
+                #p.tuning = [self._tunings.default[p.name]] * self.nChains
                 p.weight = self.prob.root3n * \
                            self.tree.nInternalNodes * fudgeFactor['root3n']
 
@@ -2251,14 +2251,14 @@ class Mcmc(object):
                         tempNum = self.chains[chNum].tempNum
                         if aProposal.tnNSamples[tempNum] >= aProposal.tnSampleSize:
                             aProposal.tune(tempNum)
-                    elif aProposal.name == 'root3' and self.doRoot3Tuning:
-                        tempNum = self.chains[chNum].tempNum
-                        if aProposal.tnNSamples[tempNum] >= aProposal.tnSampleSize:
-                            aProposal.tune(tempNum)
-                    elif aProposal.name == 'root3n' and self.doRoot3nTuning:
-                        tempNum = self.chains[chNum].tempNum
-                        if aProposal.tnNSamples[tempNum] >= aProposal.tnSampleSize:
-                            aProposal.tune(tempNum)
+                    # elif aProposal.name == 'root3' and self.doRoot3Tuning:
+                    #     tempNum = self.chains[chNum].tempNum
+                    #     if aProposal.tnNSamples[tempNum] >= aProposal.tnSampleSize:
+                    #         aProposal.tune(tempNum)
+                    # elif aProposal.name == 'root3n' and self.doRoot3nTuning:
+                    #     tempNum = self.chains[chNum].tempNum
+                    #     if aProposal.tnNSamples[tempNum] >= aProposal.tnSampleSize:
+                    #         aProposal.tune(tempNum)
 
                 # print "   Mcmc.run(). finished a gen on chain %i" % (chNum)
                 for p in self.props.proposals:
