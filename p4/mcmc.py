@@ -975,8 +975,8 @@ class Mcmc(object):
         self.setupPfLogging = False
 
         # Whether to do root3 and root3n tuning or not
-        self.doRoot3Tuning = False
-        self.doRoot3nTuning = False
+        # self.doRoot3Tuning = False
+        # self.doRoot3nTuning = False
         
 
     def _setLogger(self):
