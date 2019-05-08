@@ -33,10 +33,7 @@ if True:
             print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
         
         self.logProposalRatio = 0.0
-        if self.mcmc.doRoot3Tuning:
-            self.logPriorRatio = theProposal.tuning[self.tempNum]  # hack alert!
-        else:
-            self.logPriorRatio = 0.0
+        self.logPriorRatio = 0.0
 
     def proposeRoot3n(self, theProposal):
         """For non-biRooted trees.  Root on a neighbouring internal node."""
@@ -61,10 +58,7 @@ if True:
         else:
             print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
         self.logProposalRatio = 0.0
-        if self.mcmc.doRoot3Tuning:
-            self.logPriorRatio = theProposal.tuning[self.tempNum]  # hack alert!
-        else:
-            self.logPriorRatio = 0.0
+        self.logPriorRatio = 0.0
 
     def proposeBrLen(self, theProposal):
         #gm = ['Chain.proposeBrLen']
