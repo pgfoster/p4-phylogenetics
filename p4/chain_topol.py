@@ -57,7 +57,14 @@ if True:
                     mpNew.compNum = savedOldCompNum
         else:
             print("Chain.proposeRoot3().  No other internal nodes.  Fix me.")
-        self.logProposalRatio = 0.0
+
+        # There is a proposal imbalance, so we need to calculate the
+        # proposal ratio.  It has to do with the number of non-leaves, as
+        # leaves are not root candidates. 
+        oldRootNNonLeaves = len(candidates)
+        newRootNNonLeaves = len([n for n in self.propTree.root.iterChildren() if not n.isLeaf])
+        proposalRatio = oldRootNNonLeaves/newRootNNonLeaves
+        self.logProposalRatio = math.log(proposalRatio)
         self.logPriorRatio = 0.0
 
     def proposeBrLen(self, theProposal):
