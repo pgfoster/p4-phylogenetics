@@ -1073,7 +1073,7 @@ def splash2(outFile=None, verbose=True):
     return stuff
 
 
-def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None):
+def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None, randomlyReRoot=True):
     """Make a simple random Tree.
 
     You can supply a list of taxNames, or simply specify nTax.  In the
@@ -1357,7 +1357,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
                 t.setPreAndPostOrder()
         nodeNum = t.addNodeBetweenNodes(n, n.parent)
         t.reRoot(nodeNum, moveInternalName=False)
-    else:
+    elif randomlyReRoot:
         # The way it is now, the root rightmost child is always a
         # leaf.  Not really random, then, right?  So choose a random
         # internal node, and re-root it there.
