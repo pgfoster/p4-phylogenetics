@@ -38,7 +38,7 @@ class Constraints(object):
 
         self.tree.makeSplitKeys()
         self.constraints = []
-        self.tree.draw()
+        #self.tree.draw()
         for n in self.tree.iterInternalsNoRoot():
             n.name = n.br.splitKey
             if n.br.splitKey not in self.constraints:
