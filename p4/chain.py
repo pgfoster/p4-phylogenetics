@@ -1308,7 +1308,7 @@ class Chain(object):
                 # print "Too big!"
                 print("Comparing topology stuff with Tree.verifyIdentityWith() ...")
                 # python level only, false for 'doSplitKeys'
-                ret = self.curTree.verifyIdentityWith(self.testTree, False)
+                ret = self.curTree.verifyIdentityWith(self.testTree, doSplitKeys=False)
                 if ret == var.DIFFERENT:
                     print("verifyIdentityOfTwoTreesInChain() tree topology stuff differs")
                 else:
@@ -1440,8 +1440,7 @@ class Chain(object):
 
         # print "Python-level. Verify node relations, root, br.lens, model
         # usage, pre- and post-order."
-        ret = self.curTree.verifyIdentityWith(
-            self.propTree, doSplitKeys)  # python level only
+        ret = self.curTree.verifyIdentityWith(self.propTree, doSplitKeys=doSplitKeys)  # python level only
         if ret == var.DIFFERENT:
             # print "verifyIdentityOfTwoTreesInChain() tree topology stuff
             # differs"

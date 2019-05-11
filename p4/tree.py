@@ -2411,7 +2411,7 @@ class Tree(object):
 
         otherTree._nInternalNodes = self._nInternalNodes
 
-    def verifyIdentityWith(self, otherTree, doSplitKeys):
+    def verifyIdentityWith(self, otherTree, doSplitKeys=False, doMore=False):
         """For MCMC debugging.  Verifies that two trees are identical."""
 
         complaintHead = '\nTree.verifyIdentityWith()'  # keep
@@ -2498,56 +2498,57 @@ class Tree(object):
                         print('    rawSplitKeys differ.')
                         return var.DIFFERENT
 
-        # model usage numbers
-        isBad = 0
-        for pNum in range(self.model.nParts):
-            for nNum in range(len(self.nodes)):
-                selfNode = self.nodes[nNum]
-                otherNode = otherTree.nodes[nNum]
-                if selfNode.parts[pNum].compNum != otherNode.parts[pNum].compNum:
+        if self.model:
+            # model usage numbers
+            isBad = 0
+            for pNum in range(self.model.nParts):
+                for nNum in range(len(self.nodes)):
+                    selfNode = self.nodes[nNum]
+                    otherNode = otherTree.nodes[nNum]
+                    if selfNode.parts[pNum].compNum != otherNode.parts[pNum].compNum:
+                        isBad = 1
+                    if self.nodes[nNum] != self.root:
+                        if selfNode.br.parts[pNum].rMatrixNum != otherNode.br.parts[pNum].rMatrixNum:
+                            isBad = 1
+                        elif selfNode.br.parts[pNum].gdasrvNum != otherNode.br.parts[pNum].gdasrvNum:
+                            isBad = 1
+
+                    if isBad:
+                        print(complaintHead)
+                        print('    Node %i, model usage info does not match.' % nNum)
+                        return var.DIFFERENT
+
+            # pre- and postOrder
+            isBad = 0
+            for i in range(len(self.preOrder)):
+                if self.preOrder[i] != otherTree.preOrder[i]:
                     isBad = 1
-                if self.nodes[nNum] != self.root:
-                    if selfNode.br.parts[pNum].rMatrixNum != otherNode.br.parts[pNum].rMatrixNum:
-                        isBad = 1
-                    elif selfNode.br.parts[pNum].gdasrvNum != otherNode.br.parts[pNum].gdasrvNum:
-                        isBad = 1
-
-                if isBad:
-                    print(complaintHead)
-                    print('    Node %i, model usage info does not match.' % nNum)
-                    return var.DIFFERENT
-
-        # pre- and postOrder
-        isBad = 0
-        for i in range(len(self.preOrder)):
-            if self.preOrder[i] != otherTree.preOrder[i]:
-                isBad = 1
-                break
-            elif self.postOrder[i] != otherTree.postOrder[i]:
-                isBad = 1
-                break
-        if isBad:
-            print(complaintHead)
-            print('    Pre- or postOrder do not match.')
-            return var.DIFFERENT
-
-        if self.nInternalNodes != otherTree.nInternalNodes:
-            print(complaintHead)
-            print('    nInternalNodes differ.')
-            return var.DIFFERENT
-
-        # partLikes
-        for pNum in range(self.model.nParts):
-            # if otherTree.partLikes[pNum] != self.partLikes[pNum]:
-            myDiff = math.fabs(otherTree.partLikes[pNum] - self.partLikes[pNum])
-            if myDiff > 1.e-5:
+                    break
+                elif self.postOrder[i] != otherTree.postOrder[i]:
+                    isBad = 1
+                    break
+            if isBad:
                 print(complaintHead)
-                print("    partLikes differ by %.8f (%g).  (%.8f, (%g) %.8f (%g)" % (
-                    myDiff, myDiff,
-                    otherTree.partLikes[pNum], otherTree.partLikes[pNum], self.partLikes[pNum], self.partLikes[pNum]))
+                print('    Pre- or postOrder do not match.')
                 return var.DIFFERENT
 
-        if 0:  # some more
+            if self.nInternalNodes != otherTree.nInternalNodes:
+                print(complaintHead)
+                print('    nInternalNodes differ.')
+                return var.DIFFERENT
+
+            # partLikes
+            for pNum in range(self.model.nParts):
+                # if otherTree.partLikes[pNum] != self.partLikes[pNum]:
+                myDiff = math.fabs(otherTree.partLikes[pNum] - self.partLikes[pNum])
+                if myDiff > 1.e-5:
+                    print(complaintHead)
+                    print("    partLikes differ by %.8f (%g).  (%.8f, (%g) %.8f (%g)" % (
+                        myDiff, myDiff,
+                        otherTree.partLikes[pNum], otherTree.partLikes[pNum], self.partLikes[pNum], self.partLikes[pNum]))
+                    return var.DIFFERENT
+
+        if doMore:  # some more
             for nNum in range(len(self.nodes)):
                 selfNode = self.nodes[nNum]
                 otherNode = otherTree.nodes[nNum]
