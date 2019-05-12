@@ -639,7 +639,7 @@ class Mcmc(object):
             gm.append("The tree that you feed to this class should have a model and data attached.")
             raise P4Error(gm)
 
-        if 1:
+        if 0:
             if 1:
                 if aTree.root.getNChildren() != 3 or not aTree.isFullyBifurcating():
                     gm.append("Mcmc is not implemented for bifurcating roots, or trees that are not fully bifurcating.")

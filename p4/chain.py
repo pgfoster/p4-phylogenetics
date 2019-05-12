@@ -526,7 +526,27 @@ class Chain(object):
                               theProposal.pNum, 0)
 
         elif theProposal.name == 'local':
-            self.proposeLocal(theProposal)
+            if self.propTree.root.getNChildren() == 2:
+                if random.random() < 0.5:
+                    stNode = self.propTree.pruneSubTreeWithoutParent(self.propTree.root.leftChild.sibling, allowSingleChildNode=True)
+                else:
+                    stNode = self.propTree.pruneSubTreeWithoutParent(self.propTree.root.leftChild, allowSingleChildNode=True)
+                self.propTree.setPreAndPostOrder()
+                self.propTree.root.name = "OldRoot"
+                self.propTree.root.isLeaf = 1
+                self.propTree.reRoot(self.propTree.root.leftChild)
+                #print("Starting local proposal ...")
+                self.proposeLocal(theProposal)
+                #print("  ... finished local proposal")
+                self.propTree.reRoot(self.propTree.node("OldRoot"))
+                self.propTree.root.name = None
+                self.propTree.root.isLeaf = 0
+                self.propTree.reconnectSubTreeWithoutParent(stNode, self.propTree.root)
+                self.propTree.setPreAndPostOrder()
+                self.propTree.draw()
+                print("After local, RF is %s" % self.propTree.topologyDistance(self.mcmc.tree))
+            else:
+                self.proposeLocal(theProposal)
             if theProposal.doAbort:
                 return 0.0
             else:
@@ -1087,7 +1107,7 @@ class Chain(object):
         # if aProposal.name in ['rMatrix', 'comp', 'gdasrv']:
         #    acceptMove = False
 
-        if 0 and self.mcmc.gen > 0 and self.mcmc.gen < 1000:
+        if 1 and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
             print("-------------- (gen %5i, %20s) acceptMove = %6s" % (self.mcmc.gen, aProposal.name, acceptMove), end=' ')
             if acceptMove:
                 logLikeDiff = self.propTree.logLike - self.curTree.logLike
