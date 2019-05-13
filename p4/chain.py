@@ -977,10 +977,10 @@ class Chain(object):
                 raise P4Error(gm)
 
         # Experimental Heating hack
-        # if self.mcmc.doHeatingHack: # and theProposal.name in self.mcmc.heatingHackProposalNames:
-        #     heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature)
-        #     logLikeRatio *= heatFactor
-        #     self.logPriorRatio *= heatFactor
+        if self.mcmc.doHeatingHack: # and theProposal.name in self.mcmc.heatingHackProposalNames:
+            heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature)
+            logLikeRatio *= heatFactor
+            self.logPriorRatio *= heatFactor
 
         theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
         # if theProposal.name in ['ndch2_leafCompsDir']:
