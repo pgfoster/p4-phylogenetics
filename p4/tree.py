@@ -2390,14 +2390,13 @@ class Tree(object):
             for nNum in range(len(self.nodes)):
                 selfNode = self.nodes[nNum]
                 otherNode = otherTree.nodes[nNum]
-                for pNum in range(self.model.nParts):
-                    otherNode.parts[pNum].compNum = selfNode.parts[
-                        pNum].compNum
-                    if selfNode != self.root:
-                        otherNode.br.parts[pNum].rMatrixNum = selfNode.br.parts[
-                            pNum].rMatrixNum
-                        otherNode.br.parts[
-                            pNum].gdasrvNum = selfNode.br.parts[pNum].gdasrvNum
+                if selfNode.parts and otherNode.parts:
+                    for pNum in range(self.model.nParts):
+                        otherNode.parts[pNum].compNum = selfNode.parts[pNum].compNum
+                        if selfNode != self.root:
+                            if selfNode.br.parts and otherNode.br.parts:
+                                otherNode.br.parts[pNum].rMatrixNum = selfNode.br.parts[pNum].rMatrixNum
+                                otherNode.br.parts[pNum].gdasrvNum = selfNode.br.parts[pNum].gdasrvNum
 
         # pre- and postOrder
         for i in range(len(self.preOrder)):
@@ -2505,13 +2504,15 @@ class Tree(object):
                 for nNum in range(len(self.nodes)):
                     selfNode = self.nodes[nNum]
                     otherNode = otherTree.nodes[nNum]
-                    if selfNode.parts[pNum].compNum != otherNode.parts[pNum].compNum:
-                        isBad = 1
-                    if self.nodes[nNum] != self.root:
-                        if selfNode.br.parts[pNum].rMatrixNum != otherNode.br.parts[pNum].rMatrixNum:
+                    if selfNode.parts and otherNode.parts:
+                        if selfNode.parts[pNum].compNum != otherNode.parts[pNum].compNum:
                             isBad = 1
-                        elif selfNode.br.parts[pNum].gdasrvNum != otherNode.br.parts[pNum].gdasrvNum:
-                            isBad = 1
+                        if self.nodes[nNum] != self.root:
+                            if selfNode.br.parts and otherNode.br.parts:
+                                if selfNode.br.parts[pNum].rMatrixNum != otherNode.br.parts[pNum].rMatrixNum:
+                                    isBad = 1
+                                elif selfNode.br.parts[pNum].gdasrvNum != otherNode.br.parts[pNum].gdasrvNum:
+                                    isBad = 1
 
                     if isBad:
                         print(complaintHead)

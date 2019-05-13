@@ -630,7 +630,6 @@ class Mcmc(object):
 
     def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True):
         gm = ['Mcmc.__init__()']
-
         self.verbose = verbose
 
         if aTree and aTree.model and aTree.data:
@@ -750,7 +749,6 @@ class Mcmc(object):
                     ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
         # maybeTunableButNotNow  compLocation eTBR polytomy root3 root3n rMatrixLocation
 
-
         self.treePartitions = None
         self.likesFileName = "mcmc_likes_%i" % runNum
         self.treeFileName = "mcmc_trees_%i.nex" % runNum
@@ -801,7 +799,6 @@ class Mcmc(object):
         self.swapTuner = None
         self.stickyRootComp = False
 
-
         # check the tree, and tree+model+data
         if not aTree.taxNames:
             gm.append("The tree that you supply should have a 'taxNames' attribute.")
@@ -851,7 +848,7 @@ class Mcmc(object):
         else:
             self.prob.relRate = 0.0
 
-        nNodes = len(self.tree.nodes)
+        nNodes = len(list(self.tree.iterNodes()))
         for pNum in range(self.tree.model.nParts):
             mp = self.tree.model.parts[pNum]
             if mp.ndch2:
@@ -883,7 +880,6 @@ class Mcmc(object):
                 # ususal comp proposals should not be on if we are doing ndch2
                 self.prob.compDir = 0.0
                 self.prob.allCompsDir = 0.0
-
 
         if self.tree.model.isHet:
             props_on = []
@@ -977,7 +973,6 @@ class Mcmc(object):
         # Whether to do root3 and root3n tuning or not
         # self.doRoot3Tuning = False
         # self.doRoot3nTuning = False
-        
 
     def _setLogger(self):
         """Make a logger."""
@@ -2732,6 +2727,8 @@ class Mcmc(object):
                 print(theMessage)
                 sys.stdout.flush()
             ch.propTree.data = savedData
+            #ch.propTree.dump(node=True)
+            #ch.propTree.draw()
             ch.propTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
         if self.setupPfLogging:
             for ch in self.chains:

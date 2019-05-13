@@ -527,24 +527,62 @@ class Chain(object):
 
         elif theProposal.name == 'local':
             if self.propTree.root.getNChildren() == 2:
-                if random.random() < 0.5:
-                    stNode = self.propTree.pruneSubTreeWithoutParent(self.propTree.root.leftChild.sibling, allowSingleChildNode=True)
-                else:
-                    stNode = self.propTree.pruneSubTreeWithoutParent(self.propTree.root.leftChild, allowSingleChildNode=True)
-                self.propTree.setPreAndPostOrder()
-                self.propTree.root.name = "OldRoot"
-                self.propTree.root.isLeaf = 1
-                self.propTree.reRoot(self.propTree.root.leftChild)
-                #print("Starting local proposal ...")
-                self.proposeLocal(theProposal)
-                #print("  ... finished local proposal")
-                self.propTree.reRoot(self.propTree.node("OldRoot"))
-                self.propTree.root.name = None
-                self.propTree.root.isLeaf = 0
-                self.propTree.reconnectSubTreeWithoutParent(stNode, self.propTree.root)
-                self.propTree.setPreAndPostOrder()
-                self.propTree.draw()
-                print("After local, RF is %s" % self.propTree.topologyDistance(self.mcmc.tree))
+                if 0:
+                    if random.random() < 0.5:
+                        stNode = self.propTree.pruneSubTreeWithoutParent(self.propTree.root.leftChild.sibling, allowSingleChildNode=True)
+                    else:
+                        stNode = self.propTree.pruneSubTreeWithoutParent(self.propTree.root.leftChild, allowSingleChildNode=True)
+                    self.propTree.setPreAndPostOrder()
+                    self.propTree.root.name = "OldRoot"
+                    self.propTree.root.isLeaf = 1
+                    self.propTree.reRoot(self.propTree.root.leftChild)
+                    #print("Starting local proposal ...")
+                    self.proposeLocal(theProposal)
+                    #print("  ... finished local proposal")
+                    self.propTree.reRoot(self.propTree.node("OldRoot"))
+                    self.propTree.root.name = None
+                    self.propTree.root.isLeaf = 0
+                    self.propTree.reconnectSubTreeWithoutParent(stNode, self.propTree.root)
+                    self.propTree.setPreAndPostOrder()
+                    #self.propTree.draw()
+                    
+                if 1:
+                    rooter = self.propTree.attachRooter()
+                    self.propTree.makeSplitKeys()
+                    #print("rooter br is %s, rooter.nodeNum=%i" % (rooter.br, rooter.nodeNum))
+                    #print("Starting local proposal ...")
+                    self.proposeLocal(theProposal)
+                    #print("  ... finished local proposal")
+
+                    if rooter == self.propTree.root:
+                        #self.propTree.draw()
+                        assert rooter.leftChild.leftChild.sibling
+                        assert not rooter.leftChild.leftChild.sibling.sibling
+                        self.propTree.reRoot(rooter.leftChild)
+
+                    if rooter.br and rooter.br.parts:
+                        for n in self.propTree.root.iterChildren():
+                            if not n.br.parts:
+                                n.br.parts = rooter.br.parts
+                                rooter.br.parts = []
+                                break
+
+                    if rooter.br.parts:
+                        print("xx rooter is node %i, br=%s, parts=%s" % (rooter.nodeNum, rooter.br, rooter.br.parts))
+                        for n in self.propTree.iterNodesNoRoot():
+                            if n.br.parts:
+                                pass
+                            else:
+                                print("xx Node %i br (%s) has no parts." % (n.nodeNum, n.br))
+                        raise P4Error(gm)
+                    
+
+                    self.propTree.reRoot(rooter.parent)
+                    self.propTree.detachRooter()
+                    
+
+                    
+                #print("After local, RF is %s" % self.propTree.topologyDistance(self.mcmc.tree))
             else:
                 self.proposeLocal(theProposal)
             if theProposal.doAbort:
@@ -638,7 +676,43 @@ class Chain(object):
             #self.propTree.root.flag = 0
 
         elif theProposal.name == 'eTBR':
-            self.proposeETBR_Blaise(theProposal)
+            if self.propTree.root.getNChildren() == 2:
+                    rooter = self.propTree.attachRooter()
+                    self.propTree.makeSplitKeys()
+                    #print("rooter br is %s, rooter.nodeNum=%i" % (rooter.br, rooter.nodeNum))
+                    #print("Starting eTBR proposal ...")
+                    self.proposeETBR_Blaise(theProposal)
+                    #print("  ... finished eTBR proposal")
+
+                    if rooter == self.propTree.root:
+                        #self.propTree.draw()
+                        assert rooter.leftChild.leftChild.sibling
+                        assert not rooter.leftChild.leftChild.sibling.sibling
+                        self.propTree.reRoot(rooter.leftChild)
+
+                    if rooter.br and rooter.br.parts:
+                        for n in self.propTree.root.iterChildren():
+                            if not n.br.parts:
+                                n.br.parts = rooter.br.parts
+                                rooter.br.parts = []
+                                break
+
+                    if rooter.br.parts:
+                        print("xx rooter is node %i, br=%s, parts=%s" % (rooter.nodeNum, rooter.br, rooter.br.parts))
+                        for n in self.propTree.iterNodesNoRoot():
+                            if n.br.parts:
+                                pass
+                            else:
+                                print("xx Node %i br (%s) has no parts." % (n.nodeNum, n.br))
+                        raise P4Error(gm)
+                    
+
+                    self.propTree.reRoot(rooter.parent)
+                    self.propTree.detachRooter()
+                    
+            
+            else:
+                self.proposeETBR_Blaise(theProposal)
             #self.proposeETBR(theProposal)
             #self.proposeESPR_Blaise(theProposal)
             if theProposal.doAbort:
@@ -1107,13 +1181,14 @@ class Chain(object):
         # if aProposal.name in ['rMatrix', 'comp', 'gdasrv']:
         #    acceptMove = False
 
-        if 1 and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
+        if 0 and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
             print("-------------- (gen %5i, %20s) acceptMove = %6s" % (self.mcmc.gen, aProposal.name, acceptMove), end=' ')
             if acceptMove:
                 logLikeDiff = self.propTree.logLike - self.curTree.logLike
             else:
                 logLikeDiff = 0.0
             #print("logLikeChange = %8.4f" % logLikeDiff, end=' ')
+            print()
 
         aProposal.nProposals[self.tempNum] += 1
         aProposal.tnNSamples[self.tempNum] += 1
@@ -1379,8 +1454,8 @@ class Chain(object):
                     "br.lenChanged or flag should not be set at this point.")
                 raise P4Error(gm)
 
-        #if 1:
-        if (self.mcmc.gen + 1) % 100 == 0:  # every hundred gens
+        if 1:
+        #if (self.mcmc.gen + 1) % 100 == 0:  # every hundred gens
             ret = self.verifyIdentityOfTwoTreesInChain(
                 doSplitKeys=self.mcmc.constraints)
             if ret == var.DIFFERENT:

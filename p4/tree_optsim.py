@@ -78,7 +78,7 @@ if True:
         gm = ['Tree._allocCStuff()']
 
         # Make sure the nodeNums go from zero to N-1
-        for i in range(len(self.nodes)):
+        for i,n in enumerate(self.iterNodes()):           # allow NO_ORDER nodes at the end
             if self.nodes[i].nodeNum != i:
                 gm.append(
                     "Programming error: Problem with node number %i." % i)
@@ -99,7 +99,7 @@ if True:
             if not self.cTree:
                 gm.append("Unable to allocate a cTree")
                 raise P4Error(gm)
-            for n in self.nodes:
+            for n in self.iterNodes():
                 n.doDataPart = 1
                 # print 'about to dp_newNode (%i)' % n.nodeNum
                 cNode = pf.dp_newNode(
@@ -110,11 +110,11 @@ if True:
                 n.cNode = cNode
         else:
             nLeaves = 0
-            for n in self.nodes:
+            for n in self.iterNodes():
                 if n.isLeaf:
                     nLeaves += 1
             self.partLikes = numpy.zeros(self.model.nParts, numpy.float)
-            self.cTree = pf.p4_newTree(len(self.nodes), nLeaves, self.preOrder,
+            self.cTree = pf.p4_newTree(len(list(self.iterNodes())), nLeaves, self.preOrder,
                                        self.postOrder, var._newtAndBrentPowellOptPassLimit, self.partLikes, 
                                        self.data.cData, self.model.cModel)
             if not self.cTree:
@@ -122,6 +122,8 @@ if True:
                 raise P4Error(gm)
             for i in range(len(self.nodes)):
                 n = self.nodes[i]
+                if n.nodeNum == var.NO_ORDER:
+                    continue                 # seems a little mixed up.
                 if i in self.preOrder:
                     inTree = 1
                 else:
@@ -153,7 +155,7 @@ if True:
         # pf.p4_setRelative(int theCNode, int relation, int relNum)
         # parent- relation = 0, leftChild- relation = 1, sibling- relation
         # = 2
-        for n in self.nodes:
+        for n in self.iterNodes():
             if n.parent:
                 pf.p4_setNodeRelation(n.cNode, 0, n.parent.nodeNum)
             else:
@@ -182,7 +184,7 @@ if True:
             for pNum in range(self.model.nParts):
                 if self.model.parts[pNum].isHet:
                     # print "setCStuff().  about to setCompNum"
-                    for n in self.nodes:
+                    for n in self.iterNodes():
                         pf.p4_setCompNum(n.cNode, pNum, n.parts[pNum].compNum)
                         if n != self.root:
                             pf.p4_setRMatrixNum(
@@ -219,6 +221,7 @@ if True:
         self.setCStuff()
         #print("about to p4_setPrams()...")
         pf.p4_setPrams(self.cTree, -1)  # "-1" means do all parts
+        #print("finished _commonCStuff()")
 
     def calcLogLike(self, verbose=1, resetEmpiricalComps=True):
         """Calculate the likelihood of the tree, without optimization."""
