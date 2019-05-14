@@ -286,8 +286,7 @@ class Chain(object):
     def proposeSp(self, theProposal):
         gm = ['Chain.proposeSp()']
         # if self.mcmc.gen > 1300:
-        #print "proposeSp().  gen %i, About to propose %s" % (self.mcmc.gen,
-        #theProposal.name)
+        # print("proposeSp().  gen %5i,  %30s" % (self.mcmc.gen, theProposal.name), end=' ')
 
         if theProposal.name == 'comp':
             # print "theProposal.name = comp, pNum=%i" % theProposal.pNum
@@ -1181,8 +1180,8 @@ class Chain(object):
         # if aProposal.name in ['rMatrix', 'comp', 'gdasrv']:
         #    acceptMove = False
 
-        if 0 and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
-            print("-------------- (gen %5i, %20s) acceptMove = %6s" % (self.mcmc.gen, aProposal.name, acceptMove), end=' ')
+        if 0: #and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
+            print("-------------- (gen %5i, %30s) acceptMove = %6s" % (self.mcmc.gen, aProposal.name, acceptMove), end=' ')
             if acceptMove:
                 logLikeDiff = self.propTree.logLike - self.curTree.logLike
             else:
@@ -1454,8 +1453,8 @@ class Chain(object):
                     "br.lenChanged or flag should not be set at this point.")
                 raise P4Error(gm)
 
-        if 1:
-        #if (self.mcmc.gen + 1) % 100 == 0:  # every hundred gens
+        #if 1:
+        if (self.mcmc.gen + 1) % 100 == 0:  # every hundred gens
             ret = self.verifyIdentityOfTwoTreesInChain(
                 doSplitKeys=self.mcmc.constraints)
             if ret == var.DIFFERENT:
