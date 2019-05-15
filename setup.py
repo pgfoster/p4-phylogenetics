@@ -45,7 +45,7 @@ except ImportError:
 #my_lib_dirs = ["/my/weird/lib"]
 
 my_include_dirs = []
-my_lib_dirs = []
+my_lib_dirs = ["/usr/local/lib64"]
 
 likelyDirs = [ "/usr",
                "/usr/local",
