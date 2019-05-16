@@ -3021,3 +3021,48 @@ class Tree(object):
             if not n.leftChild:
                 n.isLeaf = 1
         self.setPreAndPostOrder()
+
+    def attachRooter(self):
+        rNode = self.nodes[-1]
+        assert rNode.name == 'tempRooter'
+        assert rNode.nodeNum == var.NO_ORDER
+        rtMostCh = self.root.rightmostChild()
+        rtMostCh.sibling = rNode
+        rNode.sibling = None
+        rNode.parent = self.root
+        rNode.nodeNum = len(self.nodes) - 1
+        if self.taxNames:
+            # taxnames can be shared among trees, so check whether it has already been added
+            if rNode.name not in self.taxNames:
+                self.taxNames.append(rNode.name)
+        self.preAndPostOrderAreValid = False
+        self.setPreAndPostOrder()
+        #if self._nTax:
+        #    self._nTax += 1
+        return rNode
+
+
+    def detachRooter(self):
+        rNode = self.nodes[-1]
+        assert rNode.parent == self.root
+        safety = 0
+        while self.root.leftChild.sibling.sibling != rNode:
+            self.rotateAround(self.root)
+            safety += 1
+            if safety >= 5:
+                self.draw()
+                raise P4Error("Tree.detachRooter() Too many rotations.")
+
+        assert self.root.leftChild.sibling.sibling == rNode
+        self.root.leftChild.sibling.sibling = None
+        rNode.parent = None
+        rNode.nodeNum = var.NO_ORDER
+        self.preAndPostOrderAreValid = False
+        self.setPreAndPostOrder()
+        if self.taxNames:
+            # taxnames can be shared among trees, so check whether it is in
+            if rNode.name == self.taxNames[-1]:
+                self.taxNames.pop()
+        #if self._nTax:
+        #    self._nTax -= 1
+

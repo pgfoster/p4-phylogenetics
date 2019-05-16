@@ -67,6 +67,174 @@ if True:
         self.logProposalRatio = math.log(proposalRatio)
         self.logPriorRatio = 0.0
 
+    def proposeRoot2(self, theProposal):
+        """For bi-rooted trees; slides the node, perhaps past other nodes.
+
+        Branch lengths are not affected.
+        """
+
+        # Check that we have a bifurcating root.
+        assert self.propTree.root.leftChild and self.propTree.root.leftChild.sibling
+        assert not self.propTree.root.leftChild.sibling.sibling
+
+        mvDist = theProposal.tuning[self.tempNum] * random.random()
+
+        oldRoot = self.propTree.root
+        curNode = self.propTree.root
+        while True:
+            dests = [n for n in curNode.iterChildren()]
+            dest = random.choice(dests)
+            #print("Got dests %s, choose dest %i" % ([n.nodeNum for n in dests], dest.nodeNum))
+
+            if mvDist > dest.br.len:
+                #print("go to node %i" % dest.nodeNum)
+                mvDist -= dest.br.len
+                curNode = dest
+                if curNode.isLeaf:
+                    #print("reRoot to node %i" % curNode.nodeNum)
+                    self.propTree.reRoot(curNode, checkBiRoot=False)
+            else:
+                break
+        # print("finished loop with curNode %i, dest=%i, and mvDist %4f" % (curNode.nodeNum, dest.nodeNum, mvDist))
+
+        assert dest.parent == curNode
+
+        if dest.parent == curNode:     # curNode ----- dest
+            pass
+        else:
+            print("curNode %i, dest %i" % (curNode.nodeNum, dest.nodeNum))
+            self.propTree.draw()
+            print("xx fix me")
+            raise P4Error()
+
+        if curNode == oldRoot:   # then it is easy
+            # as there may have been some rearrangements in the loop above, reRoot
+            self.propTree.reRoot(oldRoot, checkBiRoot=False) 
+            if dest == self.propTree.root.leftChild:
+                dest.br.len -= mvDist
+                if dest.br.len <= var.BRLEN_MIN:
+                    dest.br.len += var.BRLEN_MIN
+                dest.sibling.br.len += mvDist
+            elif dest == self.propTree.root.leftChild.sibling:
+                dest.br.len -= mvDist
+                if dest.br.len <= var.BRLEN_MIN:
+                    dest.br.len += var.BRLEN_MIN
+                self.propTree.root.leftChild.br.len += mvDist
+            else:
+                raise P4Error("This should not happen.")
+
+        elif dest == oldRoot:   # also easy
+            pNode = oldRoot.leftChild
+            # curNode---------oldRoot------pNode
+            #                  dest
+            pNode.br.len += (oldRoot.br.len - mvDist)
+            oldRoot.br.len = mvDist
+            if oldRoot.br.len <= var.BRLEN_MIN:
+                oldRoot.br.len += var.BRLEN_MIN
+            self.propTree.reRoot(oldRoot, checkBiRoot=False)
+            self.propTree.setPreAndPostOrder()
+
+        else:
+            # Neither curNode nor dest is not the root. Need to rearrange.
+
+            # Remove the current root.  
+            if oldRoot.parent:
+                qNode = oldRoot.parent
+            else:
+                # reRoot
+                self.propTree.reRoot(self.propTree.root.leftChild, checkBiRoot=False)
+                qNode = oldRoot.parent
+
+            #self.propTree.draw()
+            #print("in the tree above, the root should have a parent.)
+            #print("qNode is %i, dest = %i" % (qNode.nodeNum, dest.nodeNum))
+
+            pNode = oldRoot.leftChild      #  qNode --- oldRoot ----pNode
+            sib = oldRoot.sibling
+            leftSib = oldRoot.leftSibling()
+
+            # remove the oldRoot from the tree.
+
+            #             +----------leftSib
+            #             |
+            #    ---------qNode              +----------
+            #             +---------0--------pNode
+            #             |     oldRoot      +----------
+            #             |
+            #             +---------sib
+
+            pNode.parent = qNode
+            pNode.sibling = sib  # might be None
+            if leftSib:
+                leftSib.sibling = pNode
+            else:
+                qNode.leftChild = pNode
+            oldRoot.sibling = None
+            oldRoot.parent = None
+            oldRoot.leftChild = None
+            pNode.br.len += oldRoot.br.len
+
+            if dest.parent == curNode:     # curNode ----- dest
+                pass
+            else:
+                print("curNode %i, dest %i" % (curNode.nodeNum, dest.nodeNum))
+                self.setPreAndPostOrder()
+                self.draw()
+                print("fix me")
+                raise P4Error
+
+            #oldRoot.nodeNum = var.NO_ORDER  # out of the tree
+            #self.propTree.setPreAndPostOrder()
+            #self.propTree.dump(node=True)
+            #self.propTree.draw()
+
+            #             +----------leftSib (may not exist)
+            #             |
+            #    ---------qNode       +----------
+            #             +-----------pNode
+            #             |           +----------
+            #             | 
+            #             +---------sib (may be None)
+
+            # now re-attach the old root
+            qNode = curNode
+            pNode = dest                  #  to be:  qNode --- root ----pNode
+
+            assert pNode.parent == qNode
+
+            sib = pNode.sibling
+            leftSib = pNode.leftSibling()
+
+            pNode.parent = oldRoot
+            oldRoot.parent = qNode
+            oldRoot.leftChild = pNode
+            pNode.sibling = None
+            oldRoot.sibling = sib   # may be None
+            if leftSib:
+                leftSib.sibling = oldRoot
+            else:
+                qNode.leftChild = oldRoot
+            oldRoot.br.len = mvDist
+            pNode.br.len -= mvDist
+            for n in [oldRoot, pNode]:
+                if n.br.len < var.BRLEN_MIN:
+                    n.br.len += var.BRLEN_MIN
+            self.propTree.reRoot(oldRoot)
+            self.propTree.setPreAndPostOrder()
+
+            #oldRoot.nodeNum = 0
+            #self.propTree.dump(node=True)
+            #self.propTree.setPreAndPostOrder()
+            #self.propTree.draw()
+
+
+        assert self.propTree.root.leftChild and self.propTree.root.leftChild.sibling
+        assert not self.propTree.root.leftChild.sibling.sibling
+        self.logProposalRatio = 0.0
+        self.logPriorRatio = 0.0
+
+
+
     def proposeBrLen(self, theProposal):
         #gm = ['Chain.proposeBrLen']
 
@@ -215,11 +383,8 @@ if True:
                 pTree.checkSplitKeys(useOldName=True)
 
         if pTree.root.getNChildren() == 2:
-            isBiRoot = True
             gm.append("This method is not working for biRoot'd trees yet.")
             raise P4Error(gm)
-        else:
-            isBiRoot = False
 
         assert pTree.nInternalNodes > 1, "For local, we need trees with more than 1 internal node."
 

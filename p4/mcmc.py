@@ -26,6 +26,7 @@ fudgeFactor['allBrLens'] = 1.0
 fudgeFactor['polytomy'] = 1.0
 fudgeFactor['root3'] = 0.05
 fudgeFactor['root3n'] = 0.1
+fudgeFactor['root2'] = 0.1
 fudgeFactor['compLocation'] = 0.01
 fudgeFactor['rMatrixLocation'] = 0.01
 fudgeFactor['gdasrvLocation'] = 0.01
@@ -84,6 +85,7 @@ class McmcTunings(object):
         self.default['doInternalBrLenPrior'] = False
         self.default['brLenPriorType'] = 'exponential'
         self.default['allBrLens'] = 2.0 * math.log(1.02)
+        self.default['root2'] = 0.2
         #self.default['root3'] = 10.0
         #self.default['root3n'] = 10.0
 
@@ -132,6 +134,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'polytomy', 0.0)
         object.__setattr__(self, 'root3', 0.0)
         object.__setattr__(self, 'root3n', 0.0)
+        object.__setattr__(self, 'root2', 0.0)
         object.__setattr__(self, 'compLocation', 0.0)
         object.__setattr__(self, 'rMatrixLocation', 0.0)
         object.__setattr__(self, 'relRate', 1.0)
@@ -648,6 +651,25 @@ class Mcmc(object):
                     gm.append("Mcmc is not implemented for roots that have less than 3 children.")
                     raise P4Error(gm)
 
+        self.isBiRoot = False
+        rootNChildren = aTree.root.getNChildren()
+        if rootNChildren == 2:
+            ret = aTree.isFullyBifurcating(verbose=True, biRoot=True)
+            if not ret:
+                gm.append("The tree has a bifurcating root, but otherwise is not fully bifurcating.")
+                raise P4Error(gm)
+            self.isBiRoot = True
+        elif rootNChildren == 3:
+            ret = aTree.isFullyBifurcating(verbose=True, biRoot=False)
+            if not ret:
+                gm.append("The tree has a trifurcating root, but otherwise is not fully bifurcating.")
+                raise P4Error(gm)
+            self.isBiRoot = False
+        else:
+            gm.append("Mcmc only allows trifurcating or bifurcating roots.  This tree has %i children" % rootNChildren)
+            raise P4Error(gm)
+            
+
         self.tree = aTree
         self.constraints = constraints
         if self.constraints:
@@ -937,12 +959,22 @@ class Mcmc(object):
                         if thisMString not in props_on:
                             props_on.append(thisMString)
 
-            self.prob.root3 = 1.0
-            self.prob.root3n = 1.0
-
+            if self.isBiRoot:
+                self.prob.root2 = 1.0
+                thisMString = "root2 (root location)"
+                if thisMString not in props_on:
+                    props_on.append(thisMString)
+            else:
+                self.prob.root3 = 1.0
+                thisMString = "root3 (root location)"
+                if thisMString not in props_on:
+                    props_on.append(thisMString)
+                self.prob.root3n = 1.0
+                thisMString = "root3n (root location, neighbours)"
+                if thisMString not in props_on:
+                    props_on.append(thisMString)
+            
             if verbose:
-                props_on.append("root location")
-                props_on.append("root location (neighbours)")
                 print("\n%23s" % "Additional proposals:")
                 for prop in props_on:
                     print("%30s = on" % prop)
@@ -951,6 +983,7 @@ class Mcmc(object):
         else:
             self.prob.root3 = 0.0
             self.prob.root3n = 0.0
+            self.prob.root2 = 0.0
             self.prob.compLocation = 0.0
             self.prob.rMatrixLocation = 0.0
             #self.prob.gdasrvLocation = 0.0
@@ -1176,6 +1209,28 @@ class Mcmc(object):
                 p.tnFactorHi = 0.8
                 p.tnFactorLo = 1.2
                 p.tnFactorVeryLo = 1.6
+
+                self.props.proposals.append(p)
+
+        # root2
+        if self.prob.root2:
+            if len(self.tree.taxNames) <= 3:
+                pass
+            else:
+                p = Proposal(self)
+                p.name = 'root2'
+                p.tuning = [self._tunings.default[p.name]] * self.nChains
+                p.weight = self.prob.root2 * self.tree.nInternalNodes * fudgeFactor['root3n']
+
+                p.tnAccVeryHi = 0.5
+                p.tnAccHi = 0.4
+                p.tnAccLo = 0.1
+                p.tnAccVeryLo = 0.06
+
+                p.tnFactorVeryHi = 1.6
+                p.tnFactorHi = 1.2
+                p.tnFactorLo = 0.8
+                p.tnFactorVeryLo = 0.7
 
                 self.props.proposals.append(p)
 
