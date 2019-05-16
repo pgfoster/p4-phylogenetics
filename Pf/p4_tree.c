@@ -1082,14 +1082,24 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
                     printf("p4_partLogLike() error: Couldn't open crash report file for appending \n");
                     exit(1);
                 }
-                fprintf(fout, "p4_partLogLike error.  Negative like value.\n");
-                fprintf(fout, "p4_tree.c: treeLogLike: (zero-based) seqPos %i, site like %g\n", seqPos, like);
-                fprintf(fout, "May be due to var.PIVEC_MIN, var.RATE_MIN, or var.BRLEN_MIN being too small.\n");
-                fprintf(fout, "eg if var.PIVEC_MIN is 1e-14, you could try setting it to 1e-13,\n");
-                fprintf(fout, "or if var.RATE_MIN is 1e-13, you could try setting it to 1e-12.\n");
+                fprintf(fout, "=================================================\n");
+                fprintf(fout, "p4_partLogLike() error.  Got negative likelihood value.\n");
+                fprintf(fout, "p4_tree.c: partLogLike: (zero-based) seqPos %i, site like %g\n", seqPos, like);
+
+
+                fprintf(fout, "\n");
+                fprintf(fout, "PIVEC_MIN is now %g\n", aTree->model->PIVEC_MIN[0]);
+                fprintf(fout, "RATE_MIN is now %g\n", aTree->model->RATE_MIN[0]);
+                fprintf(fout, "BRLEN_MIN is now  %g\n", aTree->model->BRLEN_MIN[0]);
+                fprintf(fout, "GAMMA_SHAPE_MIN is now %g\n", aTree->model->GAMMA_SHAPE_MIN[0]);
+                fprintf(fout, "This problem may be due to one of var.PIVEC_MIN, var.RATE_MIN, "); 
+                fprintf(fout, "var.BRLEN_MIN, var.GAMMA_SHAPE_MIN being too small.\n");
+                fprintf(fout, "Try raising one or more?\n");
                 fclose(fout);
                 printf("Got a serious problem; see the file p4_CRASH \n");
                 exit(1);
+
+
             }
 
 
