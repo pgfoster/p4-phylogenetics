@@ -13,6 +13,7 @@ from p4.chain import Chain
 from p4.p4exceptions import P4Error
 from p4.treepartitions import TreePartitions
 from p4.constraints import Constraints
+from p4.node import Node
 import datetime
 import numpy
 import logging
@@ -641,15 +642,6 @@ class Mcmc(object):
             gm.append("The tree that you feed to this class should have a model and data attached.")
             raise P4Error(gm)
 
-        if 0:
-            if 1:
-                if aTree.root.getNChildren() != 3 or not aTree.isFullyBifurcating():
-                    gm.append("Mcmc is not implemented for bifurcating roots, or trees that are not fully bifurcating.")
-                    raise P4Error(gm)
-            else:
-                if aTree.root.getNChildren() < 3:
-                    gm.append("Mcmc is not implemented for roots that have less than 3 children.")
-                    raise P4Error(gm)
 
         self.isBiRoot = False
         rootNChildren = aTree.root.getNChildren()
@@ -659,6 +651,14 @@ class Mcmc(object):
                 gm.append("The tree has a bifurcating root, but otherwise is not fully bifurcating.")
                 raise P4Error(gm)
             self.isBiRoot = True
+            # Add a rooter node to aTree.nodes, not "in" the tree
+            n = Node()
+            n.isLeaf = 1
+            n.name = 'tempRooter'
+            n.nodeNum = var.NO_ORDER
+            aTree.nodes.append(n)
+            aTree.setPreAndPostOrder()
+
         elif rootNChildren == 3:
             ret = aTree.isFullyBifurcating(verbose=True, biRoot=False)
             if not ret:
@@ -767,7 +767,7 @@ class Mcmc(object):
         self.props = Proposals()
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     gdasrv local ndch2_internalCompsDir ndch2_root3n_internalCompsDir 
-                    ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
+                    ndch2_internalCompsDirAlpha ndch2_leafCompsDir root2
                     ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
         # maybeTunableButNotNow  compLocation eTBR polytomy root3 root3n rMatrixLocation
 
@@ -2304,7 +2304,7 @@ class Mcmc(object):
                     
                     # tunables = """allBrLens allCompsDir brLen compDir 
                     # gdasrv local ndch2_internalCompsDir 
-                    # ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
+                    # ndch2_internalCompsDirAlpha ndch2_leafCompsDir root2
                     # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
 
                     # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation
