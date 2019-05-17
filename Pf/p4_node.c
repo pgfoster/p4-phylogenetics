@@ -814,15 +814,19 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
             } // for symb
         } // for rate
     }
-#if 0
-    printf("   node %i condLikes: \n", aNode->nodeNum);
-    for(seqPos = 0; seqPos < 1; seqPos++) {			
-        for(rate = 0; rate < 2; rate++){
-            printf("seqPos %i, rate %i: ", seqPos, rate);
-            for(symb = 0; symb < mp->dim; symb++) {
-                printf(" %6g", aNode->cl[pNum][rate][symb][seqPos]);
+#if 1    // slow check for negative cond likes
+    // printf("   node %i condLikes: \n", aNode->nodeNum);
+    for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
+        for(rate = 0; rate < mp->nCat; rate++){
+            //printf("seqPos %i, rate %i: ", seqPos, rate);
+            for(symb = 0; symb < dim; symb++) {
+                if(aNode->cl[pNum][rate][symb][seqPos] < 0.0) {
+                    printf("p4_setConditionalLikelihoodsOfInteriorNodePart() ");
+                    printf("node %i, rate %i, symb %i, seqPos %i ", aNode->nodeNum, rate, symb, seqPos);
+                    printf("condLike %g\n", aNode->cl[pNum][rate][symb][seqPos]);
+                }
             }
-            printf("\n");
+            //printf("\n");
         }
     }
 #endif		
