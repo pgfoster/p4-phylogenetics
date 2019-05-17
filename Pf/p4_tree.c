@@ -962,6 +962,19 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
     }
 #endif
 
+#if 1
+    for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
+        for(rate = 0; rate < mp->nCat; rate++) {
+            for(i = 0; i < mp->dim; i++) {
+                if(aTree->root->cl[pNum][rate][i][seqPos] < 0.0) {
+                    printf("aTree->root->cl[pNum %i][rate %if][symb %i][seqPos %i]  %g\n", 
+                           pNum, rate, i, seqPos, aTree->root->cl[pNum][rate][i][seqPos]);
+                }
+            }
+        }
+    }
+#endif
+
     oneMinusPInvar = 1.0 - mp->pInvar->val[0];
 
     if(!mp->freqsTimesOneMinusPInvar) {
@@ -1041,6 +1054,19 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
             for(rate = 0; rate < mp->nCat; rate++) {
                 //rateLike = 0.0;
                 for(i = 0; i < mp->dim; i++) {
+
+                    if ((1)) {
+                        double addend;
+                        addend = mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+                        if(addend <= 0.0) {
+                            printf("ZLTZ comps %g * cl %g is %g\n", 
+                                   mp->comps[aTree->root->compNums[pNum]]->val[i], 
+                                   aTree->root->cl[pNum][rate][i][seqPos],
+                                   addend);
+                            printf("    for pNum %i, symb %i, rate %i, seqPos %i\n", pNum, i, rate, seqPos);
+                        }
+                    }
+
                     like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
                     //rateLike += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
 #if 0
