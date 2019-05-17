@@ -2597,38 +2597,49 @@ class Tree(object):
                     print("isFullyBifurcating() returning False, due to root with %i children." % rootNChildren)
                 return False
             
-            elif self.root and self.root.isLeaf:  # rooting on a leaf is OK
-                pass
+            elif rootNChildren == 1 or rootNChildren == 3:   # rooting on a leaf is OK
+                if rootNChildren == 1:
+                    if not self.root.isLeaf:
+                        if verbose:
+                            print("isFullyBifurcating()", end=" ")
+                            print("returning False, because the single-child root is not a leaf.")
+                        return False
+
+                for n in self.iterInternalsNoRoot():
+                    if n.leftChild and n.leftChild.sibling:
+                        if n.leftChild.sibling.sibling:
+                            if verbose:
+                                print("isFullyBifurcating()", end=" ")
+                                print("returning False, due to node %i having 3 or more children." % n.nodeNum)
+                            return False
+                    else:
+                        if verbose:
+                            print("isFullyBifurcating()", end=" ")
+                            print("returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum)
+                        return False
+                return True
             else:
                 raise P4Error("Tree.isFullyBifurcating() --- this should not happen; fix me.")
 
-            for n in self.iterInternalsNoRoot():
-                if n.leftChild and n.leftChild.sibling:
-                    if n.leftChild.sibling.sibling:
-                        if verbose:
-                            print("isFullyBifurcating() returning False, due to node %i having 3 or more children." % n.nodeNum)
-                        return False
-                else:
-                    if verbose:
-                        print("Tree.isFullyBifurcating() returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum)
-                    return False
-            return True
-
         if biRoot:
-            if rootNChildren != 2:    # root on a leaf not allowed on a biRoot tree, as the root is explicitly not a leaf.
+            # root on a leaf not allowed on a biRoot tree, as the root is explicitly not a leaf.
+            if rootNChildren != 2:    
                 if verbose:
-                    print("Tree.isFullyBifurcating(biRoot=True) returning False, due to root with %i children." % rootNChildren)
+                    print("isFullyBifurcating(biRoot=True)", end=" ")
+                    print("returning False, due to root with %i children." % rootNChildren)
                 return False
 
             for n in self.iterInternalsNoRoot():
                 if n.leftChild and n.leftChild.sibling:
                     if n.leftChild.sibling.sibling:
                         if verbose:
-                            print("Tree.isFullyBifurcating(biRoot=True) returning False, due to node %i having 3 or more children." % n.nodeNum)
+                            print("isFullyBifurcating(biRoot=True)", end=" ")
+                            print("returning False, due to node %i having 3 or more children." % n.nodeNum)
                         return False
                 else:
                     if verbose:
-                        print("Tree.isFullyBifurcating(biRoot=True) returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum)
+                        print("isFullyBifurcating(biRoot=True)", end=" ")
+                        print("returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum)
                     return False
             return True
 
