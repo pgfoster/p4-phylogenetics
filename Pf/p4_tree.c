@@ -12,7 +12,7 @@
 
 //static  int anInt = 0;  // for a recursion, below.
 
-p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, double *partLikes, data *aData, p4_model *aModel)
+p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, double *partLikes, data *aData, p4_model *aModel, int *newtAndBrentPowellOptPassLimit)
 {
     p4_tree	*aTree;
     int		i;
@@ -46,6 +46,7 @@ p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, doub
     aTree->preOrder = preOrder;  // numeric array
     aTree->postOrder = postOrder;
     aTree->partLikes = partLikes;
+    aTree->newtAndBrentPowellOptPassLimit = newtAndBrentPowellOptPassLimit;
     //for(i = 0; i < nNodes; i++) {
     //	printf("node %i, ", i);
     //	printf("preOrder = %i\n", preOrder[i]);
@@ -385,7 +386,7 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
         //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+                if(mp->comps[i]->val[j] < (0.5 * aTree->model->PIVEC_MIN[0])) {
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }
@@ -426,11 +427,11 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
         double sum=0.0;
 
         mp = aTree->model->parts[pNum];
-        //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
+        // printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                //if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
-                if(mp->comps[i]->val[j] < PIVEC_MIN) {               // Was half PIVEC_MIN.  Why?
+                //if(mp->comps[i]->val[j] < (0.5 * aTree->model->PIVEC_MIN[0])) {
+                if(mp->comps[i]->val[j] < aTree->model->PIVEC_MIN[0]) {               // Was half PIVEC_MIN.  Why?
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }
@@ -452,7 +453,7 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
 
     // turn on all needsReset
     mp = aTree->model->parts[pNum];
-    //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
+    // printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
     for(i = 0; i < mp->nComps; i++) {
         for(j = 0; j < mp->nRMatrices; j++) {
             mp->bQETneedsReset[(i * mp->nRMatrices) + j] = 1;
@@ -654,7 +655,7 @@ void p4_setPramsPartTest(p4_tree *aTree, int pNum)
         //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+                if(mp->comps[i]->val[j] < (0.5 * aTree->model->PIVEC_MIN[0])) {
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }
@@ -699,7 +700,7 @@ void p4_setPramsPartTest(p4_tree *aTree, int pNum)
         //printf("    part %i, nComps=%i, nRMatrices=%i, nCat=%i\n", pNum, mp->nComps, mp->nRMatrices, mp->nCat);
         for(i = 0; i < mp->nComps; i++) {
             for(j = 0; j < mp->dim; j++) {
-                if(mp->comps[i]->val[j] < (0.5 * PIVEC_MIN)) {
+                if(mp->comps[i]->val[j] < (0.5 * aTree->model->PIVEC_MIN[0])) {
                     printf("p4_setPramsPart()  part %i, comp %i, value %i is %g   Bad.\n", pNum, i, j, mp->comps[i]->val[j]);
                     exit(1);
                 }
@@ -961,6 +962,19 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
     }
 #endif
 
+#if 1
+    for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
+        for(rate = 0; rate < mp->nCat; rate++) {
+            for(i = 0; i < mp->dim; i++) {
+                if(aTree->root->cl[pNum][rate][i][seqPos] < 0.0) {
+                    printf("aTree->root->cl[pNum %i][rate %if][symb %i][seqPos %i]  %g\n", 
+                           pNum, rate, i, seqPos, aTree->root->cl[pNum][rate][i][seqPos]);
+                }
+            }
+        }
+    }
+#endif
+
     oneMinusPInvar = 1.0 - mp->pInvar->val[0];
 
     if(!mp->freqsTimesOneMinusPInvar) {
@@ -1040,6 +1054,19 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
             for(rate = 0; rate < mp->nCat; rate++) {
                 //rateLike = 0.0;
                 for(i = 0; i < mp->dim; i++) {
+
+                    if ((1)) {
+                        double addend;
+                        addend = mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+                        if(addend <= 0.0) {
+                            printf("ZLTZ comps %g * cl %g is %g\n", 
+                                   mp->comps[aTree->root->compNums[pNum]]->val[i], 
+                                   aTree->root->cl[pNum][rate][i][seqPos],
+                                   addend);
+                            printf("    for pNum %i, symb %i, rate %i, seqPos %i\n", pNum, i, rate, seqPos);
+                        }
+                    }
+
                     like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
                     //rateLike += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
 #if 0
@@ -1081,14 +1108,24 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
                     printf("p4_partLogLike() error: Couldn't open crash report file for appending \n");
                     exit(1);
                 }
-                fprintf(fout, "p4_partLogLike error.  Negative like value.\n");
-                fprintf(fout, "p4_tree.c: treeLogLike: (zero-based) seqPos %i, site like %g\n", seqPos, like);
-                fprintf(fout, "May be due to var.PIVEC_MIN, var.RATE_MIN, or var.BRLEN_MIN being too small.\n");
-                fprintf(fout, "eg if var.PIVEC_MIN is 1e-14, you could try setting it to 1e-13,\n");
-                fprintf(fout, "or if var.RATE_MIN is 1e-13, you could try setting it to 1e-12.\n");
+                fprintf(fout, "=================================================\n");
+                fprintf(fout, "p4_partLogLike() error.  Got negative likelihood value.\n");
+                fprintf(fout, "p4_tree.c: partLogLike: (zero-based) seqPos %i, site like %g\n", seqPos, like);
+
+
+                fprintf(fout, "\n");
+                fprintf(fout, "PIVEC_MIN is now %g\n", aTree->model->PIVEC_MIN[0]);
+                fprintf(fout, "RATE_MIN is now %g\n", aTree->model->RATE_MIN[0]);
+                fprintf(fout, "BRLEN_MIN is now  %g\n", aTree->model->BRLEN_MIN[0]);
+                fprintf(fout, "GAMMA_SHAPE_MIN is now %g\n", aTree->model->GAMMA_SHAPE_MIN[0]);
+                fprintf(fout, "This problem may be due to one of var.PIVEC_MIN, var.RATE_MIN, "); 
+                fprintf(fout, "var.BRLEN_MIN, var.GAMMA_SHAPE_MIN being too small.\n");
+                fprintf(fout, "Try raising one or more?\n");
                 fclose(fout);
                 printf("Got a serious problem; see the file p4_CRASH \n");
                 exit(1);
+
+
             }
 
 

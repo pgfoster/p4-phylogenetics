@@ -408,7 +408,7 @@ if True:
         if width == None:
             tLen = 0  # Longest number of horizontal sections to draw
             longestNameLen = 0
-            for n in self.nodes:
+            for n in self.iterNodes():
                 if n.isLeaf and n != self.root:
                     if n.name:  # This assumes short internal node name lengths
                         if len(n.name) > longestNameLen:
@@ -436,7 +436,7 @@ if True:
 
         # Make sure the names fit.
         if not autoIncreaseWidth:
-            for n in self.nodes:
+            for n in self.iterNodes():
                 if n.isLeaf and n != self.root:
                     if n.name and len(n.name) > p.width:
                         gm.append(
@@ -556,7 +556,4 @@ if True:
         f.write(s)
         f.close()
 
-    #############################################
-    # Various Tree methods for defining models
-    #############################################
-
+    

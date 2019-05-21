@@ -66,9 +66,10 @@ class TreePicture(object):
                 # print "n=%s, n.parent=%s" % (n.nodeNum, n.parent)
                 # print "n.parent.xPos=%s, n.br.len=%s, self.addToBrLen=%s" %
                 # (n.parent.xPos, n.br.len, self.addToBrLen)
+                if n.parent == None:
+                    raise P4Error("Programming error. node %i n.parent is None" % n.nodeNum)
                 if n.parent.xPos == None:
-                    raise P4Error(
-                        "Programming error. node %i n.parent.xPos is None" % n.nodeNum)
+                    raise P4Error("Programming error. node %i n.parent.xPos is None" % n.nodeNum)
                 if n.br == None:
                     raise P4Error(
                         "Programming error. node %i n.br is None" % n.nodeNum)

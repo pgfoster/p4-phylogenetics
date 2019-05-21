@@ -104,7 +104,7 @@ class Var(object):
 
         #: Require that MCMC run numbers are in order.
         # Ensure chains are init'ed sequentially
-        self.strictRunNumberChecking = True
+        self.strictRunNumberChecking = False   # changed from True April 2019
 
         self.NO_ORDER = -10000  # pre and postOrder for unused nodes.
 
@@ -155,14 +155,6 @@ class Var(object):
         """A list of metrics.
 
         Used by :meth:`Tree.Tree.topologyDistance` and :meth:`Trees.Trees.topologyDistanceMatrix`
-        """
-
-        self.interactiveHelper = None
-        """Whether to read the contents of p4.extras
-
-        This directory has modules that may be handy, but are not central to
-        what p4 is about, and so are not imported by default.
-
         """
 
         # These are used by TreePicture
@@ -238,14 +230,10 @@ class Var(object):
         self.doDataPart = 0        # Experimental
 
         # Modify behavior of NexusToken.nextTok() function.
-        self._nexus_writeVisibleComments = numpy.array(
-            [0], numpy.int32)   # write, but do not get, all [!...]
-        self._nexus_getP4CommandComments = numpy.array(
-            [0], numpy.int32)             # all [&&p4 ...]
-        self._nexus_getWeightCommandComments = numpy.array(
-            [1], numpy.int32)         # all [&w ...]
-        self._nexus_getAllCommandComments = numpy.array(
-            [0], numpy.int32)            # all [&...]
+        self._nexus_writeVisibleComments = numpy.array([0], numpy.int32)   # write, but do not get, all [!...]
+        self._nexus_getP4CommandComments = numpy.array([0], numpy.int32)             # all [&&p4 ...]
+        self._nexus_getWeightCommandComments = numpy.array([1], numpy.int32)         # all [&w ...]
+        self._nexus_getAllCommandComments = numpy.array([0], numpy.int32)            # all [&...]
         self._nexus_getLineEndingsAsTokens = numpy.array([0], numpy.int32)
 
         self.rMatrixProteinSpecs = ['cpREV', 'd78', 'jtt', 'mtREV24', 'mtmam',
@@ -278,21 +266,23 @@ class Var(object):
         # elements are relative to it.
         self._rMatrixNormalizeTo1 = numpy.array([1], numpy.int32)
 
-        # see Pf/defines.h for c-language defines, which should be the same.
-        self.PIVEC_MIN = 1.0e-13      # Changed from 1e-18 March 2019, to avoid getting negative bigP values
-        #self.RATE_MIN = 1.0e-14    # ie for rMatrices, changed from 1.0e-8 nov 2016, because self._rMatrixNormalizeTo1 is set
-        self.RATE_MIN = 1.0e-13    # changed from 1.e-14 March 2019, to avoid getting negative bigP values
-        self.RATE_MAX = 0.9999999  # changed from 1.0e8 nov 2016, also because self._rMatrixNormalizeTo1 is set
-        self.GAMMA_SHAPE_MIN = 0.000001
-        self.GAMMA_SHAPE_MAX = 300.0
-        self.PINVAR_MIN = 0.0
-        self.PINVAR_MAX = 0.99
-        self.RELRATE_MIN = 1.0e-8
-        self.RELRATE_MAX = 1.0e8
-        self.KAPPA_MIN = 0.000001
-        self.KAPPA_MAX = 100.0
-        self.BRLEN_MIN = 1.0e-8
-        self.BRLEN_MAX = 3.0
+        self._PIVEC_MIN = numpy.array([1.0e-13], numpy.float64)      # Changed from 1e-18 March 2019, to avoid getting negative bigP values
+        self._PIVEC_MAX = numpy.array([0.999], numpy.float64)      
+        #self._RATE_MIN = 1.0e-14                                 # ie for rMatrices, changed from 1.0e-8 nov 2016, because self._rMatrixNormalizeTo1 is set
+        self._RATE_MIN = numpy.array([1.0e-13], numpy.float64)    # changed from 1.e-14 March 2019, to avoid getting negative bigP values
+        self._RATE_MAX = numpy.array([0.9999999], numpy.float64)  # changed from 1.0e8 nov 2016, also because self._rMatrixNormalizeTo1 is set
+        self._GAMMA_SHAPE_MIN = numpy.array([0.1], numpy.float64)  # changed from 0.000001 april 2019, with alpha=0.1, slowest cat is 5.e-7
+        self._GAMMA_SHAPE_MAX = numpy.array([300.0], numpy.float64)
+        self._PINVAR_MIN = numpy.array([0.0], numpy.float64)
+        self._PINVAR_MAX = numpy.array([0.99], numpy.float64)
+        self._RELRATE_MIN = numpy.array([1.0e-8], numpy.float64)
+        self._RELRATE_MAX = numpy.array([1.0e8], numpy.float64)
+        self._KAPPA_MIN = numpy.array([0.000001], numpy.float64)
+        self._KAPPA_MAX = numpy.array([100.0], numpy.float64)
+        self._BRLEN_MIN = numpy.array([1.0e-8], numpy.float64)
+        self._BRLEN_MAX = numpy.array([3.0], numpy.float64)
+
+        self._newtAndBrentPowellOptPassLimit = numpy.array([50], numpy.int32)
 
         self.GAP_CODE = -1
         self.QMARK_CODE = -2
@@ -319,10 +309,102 @@ class Var(object):
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
         #self.mcmc_doTuneChainTemp = False
 
-
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
         raise P4Error(gm)
+
+    def _getPIVEC_MIN(self):
+        return self._PIVEC_MIN[0]
+    def _setPIVEC_MIN(self, newValue):
+        self._PIVEC_MIN[0] = newValue
+    PIVEC_MIN = property(_getPIVEC_MIN, _setPIVEC_MIN, _del_nothing, "(property) PIVEC_MIN (float)")
+
+    def _getPIVEC_MAX(self):
+        return self._PIVEC_MAX[0]
+    def _setPIVEC_MAX(self, newValue):
+        self._PIVEC_MAX[0] = newValue
+    PIVEC_MAX = property(_getPIVEC_MAX, _setPIVEC_MAX, _del_nothing, "(property) PIVEC_MAX (float)")
+
+    def _getRATE_MIN(self):
+        return self._RATE_MIN[0]
+    def _setRATE_MIN(self, newValue):
+        self._RATE_MIN[0] = newValue
+    RATE_MIN = property(_getRATE_MIN, _setRATE_MIN, _del_nothing, "(property) RATE_MIN (float)")
+
+    def _getRATE_MAX(self):
+        return self._RATE_MAX[0]
+    def _setRATE_MAX(self, newValue):
+        self._RATE_MAX[0] = newValue
+    RATE_MAX = property(_getRATE_MAX, _setRATE_MAX, _del_nothing, "(property) RATE_MAX (float)")
+
+    def _getGAMMA_SHAPE_MIN(self):
+        return self._GAMMA_SHAPE_MIN[0]
+    def _setGAMMA_SHAPE_MIN(self, newValue):
+        self._GAMMA_SHAPE_MIN[0] = newValue
+    GAMMA_SHAPE_MIN = property(_getGAMMA_SHAPE_MIN, _setGAMMA_SHAPE_MIN, _del_nothing, "(property) GAMMA_SHAPE_MIN (float)")
+
+    def _getGAMMA_SHAPE_MAX(self):
+        return self._GAMMA_SHAPE_MAX[0]
+    def _setGAMMA_SHAPE_MAX(self, newValue):
+        self._GAMMA_SHAPE_MAX[0] = newValue
+    GAMMA_SHAPE_MAX = property(_getGAMMA_SHAPE_MAX, _setGAMMA_SHAPE_MAX, _del_nothing, "(property) GAMMA_SHAPE_MAX (float)")
+
+    def _getPINVAR_MIN(self):
+        return self._PINVAR_MIN[0]
+    def _setPINVAR_MIN(self, newValue):
+        self._PINVAR_MIN[0] = newValue
+    PINVAR_MIN = property(_getPINVAR_MIN, _setPINVAR_MIN, _del_nothing, "(property) PINVAR_MIN (float)")
+
+    def _getPINVAR_MAX(self):
+        return self._PINVAR_MAX[0]
+    def _setPINVAR_MAX(self, newValue):
+        self._PINVAR_MAX[0] = newValue
+    PINVAR_MAX = property(_getPINVAR_MAX, _setPINVAR_MAX, _del_nothing, "(property) PINVAR_MAX (float)")
+
+    def _getRELRATE_MIN(self):
+        return self._RELRATE_MIN[0]
+    def _setRELRATE_MIN(self, newValue):
+        self._RELRATE_MIN[0] = newValue
+    RELRATE_MIN = property(_getRELRATE_MIN, _setRELRATE_MIN, _del_nothing, "(property) RELRATE_MIN (float)")
+
+    def _getRELRATE_MAX(self):
+        return self._RELRATE_MAX[0]
+    def _setRELRATE_MAX(self, newValue):
+        self._RELRATE_MAX[0] = newValue
+    RELRATE_MAX = property(_getRELRATE_MAX, _setRELRATE_MAX, _del_nothing, "(property) RELRATE_MAX (float)")
+
+    def _getKAPPA_MIN(self):
+        return self._KAPPA_MIN[0]
+    def _setKAPPA_MIN(self, newValue):
+        self._KAPPA_MIN[0] = newValue
+    KAPPA_MIN = property(_getKAPPA_MIN, _setKAPPA_MIN, _del_nothing, "(property) KAPPA_MIN (float)")
+
+    def _getKAPPA_MAX(self):
+        return self._KAPPA_MAX[0]
+    def _setKAPPA_MAX(self, newValue):
+        self._KAPPA_MAX[0] = newValue
+    KAPPA_MAX = property(_getKAPPA_MAX, _setKAPPA_MAX, _del_nothing, "(property) KAPPA_MAX (float)")
+
+    def _getBRLEN_MIN(self):
+        return self._BRLEN_MIN[0]
+    def _setBRLEN_MIN(self, newValue):
+        self._BRLEN_MIN[0] = newValue
+    BRLEN_MIN = property(_getBRLEN_MIN, _setBRLEN_MIN, _del_nothing, "(property) BRLEN_MIN (float)")
+
+    def _getBRLEN_MAX(self):
+        return self._BRLEN_MAX[0]
+    def _setBRLEN_MAX(self, newValue):
+        self._BRLEN_MAX[0] = newValue
+    BRLEN_MAX = property(_getBRLEN_MAX, _setBRLEN_MAX, _del_nothing, "(property) BRLEN_MAX (float)")
+
+    def _get_newtAndBrentPowellOptPassLimit(self):
+        return self._newtAndBrentPowellOptPassLimit[0]
+    def _set_newtAndBrentPowellOptPassLimit(self, newValue):
+        self._newtAndBrentPowellOptPassLimit[0] = newValue
+    newtAndBrentPowellOptPassLimit = property(_get_newtAndBrentPowellOptPassLimit, 
+                                              _set_newtAndBrentPowellOptPassLimit, 
+                                              _del_nothing, "(property) newtAndBrentPowellOptPassLimit (int)")
+
 
     # self._nexus_writeVisibleComments = 0             # write, but do not get, all [!...]
     # self._nexus_getP4CommandComments = 0             # all [&&p4 ...]

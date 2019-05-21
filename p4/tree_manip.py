@@ -181,19 +181,14 @@ if True:
         # bifurcating.  So check that.
         if checkBiRoot:
             if self.root.getNChildren() == 2:
-                gm.append(
-                    "The tree has a bifurcating root, so you probably do not")
-                gm.append(
-                    "want to reRoot() it.  You can remove the bifurcating root")
-                gm.append(
-                    "with yourTree.removeRoot().  If you really want to reRoot()")
-                gm.append(
-                    "with a bifurcating root, set checkBiRoot=False in the reRoot() args.")
+                gm.append("The tree has a bifurcating root, so you probably do not")
+                gm.append("want to reRoot() it.  You can remove the bifurcating root")
+                gm.append("with yourTree.removeRoot().  If you really want to reRoot()")
+                gm.append("with a bifurcating root, set checkBiRoot=False in the reRoot() args.")
                 raise P4Error(gm)
         if self.root.isLeaf and not self.root.name:
             gm.append("The root is a leaf, but has no name.")
-            gm.append(
-                "So when you reRoot() it, some other leaf will have no name.")
+            gm.append("So when you reRoot() it, some other leaf will have no name.")
             gm.append("That is a recipe for trouble, and is not allowed.")
             raise P4Error(gm)
 
@@ -210,23 +205,19 @@ if True:
                         print("(Set stompRootName=2 to do this silently ...)")
                     self.root.name = None
                 else:
-                    gm.append(
-                        "Setting 'moveInternalName' implies keeping node names with their branches.")
-                    gm.append(
-                        "The root in this tree has a name, but has no branch.")
+                    gm.append("Setting 'moveInternalName' implies keeping node names with their branches.")
+                    gm.append("The root in this tree has a name, but has no branch.")
                     gm.append("So that does not work.")
                     gm.append("Set arg stompRootName to work around this.")
                     raise P4Error(gm)
             if self.root.isLeaf and self.root.leftChild.name:
                 assert self.root.name
+                self.draw()
                 gm.append("The current root is a leaf, with a name.")
-                gm.append(
-                    "Its sole child has a name also, which is an 'internal' node name.")
+                gm.append("Its sole child has a name also, which is an 'internal' node name.")
                 gm.append("Arg moveInternalName is turned on.")
-                gm.append(
-                    "So when the tree gets re-rooted, that internal node name  should stay with its branch, not its node.")
-                gm.append(
-                    "But the rerooted branch will already have a name-- the current root name.")
+                gm.append("So when the tree gets re-rooted, that internal node name  should stay with its branch, not its node.")
+                gm.append("But the rerooted branch will already have a name-- the current root name.")
                 gm.append("So that does not work.")
                 raise P4Error(gm)
 
@@ -442,7 +433,7 @@ if True:
         self.setPreAndPostOrder()
         self._nTax = 0
 
-    def removeNode(self, specifier, alsoRemoveSingleChildParentNode=True, alsoRemoveBiRoot=True, alsoRemoveSingleChildRoot=True):
+    def removeNode(self, specifier, alsoRemoveSingleChildParentNode=True, alsoRemoveBiRoot=True, alsoRemoveSingleChildRoot=True, deleteCStuff=True):
         """Remove a node, together with everything above it.
 
         Arg *specifier* can be a nodeNum, name, or node object.
@@ -521,7 +512,8 @@ if True:
             return
         rNodeParnt = rNode.parent
 
-        self.deleteCStuff()
+        if deleteCStuff:
+            self.deleteCStuff()
 
         # For cases where the tree is originally with a single child root
         # -- we don't want to then delete that root below.

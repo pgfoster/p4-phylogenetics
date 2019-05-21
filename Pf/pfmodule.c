@@ -1183,27 +1183,23 @@ pf_p4_newTree(PyObject *self, PyObject *args)
     int nLeaves;
     data *aData;
     p4_model *aModel;
-    PyArrayObject *oPreOrder, *oPostOrder, *oPartLikes;
-    int  *preOrder, *postOrder;
+    PyArrayObject *oPreOrder, *oPostOrder, *oPartLikes, *oNewtAndBrentPowellOptPassLimit;
+    int  *preOrder, *postOrder, *newtAndBrentPowellOptPassLimit;
     double *partLikes;
     //int i;
 	
-    if(!PyArg_ParseTuple(args, "iiOOOll",&nNodes, &nLeaves, &oPreOrder, &oPostOrder, &oPartLikes, &aData, &aModel)) {
+    if(!PyArg_ParseTuple(args, "iiOOOOll",&nNodes, &nLeaves, &oPreOrder, &oPostOrder, 
+                         &oNewtAndBrentPowellOptPassLimit, &oPartLikes, &aData, &aModel)) {
         printf("Error pf_p4_newTree: couldn't parse tuple\n");
         return NULL;
     }
-    //preOrder = NA_InputArray(oPreOrder, tInt, C_ARRAY);
-    //postOrder = NA_InputArray(oPostOrder, tInt, C_ARRAY);
-    //if(!preOrder || !postOrder) {
-    //	printf("Error pf_p4_newTree: couldn't convert input array.\n");
-    //	return NULL;
-    //}
 
     preOrder = (int *)oPreOrder->data;
     postOrder = (int *)(oPostOrder->data);
     partLikes = (double *)(oPartLikes->data);
-    //printf("preOrder is %li\n", (long int)preOrder);
-    return Py_BuildValue("l", p4_newTree(nNodes, nLeaves, preOrder, postOrder, partLikes, aData, aModel));
+    newtAndBrentPowellOptPassLimit = (int *)(oNewtAndBrentPowellOptPassLimit->data);
+    //printf("pfmodule.c pf_p4_newTree. newtAndBrentPowellOptPassLimit is %i\n", newtAndBrentPowellOptPassLimit[0]);
+    return Py_BuildValue("l", p4_newTree(nNodes, nLeaves, preOrder, postOrder, partLikes, aData, aModel, newtAndBrentPowellOptPassLimit));
 }
 
 
@@ -1290,12 +1286,64 @@ pf_p4_newModel(PyObject *self, PyObject *args)
     int nFreePrams;
     int isHet;
     PyArrayObject *oRMatrixNormalizeTo1;
+    PyArrayObject *oPINVAR_MIN;
+    PyArrayObject *oPINVAR_MAX;
+    PyArrayObject *oKAPPA_MIN;
+    PyArrayObject *oKAPPA_MAX;
+    PyArrayObject *oGAMMA_SHAPE_MIN;
+    PyArrayObject *oGAMMA_SHAPE_MAX;
+    PyArrayObject *oPIVEC_MIN;
+    PyArrayObject *oPIVEC_MAX;
+    PyArrayObject *oRATE_MIN;
+    PyArrayObject *oRATE_MAX;
+    PyArrayObject *oRELRATE_MIN;
+    PyArrayObject *oRELRATE_MAX;
+    PyArrayObject *oBRLEN_MIN;
+    PyArrayObject *oBRLEN_MAX;
 	
-    if(!PyArg_ParseTuple(args, "iiiiiO", &nParts, &doRelRates, &relRatesAreFree, &nFreePrams, &isHet, &oRMatrixNormalizeTo1)) {
+    if(!PyArg_ParseTuple(args, "iiiiiOOOOOOOOOOOOOOO", &nParts, 
+                         &doRelRates, 
+                         &relRatesAreFree, 
+                         &nFreePrams, 
+                         &isHet, 
+                         &oRMatrixNormalizeTo1,
+                         &oPINVAR_MIN,
+                         &oPINVAR_MAX,
+                         &oKAPPA_MIN,
+                         &oKAPPA_MAX,
+                         &oGAMMA_SHAPE_MIN,
+                         &oGAMMA_SHAPE_MAX,
+                         &oPIVEC_MIN,
+                         &oPIVEC_MAX,
+                         &oRATE_MIN,
+                         &oRATE_MAX,
+                         &oRELRATE_MIN,
+                         &oRELRATE_MAX,
+                         &oBRLEN_MIN,
+                         &oBRLEN_MAX )) {
         printf("Error pf_p4_newModel: couldn't parse tuple\n");
         return NULL;
     }
-    return Py_BuildValue("l", p4_newModel(nParts, doRelRates, relRatesAreFree, nFreePrams, isHet, (int *)(oRMatrixNormalizeTo1->data)));
+    return Py_BuildValue("l", p4_newModel(nParts, 
+                                          doRelRates, 
+                                          relRatesAreFree, 
+                                          nFreePrams, 
+                                          isHet, 
+                                          (int *)(oRMatrixNormalizeTo1->data),
+                                          (double *)(oPINVAR_MIN->data),
+                                          (double *)(oPINVAR_MAX->data),
+                                          (double *)(oKAPPA_MIN->data),
+                                          (double *)(oKAPPA_MAX->data),
+                                          (double *)(oGAMMA_SHAPE_MIN->data),
+                                          (double *)(oGAMMA_SHAPE_MAX->data),
+                                          (double *)(oPIVEC_MIN->data),
+                                          (double *)(oPIVEC_MAX->data),
+                                          (double *)(oRATE_MIN->data),
+                                          (double *)(oRATE_MAX->data),
+                                          (double *)(oRELRATE_MIN->data),
+                                          (double *)(oRELRATE_MAX->data),
+                                          (double *)(oBRLEN_MIN->data),
+                                          (double *)(oBRLEN_MAX->data)));
 }
 
 
@@ -1957,6 +2005,34 @@ pf_p4_setConditionalLikelihoodsOfInteriorNodePart(PyObject *self, PyObject *args
 }
 
 
+static PyObject *
+pf_p4_allBOBYQAOptimize(PyObject *self, PyObject *args)
+{
+    p4_tree  *aTree;
+
+    if(!PyArg_ParseTuple(args, "l", &aTree)) {
+        printf("Error pf_p4_allBOBYQAOptimize: couldn't parse tuple\n");
+        return NULL;
+    }
+    p4_allBOBYQAOptimize(aTree);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
+pf_p4_newtAndBOBYQAOpt(PyObject *self, PyObject *args)
+{
+    p4_tree  *aTree;
+
+    if(!PyArg_ParseTuple(args, "l", &aTree)) {
+        printf("Error pf_p4_newtAndBOBYQAOpt: couldn't parse tuple\n");
+        return NULL;
+    }
+    p4_newtAndBOBYQAOpt(aTree);
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 
 
 
@@ -2427,45 +2503,12 @@ pf_unsetMcmcTreeCallback(PyObject *dummy, PyObject *args)
 }
 
 
-#if 0
+#if 1
 static PyObject *
 pf_test(PyObject *self, PyObject *args)
 {
-    //tree   *theTree;
-    //double  brLen;
-    //int     i, nCalls;
-	
-    //if(!PyArg_ParseTuple(args, "l", &theTree)) {
-    //	printf("Error pf_test: couldn't parse tuple\n");
-    //	return NULL;
-    //}
-
-    double **mat;
-    double **result;
-    int i,j;
-    eig *theEig;
 
     printf("pf_test here.\n");
-
-    mat = psdmatrix(4);
-    result = psdmatrix(4);
-    for(i = 0; i < 4; i++) {
-        for(j = 0; j < 4; j++) {
-            if(i == j) {
-                mat[i][j] = -1.0;
-            }
-            else {
-                mat[i][j] = 1.0/3.0;
-            }
-            result[i][j] = 0.0;
-        }
-    }
-    dump_psdmatrix(mat, 4);
-    theEig = allocEig(4, mat);
-    eigensystem(theEig);
-    matrixExpTimesBranchLength(theEig, 0.1, result);
-    dump_psdmatrix(result, 4);
-    freeEig(theEig);
 	
     Py_INCREF(Py_None);
     return Py_None;
@@ -2496,7 +2539,7 @@ pf_test(PyObject *self, PyObject *args)
 }
 #endif
 
-#if 1
+#if 0
 static PyObject *
 pf_test(PyObject *self, PyObject *args)
 {
@@ -2678,6 +2721,8 @@ static PyMethodDef pfMethods[] = {
     {"p4_calculateBigPDecks", pf_p4_calculateBigPDecks, METH_VARARGS},
     {"p4_calculateAllBigPDecksAllParts", pf_p4_calculateAllBigPDecksAllParts, METH_VARARGS},
     {"p4_setConditionalLikelihoodsOfInteriorNodePart", pf_p4_setConditionalLikelihoodsOfInteriorNodePart, METH_VARARGS},
+    {"p4_allBOBYQAOptimize", pf_p4_allBOBYQAOptimize, METH_VARARGS},
+    {"p4_newtAndBOBYQAOpt", pf_p4_newtAndBOBYQAOpt, METH_VARARGS},
     {"p4_allBrentPowellOptimize", pf_p4_allBrentPowellOptimize, METH_VARARGS},
     {"p4_newtAndBrentPowellOpt", pf_p4_newtAndBrentPowellOpt, METH_VARARGS},
     {"p4_newtSetup", pf_p4_newtSetup, METH_VARARGS},

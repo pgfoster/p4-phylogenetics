@@ -2407,14 +2407,13 @@ class Tree(object):
             for nNum in range(len(self.nodes)):
                 selfNode = self.nodes[nNum]
                 otherNode = otherTree.nodes[nNum]
-                for pNum in range(self.model.nParts):
-                    otherNode.parts[pNum].compNum = selfNode.parts[
-                        pNum].compNum
-                    if selfNode != self.root:
-                        otherNode.br.parts[pNum].rMatrixNum = selfNode.br.parts[
-                            pNum].rMatrixNum
-                        otherNode.br.parts[
-                            pNum].gdasrvNum = selfNode.br.parts[pNum].gdasrvNum
+                if selfNode.parts and otherNode.parts:
+                    for pNum in range(self.model.nParts):
+                        otherNode.parts[pNum].compNum = selfNode.parts[pNum].compNum
+                        if selfNode != self.root:
+                            if selfNode.br.parts and otherNode.br.parts:
+                                otherNode.br.parts[pNum].rMatrixNum = selfNode.br.parts[pNum].rMatrixNum
+                                otherNode.br.parts[pNum].gdasrvNum = selfNode.br.parts[pNum].gdasrvNum
 
         # pre- and postOrder
         for i in range(len(self.preOrder)):
@@ -2428,7 +2427,7 @@ class Tree(object):
 
         otherTree._nInternalNodes = self._nInternalNodes
 
-    def verifyIdentityWith(self, otherTree, doSplitKeys):
+    def verifyIdentityWith(self, otherTree, doSplitKeys=False, doMore=False):
         """For MCMC debugging.  Verifies that two trees are identical."""
 
         complaintHead = '\nTree.verifyIdentityWith()'  # keep
@@ -2515,56 +2514,59 @@ class Tree(object):
                         print('    rawSplitKeys differ.')
                         return var.DIFFERENT
 
-        # model usage numbers
-        isBad = 0
-        for pNum in range(self.model.nParts):
-            for nNum in range(len(self.nodes)):
-                selfNode = self.nodes[nNum]
-                otherNode = otherTree.nodes[nNum]
-                if selfNode.parts[pNum].compNum != otherNode.parts[pNum].compNum:
+        if self.model:
+            # model usage numbers
+            isBad = 0
+            for pNum in range(self.model.nParts):
+                for nNum in range(len(self.nodes)):
+                    selfNode = self.nodes[nNum]
+                    otherNode = otherTree.nodes[nNum]
+                    if selfNode.parts and otherNode.parts:
+                        if selfNode.parts[pNum].compNum != otherNode.parts[pNum].compNum:
+                            isBad = 1
+                        if self.nodes[nNum] != self.root:
+                            if selfNode.br.parts and otherNode.br.parts:
+                                if selfNode.br.parts[pNum].rMatrixNum != otherNode.br.parts[pNum].rMatrixNum:
+                                    isBad = 1
+                                elif selfNode.br.parts[pNum].gdasrvNum != otherNode.br.parts[pNum].gdasrvNum:
+                                    isBad = 1
+
+                    if isBad:
+                        print(complaintHead)
+                        print('    Node %i, model usage info does not match.' % nNum)
+                        return var.DIFFERENT
+
+            # pre- and postOrder
+            isBad = 0
+            for i in range(len(self.preOrder)):
+                if self.preOrder[i] != otherTree.preOrder[i]:
                     isBad = 1
-                if self.nodes[nNum] != self.root:
-                    if selfNode.br.parts[pNum].rMatrixNum != otherNode.br.parts[pNum].rMatrixNum:
-                        isBad = 1
-                    elif selfNode.br.parts[pNum].gdasrvNum != otherNode.br.parts[pNum].gdasrvNum:
-                        isBad = 1
-
-                if isBad:
-                    print(complaintHead)
-                    print('    Node %i, model usage info does not match.' % nNum)
-                    return var.DIFFERENT
-
-        # pre- and postOrder
-        isBad = 0
-        for i in range(len(self.preOrder)):
-            if self.preOrder[i] != otherTree.preOrder[i]:
-                isBad = 1
-                break
-            elif self.postOrder[i] != otherTree.postOrder[i]:
-                isBad = 1
-                break
-        if isBad:
-            print(complaintHead)
-            print('    Pre- or postOrder do not match.')
-            return var.DIFFERENT
-
-        if self.nInternalNodes != otherTree.nInternalNodes:
-            print(complaintHead)
-            print('    nInternalNodes differ.')
-            return var.DIFFERENT
-
-        # partLikes
-        for pNum in range(self.model.nParts):
-            # if otherTree.partLikes[pNum] != self.partLikes[pNum]:
-            myDiff = math.fabs(otherTree.partLikes[pNum] - self.partLikes[pNum])
-            if myDiff > 1.e-5:
+                    break
+                elif self.postOrder[i] != otherTree.postOrder[i]:
+                    isBad = 1
+                    break
+            if isBad:
                 print(complaintHead)
-                print("    partLikes differ by %.8f (%g).  (%.8f, (%g) %.8f (%g)" % (
-                    myDiff, myDiff,
-                    otherTree.partLikes[pNum], otherTree.partLikes[pNum], self.partLikes[pNum], self.partLikes[pNum]))
+                print('    Pre- or postOrder do not match.')
                 return var.DIFFERENT
 
-        if 0:  # some more
+            if self.nInternalNodes != otherTree.nInternalNodes:
+                print(complaintHead)
+                print('    nInternalNodes differ.')
+                return var.DIFFERENT
+
+            # partLikes
+            for pNum in range(self.model.nParts):
+                # if otherTree.partLikes[pNum] != self.partLikes[pNum]:
+                myDiff = math.fabs(otherTree.partLikes[pNum] - self.partLikes[pNum])
+                if myDiff > 1.e-5:
+                    print(complaintHead)
+                    print("    partLikes differ by %.8f (%g).  (%.8f, (%g) %.8f (%g)" % (
+                        myDiff, myDiff,
+                        otherTree.partLikes[pNum], otherTree.partLikes[pNum], self.partLikes[pNum], self.partLikes[pNum]))
+                    return var.DIFFERENT
+
+        if doMore:  # some more
             for nNum in range(len(self.nodes)):
                 selfNode = self.nodes[nNum]
                 otherNode = otherTree.nodes[nNum]
@@ -2589,31 +2591,74 @@ class Tree(object):
 
     ############################################
 
-    def isFullyBifurcating(self, verbose=False):
-        """Returns True if the tree is fully bifurcating.  Else False. """
 
-        if self.root and self.root.leftChild and self.root.leftChild.sibling and self.root.leftChild.sibling.sibling:
-            if self.root.leftChild.sibling.sibling.sibling:
-                if verbose:
-                    print("isFullyBifurcating() returning False, due to root with 4 or more children.")
-                return False
-        elif self.root and self.root.isLeaf:
-            pass
-        else:
+    def isFullyBifurcating(self, verbose=False, biRoot=True):
+        """Returns True if the tree is fully bifurcating.  Else False. 
+
+        If arg biRoot is True, then it is required that the tree be
+        biRoot'ed (ie have a bifurcating root)
+
+        If arg biRoot is False, then biRoot'ed trees are not allowed,
+        but trees rooted on a leaf are allowed.
+
+        """
+
+        rootNChildren = self.root.getNChildren()
+        if rootNChildren > 3:
             if verbose:
-                print("isFullyBifurcating() returning False, due to (non-leaf) root not having 3 children.")
+                print("isFullyBifurcating() returning False, due to root with %i children." % rootNChildren)
             return False
-        for n in self.iterInternalsNoRoot():
-            if n.leftChild and n.leftChild.sibling:
-                if n.leftChild.sibling.sibling:
-                    if verbose:
-                        print("isFullyBifurcating() returning False, due to node %i having 3 or more children." % n.nodeNum)
-                    return False
-            else:
+        if not biRoot:
+            if rootNChildren == 2:
                 if verbose:
-                    print("isFullyBifurcating() returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum)
+                    print("isFullyBifurcating() returning False, due to root with %i children." % rootNChildren)
                 return False
-        return True
+            
+            elif rootNChildren == 1 or rootNChildren == 3:   # rooting on a leaf is OK
+                if rootNChildren == 1:
+                    if not self.root.isLeaf:
+                        if verbose:
+                            print("isFullyBifurcating()", end=" ")
+                            print("returning False, because the single-child root is not a leaf.")
+                        return False
+
+                for n in self.iterInternalsNoRoot():
+                    if n.leftChild and n.leftChild.sibling:
+                        if n.leftChild.sibling.sibling:
+                            if verbose:
+                                print("isFullyBifurcating()", end=" ")
+                                print("returning False, due to node %i having 3 or more children." % n.nodeNum)
+                            return False
+                    else:
+                        if verbose:
+                            print("isFullyBifurcating()", end=" ")
+                            print("returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum)
+                        return False
+                return True
+            else:
+                raise P4Error("Tree.isFullyBifurcating() --- this should not happen; fix me.")
+
+        if biRoot:
+            # root on a leaf not allowed on a biRoot tree, as the root is explicitly not a leaf.
+            if rootNChildren != 2:    
+                if verbose:
+                    print("isFullyBifurcating(biRoot=True)", end=" ")
+                    print("returning False, due to root with %i children." % rootNChildren)
+                return False
+
+            for n in self.iterInternalsNoRoot():
+                if n.leftChild and n.leftChild.sibling:
+                    if n.leftChild.sibling.sibling:
+                        if verbose:
+                            print("isFullyBifurcating(biRoot=True)", end=" ")
+                            print("returning False, due to node %i having 3 or more children." % n.nodeNum)
+                        return False
+                else:
+                    if verbose:
+                        print("isFullyBifurcating(biRoot=True)", end=" ")
+                        print("returning False, due to non-leaf node %i having 1 or fewer children." % n.nodeNum)
+                    return False
+            return True
 
     # These next two are for the eTBR implementation that I got from Jason
     # Evans' Crux.  Thanks Jason!
@@ -2857,7 +2902,7 @@ class Tree(object):
 
         If you have nexus taxsets defined, you can show them.
         """
-        from btv import TV
+        from p4.btv import TV
         #import os
         #os.environ['PYTHONINSPECT'] = '1'
         TV(self)
@@ -3004,3 +3049,48 @@ class Tree(object):
             if not n.leftChild:
                 n.isLeaf = 1
         self.setPreAndPostOrder()
+
+    def attachRooter(self):
+        rNode = self.nodes[-1]
+        assert rNode.name == 'tempRooter'
+        assert rNode.nodeNum == var.NO_ORDER
+        rtMostCh = self.root.rightmostChild()
+        rtMostCh.sibling = rNode
+        rNode.sibling = None
+        rNode.parent = self.root
+        rNode.nodeNum = len(self.nodes) - 1
+        if self.taxNames:
+            # taxnames can be shared among trees, so check whether it has already been added
+            if rNode.name not in self.taxNames:
+                self.taxNames.append(rNode.name)
+        self.preAndPostOrderAreValid = False
+        self.setPreAndPostOrder()
+        #if self._nTax:
+        #    self._nTax += 1
+        return rNode
+
+
+    def detachRooter(self):
+        rNode = self.nodes[-1]
+        assert rNode.parent == self.root
+        safety = 0
+        while self.root.leftChild.sibling.sibling != rNode:
+            self.rotateAround(self.root)
+            safety += 1
+            if safety >= 5:
+                self.draw()
+                raise P4Error("Tree.detachRooter() Too many rotations.")
+
+        assert self.root.leftChild.sibling.sibling == rNode
+        self.root.leftChild.sibling.sibling = None
+        rNode.parent = None
+        rNode.nodeNum = var.NO_ORDER
+        self.preAndPostOrderAreValid = False
+        self.setPreAndPostOrder()
+        if self.taxNames:
+            # taxnames can be shared among trees, so check whether it is in
+            if rNode.name == self.taxNames[-1]:
+                self.taxNames.pop()
+        #if self._nTax:
+        #    self._nTax -= 1
+

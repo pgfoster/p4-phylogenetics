@@ -182,7 +182,7 @@ class ModelPart(object):
             #         raise P4Error(gm)
             #     # no longer needed, as comp.val is a numpy array
             #     #pf.p4_setCompVal(theModel.cModel, self.num, mNum, i, mt.val[i])
-            assert numpy.min(mt.val) > var.PIVEC_MIN
+            assert numpy.min(mt.val) >= var.PIVEC_MIN
 
         # Do the rMatrices
         for mNum in range(self.nRMatrices):
@@ -691,10 +691,27 @@ class Model(object):
             gm = [complaintHead]
             gm.append("About to alloc cModel, but cModel already exists.(%s)" % self.cModel)
             raise P4Error(gm)
-        self.cModel = pf.p4_newModel(self.nParts, self.doRelRates, self.relRatesAreFree, int(self.nFreePrams), self.isHet,
-                                     var._rMatrixNormalizeTo1)
-        # print "                                          ==== new cModel %s"
-        # % self.cModel
+        self.cModel = pf.p4_newModel(self.nParts, 
+                                     self.doRelRates, 
+                                     self.relRatesAreFree, 
+                                     int(self.nFreePrams), 
+                                     self.isHet,
+                                     var._rMatrixNormalizeTo1,
+                                     var._PINVAR_MIN,
+                                     var._PINVAR_MAX,
+                                     var._KAPPA_MIN,
+                                     var._KAPPA_MAX,
+                                     var._GAMMA_SHAPE_MIN,
+                                     var._GAMMA_SHAPE_MAX,
+                                     var._PIVEC_MIN,
+                                     var._PIVEC_MAX,
+                                     var._RATE_MIN,
+                                     var._RATE_MAX,
+                                     var._RELRATE_MIN,
+                                     var._RELRATE_MAX,
+                                     var._BRLEN_MIN,
+                                     var._BRLEN_MAX)
+        #print("                                          ==== new cModel %s"  % self.cModel)
         for pNum in range(self.nParts):
             mp = self.parts[pNum]
             if 0:
@@ -835,7 +852,11 @@ class Model(object):
                     #     for i in range(mp.dim):
                     #         mt.val[i] /= theSum
                     assert math.fabs(1.0 - numpy.sum(mt.val)) < 1.e-15
-                    assert numpy.min(mt.val) > var.PIVEC_MIN
+                    if numpy.min(mt.val) < var.PIVEC_MIN:
+                        gm = [complaintHead]
+                        gm.append("var.PIVEC_MIN is currently %g" % var.PIVEC_MIN)
+                        gm.append("Got comp %i val %g ; too small" % (mNum, numpy.min(mt.val)))
+                        raise P4Error(gm)
                     if 0:
                         theSum = sum(mt.val)
                         print("restoreFreePrams(). pNum %i, comp %i, sum=%g, 1.0 - sum = %g" % (
