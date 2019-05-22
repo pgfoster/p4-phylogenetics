@@ -123,7 +123,7 @@ class McmcCheckPointReader(object):
                 m = self.mm[i]
                 assert m.checkPointInterval % m.sampleInterval == 0
                 thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
-                assert thisNSamps == m.treePartitions.nTrees
+                #assert thisNSamps == m.treePartitions.nTrees
                 # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
                 print("%12s %12s %12s %12s %12s" % (
                     " ", i, m.runNum, m.gen + 1, thisNSamps))

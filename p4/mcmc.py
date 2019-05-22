@@ -27,7 +27,7 @@ fudgeFactor['allBrLens'] = 1.0
 fudgeFactor['polytomy'] = 1.0
 fudgeFactor['root3'] = 0.05
 fudgeFactor['root3n'] = 0.1
-fudgeFactor['root2'] = 0.1
+fudgeFactor['root2'] = 2.0
 fudgeFactor['compLocation'] = 0.01
 fudgeFactor['rMatrixLocation'] = 0.01
 fudgeFactor['gdasrvLocation'] = 0.01
@@ -86,7 +86,7 @@ class McmcTunings(object):
         self.default['doInternalBrLenPrior'] = False
         self.default['brLenPriorType'] = 'exponential'
         self.default['allBrLens'] = 2.0 * math.log(1.02)
-        self.default['root2'] = 0.2
+        self.default['root2'] = 0.1
         #self.default['root3'] = 10.0
         #self.default['root3n'] = 10.0
 
@@ -767,9 +767,9 @@ class Mcmc(object):
         self.props = Proposals()
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     gdasrv local ndch2_internalCompsDir ndch2_root3n_internalCompsDir 
-                    ndch2_internalCompsDirAlpha ndch2_leafCompsDir root2
+                    ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
                     ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
-        # maybeTunableButNotNow  compLocation eTBR polytomy root3 root3n rMatrixLocation
+        # maybeTunableButNotNow  compLocation eTBR polytomy root3 root3n rMatrixLocation root2
 
         self.treePartitions = None
         self.likesFileName = "mcmc_likes_%i" % runNum
@@ -2304,10 +2304,10 @@ class Mcmc(object):
                     
                     # tunables = """allBrLens allCompsDir brLen compDir 
                     # gdasrv local ndch2_internalCompsDir 
-                    # ndch2_internalCompsDirAlpha ndch2_leafCompsDir root2
+                    # ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
                     # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
 
-                    # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation
+                    # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation root2
 
                     if aProposal.name in self.tunableProps:
                         tempNum = self.chains[chNum].tempNum
@@ -2531,7 +2531,7 @@ class Mcmc(object):
 
                 # Add curTree to treePartitions
                 if self.treePartitions:
-                    self.treePartitions._getSplitsFromTree(
+                    self.treePartitions.getSplitsFromTree(
                         self.chains[coldChainNum].curTree)
                 else:
                     self.treePartitions = TreePartitions(
@@ -2808,7 +2808,7 @@ class Mcmc(object):
         if self.simulate:
             theCopy.simTree.deleteCStuff()
             theCopy.simTree.data = None
-        theCopy.treePartitions._finishSplits()
+        #theCopy.treePartitions._finishSplits()
         theCopy.likesFile = None
         theCopy.treeFile = None
         for chNum in range(theCopy.nChains):
