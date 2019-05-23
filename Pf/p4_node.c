@@ -345,7 +345,7 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
         }
     }
 
-    if ((1)) {
+    if ((0)) {
         // Find any negative values in the bigPDecks.  If any are found
         // that would be a serious problem, and so the program should give
         // an error message and die.  The most likely reason, I think, is
