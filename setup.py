@@ -51,7 +51,9 @@ likelyDirs = [ "/usr",
                "/usr/local",
                "/sw",
                "/opt/local",
-               os.path.expanduser('~')
+               os.path.expanduser('~'),
+               os.path.join(os.path.expanduser('~'), ".linuxbrew"),
+	       "/home/linuxbrew/.linuxbrew"
                ]
 
 import glob
