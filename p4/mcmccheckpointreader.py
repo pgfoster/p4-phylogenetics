@@ -233,6 +233,7 @@ class McmcCheckPointReader(object):
         nItems = int(((nM * nM) - nM) / 2)
         asdosses = numpy.zeros((nM, nM), dtype=numpy.float64)
         vect = numpy.zeros(nItems, dtype=numpy.float64)
+        mdvect = numpy.zeros(nItems, dtype=numpy.float64)
         maxDiffs = numpy.zeros((nM, nM), dtype=numpy.float64)
 
         vCounter = 0
@@ -246,9 +247,10 @@ class McmcCheckPointReader(object):
                 asdosses[mNum1][mNum2] = thisAsdoss
                 asdosses[mNum2][mNum1] = thisAsdoss
                 vect[vCounter] = thisAsdoss
-                vCounter += 1
                 maxDiffs[mNum1][mNum2] = thisMaxDiff
                 maxDiffs[mNum2][mNum1] = thisMaxDiff
+                mdvect[vCounter] = thisMaxDiff
+                vCounter += 1
 
                 if 0:
                     print(" %10i " % mNum1, end=' ')
@@ -262,14 +264,21 @@ class McmcCheckPointReader(object):
         print(asdosses)
         print()
         print("For the %i values in one triangle," % nItems)
-        print("max =  ", vect.max())
-        print("min =  ", vect.min())
-        print("mean = ", vect.mean())
-        print("var =  ", vect.var())
+        print("max =  %.3f" % vect.max())
+        print("min =  %.3f" % vect.min())
+        print("mean = %.3f" % vect.mean())
+        #print("var =  %.2g", vect.var())
 
         print()
         print("Pairwise maximum differences in split supports between the two runs ---")
         print(maxDiffs)
+        print()
+        print("For the %i values in one triangle," % nItems)
+        print("max =  %.3f" % mdvect.max())
+        print("min =  %.3f" % mdvect.min())
+        #print("mean = ", mdvect.mean())
+        #print("var =  ", mdvect.var())
+        
 
         # Reset printoptions back to what it was
         numpy.set_printoptions(
