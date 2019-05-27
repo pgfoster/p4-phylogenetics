@@ -975,24 +975,40 @@ class Chain(object):
         # To run "without the data", which shows the effect of priors.
         #logLikeRatio = 0.0
 
-        if self.mcmc.nChains > 1:
-            if self.mcmc.swapVector:
-                heatBeta = 1.0 / (1.0 + self.mcmc.chainTemps[self.tempNum])
-            else:
-                heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
-            logLikeRatio *= heatBeta
-            try:
-                self.logPriorRatio *= heatBeta
-            except TypeError:
-                gm.append("logPriorRatio is %s, heatBeta is %s" % (self.logPriorRatio, heatBeta))
-                gm.append("proposal name %s" % theProposal.name)
-                raise P4Error(gm)
+        # Experimental Heating hack.  Dodgy.
+        if self.mcmc.doHeatingHack:
+            assert self.mcmc.swapVector
+            if self.mcmc.heatingHackRamper:
+                hHTemp = self.mcmc.originalHeatingHackTemperature
+                myG = self.mcmc.gen
+                if myG <= self.mcmc.heatingHackRamper[0]:
+                    pass
+                elif myG >= self.mcmc.heatingHackRamper[1]:
+                    hHTemp = 0.0
+                else:
+                    rdiff = self.mcmc.heatingHackRamper[1] - self.mcmc.heatingHackRamper[0]
+                    factor = (self.mcmc.heatingHackRamper[1] - myG) / rdiff 
+                    hHTemp = self.mcmc.originalHeatingHackTemperature * factor
+                    #print("hHTemp. factor %.3f, new hHTemp %.3f" % (factor, hHTemp))
+                self.mcmc.heatingHackTemperature = hHTemp
 
-        # Experimental Heating hack
-        if self.mcmc.doHeatingHack: # and theProposal.name in self.mcmc.heatingHackProposalNames:
-            heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature)
+            heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature + self.mcmc.chainTemps[self.tempNum])
             logLikeRatio *= heatFactor
             self.logPriorRatio *= heatFactor
+
+        else:
+            if self.mcmc.nChains > 1:
+                if self.mcmc.swapVector:
+                    heatBeta = 1.0 / (1.0 + self.mcmc.chainTemps[self.tempNum])
+                else:
+                    heatBeta = 1.0 / (1.0 + self.mcmc.chainTemp * self.tempNum)
+                logLikeRatio *= heatBeta
+                try:
+                    self.logPriorRatio *= heatBeta
+                except TypeError:
+                    gm.append("logPriorRatio is %s, heatBeta is %s" % (self.logPriorRatio, heatBeta))
+                    gm.append("proposal name %s" % theProposal.name)
+                    raise P4Error(gm)
 
         theSum = logLikeRatio + self.logProposalRatio + self.logPriorRatio
         # if theProposal.name in ['ndch2_leafCompsDir']:

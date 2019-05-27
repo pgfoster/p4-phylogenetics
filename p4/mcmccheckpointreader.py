@@ -276,7 +276,7 @@ class McmcCheckPointReader(object):
         print("For the %i values in one triangle," % nItems)
         print("max =  %.3f" % mdvect.max())
         print("min =  %.3f" % mdvect.min())
-        #print("mean = ", mdvect.mean())
+        print("mean = %.3f" % mdvect.mean())
         #print("var =  ", mdvect.var())
         
 

@@ -476,7 +476,10 @@ class SwapTunerV(object):
                 #print(message)
                 self.mcmc.logger.info(message)
             # Make chainTemps from chainTempDiffs
-            self.mcmc.chainTemps = [0.0]
+            if self.mcmc.doHeatingHack:
+                self.mcmc.chainTemps = [self.mcmc.heatingHackTemperature]
+            else:
+                self.mcmc.chainTemps = [0.0]
             for dNum in range(self.mcmc.nChains - 1):
                 self.mcmc.chainTemps.append(self.mcmc.chainTempDiffs[dNum] + self.mcmc.chainTemps[-1])
             if doMessage:
@@ -1002,7 +1005,8 @@ class Mcmc(object):
         # Hidden experimental hacking
         self.doHeatingHack = False
         self.heatingHackTemperature = 5.0
-        #self.heatingHackProposalNames = ['local', 'eTBR']
+        self.originalHeatingHackTemperature = 5.0
+        self.heatingHackRamper = None
 
         # Whether logging from the Pf module is turned on.
         # When it is turned on, a callback is set up to self._logFromPfModule()
@@ -1993,9 +1997,10 @@ class Mcmc(object):
         # Hidden experimental hack
         if self.doHeatingHack:
             print("Heating hack is turned on.")
-            assert self.nChains == 1, "MCMCMC does not work with the heating hack"
+            #assert self.nChains == 1, "MCMCMC does not work with the heating hack"
             print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
             #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
+            self.originalHeatingHackTemperature = self.heatingHackTemperature
 
         if self.prob.polytomy:
             for pNum in range(self.tree.model.nParts):
