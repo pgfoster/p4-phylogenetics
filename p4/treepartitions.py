@@ -116,7 +116,7 @@ class Split(object):
                 print("%35s = %s" % ('compCounts', self.rootModelUsage.parts[pNum].compCounts))
 
     def combineWith(self, otherSplitObject):
-        # no need to do proportion -- that is handled by _finishSplits()
+        # no need to do proportion -- that is handled by finishSplits()
         # model stuff is ignored -- actually, wiped! -- due to lazy
         # programming.
         oso = otherSplitObject
@@ -734,7 +734,7 @@ something like this::
         - Put biRoot counts on appropriate branches.
         """
 
-        gm = ['TreePartitions._finishSplits()']
+        gm = ['TreePartitions.finishSplits()']
         # print "self.nTrees = %s" % self.nTrees
         for spl in self.splits:
             spl.string = p4.func.getSplitStringFromKey(spl.key, self.nTax)
@@ -2174,7 +2174,7 @@ something like this::
             gm.append("Possibly a duplicated site?")
             raise P4Error(gm)
 
-        self._finishSplits()
+        self.finishSplits()
         # self.dump()
 
         t = self.consensus()
@@ -2237,7 +2237,7 @@ something like this::
             else:
                 self.biSplits.append(ospl)
                 self.biSplitsHash[ospl.key] = ospl
-        self._finishSplits()
+        self.finishSplits()
 
     def getSplitForTaxNames(self, txNames):
         k = p4.func.getSplitKeyFromTaxNames(self.taxNames, txNames)
