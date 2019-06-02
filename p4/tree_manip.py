@@ -875,6 +875,7 @@ if True:
         theGrandParent = rNodeParnt.parent
         rNodeParntLeftSib = rNodeParnt.leftSibling()
         rNodeParntSib = rNodeParnt.sibling
+        theGrandParentLeftChild = theGrandParent.leftChild
         
 
         if theSib:
@@ -885,6 +886,8 @@ if True:
                 rNodeParntLeftSib.sibling = theSib
             if rNodeParntSib:
                 theSib.sibling = rNodeParntSib
+            if theGrandParentLeftChild == rNodeParnt:
+                theGrandParent.leftChild = theSib
                 
 
         elif theLeftSib:
@@ -895,6 +898,8 @@ if True:
                 rNodeParntLeftSib.sibling = theLeftSib
             if rNodeParntSib:
                 theLeftSib.sibling = rNodeParntSib
+            if theGrandParentLeftChild == rNodeParnt:
+                theGrandParent.leftChild = theLeftSib
 
         rNodeParnt.leftChild = rNode
 
