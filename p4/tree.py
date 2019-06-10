@@ -1944,7 +1944,7 @@ class Tree(object):
                     splitList.append([x, 0])
                 n.br.rcList = [n.br.rc]
 
-    def makeSplitKeys(self, makeNodeForSplitKeyDict=False):
+    def makeSplitKeys(self, makeNodeForSplitKeyDict=True):
         """Make long integer-valued split keys.
 
         This needs to have self.taxNames set.
