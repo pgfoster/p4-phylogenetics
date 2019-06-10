@@ -2951,6 +2951,44 @@ class Tree(object):
             n = treeB.splitKeyHash[spl]
             n.br.color = 'orange'
 
+    def drawTopologyCompare(self, treeB, showNodeNums=False):
+        """Graphically show topology differences between two trees.
+
+        The two trees (self and treeB) are drawn as text, with differences
+        highlighted with a thick branch.
+
+        The taxNames need to be set, and need to be the same for both
+        trees.
+
+        """
+
+        sd = self.topologyDistance(treeB)
+        if sd == 0:
+            print("The trees are the same. ")
+            return
+
+        self.splitKeyHash = {}
+        for n in self.iterInternalsNoRoot():
+            self.splitKeyHash[n.br.splitKey] = n
+        treeB.splitKeyHash = {}
+        for n in treeB.iterNodesNoRoot():
+            treeB.splitKeyHash[n.br.splitKey] = n
+        assert self.splitKeySet
+        assert treeB.splitKeySet
+        selfHasButTreeBDoesnt = self.splitKeySet.difference(treeB.splitKeySet)
+        treeBHasButSelfDoesnt = treeB.splitKeySet.difference(self.splitKeySet)
+
+        for spl in selfHasButTreeBDoesnt:
+            n = self.splitKeyHash[spl]
+            n.br.textDrawSymbol = '='
+        for spl in treeBHasButSelfDoesnt:
+            n = treeB.splitKeyHash[spl]
+            n.br.textDrawSymbol = '='
+
+        self.draw(showNodeNums=showNodeNums)
+        treeB.draw(showNodeNums=showNodeNums)
+
+
     ##################################################
 
     def readPhyloXmlFile(self, fName, verbose=False):
