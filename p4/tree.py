@@ -2577,7 +2577,7 @@ class Tree(object):
     ############################################
 
 
-    def isFullyBifurcating(self, verbose=False, biRoot=True):
+    def isFullyBifurcating(self, verbose=False, biRoot=False):
         """Returns True if the tree is fully bifurcating.  Else False. 
 
         If arg biRoot is True, then it is required that the tree be
