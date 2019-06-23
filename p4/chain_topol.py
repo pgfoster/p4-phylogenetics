@@ -135,7 +135,7 @@ if True:
             self.propTree.setPreAndPostOrder()
 
         else:
-            # Neither curNode nor dest is not the root. Need to rearrange.
+            # Neither curNode nor dest is the root. Need to rearrange.
 
             # Remove the current root.  
             if oldRoot.parent:
