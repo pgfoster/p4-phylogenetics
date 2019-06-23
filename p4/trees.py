@@ -919,3 +919,87 @@ class Trees(object):
             startTNum += stride
 
         f.close()
+    
+    def getNodeOnReferenceTreeCorrespondingToSelfRoots(self, refTree, verbose=False):
+
+        gm = ["Trees.getNodeOnReferenceTreeCorrespondingToSelfRoots()"]
+
+        rtnChildren = refTree.root.getNChildren()
+        if rtnChildren == 2:
+            gm.append("The refTree should not be bi-rooted")
+            gm.append("You can do refTree.removeRoot() ")
+            raise P4Error(gm)
+            
+        assert refTree.taxNames
+        assert refTree.taxNames == self.taxNames
+
+        nodeNums = []
+        for t in self.trees:
+            ret = t.getNodeOnReferenceTreeCorrespondingToSelfRoot(refTree, verbose=verbose)
+            if ret:
+                nodeNums.append(ret.nodeNum)
+            else:
+                nodeNums.append(-1)
+
+        # sanity check
+        rootCountAttrs = 0
+        biRootCountAttrs = 0
+        for n in refTree.iterNodes():
+            if n.br:
+                if hasattr(n.br, 'biRootCount'):
+                    biRootCountAttrs += 1
+            if hasattr(n, "rootCount"):
+                rootCountAttrs += 1
+        assert rootCountAttrs or biRootCountAttrs
+        if rootCountAttrs and biRootCountAttrs:
+            gm.append("refTree has %i rootCount's and %i biRootCount's." % (rootCountAttrs, biRootCountAttrs))
+            gm.append("It should not have both.")
+            raise P4Error(gm)
+
+        if rootCountAttrs:
+            nodesList = []
+            maxRootCount = 0
+            for n in refTree.iterNodes():
+                if n.rootCount:
+                    n.name = n.rootCount
+                    nodesList.append(n)
+                    if n.rootCount > maxRootCount:
+                        maxRootCount = n.rootCount
+            print("non-bi-root maxRootCount is %i" % maxRootCount)
+            nodesInOrder = p4.func.sortListOfObjectsOnAttribute(nodesList, 'rootCount')
+            nodesInOrder.reverse()
+            sumRootCount = 0
+            print("node    rootCount")
+            print("-----    --------")
+            for n in nodesInOrder:
+                print("%3i       %i" % (n.nodeNum, n.rootCount))
+                sumRootCount += n.rootCount
+            print("The sum of rootCounts is %i, for %i trees" % (sumRootCount, len(self.trees)))
+            refTree.draw()
+            print(nodeNums)
+
+        elif biRootCountAttrs:
+            nodesList = []
+            maxRootCount = 0
+            for n in refTree.iterNodes():
+                if n.br and n.br.biRootCount:
+                    #n.name = n.rootCount
+                    nodesList.append(n)
+                    if n.br.biRootCount > maxRootCount:
+                        maxRootCount = n.br.biRootCount
+            print("bi-root maxRootCount is %i" % maxRootCount)
+            tList = [[n.nodeNum, n.br.biRootCount] for n in nodesList]
+            nodeNumsInOrder = p4.func.sortListOfListsOnListElementNumber(tList, 1)
+            nodeNumsInOrder.reverse()
+            sumBiRootCount = 0
+            print("node     biRootCount")
+            print("-----    --------")
+            for n in nodeNumsInOrder:
+                print("%3i       %i" % (n[0], n[1]))
+                sumBiRootCount += n[1]
+            print("The sum of biRootCounts is %i, for %i trees" % (sumBiRootCount, len(self.trees)))
+            refTree.draw()
+            print(nodeNums)
+            
+
+                

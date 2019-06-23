@@ -2951,6 +2951,8 @@ class Tree(object):
             n = treeB.splitKeyHash[spl]
             n.br.color = 'orange'
 
+    ##################################################
+
     def drawTopologyCompare(self, treeB, showNodeNums=False):
         """Graphically show topology differences between two trees.
 
@@ -2989,7 +2991,80 @@ class Tree(object):
         treeB.draw(showNodeNums=showNodeNums)
 
 
-    ##################################################
+    def getNodeOnReferenceTreeCorrespondingToSelfRoot(self, refTree, verbose=True):
+        """Find, on a ref tree, a node corresponding to where the self root is.
+
+        This works for both bifurcating and non-bifurcating roots (of
+        self).
+
+        The refTree should not be bi-rooted.
+
+        To facilitate doing a lot of (self) trees, a counter in the
+        corresponding node in the refTree is incremented.  The refTree
+        is rooted on the first taxon.  For bi-rooted trees, the
+        node.br.biRootCount is incremented, and for non-bi-rooted
+        trees the node.rootCount is incremented.  The root counts
+        should therefore be immune to reRoot()'ing.
+
+        """
+
+        gm = ["Tree.getNodeOnReferenceTreeCorrespondingToSelfRoot()"]
+        assert self is not refTree
+        assert self.taxNames
+        assert refTree.taxNames
+        assert self.taxNames == refTree.taxNames
+
+        isBiRoot = False
+        # sr = self.root; srnChildren = nChildren of self.root
+        srnChildren = self.root.getNChildren()
+        if srnChildren == 1:
+            gm.append("Self root has only one child; does not work")
+            raise P4Error(gm)
+        elif srnChildren == 2:
+            isBiRoot = True
+            for n in refTree.iterNodesNoRoot():
+                if not hasattr(n.br, "biRootCount"):
+                    n.br.biRootCount = 0
+        else:
+            for n in refTree.iterNodes():
+                if not hasattr(n, "rootCount"):
+                    n.rootCount = 0
+
+        #self.draw()
+        refTree.reRoot(self.taxNames[0])
+        #refTree.draw()
+
+        self.makeSplitKeys()  # default makeNodeForSplitKeyDict=True
+        refTree.makeSplitKeys()
+
+        for ch in self.root.iterChildren():
+            if ch.br.rawSplitKey & 1:
+                break
+        # ch clade has the first taxon, ch.parent is self.root
+        #print("self root child %i clade has the first taxon" % ch.nodeNum)
+        refNode = refTree.nodeForSplitKeyDict.get(ch.br.splitKey)
+        if refNode:
+            if isBiRoot:
+                refNode.br.biRootCount += 1
+                if verbose:
+                    #print("When the refTree is rooted on the first taxon,")
+                    #print("the bi-root is on the branch on refTree node %i" % refNode.nodeNum)
+                    print("Incrementing refTree node %i br.biRootCount by 1" % refNode.nodeNum)
+
+            else:
+                refNode.rootCount += 1
+                if verbose:
+                    #print("When the refTree is rooted on the first taxon,")
+                    #print("the root is at refTree node %i" % refNode.nodeNum)
+                    print("Incrementing refTree node %i rootCount by 1" % refNode.nodeNum)
+
+            return refNode
+        else:
+            if verbose:
+                print("There is no node in the refTree corresponding to the self.root")
+            return None
+                
+                
 
     def readPhyloXmlFile(self, fName, verbose=False):
         """Start with an empty Tree, read in a phyloxml file"""
