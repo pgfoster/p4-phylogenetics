@@ -991,8 +991,11 @@ class Chain(object):
                     hHTemp = self.mcmc.originalHeatingHackTemperature * factor
                     #print("hHTemp. factor %.3f, new hHTemp %.3f" % (factor, hHTemp))
                 self.mcmc.heatingHackTemperature = hHTemp
-
-            heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature + self.mcmc.chainTemps[self.tempNum])
+            
+            if self.mcmc.nChains > 1:
+                heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature + self.mcmc.chainTemps[self.tempNum])
+            else:
+                heatFactor = 1.0 / (1.0 + self.mcmc.heatingHackTemperature)
             logLikeRatio *= heatFactor
             self.logPriorRatio *= heatFactor
 
@@ -1209,13 +1212,13 @@ class Chain(object):
         # if aProposal.name in ['rMatrix', 'comp', 'gdasrv']:
         #    acceptMove = False
 
-        if 0: #and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
+        if 0 and aProposal.name == 'root2': #and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
             print("-------------- (gen %5i, %30s) acceptMove = %6s" % (self.mcmc.gen, aProposal.name, acceptMove), end=' ')
             if acceptMove:
                 logLikeDiff = self.propTree.logLike - self.curTree.logLike
             else:
                 logLikeDiff = 0.0
-            #print("logLikeChange = %8.4f" % logLikeDiff, end=' ')
+            print("logLikeChange = %8.4f" % logLikeDiff, end=' ')
             print()
 
         aProposal.nProposals[self.tempNum] += 1
