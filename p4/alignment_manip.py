@@ -2260,7 +2260,7 @@ if True:
         dof2 = dof - zcount
         assert dof2
 
-        # Now calculate SB, Stuart's stat.  For that we need the d vector
+        # Now calculate QS, Stuart's stat.  For that we need the d vector
         # and the V matrix.  Oddly, d is dim-1 long, and V is (dim-1,dim-1).
 
         # Lesson in sum().  sum() is a Python function, not in numpy.
