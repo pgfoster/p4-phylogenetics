@@ -1983,6 +1983,7 @@ something like this::
                 print()
                 print(gm[0])
                 print(longMessage1)  # see top of file
+                sumBiRootCount = 0
                 print("node  br.biRootCount")
                 for n in conTree.iterNodesNoRoot():
                     if not n.br.biRootCount:  # None or zero
@@ -1999,6 +2000,8 @@ something like this::
                                 n.name += "_%i" % n.br.biRootCount
                             else:
                                 n.name = "%i" % n.br.biRootCount
+                            sumBiRootCount += n.br.biRootCount
+                print("Total biRootCount is %i, for %i trees" % (sumBiRootCount, self.nTrees))
                 #conTree.draw()
                 if 0 and isinstance(showRootInfo, str):           # this does not work because leaf node names are modified.
                     if showRootInfo.endswith(".nex"):
@@ -2017,7 +2020,7 @@ something like this::
                     print()
 
                 # Undo the root decoration
-                for n in conTree.iterInternalsNoRoot():
+                for n in conTree.iterNodesNoRoot():
                     if n.br.biRootCount:
                         if n.isLeaf:
                             n.name = n.oldName
@@ -2029,6 +2032,7 @@ something like this::
                 print()
                 print(gm[0])
                 print(longMessage2)  # see top of file.
+                sumRootCount = 0
                 print("node  rootCount")
                 for n in conTree.iterNodes():
                     if hasattr(n, 'rootCount'):
@@ -2040,6 +2044,8 @@ something like this::
                             else:
                                 print("%4i  %6.1f" % (n.nodeNum, n.rootCount))
                             n.name = "%i" % n.rootCount
+                            sumRootCount += n.rootCount
+                print("Total rootCount is %i, for %i trees" % (sumRootCount, self.nTrees))
                 if isinstance(showRootInfo, str):
                     if showRootInfo.endswith(".nex"):
                         rootOutFileName = showRootInfo
