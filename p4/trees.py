@@ -920,7 +920,7 @@ class Trees(object):
 
         f.close()
     
-    def getNodeOnReferenceTreeCorrespondingToSelfRoots(self, refTree, verbose=False):
+    def getNodeOnReferenceTreeCorrespondingToSelfRoots(self, refTree, verbose=False, drawWidth=150):
 
         gm = ["Trees.getNodeOnReferenceTreeCorrespondingToSelfRoots()"]
 
@@ -975,7 +975,7 @@ class Trees(object):
                 print("%3i       %i" % (n.nodeNum, n.rootCount))
                 sumRootCount += n.rootCount
             print("The sum of rootCounts is %i, for %i trees" % (sumRootCount, len(self.trees)))
-            refTree.draw()
+            refTree.draw(width=drawWidth)
             print(nodeNums)
 
         elif biRootCountAttrs:
@@ -998,7 +998,7 @@ class Trees(object):
                 print("%3i       %i" % (n[0], n[1]))
                 sumBiRootCount += n[1]
             print("The sum of biRootCounts is %i, for %i trees" % (sumBiRootCount, len(self.trees)))
-            refTree.draw()
+            refTree.draw(width=drawWidth)
             print(nodeNums)
             
 
