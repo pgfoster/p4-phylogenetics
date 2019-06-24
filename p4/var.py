@@ -308,6 +308,7 @@ class Var(object):
         self.stmcmc_useFastSpa = False
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
         #self.mcmc_doTuneChainTemp = False
+        self.mcmc_allowUnresolvedStartingTree = False
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]

@@ -648,29 +648,33 @@ class Mcmc(object):
 
         self.isBiRoot = False
         rootNChildren = aTree.root.getNChildren()
-        if rootNChildren == 2:
-            ret = aTree.isFullyBifurcating(verbose=True, biRoot=True)
-            if not ret:
-                gm.append("The tree has a bifurcating root, but otherwise is not fully bifurcating.")
-                raise P4Error(gm)
-            self.isBiRoot = True
-            # Add a rooter node to aTree.nodes, not "in" the tree
-            n = Node()
-            n.isLeaf = 1
-            n.name = 'tempRooter'
-            n.nodeNum = var.NO_ORDER
-            aTree.nodes.append(n)
-            aTree.setPreAndPostOrder()
-
-        elif rootNChildren == 3:
-            ret = aTree.isFullyBifurcating(verbose=True, biRoot=False)
-            if not ret:
-                gm.append("The tree has a trifurcating root, but otherwise is not fully bifurcating.")
-                raise P4Error(gm)
-            self.isBiRoot = False
+        if var.mcmc_allowUnresolvedStartingTree:
+            if rootNChildren == 2:
+                self.isBiRoot = True
         else:
-            gm.append("Mcmc only allows trifurcating or bifurcating roots.  This tree has %i children" % rootNChildren)
-            raise P4Error(gm)
+            if rootNChildren == 2:
+                ret = aTree.isFullyBifurcating(verbose=True, biRoot=True)
+                if not ret:
+                    gm.append("The tree has a bifurcating root, but otherwise is not fully bifurcating.")
+                    raise P4Error(gm)
+                self.isBiRoot = True
+                # Add a rooter node to aTree.nodes, not "in" the tree
+                n = Node()
+                n.isLeaf = 1
+                n.name = 'tempRooter'
+                n.nodeNum = var.NO_ORDER
+                aTree.nodes.append(n)
+                aTree.setPreAndPostOrder()
+
+            elif rootNChildren == 3:
+                ret = aTree.isFullyBifurcating(verbose=True, biRoot=False)
+                if not ret:
+                    gm.append("The tree has a trifurcating root, but otherwise is not fully bifurcating.")
+                    raise P4Error(gm)
+                self.isBiRoot = False
+            else:
+                gm.append("Mcmc only allows trifurcating or bifurcating roots.  This tree root has %i children" % rootNChildren)
+                raise P4Error(gm)
             
 
         self.tree = aTree
