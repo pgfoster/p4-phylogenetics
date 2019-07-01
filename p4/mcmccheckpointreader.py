@@ -229,6 +229,9 @@ class McmcCheckPointReader(object):
             None
 
         """
+        for m in self.mm:
+            m.treePartitions.finishSplits()
+
         nM = len(self.mm)
         nItems = int(((nM * nM) - nM) / 2)
         asdosses = numpy.zeros((nM, nM), dtype=numpy.float64)
