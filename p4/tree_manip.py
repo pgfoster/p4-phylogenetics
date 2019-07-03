@@ -57,7 +57,7 @@ if True:
             raise P4Error(gm)
 
         if nodeNum < 0 or nodeNum >= len(self.nodes):
-            gm.append("The node number is out of range.")
+            gm.append("The requested node number %i is out of range (of %i nodes)." % (nodeNum, len(self.nodes)))
             raise P4Error(gm)
 
         return self.nodes[nodeNum]
