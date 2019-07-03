@@ -3192,3 +3192,18 @@ class Tree(object):
         #if self._nTax:
         #    self._nTax -= 1
 
+    def isBiRoot(self):
+        """Answers whether self has a bifurcating root"""
+
+        rootNChildren = self.root.getNChildren()
+        if rootNChildren == 2:
+            return True
+        return False
+
+    def isTriRoot(self):
+        """Answers whether self has a trifurcating root"""
+
+        rootNChildren = self.root.getNChildren()
+        if rootNChildren == 3:
+            return True
+        return False
