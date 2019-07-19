@@ -309,6 +309,8 @@ class Var(object):
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
         #self.mcmc_doTuneChainTemp = False
         self.mcmc_allowUnresolvedStartingTree = False
+        self.mcmc_simTemp_tuningInterval = 5000    # this is multiplied by the number of temps, m.simTemp
+        self.mcmc_logTunings = False  # verbose logging of on-the-fly changes to tunings 
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]

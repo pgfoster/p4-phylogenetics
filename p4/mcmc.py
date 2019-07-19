@@ -14,9 +14,11 @@ from p4.p4exceptions import P4Error
 from p4.treepartitions import TreePartitions
 from p4.constraints import Constraints
 from p4.node import Node
+from p4.pnumbers import Numbers
 import datetime
 import numpy
 import logging
+# import statistics
 
 # for proposal probs
 fudgeFactor = {}
@@ -242,7 +244,7 @@ class Proposal(object):
             doMessage = True
         self.tnNSamples[tempNum] = 0
         self.tnNAccepts[tempNum] = 0
-        if doMessage:
+        if var.mcmc_logTunings and doMessage:
             message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % (self.name, self.mcmc.gen, tempNum, acc)
             message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
             message += "Adjusting tuning from %g to %g" % (oldTn, self.tuning[tempNum])
@@ -489,6 +491,20 @@ class SwapTunerV(object):
                 self.mcmc.logger.info(message)
 
 
+class SimTempTemp(object):
+    def __init__(self, temp):
+        self.temp = temp
+        #self.pi = 1.0
+        #self.logPi = 0.0
+        self.logPiDiff = 0.0
+        self.occupancy = 0
+        self.nProposalsUp = 0
+        self.nAcceptedUp = 0
+        self.rValsUp = []
+        self.nProposalsDn = 0
+        self.nAcceptedDn = 0
+        self.rValsDn = []
+
 
 
 class Mcmc(object):
@@ -635,7 +651,7 @@ class Mcmc(object):
 
     """
 
-    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True):
+    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, simTemp=None, simTempMax=10.0):
         gm = ['Mcmc.__init__()']
         self.verbose = verbose
 
@@ -708,14 +724,67 @@ class Mcmc(object):
         self.startMinusOne = -1
         self.chainTemp = 1.0
 
+        # If we are doing simulated tempering ...
+        self.simTemp = None
+        if simTemp:
+            try:
+                self.simTemp = int(simTemp)
+            except (ValueError, TypeError):
+                gm.append("If set, simTemp should be an int, 2 or more.  Got %s" % simTemp)
+                raise P4Error(gm)
+            if self.simTemp < 2:
+                gm.append("If set, simTemp should be an int, 2 or more.  Got %s" % simTemp)
+                raise P4Error(gm)
+            if self.nChains != 1:
+                gm.append("If simTemp is set, nChains should only be 1.  Got %i" % self.nChains)
+
+        self.simTemp_temps = []
+        self.simTemp_curTemp = 0
+        self.simTemp_nTempChangeProposals = 0
+        self.simTemp_nTempChangeAccepts = 0
+        self.simTemp_tNums = []
+        self.simTemp_tempChangeProposeFreq = 1
+        if self.simTemp:
+            try:
+                thisSimTempMax = float(simTempMax)
+            except (ValueError, TypeError):
+                gm.append("If doing simTemp, simTempMax should be set to a float more than zero.  Got  %s" % simTempMax)
+                raise P4Error(gm)
+            if thisSimTempMax <= 0.0:
+                gm.append("If doing simTemp, simTempMax should be set to a float more than zero.  Got  %s" % simTempMax)
+                raise P4Error(gm)
+
+            self.simTempMax = thisSimTempMax
+
+            if 0:
+                # This makes the temperatures evenly spaced.
+                stepSize = self.simTempMax / (self.simTemp - 1)
+                self.simTemp_temps = [SimTempTemp(0.0)]
+                for tNum in range(1,self.simTemp):
+                    tmp = SimTempTemp(tNum * stepSize)
+                    self.simTemp_temps.append(tmp)
+            if 1:
+                # This makes more small temperatures and fewer big temperatures
+                logBase = 1.5       # should be a settable variable in the var module?
+                factor = self.simTempMax / (math.pow(logBase, self.simTemp - 1) - 1.0)
+                self.simTemp_temps = [SimTempTemp(0.0)]
+                for tNum in range(1,self.simTemp):
+                    tmp = SimTempTemp((math.pow(logBase, tNum) - 1.) * factor)
+                    self.simTemp_temps.append(tmp)
+            if 0:
+                print("Initial settings of temperatures in Mcmc.__init__()")
+                for tNum,tmp in enumerate(self.simTemp_temps):
+                    print("%2i  %10.3f" % (tNum, tmp.temp))
+        
+            
         # Check that branch lengths are neither too short nor too long
         for n in self.tree.iterNodesNoRoot():
             if n.br.len < var.BRLEN_MIN:
-                gm.append("node %i brlen (%g)is too short." %
+                gm.append("Mcmc.__init__()  node %i brlen (%g)is too short." %
                           (n.nodeNum, n.br.len))
                 raise P4Error(gm)
             elif n.br.len > var.BRLEN_MAX:
-                gm.append("node %i brlen (%f)is too long." %
+                gm.append("Mcmc.__init__()  node %i brlen (%f)is too long." %
                           (n.nodeNum, n.br.len))
                 raise P4Error(gm)
 
@@ -784,6 +853,7 @@ class Mcmc(object):
         self.simFileName = "mcmc_sims_%i" % runNum
         self.pramsFileName = "mcmc_prams_%i" % runNum
         self.hypersFileName = "mcmc_hypers_%i" % runNum
+        self.simTempFileName = "mcmc_simTemp_%i" % runNum
         self.writePrams = writePrams
         self.writeHypers = True
 
@@ -1019,6 +1089,8 @@ class Mcmc(object):
         # Whether to do root3 and root3n tuning or not
         # self.doRoot3Tuning = False
         # self.doRoot3nTuning = False
+
+        
 
     def _setLogger(self):
         """Make a logger."""
@@ -1909,6 +1981,7 @@ class Mcmc(object):
                         print("  %5.1f" % (100.0 * float(self.swapMatrix[i][j]) / float(self.swapMatrix[j][i])), end=' ')
             print()
 
+
     def _makeChainsAndProposals(self):
         """Make chains and proposals."""
 
@@ -1990,6 +2063,298 @@ class Mcmc(object):
                 p.dump()
             # return
 
+        
+
+        
+    def simTemp_trialAndError(self, nGensToDo, showTable=True, verbose=False):
+        gm = ['Mcmc.simTemp_trialAndError()']
+        assert self.simTemp
+
+        self.run(nGensToDo, verbose=False, equiProbableProposals=False, writeSamples=False)
+
+        if showTable:
+            print("simTemp_trialAndError().  After %i gens, showing occupancy, before adjustment" % nGensToDo)
+            self.simTemp_dumpTemps()
+        
+        if 1:
+            self.simTemp_tunePseudoPriors(verbose=verbose)
+
+        self.gen = -1 
+
+        
+
+    def simTemp_tunePseudoPriors(self, verbose=False, flob=sys.stdout):
+        adjustments = [[None, None] for it in range(self.simTemp - 1)]
+        for tNum,tmp in enumerate(self.simTemp_temps):
+            try:
+                nextTmp = self.simTemp_temps[tNum + 1]
+            except IndexError:
+                nextTmp = None
+
+            if tmp.nProposalsUp:
+                myNum = Numbers(tmp.rValsUp)
+                meanLogR = myNum.arithmeticMeanOfLogs()
+                upToAdd = meanLogR
+                if tNum == 0:
+                    upToAdd -= math.log(0.5)
+                if tNum == self.simTemp - 2:
+                    upToAdd += math.log(0.5)
+                if verbose:
+                    print("Up: tmp %2i, logPiDiff %.2f + %.2f = %.2f" % (
+                        tNum, tmp.logPiDiff, upToAdd, (tmp.logPiDiff + upToAdd)), file=flob) 
+                #tmp.logPiDiff += upToAdd
+                adjustments[tNum][0] = upToAdd
+
+            if nextTmp and nextTmp.nProposalsDn:
+                myNum = Numbers(nextTmp.rValsDn)
+                meanLogR = myNum.arithmeticMeanOfLogs()
+                dnToAdd =  -meanLogR
+                if tNum == 0:
+                    dnToAdd -= math.log(0.5)
+                if tNum == self.simTemp - 2:
+                    dnToAdd += math.log(0.5)
+                if verbose:
+                    print("Dn: nextTmp %2i, tmp %2i, logPiDiff %.2f + %.2f = %.2f" % (
+                        tNum + 1, tNum, tmp.logPiDiff, dnToAdd, (tmp.logPiDiff + dnToAdd)), file=flob) 
+                #tmp.logPiDiff += dnToAdd
+                adjustments[tNum][1] = dnToAdd
+
+        if 1:
+            if verbose:
+                for tNum,adj in enumerate(adjustments):
+                    print(tNum, adj, file=flob)
+
+            for tNum,adj in enumerate(adjustments):
+                thisAdj = None
+                if adj[0] != None  and adj[1] != None:
+                    thisAdj = (adj[0] + adj[1]) / 2.0
+                else:
+                    if adj[0]:
+                        thisAdj = adj[0]
+                    elif adj[1]:
+                        thisAdj = adj[1]
+                    else:
+                        thisAdj = None # redundant, belt and braces
+                if thisAdj:
+                    tmp = self.simTemp_temps[tNum]
+                    tmp.logPiDiff += thisAdj
+                    if verbose:
+                        print("tmp %2i  incrementing by %.2f" % (tNum, thisAdj), file=flob)
+
+
+                
+            
+
+    def simTemp_dumpTemps(self, flob=sys.stdout):
+        """Arg flob should be a file-like object."""
+        print("%4s %10s %12s %10s %10s %10s %10s %10s %10s %10s" % (
+            "indx", "temp", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "meanLnR_Up", "nPropsDn", "accptDn", "meanLnR_Dn"), 
+              file=flob)
+        for i, tmp in enumerate(self.simTemp_temps):
+            print("%4s %10.3f %12.4f %10i %10i" % (
+                i,
+                tmp.temp, 
+                #tmp.logPi, 
+                tmp.logPiDiff,
+                tmp.occupancy,
+                tmp.nProposalsUp), file=flob, end='')
+            if tmp.nProposalsUp:
+                myNum = Numbers(tmp.rValsUp)
+                myAMean = myNum.arithmeticMeanOfLogs()
+                print(" %10.4f %10.4f" % (
+                    (tmp.nAcceptedUp/tmp.nProposalsUp),
+                    myAMean), file=flob, end='')
+            else:
+                print(" %10s %10s" % ("-", "-"), file=flob, end='')
+            print(" %10i" % tmp.nProposalsDn, file=flob, end='')
+            if tmp.nProposalsDn:
+                myNum = Numbers(tmp.rValsDn)
+                myAMean = myNum.arithmeticMeanOfLogs()
+                print(" %10.4f %10.4f" % (
+                    (tmp.nAcceptedDn/tmp.nProposalsDn),
+                    myAMean), file=flob, end='')
+            else:
+                print(" %10s %10s" % ("-", "-"), file=flob, end='')
+            print(file=flob)
+
+                
+                
+
+        
+    def simTemp_proposeTempChange(self):
+
+        # Method and symbols are from:
+
+        # Geyer, C. J., and Thompson, E. A. (1995). Annealing Markov
+        # chain Monte Carlo with applications to ancestral
+        # inference. Journal of the American Statistical Association,
+        # 90, 909–920.
+
+        i = self.simTemp_curTemp   # index
+        nTemps = self.simTemp
+        ch = self.chains[0]
+
+        if i == 0:
+            j = 1
+            qij = 1.
+            if nTemps == 2:
+                qji = 1.0
+            else:
+                qji = 0.5
+        elif i == nTemps - 1:
+            j = nTemps - 2
+            qij = 1.
+            if nTemps == 2:
+                qji = 1.0
+            else:
+                qji = 0.5
+        else:
+            if random.random() < 0.5:
+                j = i - 1
+            else:
+                j = i + 1
+            qij = 0.5
+            if j == 0:
+                qji = 1.0
+            elif j == nTemps - 1:
+                qji = 1.0
+            else:
+                qji = 0.5
+
+        # tmp's are SimTempTemp objects
+        tmpI = self.simTemp_temps[i]
+        tmpJ = self.simTemp_temps[j]
+
+        beta_i = 1.0 / (1.0 + tmpI.temp)
+        beta_j = 1.0 / (1.0 + tmpJ.temp)
+
+        # h_i_Atx is notation from Geyer and Thompson.  I want the log form
+        # print("curr log like %f, beta_i %f, beta_j %f" % (ch.curTree.logLike, beta_i, beta_j))
+        #log_h_i_Atx = ch.curTree.logLike * beta_i 
+        #log_h_j_Atx = ch.curTree.logLike * beta_j
+        #logTempRatio = log_h_j_Atx - log_h_i_Atx
+        logTempRatio = ch.curTree.logLike * (beta_j - beta_i)
+        #print("toCalc logTempRatio:", ch.curTree.logLike, "*", beta_j, "-", ch.curTree.logLike, "*", beta_i, "=", logTempRatio)
+        #logTempRatio = math.log(beta_j / beta_i)
+
+        #logPseudoPriorRatio =  math.log(tmpJ.pi / tmpI.pi)
+        if i < j:
+            logPseudoPriorRatio = -tmpI.logPiDiff
+        else:
+            logPseudoPriorRatio = tmpJ.logPiDiff
+
+        #logPseudoPriorRatio =  tmpJ.logPi - tmpI.logPi
+        # print("to calc logPseudoPriorRatio:", tmpJ.logPi, "-", tmpI.logPi, "=", logPseudoPriorRatio)
+        logHastingsRatio = math.log(qji / qij)
+
+        if 0:
+            print("hastingsRatio gen %i: i=%i, j=%i, hastingsRatio %f, logHastingsRatio %f" % (
+                self.gen, i, j, (qji/qij), logHastingsRatio))
+
+
+        # Geyer and Thompson use "r".  I want the log form
+        log_r = logTempRatio + logPseudoPriorRatio + logHastingsRatio
+
+
+        acceptMove = False
+        if log_r < -100.0:
+            acceptMove = False
+        elif log_r >= 0.0:
+            acceptMove = True
+        else:
+            r = math.exp(log_r)
+            if random.random() < r:
+                acceptMove = True
+        #print("log_r %f, acceptMove %s" % (log_r, acceptMove))
+
+        #if 0:
+        if 0 and i==0 and j==1:
+            print("attemptSwap gen %i: i=%i, j=%i, log_r=%f logTempRatio=%f   logPseudoPriorRatio %f  logHastingsRatio %f acceptMove=%s" % (
+                self.gen, i, j, log_r, logTempRatio, logPseudoPriorRatio, logHastingsRatio, acceptMove))
+
+        if acceptMove:
+            self.simTemp_curTemp = j
+            #myTemp = self.simTemp_temps[self.simTemp_curTemp]
+            #ch.gamma = myTemp.gamma
+            # need to recalculate ch.like_cur
+            #ch.like_cur = bigU(ch.x_cur, ch.gamma)
+            self.simTemp_nTempChangeAccepts += 1
+        self.simTemp_nTempChangeProposals += 1
+        if j > i:
+            tmpI.nProposalsUp += 1
+            if acceptMove:
+                tmpI.nAcceptedUp += 1
+            tmpI.rValsUp.append(log_r)
+        else:
+            tmpI.nProposalsDn += 1
+            if acceptMove:
+                tmpI.nAcceptedDn += 1
+            tmpI.rValsDn.append(log_r)
+        
+
+    def simTemp_approximatePi(self, logLike=None):
+        gm = ["Mcmc.simTemp_approximatePi()"]
+        print(gm[0])
+
+        if logLike:
+            thisLogLike = logLike
+        else:
+            ch = self.chains[0]
+            thisLogLike = ch.curTree.logLike
+
+        print("logLike is", thisLogLike)
+        
+        #self.simTemp_dumpTemps()
+        nTemps = self.simTemp
+        for i,tmpI in enumerate(self.simTemp_temps[:-1]):
+            j = i + 1
+            tmpJ = self.simTemp_temps[j] 
+            #print(i, j)
+            beta_i = 1.0 / (1.0 + tmpI.temp)
+            beta_j = 1.0 / (1.0 + tmpJ.temp)
+            logTempRatio = (thisLogLike * beta_j) - (thisLogLike * beta_i)
+
+            # Take the hastings ratio into account ...
+            # On second thought, don't
+            # if i == 0:
+            #     # so j is 1
+            #     qij = 1.
+            #     if nTemps == 2:
+            #         qji = 1.0
+            #     else:
+            #         qji = 0.5
+            # else:
+            #     qij = 0.5
+            #     if j == nTemps - 1:
+            #         qji = 1.0
+            #     else:
+            #         qji = 0.5
+            # logHastingsRatio = math.log(qji / qij)
+
+            tmpI.logPiDiff = logTempRatio
+
+        # #self.simTemp_dumpTemps()
+        # for tNum in range(self.simTemp - 2, -1, -1):
+        #     tmpI = self.simTemp_temps[tNum]
+        #     tmpJ = self.simTemp_temps[tNum + 1]
+        #     tmpI.logPi = tmpJ.logPi + tmpI.logPiDiff
+
+        # It seems that there is low occupancy in the middle temps.
+        # So increase the high temp diffs, and decrease the low temp diffs.
+        middle = self.simTemp / 2.
+        if self.simTemp % 2 == 0:
+            middleA = int(middle - 0.5)
+            middleB = int(middle + 0.5)
+        else:
+            middleA = int(middle)
+            middleB = int(middle)
+
+        #for 
+        fudge = 3.0
+        
+        self.simTemp_dumpTemps()
+
+
     def run(self, nGensToDo, verbose=True, equiProbableProposals=False, writeSamples=True):
         """Start the Mcmc running."""
 
@@ -2001,10 +2366,38 @@ class Mcmc(object):
         # Hidden experimental hack
         if self.doHeatingHack:
             print("Heating hack is turned on.")
-            #assert self.nChains == 1, "MCMCMC does not work with the heating hack"
             print("Heating hack temperature is %.2f" % self.heatingHackTemperature)
             #print("Heating hack affects proposals %s" % self.heatingHackProposalNames)
             self.originalHeatingHackTemperature = self.heatingHackTemperature
+
+        if self.simTemp:
+            if self.doHeatingHack:
+                gm.append("If we are doing simTemp, then doHeatingHack should be off.")
+                raise P4Error(gm)
+        
+            if not self.simTemp_temps:
+                gm.append("If we are doing simTemp, we should have SimTempTemp objects in m.simTemp_temps.")
+                raise P4Error(gm)
+            if len(self.simTemp_temps) != self.simTemp:
+                gm.append("If we are doing simTemp, we should have %i SimTempTemp objects in m.simTemp_temps." % self.simTemp)
+                raise P4Error(gm)
+            for it in self.simTemp_temps:
+                if not isinstance(it, SimTempTemp):
+                    gm.append("Each item in m.simTemp_temps should be a SimTempTemp object.")
+                    raise P4Error(gm)
+
+            self.simTemp_nTempChangeProposals = 0
+            self.simTemp_nTempChangeAccepts = 0
+            self.simTemp_tNums = []
+            for tmp in self.simTemp_temps:
+                tmp.occupancy = 0
+                tmp.nProposalsUp = 0
+                tmp.nAcceptedUp = 0
+                tmp.rValsUp = []
+                tmp.nProposalsDn = 0
+                tmp.nAcceptedDn = 0
+                tmp.rValsDn = []
+
 
         if self.prob.polytomy:
             for pNum in range(self.tree.model.nParts):
@@ -2015,7 +2408,7 @@ class Mcmc(object):
                     raise P4Error(gm)
                 
 
-        if self.checkPointInterval:
+        if writeSamples and self.checkPointInterval:
             # Check that checkPointInterval makes sense.
             # We want a couple of things:
             #  1.  The last gen should be on checkPointInterval.  For
@@ -2052,16 +2445,6 @@ class Mcmc(object):
                 self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         if self.props.proposals:  # It is a re-start
-
-            # # autoTune() is gone now, so I don't need this any more, right?
-            # # Its either a re-start, or it has been thru autoTune().
-            # # I can tell the difference by self.gen, which is -1 after
-            # # autoTune()
-            # if self.gen == -1:
-            #     self._makeChainsAndProposals()
-            #     self._setOutputTreeFile()
-            #     if self.simulate:
-            #         self._writeSimFileHeader(self.tree)
 
             # The probs and tunings may have been changed by the user.
             self._refreshProposalProbs()
@@ -2167,11 +2550,17 @@ class Mcmc(object):
             self.startMinusOne = self.gen
         else:
             self.logger.info("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+            if self.simTemp:
+                self.logger.info("Using simulated tempering MCMC, with %i temperatures, with highest temperature %.2f" % (
+                    self.simTemp, self.simTempMax))
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
                 else:
                     print("Not using Metropolis-coupled MCMC.")
+                if self.simTemp:
+                    print("Using simulated tempering MCMC, with %i temperatures, with highest temperature %.2f" % (
+                        self.simTemp, self.simTempMax))
                 print("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
                 print("Set to do %i generations." % nGensToDo)
 
@@ -2181,7 +2570,7 @@ class Mcmc(object):
                         print("There are no free prams in the model, so I am turning writePrams off.")
                     self.writePrams = False
                 else:
-                    pramsFile = open(self.pramsFileName, 'a')
+                    pramsFile = open(self.pramsFileName, 'w')
                     self.chains[0].curTree.model.writePramsProfile(pramsFile, self.runNum)
                     pramsFile.write("genPlus1")
                     self.chains[0].curTree.model.writePramsHeaderLine(pramsFile)
@@ -2190,7 +2579,7 @@ class Mcmc(object):
                 if not self.tree.model.parts[0].ndch2:     # and therefore all model parts, this week
                     self.writeHypers = False
                 else:
-                    hypersFile = open(self.hypersFileName, 'a')
+                    hypersFile = open(self.hypersFileName, 'w')
                     hypersFile.write('genPlus1')
                     self.chains[0].curTree.model.writeHypersHeaderLine(hypersFile)
                     hypersFile.close()
@@ -2292,6 +2681,7 @@ class Mcmc(object):
 
                     # success returns None
                     failure = self.chains[chNum].gen(aProposal)
+                    #failure = None
 
                     if failure:
                         myWarn = "Mcmc.run() main loop.  Proposal %s generated a 'failure'.  Why?" % aProposal.name
@@ -2336,188 +2726,37 @@ class Mcmc(object):
                     if p.name in abortableProposals:
                         p.doAbort = False
 
-            # Do swap, if there is more than 1 chain.
+            
             if self.nChains == 1:
-                coldChain = 0
+                if self.simTemp:
+                    self.simTemp_temps[self.simTemp_curTemp].occupancy += 1
+                    if (self.gen + 1) % self.simTemp_tempChangeProposeFreq == 0:
+                        self.simTemp_proposeTempChange()
+                    self.simTemp_tNums.append(self.simTemp_curTemp)
+
+
             else:
-                if self.swapVector:
-                    rTempNum1 = random.randrange(self.nChains - 1)
-                    rTempNum2 = rTempNum1 + 1
-                    chain1 = None
-                    chain2 = None
-                    for ch in self.chains:
-                        if ch.tempNum == rTempNum1:
-                            chain1 = ch
-                        elif ch.tempNum == rTempNum2:
-                            chain2 = ch
-                    assert chain1 and chain2
-                    
-                    # Use the upper triangle of swapMatrix for nAttempts
-                    self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                # Propose swap, if there is more than 1 chain.
+                self._proposeSwapChainsInMcmcmc()
 
-                    lnR = (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
-                            ) * chain2.curTree.logLike
-                    lnR += (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
-                            ) * chain2.curTree.logLike
-
-                    if lnR < -100.0:
-                        r = 0.0
-                    elif lnR >= 0.0:
-                        r = 1.0
-                    else:
-                        r = math.exp(lnR)
-
-                    acceptSwap = 0
-                    if random.random() < r:
-                        acceptSwap = 1
-
-                    # for continuous temperature tuning with self.swapTuner
-                    if self.swapTuner:
-                        # Index the nAttempts and nSwaps with the lower of the two tempNum's, which would be chain1.tempNum
-                        self.swapTuner.nAttempts[chain1.tempNum] += 1
-                        if acceptSwap:
-                            self.swapTuner.nSwaps[chain1.tempNum] += 1
-                        if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
-                            self.swapTuner.tune(chain1.tempNum)
-                            # tune() zeros nAttempts and nSwaps counters
-
-                    if acceptSwap:
-                        # Use the lower triangle of swapMatrix to keep track of
-                        # nAccepted's
-                        assert chain1.tempNum < chain2.tempNum
-                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-
-                        # Do the swap
-                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
-
-                else:    # swap matrix
-                    # Chain swapping stuff was lifted from MrBayes.  Thanks again.
-                    chain1, chain2 = random.sample(self.chains, 2)
-
-                    thisCh1Temp = None
-                    thisCh2Temp = None
-                    # Use the upper triangle of swapMatrix for nProposed's
-                    if chain1.tempNum < chain2.tempNum:
-                        self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
-                        thisCh1Temp = chain1.tempNum
-                        thisCh2Temp = chain2.tempNum
-                    else:
-                        self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-                        thisCh1Temp = chain2.tempNum
-                        thisCh2Temp = chain1.tempNum
-
-
-                    lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                            ) * chain2.curTree.logLike
-                    lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
-                            ) * chain1.curTree.logLike
-                    lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
-                            ) * chain2.curTree.logLike
-
-                    if lnR < -100.0:
-                        r = 0.0
-                    elif lnR >= 0.0:
-                        r = 1.0
-                    else:
-                        r = math.exp(lnR)
-
-                    acceptSwap = 0
-                    if random.random() < r:
-                        acceptSwap = 1
-
-                    # # for continuous temperature tuning with self.swapTuner
-                    # if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
-                    #     self.swapTuner.swaps01_nAttempts += 1
-                    #     if acceptSwap:
-                    #         self.swapTuner.swaps01_nSwaps += 1
-                    #     if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
-                    #         self.swapTuner.tune(self)
-                    #         # tune() zeros nAttempts and nSwaps counters
-
-                    if acceptSwap:
-                        # Use the lower triangle of swapMatrix to keep track of
-                        # nAccepted's
-                        if chain1.tempNum < chain2.tempNum:
-                            self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
-                        else:
-                            self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
-
-                        # Do the swap
-                        chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
-
-                # Find the cold chain, the one where tempNum is 0
-                coldChainNum = -1
-                for i in range(len(self.chains)):
-                    if self.chains[i].tempNum == 0:
-                        coldChainNum = i
-                        break
-                if coldChainNum == -1:
-                    gm.append("Unable to find which chain is the cold chain.  Bad.")
-                    raise P4Error(gm)
-
+            # =====================================
             # If it is a writeInterval, write stuff
-            if (self.gen + 1) % self.sampleInterval == 0:
+            # =====================================
+
+            doWrite = False
+            if not writeSamples:
+                doWrite = False
+            else:
+                if self.simTemp:
+                    if self.simTemp_curTemp == 0:
+                        doWrite = True
+                else:
+                    if ((self.gen + 1) % self.sampleInterval) == 0:
+                        doWrite = True
+            
+            if doWrite:
                 if writeSamples:
-                    likesFile = open(self.likesFileName, 'a')
-                    likesFile.write(
-                        '%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
-                    likesFile.close()
-
-                    # Check the likelihood every write interval
-                    if 0:
-                        oldLike = self.chains[coldChainNum].curTree.logLike
-                        print("gen+1 %11i  %f  " % (
-                            self.gen+1, 
-                            self.chains[coldChainNum].curTree.logLike), end=' ')
-                        self.chains[coldChainNum].curTree.calcLogLike(verbose=False)
-                        newLike = self.chains[coldChainNum].curTree.logLike
-                        print("%f" % self.chains[coldChainNum].curTree.logLike, end=' ')
-                        likeDiff = math.fabs(oldLike - newLike)
-                        if likeDiff > 1e-14:
-                            print("%f" % likeDiff)
-                        else:
-                            print()
-                                                                  
-
-                    treeFile = open(self.treeFileName, 'a')
-                    treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
-                    if self.tree.model.parts[0].ndch2:     # and therefore all model parts
-                        if self.tree.model.parts[0].ndch2_writeComps:
-                            self.chains[coldChainNum].curTree.writeNewick(treeFile,
-                                                                          withTranslation=1,
-                                                                          translationHash=self.translationHash,
-                                                                          doMcmcCommandComments=True)
-                        else:
-                            self.chains[coldChainNum].curTree.writeNewick(treeFile,
-                                                                          withTranslation=1,
-                                                                          translationHash=self.translationHash,
-                                                                          doMcmcCommandComments=False)
-
-                    else:
-                        self.chains[coldChainNum].curTree.writeNewick(treeFile,
-                                                                      withTranslation=1,
-                                                                      translationHash=self.translationHash,
-                                                                      doMcmcCommandComments=self.tree.model.isHet)
-                    treeFile.close()
-
-                if writeSamples and self.writePrams:
-                    pramsFile = open(self.pramsFileName, 'a')
-                    #pramsFile.write("%12i " % (self.gen + 1))
-                    pramsFile.write("%12i" % (self.gen + 1))
-                    self.chains[coldChainNum].curTree.model.writePramsLine(pramsFile)
-                    pramsFile.close()
-
-                if writeSamples and self.writeHypers:
-                    hypersFile = open(self.hypersFileName, 'a')
-                    hypersFile.write("%12i" % (self.gen + 1))
-                    self.chains[coldChainNum].curTree.model.writeHypersLine(hypersFile)
-                    hypersFile.close()
+                    self._writeSample(coldChainNum=coldChainNum)
 
                 # Do a simulation
                 if self.simulate:
@@ -2578,28 +2817,50 @@ class Mcmc(object):
                                 "%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
 
-                # If it is a checkPointInterval, pickle
+            # Tune simTemp pseudo priors
+            if writeSamples:              # don't do it during a pre-run.
+                if (self.gen + 1) % (self.simTemp * var.mcmc_simTemp_tuningInterval) == 0:
+                    fout = open(self.simTempFileName, 'a')
+                    print("-" * 50, file=fout)
+                    print("gen+1 %11i" % (self.gen + 1), file=fout)
+                    print("before tuning.", file=fout)
+                    self.simTemp_dumpTemps(flob=fout)
+                    self.simTemp_tunePseudoPriors(verbose=True, flob=fout)
+                    for tmp in self.simTemp_temps:
+                        tmp.occupancy = 0
+                    print("\nafter tuning; logPiDiff updated, occupancies zeroed.", file=fout)
+                    self.simTemp_dumpTemps(flob=fout)
+                    fout.close()
+            
+            # Do checkpoints
+            doCheckPoint = False
+            if not writeSamples:
+                doCheckPoint = False
+            else:
                 if self.checkPointInterval and (self.gen + 1) % self.checkPointInterval == 0:
-                    self._checkPoint()
+                    doCheckPoint = True                
+            
+            if doCheckPoint:
+                self.checkPoint()
 
-                    # The stuff below needs to be done in a re-start as well.
-                    # See above "if self.proposals:"
-                    self.startMinusOne = self.gen
+                # The stuff below needs to be done in a re-start as well.
+                # See above "if self.proposals:"
+                self.startMinusOne = self.gen
 
-                    # Start the tree partitions over.
-                    self.treePartitions = None
-                    # Zero the proposal counts
-                    for p in self.props.proposals:
-                        p.nProposals = [0] * self.nChains
-                        p.nAcceptances = [0] * self.nChains
-                        p.nTopologyChangeAttempts = [0] * self.nChains
-                        p.nTopologyChanges = [0] * self.nChains
-                        p.nAborts = [0] * self.nChains
-                    # Zero the swap matrix
-                    if self.nChains > 1:
-                        self.swapMatrix = []
-                        for i in range(self.nChains):
-                            self.swapMatrix.append([0] * self.nChains)
+                # Start the tree partitions over.
+                self.treePartitions = None
+                # Zero the proposal counts
+                for p in self.props.proposals:
+                    p.nProposals = [0] * self.nChains
+                    p.nAcceptances = [0] * self.nChains
+                    p.nTopologyChangeAttempts = [0] * self.nChains
+                    p.nTopologyChanges = [0] * self.nChains
+                    p.nAborts = [0] * self.nChains
+                # Zero the swap matrix
+                if self.nChains > 1:
+                    self.swapMatrix = []
+                    for i in range(self.nChains):
+                        self.swapMatrix.append([0] * self.nChains)
 
                     
 
@@ -2653,6 +2914,186 @@ class Mcmc(object):
         treeFile.write('end;\n\n')
         treeFile.close()
 
+    def _writeSample(self, coldChainNum=0):
+        likesFile = open(self.likesFileName, 'a')
+        likesFile.write(
+            '%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
+        likesFile.close()
+
+        # Check the likelihood every write interval
+        if 0:
+            oldLike = self.chains[coldChainNum].curTree.logLike
+            print("gen+1 %11i  %f  " % (
+                self.gen+1, 
+                self.chains[coldChainNum].curTree.logLike), end=' ')
+            self.chains[coldChainNum].curTree.calcLogLike(verbose=False)
+            newLike = self.chains[coldChainNum].curTree.logLike
+            print("%f" % self.chains[coldChainNum].curTree.logLike, end=' ')
+            likeDiff = math.fabs(oldLike - newLike)
+            if likeDiff > 1e-14:
+                print("%f" % likeDiff)
+            else:
+                print()
+
+
+        treeFile = open(self.treeFileName, 'a')
+        treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
+        if self.tree.model.parts[0].ndch2:     # and therefore all model parts
+            if self.tree.model.parts[0].ndch2_writeComps:
+                self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                                                              withTranslation=1,
+                                                              translationHash=self.translationHash,
+                                                              doMcmcCommandComments=True)
+            else:
+                self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                                                              withTranslation=1,
+                                                              translationHash=self.translationHash,
+                                                              doMcmcCommandComments=False)
+
+        else:
+            self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                                                          withTranslation=1,
+                                                          translationHash=self.translationHash,
+                                                          doMcmcCommandComments=self.tree.model.isHet)
+        treeFile.close()
+
+        if self.writePrams:
+            pramsFile = open(self.pramsFileName, 'a')
+            #pramsFile.write("%12i " % (self.gen + 1))
+            pramsFile.write("%12i" % (self.gen + 1))
+            self.chains[coldChainNum].curTree.model.writePramsLine(pramsFile)
+            pramsFile.close()
+
+        if self.writeHypers:
+            hypersFile = open(self.hypersFileName, 'a')
+            hypersFile.write("%12i" % (self.gen + 1))
+            self.chains[coldChainNum].curTree.model.writeHypersLine(hypersFile)
+            hypersFile.close()
+
+
+
+
+    def _proposeSwapChainsInMcmcmc(self):
+        if self.swapVector:
+            rTempNum1 = random.randrange(self.nChains - 1)
+            rTempNum2 = rTempNum1 + 1
+            chain1 = None
+            chain2 = None
+            for ch in self.chains:
+                if ch.tempNum == rTempNum1:
+                    chain1 = ch
+                elif ch.tempNum == rTempNum2:
+                    chain2 = ch
+            assert chain1 and chain2
+
+            # Use the upper triangle of swapMatrix for nAttempts
+            self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+
+            lnR = (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                    ) * chain2.curTree.logLike
+            lnR += (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                    ) * chain1.curTree.logLike
+            lnR -= (1.0 / (1.0 + (self.chainTemps[chain1.tempNum]))
+                    ) * chain1.curTree.logLike
+            lnR -= (1.0 / (1.0 + (self.chainTemps[chain2.tempNum]))
+                    ) * chain2.curTree.logLike
+
+            if lnR < -100.0:
+                r = 0.0
+            elif lnR >= 0.0:
+                r = 1.0
+            else:
+                r = math.exp(lnR)
+
+            acceptSwap = 0
+            if random.random() < r:
+                acceptSwap = 1
+
+            # for continuous temperature tuning with self.swapTuner
+            if self.swapTuner:
+                # Index the nAttempts and nSwaps with the lower of the two tempNum's, which would be chain1.tempNum
+                self.swapTuner.nAttempts[chain1.tempNum] += 1
+                if acceptSwap:
+                    self.swapTuner.nSwaps[chain1.tempNum] += 1
+                if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
+                    self.swapTuner.tune(chain1.tempNum)
+                    # tune() zeros nAttempts and nSwaps counters
+
+            if acceptSwap:
+                # Use the lower triangle of swapMatrix to keep track of
+                # nAccepted's
+                assert chain1.tempNum < chain2.tempNum
+                self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+
+                # Do the swap
+                chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+
+        else:    # swap matrix
+            # Chain swapping stuff was lifted from MrBayes.  Thanks again.
+            chain1, chain2 = random.sample(self.chains, 2)
+
+            thisCh1Temp = None
+            thisCh2Temp = None
+            # Use the upper triangle of swapMatrix for nProposed's
+            if chain1.tempNum < chain2.tempNum:
+                self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+                thisCh1Temp = chain1.tempNum
+                thisCh2Temp = chain2.tempNum
+            else:
+                self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                thisCh1Temp = chain2.tempNum
+                thisCh2Temp = chain1.tempNum
+
+
+            lnR = (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                    ) * chain2.curTree.logLike
+            lnR += (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                    ) * chain1.curTree.logLike
+            lnR -= (1.0 / (1.0 + (self.chainTemp * chain1.tempNum))
+                    ) * chain1.curTree.logLike
+            lnR -= (1.0 / (1.0 + (self.chainTemp * chain2.tempNum))
+                    ) * chain2.curTree.logLike
+
+            if lnR < -100.0:
+                r = 0.0
+            elif lnR >= 0.0:
+                r = 1.0
+            else:
+                r = math.exp(lnR)
+
+            acceptSwap = 0
+            if random.random() < r:
+                acceptSwap = 1
+
+            # # for continuous temperature tuning with self.swapTuner
+            # if self.swapTuner and thisCh1Temp == 0 and thisCh2Temp == 1:
+            #     self.swapTuner.swaps01_nAttempts += 1
+            #     if acceptSwap:
+            #         self.swapTuner.swaps01_nSwaps += 1
+            #     if self.swapTuner.swaps01_nAttempts >= self.swapTuner.sampleSize:
+            #         self.swapTuner.tune(self)
+            #         # tune() zeros nAttempts and nSwaps counters
+
+            if acceptSwap:
+                # Use the lower triangle of swapMatrix to keep track of
+                # nAccepted's
+                if chain1.tempNum < chain2.tempNum:
+                    self.swapMatrix[chain2.tempNum][chain1.tempNum] += 1
+                else:
+                    self.swapMatrix[chain1.tempNum][chain2.tempNum] += 1
+
+                # Do the swap
+                chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
+
+        # Find the cold chain, the one where tempNum is 0
+        coldChainNum = -1
+        for i in range(len(self.chains)):
+            if self.chains[i].tempNum == 0:
+                coldChainNum = i
+                break
+        if coldChainNum == -1:
+            gm.append("Unable to find which chain is the cold chain.  Bad.")
+            raise P4Error(gm)
 
 
     def _doTimeCheck(self, nGensToDo, firstGen, genInterval):
@@ -2739,7 +3180,7 @@ class Mcmc(object):
         simFile.write('\n')
         simFile.close()
 
-    def _checkPoint(self):
+    def checkPoint(self):
 
         if 0:
             for chNum in range(self.nChains):
@@ -2795,7 +3236,7 @@ class Mcmc(object):
             ch.curTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
             theDiff = math.fabs(ch.curTree.savedLogLike - ch.curTree.logLike)
             if theDiff > 0.01:
-                theMessage = "Mcmc._checkPoint(), chainNum %i. " % chNum
+                theMessage = "Mcmc.checkPoint(), chainNum %i. " % chNum
                 theMessage += "Bad likelihood calculation just before writing the checkpoint. "
                 theMessage += "Old curTree.logLike %g, new curTree.logLike %g, diff %g" % (ch.curTree.savedLogLike, ch.curTree.logLike, theDiff)
                 self.logger.info(theMessage)

@@ -109,8 +109,11 @@ class McmcCheckPointReader(object):
             for i in range(len(self.mm)):
                 m = self.mm[i]
                 assert m.checkPointInterval % m.sampleInterval == 0
-                thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
-                assert thisNSamps == m.treePartitions.nTrees
+                if m.simTemp:
+                    thisNSamps = m.treePartitions.nTrees
+                else:
+                    thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
+                    assert thisNSamps == m.treePartitions.nTrees
                 # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
                 print("%12s %12s %12s %12s %12s %12s %12s" % (
                     " ", i, m.runNum, m.gen + 1, m.checkPointInterval, m.sampleInterval, thisNSamps))
@@ -122,8 +125,11 @@ class McmcCheckPointReader(object):
             for i in range(len(self.mm)):
                 m = self.mm[i]
                 assert m.checkPointInterval % m.sampleInterval == 0
-                thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
-                #assert thisNSamps == m.treePartitions.nTrees
+                if m.simTemp:
+                    thisNSamps = m.treePartitions.nTrees
+                else:
+                    thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
+                    assert thisNSamps == m.treePartitions.nTrees
                 # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
                 print("%12s %12s %12s %12s %12s" % (
                     " ", i, m.runNum, m.gen + 1, thisNSamps))
