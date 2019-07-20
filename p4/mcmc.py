@@ -2819,18 +2819,19 @@ class Mcmc(object):
 
             # Tune simTemp pseudo priors
             if writeSamples:              # don't do it during a pre-run.
-                if (self.gen + 1) % (self.simTemp * var.mcmc_simTemp_tuningInterval) == 0:
-                    fout = open(self.simTempFileName, 'a')
-                    print("-" * 50, file=fout)
-                    print("gen+1 %11i" % (self.gen + 1), file=fout)
-                    print("before tuning.", file=fout)
-                    self.simTemp_dumpTemps(flob=fout)
-                    self.simTemp_tunePseudoPriors(verbose=True, flob=fout)
-                    for tmp in self.simTemp_temps:
-                        tmp.occupancy = 0
-                    print("\nafter tuning; logPiDiff updated, occupancies zeroed.", file=fout)
-                    self.simTemp_dumpTemps(flob=fout)
-                    fout.close()
+                if self.simTemp:
+                    if (self.gen + 1) % (self.simTemp * var.mcmc_simTemp_tuningInterval) == 0:
+                        fout = open(self.simTempFileName, 'a')
+                        print("-" * 50, file=fout)
+                        print("gen+1 %11i" % (self.gen + 1), file=fout)
+                        print("before tuning.", file=fout)
+                        self.simTemp_dumpTemps(flob=fout)
+                        self.simTemp_tunePseudoPriors(verbose=True, flob=fout)
+                        for tmp in self.simTemp_temps:
+                            tmp.occupancy = 0
+                        print("\nafter tuning; logPiDiff updated, occupancies zeroed.", file=fout)
+                        self.simTemp_dumpTemps(flob=fout)
+                        fout.close()
             
             # Do checkpoints
             doCheckPoint = False
