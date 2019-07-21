@@ -1,7 +1,5 @@
-# Read checkPoints from an MCMC.
-
-# Read them in ...
-cpr = McmcCheckPointReader(theGlob='*100000')
+# Read in the last one ...
+cpr = McmcCheckPointReader(theGlob='*', last=True)
 
 m = cpr.mm[0]
 t = m.treePartitions.consensus()

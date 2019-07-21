@@ -2830,6 +2830,14 @@ class Mcmc(object):
                     for i in range(self.nChains):
                         self.swapMatrix.append([0] * self.nChains)
 
+                if self.simTemp:
+                    fout = open(self.simTempFileName, 'a')
+                    print("-" * 50, file=fout)
+                    print("gen+1 %11i" % (self.gen + 1), file=fout)
+                    self.simTemp_dumpTemps(flob=fout)
+                    fout.close()
+
+
                     
 
             # Reassuring pips ...
