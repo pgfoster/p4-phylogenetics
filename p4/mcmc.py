@@ -18,7 +18,7 @@ from p4.pnumbers import Numbers
 import datetime
 import numpy
 import logging
-# import statistics
+import statistics
 
 # for proposal probs
 fudgeFactor = {}
@@ -744,6 +744,8 @@ class Mcmc(object):
         self.simTemp_nTempChangeAccepts = 0
         self.simTemp_tNums = []
         self.simTemp_tempChangeProposeFreq = 1
+        self.simTemp_tunerSamples = []
+        self.simTemp_tunerSampleSize = 100
         if self.simTemp:
             try:
                 thisSimTempMax = float(simTempMax)
@@ -2092,8 +2094,9 @@ class Mcmc(object):
                 nextTmp = None
 
             if tmp.nProposalsUp:
-                myNum = Numbers(tmp.rValsUp)
-                meanLogR = myNum.arithmeticMeanOfLogs()
+                #myNum = Numbers(tmp.rValsUp)
+                #meanLogR = myNum.arithmeticMeanOfLogs()
+                meanLogR = statistics.mean(tmp.rValsUp)
                 upToAdd = meanLogR
                 if tNum == 0:
                     upToAdd -= math.log(0.5)
@@ -2106,8 +2109,9 @@ class Mcmc(object):
                 adjustments[tNum][0] = upToAdd
 
             if nextTmp and nextTmp.nProposalsDn:
-                myNum = Numbers(nextTmp.rValsDn)
-                meanLogR = myNum.arithmeticMeanOfLogs()
+                #myNum = Numbers(nextTmp.rValsDn)
+                #meanLogR = myNum.arithmeticMeanOfLogs()
+                meanLogR = statistics.mean(nextTmp.rValsDn)
                 dnToAdd =  -meanLogR
                 if tNum == 0:
                     dnToAdd -= math.log(0.5)
@@ -2133,8 +2137,6 @@ class Mcmc(object):
                         thisAdj = adj[0]
                     elif adj[1]:
                         thisAdj = adj[1]
-                    else:
-                        thisAdj = None # redundant, belt and braces
                 if thisAdj:
                     tmp = self.simTemp_temps[tNum]
                     tmp.logPiDiff += thisAdj
@@ -2159,8 +2161,9 @@ class Mcmc(object):
                 tmp.occupancy,
                 tmp.nProposalsUp), file=flob, end='')
             if tmp.nProposalsUp:
-                myNum = Numbers(tmp.rValsUp)
-                myAMean = myNum.arithmeticMeanOfLogs()
+                #myNum = Numbers(tmp.rValsUp)
+                #myAMean = myNum.arithmeticMeanOfLogs()
+                myAMean = statistics.mean(tmp.rValsUp)
                 print(" %10.4f %10.4f" % (
                     (tmp.nAcceptedUp/tmp.nProposalsUp),
                     myAMean), file=flob, end='')
@@ -2168,8 +2171,9 @@ class Mcmc(object):
                 print(" %10s %10s" % ("-", "-"), file=flob, end='')
             print(" %10i" % tmp.nProposalsDn, file=flob, end='')
             if tmp.nProposalsDn:
-                myNum = Numbers(tmp.rValsDn)
-                myAMean = myNum.arithmeticMeanOfLogs()
+                #myNum = Numbers(tmp.rValsDn)
+                #myAMean = myNum.arithmeticMeanOfLogs()
+                myAMean = statistics.mean(tmp.rValsDn)
                 print(" %10.4f %10.4f" % (
                     (tmp.nAcceptedDn/tmp.nProposalsDn),
                     myAMean), file=flob, end='')
@@ -2234,8 +2238,6 @@ class Mcmc(object):
         #log_h_j_Atx = ch.curTree.logLike * beta_j
         #logTempRatio = log_h_j_Atx - log_h_i_Atx
         logTempRatio = ch.curTree.logLike * (beta_j - beta_i)
-        #print("toCalc logTempRatio:", ch.curTree.logLike, "*", beta_j, "-", ch.curTree.logLike, "*", beta_i, "=", logTempRatio)
-        #logTempRatio = math.log(beta_j / beta_i)
 
         #logPseudoPriorRatio =  math.log(tmpJ.pi / tmpI.pi)
         if i < j:
@@ -2274,10 +2276,6 @@ class Mcmc(object):
 
         if acceptMove:
             self.simTemp_curTemp = j
-            #myTemp = self.simTemp_temps[self.simTemp_curTemp]
-            #ch.gamma = myTemp.gamma
-            # need to recalculate ch.like_cur
-            #ch.like_cur = bigU(ch.x_cur, ch.gamma)
             self.simTemp_nTempChangeAccepts += 1
         self.simTemp_nTempChangeProposals += 1
         if j > i:
@@ -2294,7 +2292,6 @@ class Mcmc(object):
 
     def simTemp_approximatePi(self, logLike=None):
         gm = ["Mcmc.simTemp_approximatePi()"]
-        print(gm[0])
 
         if logLike:
             thisLogLike = logLike
@@ -2302,9 +2299,6 @@ class Mcmc(object):
             ch = self.chains[0]
             thisLogLike = ch.curTree.logLike
 
-        print("logLike is", thisLogLike)
-        
-        #self.simTemp_dumpTemps()
         nTemps = self.simTemp
         for i,tmpI in enumerate(self.simTemp_temps[:-1]):
             j = i + 1
@@ -2313,46 +2307,10 @@ class Mcmc(object):
             beta_i = 1.0 / (1.0 + tmpI.temp)
             beta_j = 1.0 / (1.0 + tmpJ.temp)
             logTempRatio = (thisLogLike * beta_j) - (thisLogLike * beta_i)
-
-            # Take the hastings ratio into account ...
-            # On second thought, don't
-            # if i == 0:
-            #     # so j is 1
-            #     qij = 1.
-            #     if nTemps == 2:
-            #         qji = 1.0
-            #     else:
-            #         qji = 0.5
-            # else:
-            #     qij = 0.5
-            #     if j == nTemps - 1:
-            #         qji = 1.0
-            #     else:
-            #         qji = 0.5
-            # logHastingsRatio = math.log(qji / qij)
-
+            # Here I tried to take the hastings ratio into account ...
+            # But it did not turn out well, so deleted.  It decreased
+            # the first and last occupancies too much.
             tmpI.logPiDiff = logTempRatio
-
-        # #self.simTemp_dumpTemps()
-        # for tNum in range(self.simTemp - 2, -1, -1):
-        #     tmpI = self.simTemp_temps[tNum]
-        #     tmpJ = self.simTemp_temps[tNum + 1]
-        #     tmpI.logPi = tmpJ.logPi + tmpI.logPiDiff
-
-        # It seems that there is low occupancy in the middle temps.
-        # So increase the high temp diffs, and decrease the low temp diffs.
-        middle = self.simTemp / 2.
-        if self.simTemp % 2 == 0:
-            middleA = int(middle - 0.5)
-            middleB = int(middle + 0.5)
-        else:
-            middleA = int(middle)
-            middleB = int(middle)
-
-        #for 
-        fudge = 3.0
-        
-        self.simTemp_dumpTemps()
 
 
     def run(self, nGensToDo, verbose=True, equiProbableProposals=False, writeSamples=True):
@@ -2389,6 +2347,7 @@ class Mcmc(object):
             self.simTemp_nTempChangeProposals = 0
             self.simTemp_nTempChangeAccepts = 0
             self.simTemp_tNums = []
+            self.simTemp_tunerSamples = []
             for tmp in self.simTemp_temps:
                 tmp.occupancy = 0
                 tmp.nProposalsUp = 0
@@ -2734,6 +2693,14 @@ class Mcmc(object):
                         self.simTemp_proposeTempChange()
                     self.simTemp_tNums.append(self.simTemp_curTemp)
 
+                    self.simTemp_tunerSamples.append(self.chains[0].curTree.logLike)
+                    if len(self.simTemp_tunerSamples) >= self.simTemp_tunerSampleSize:
+                        #myNum = Numbers(self.simTemp_tunerSamples)
+                        #meanLogLike = myNum.arithmeticMeanOfLogs()
+                        meanLogLike = statistics.mean(self.simTemp_tunerSamples)
+                        self.simTemp_approximatePi(meanLogLike)
+                        self.simTemp_tunerSamples = []
+
 
             else:
                 # Propose swap, if there is more than 1 chain.
@@ -2817,8 +2784,8 @@ class Mcmc(object):
                                 "%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
 
-            # Tune simTemp pseudo priors
-            if writeSamples:              # don't do it during a pre-run.
+            # Tune simTemp pseudo priors, turned off.
+            if 0 and writeSamples:              # don't do it during a pre-run.
                 if self.simTemp:
                     if (self.gen + 1) % (self.simTemp * var.mcmc_simTemp_tuningInterval) == 0:
                         fout = open(self.simTempFileName, 'a')
