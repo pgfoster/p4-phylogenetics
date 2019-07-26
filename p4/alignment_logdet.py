@@ -375,9 +375,9 @@ if True:
         # the two sequences.
         refUnambigCountMatrix = numpy.zeros((self.dim, self.dim), numpy.int32)
         normUnambig = numpy.zeros((self.dim, self.dim), numpy.float)
-        allSymbolNums = range(self.dim)
-        allSymbolNums += range(var.EQUATES_BASE,
-                               var.EQUATES_BASE + self.nEquates)
+        allSymbolNums = list(range(self.dim))
+        allSymbolNums += list(range(var.EQUATES_BASE,
+                               var.EQUATES_BASE + self.nEquates))
         allSymbolNums.append(var.N_LIKE)
         allSymbolNums = numpy.array(allSymbolNums, numpy.int32)
         # print "allSymbolNums = ", allSymbolNums
