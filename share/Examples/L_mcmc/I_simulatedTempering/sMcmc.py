@@ -27,9 +27,15 @@ cpInterv = int(nGen / nCp)
 
 m = Mcmc(t, nChains=1, runNum=0, checkPointInterval=cpInterv, simTemp=6, simTempMax=10.0)
 
+# Mystery hack.
+m.simTemp_tunePPLong_tunings = [3., 1.]
+
 # A pre-run, writing neither samples nor checkPoint.  Then zero the gen number. 
 m.run(20000, writeSamples=False)
 m.gen = -1
+
+for n in range(10):
+    m.simTemp_trialAndError(6000)
 
 # The main run
 m.run(nGen)

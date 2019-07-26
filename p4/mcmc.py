@@ -19,6 +19,7 @@ import datetime
 import numpy
 import logging
 import statistics
+from collections import deque
 
 # for proposal probs
 fudgeFactor = {}
@@ -746,6 +747,8 @@ class Mcmc(object):
         self.simTemp_tempChangeProposeFreq = 1
         self.simTemp_tunerSamples = []
         self.simTemp_tunerSampleSize = 100
+        self.simTemp_longTNumSampleSize = 5000
+        self.simTemp_tunePPLong_tunings = []
         if self.simTemp:
             try:
                 thisSimTempMax = float(simTempMax)
@@ -777,6 +780,8 @@ class Mcmc(object):
                 print("Initial settings of temperatures in Mcmc.__init__()")
                 for tNum,tmp in enumerate(self.simTemp_temps):
                     print("%2i  %10.3f" % (tNum, tmp.temp))
+
+            self.simTemp_longTNumSample = deque([-1] * self.simTemp_longTNumSampleSize)
         
             
         # Check that branch lengths are neither too short nor too long
@@ -2078,70 +2083,116 @@ class Mcmc(object):
             print("simTemp_trialAndError().  After %i gens, showing occupancy, before adjustment" % nGensToDo)
             self.simTemp_dumpTemps()
         
-        if 1:
-            self.simTemp_tunePseudoPriors(verbose=verbose)
+        self.simTemp_tunePseudoPriors_longSample()
 
         self.gen = -1 
 
         
+    def simTemp_tunePseudoPriors_longSample(self):
+        occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
+        expected = self.simTemp_longTNumSampleSize / self.simTemp
+        rats = [occs[i]/expected for i in range(self.simTemp)]
 
-    def simTemp_tunePseudoPriors(self, verbose=False, flob=sys.stdout):
-        adjustments = [[None, None] for it in range(self.simTemp - 1)]
-        for tNum,tmp in enumerate(self.simTemp_temps):
-            try:
-                nextTmp = self.simTemp_temps[tNum + 1]
-            except IndexError:
-                nextTmp = None
+        totalAdjusts = 0.0
 
-            if tmp.nProposalsUp:
-                #myNum = Numbers(tmp.rValsUp)
-                #meanLogR = myNum.arithmeticMeanOfLogs()
-                meanLogR = statistics.mean(tmp.rValsUp)
-                upToAdd = meanLogR
-                if tNum == 0:
-                    upToAdd -= math.log(0.5)
-                if tNum == self.simTemp - 2:
-                    upToAdd += math.log(0.5)
-                if verbose:
-                    print("Up: tmp %2i, logPiDiff %.2f + %.2f = %.2f" % (
-                        tNum, tmp.logPiDiff, upToAdd, (tmp.logPiDiff + upToAdd)), file=flob) 
-                #tmp.logPiDiff += upToAdd
-                adjustments[tNum][0] = upToAdd
+        t0 = self.simTemp_tunePPLong_tunings[0]
+        if rats[0] > 1.3 or rats[0] < 0.5:
+            if rats[0] > 3.:
+                t0 *= 1.6
+            elif rats[0] > 1.3:
+                t0 *= 1.2
+            elif rats[0] < 0.5:
+                t0 *= 0.8
+            myProd = rats[0] * t0
+            print("rats[0]=", "%5.2f," % rats[0], "    tunings[0]= %5.2f," % t0, 
+                  "prod= %6.2f" % myProd)
+            self.simTemp_temps[0].logPiDiff -= myProd
+            totalAdjusts -= myProd
+            self.simTemp_tunePPLong_tunings[0] = t0
 
-            if nextTmp and nextTmp.nProposalsDn:
-                #myNum = Numbers(nextTmp.rValsDn)
-                #meanLogR = myNum.arithmeticMeanOfLogs()
-                meanLogR = statistics.mean(nextTmp.rValsDn)
-                dnToAdd =  -meanLogR
-                if tNum == 0:
-                    dnToAdd -= math.log(0.5)
-                if tNum == self.simTemp - 2:
-                    dnToAdd += math.log(0.5)
-                if verbose:
-                    print("Dn: nextTmp %2i, tmp %2i, logPiDiff %.2f + %.2f = %.2f" % (
-                        tNum + 1, tNum, tmp.logPiDiff, dnToAdd, (tmp.logPiDiff + dnToAdd)), file=flob) 
-                #tmp.logPiDiff += dnToAdd
-                adjustments[tNum][1] = dnToAdd
+        t1 = self.simTemp_tunePPLong_tunings[1]
+        if rats[1] > 1.3 or rats[1] < 0.5:
+            if rats[1] > 1.3:
+                t1 *= 1.2
+            elif rats[1] < 0.5:
+                t1 *= 0.67
+            myProd = rats[1] * t1
+            print("rats[1]", "%5.2f" % rats[1], "    tunings[1]= %5.2f, " % t1, 
+                  "prod= %6.2f" % myProd)
+            self.simTemp_temps[1].logPiDiff -= myProd
+            self.simTemp_temps[0].logPiDiff += myProd
+            # totalAdjusts cancels for this one
+            self.simTemp_tunePPLong_tunings[1] = t1
+
+        if 0 and factorB > 1.0:
+            fudgeB = 0.9
+            self.simTemp_temps[self.simTemp - 3].logPiDiff += (fudgeB * factorB)
+            self.simTemp_temps[self.simTemp - 2].logPiDiff -= (fudgeB * factorB)
+            self.simTemp_temps[self.simTemp - 2].logPiDiff += factorB * 2.7
+
+        for tNum in range(self.simTemp - 1):
+            self.simTemp_temps[tNum].logPiDiff += totalAdjusts/self.simTemp
+        print("tunings are currently %s" % self.simTemp_tunePPLong_tunings)
+
+    def simTemp_tunePseudoPriors(self):
+        occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
+        expected = self.simTemp_longTNumSampleSize / self.simTemp
 
         if 1:
-            if verbose:
-                for tNum,adj in enumerate(adjustments):
-                    print(tNum, adj, file=flob)
+            t0 = self.simTemp_tunePPLong_tunings[0]
+            self.simTemp_temps[0].logPiDiff -= t0
+            t1 = self.simTemp_tunePPLong_tunings[1]
+            self.simTemp_temps[1].logPiDiff -= t1
+            self.simTemp_temps[0].logPiDiff += t1
+            #self.simTemp_temps[self.simTemp - 3].logPiDiff += 0.7
+            #self.simTemp_temps[self.simTemp - 2].logPiDiff -= 0.7
+            #self.simTemp_temps[self.simTemp - 2].logPiDiff += 2.
+            
+            for tNum in range(self.simTemp - 1):
+                self.simTemp_temps[tNum].logPiDiff + t0/6.
 
-            for tNum,adj in enumerate(adjustments):
-                thisAdj = None
-                if adj[0] != None  and adj[1] != None:
-                    thisAdj = (adj[0] + adj[1]) / 2.0
+        if 1:
+            myFudge = -10.0
+
+            # Want to divide the logPi by the occupancy.  Total of occs is sampleSize.
+            
+            myMax = math.log(10/expected)
+            logOccs = []
+            for tNum in range(self.simTemp):
+                if occs[tNum] > 10:
+                    rat = occs[tNum]/expected
+                    logRat = math.log(rat)
                 else:
-                    if adj[0]:
-                        thisAdj = adj[0]
-                    elif adj[1]:
-                        thisAdj = adj[1]
-                if thisAdj:
-                    tmp = self.simTemp_temps[tNum]
-                    tmp.logPiDiff += thisAdj
-                    if verbose:
-                        print("tmp %2i  incrementing by %.2f" % (tNum, thisAdj), file=flob)
+                    logRat = myMax
+                logOccs.append(logRat)
+            #print(self.gen, "logOccs", logOccs)
+
+            # center at zero
+            meanLogOccs = statistics.mean(logOccs)
+            for tNum in range(self.simTemp):
+                logOccs[tNum] -= meanLogOccs
+
+            for tNum in range(self.simTemp):
+                if tNum == 0:
+                    # To increase the occupation of the cold temp, boost the cold logPiDiff
+                    # To decrease the occupation, decrease it.
+                    self.simTemp_temps[tNum].logPiDiff += (logOccs[tNum] * myFudge)
+                elif tNum == self.simTemp - 1:
+                    # To increase the occupation of the hottest temp, decrease the hottest-1 logPiDiff 
+                    # To decrease the occupation, increase the hottest-1 logPiDiff
+                    self.simTemp_temps[tNum-1].logPiDiff -= (logOccs[tNum] * myFudge)
+                else:
+                    # To increase the occupation of a middle temp, tNum, 
+                    # - increase the tNum logPiDiff
+                    # - decrease the tNum-1  logPiDiff
+                    # To decrease the occupation of the middle temp, tNum
+                    # - decrease tNum logPiDiff 
+                    # - increase tNum-1 logPiDiff
+                    howMuch = logOccs[tNum] * myFudge
+                    self.simTemp_temps[tNum].logPiDiff += howMuch
+                    self.simTemp_temps[tNum-1].logPiDiff -= howMuch
+                
+
 
 
                 
@@ -2693,13 +2744,20 @@ class Mcmc(object):
                         self.simTemp_proposeTempChange()
                     self.simTemp_tNums.append(self.simTemp_curTemp)
 
+                    # this is a deque.  Append on the left and pop on the right
+                    self.simTemp_longTNumSample.appendleft(self.simTemp_curTemp)
+                    self.simTemp_longTNumSample.pop() # from the right, of course
+
+                    # tunerSamplSize is small, so this adjustment is high frequency (eg every 100 gens)
                     self.simTemp_tunerSamples.append(self.chains[0].curTree.logLike)
                     if len(self.simTemp_tunerSamples) >= self.simTemp_tunerSampleSize:
-                        #myNum = Numbers(self.simTemp_tunerSamples)
-                        #meanLogLike = myNum.arithmeticMeanOfLogs()
                         meanLogLike = statistics.mean(self.simTemp_tunerSamples)
                         self.simTemp_approximatePi(meanLogLike)
                         self.simTemp_tunerSamples = []
+
+                        # tunePseudoPriors() uses longTNumSample, so it should be full
+                        if self.simTemp_longTNumSample[-1] != -1:  # ie it is full
+                            self.simTemp_tunePseudoPriors()
 
 
             else:
@@ -2784,21 +2842,6 @@ class Mcmc(object):
                                 "%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
 
-            # Tune simTemp pseudo priors, turned off.
-            if 0 and writeSamples:              # don't do it during a pre-run.
-                if self.simTemp:
-                    if (self.gen + 1) % (self.simTemp * var.mcmc_simTemp_tuningInterval) == 0:
-                        fout = open(self.simTempFileName, 'a')
-                        print("-" * 50, file=fout)
-                        print("gen+1 %11i" % (self.gen + 1), file=fout)
-                        print("before tuning.", file=fout)
-                        self.simTemp_dumpTemps(flob=fout)
-                        self.simTemp_tunePseudoPriors(verbose=True, flob=fout)
-                        for tmp in self.simTemp_temps:
-                            tmp.occupancy = 0
-                        print("\nafter tuning; logPiDiff updated, occupancies zeroed.", file=fout)
-                        self.simTemp_dumpTemps(flob=fout)
-                        fout.close()
             
             # Do checkpoints
             doCheckPoint = False
@@ -2835,8 +2878,25 @@ class Mcmc(object):
                     print("-" * 50, file=fout)
                     print("gen+1 %11i" % (self.gen + 1), file=fout)
                     self.simTemp_dumpTemps(flob=fout)
+
+                    myMsg = "\n...invoking simTemp_tunePseudoPriors_longSample()"
+                    print(myMsg, file=fout)
+                    self.simTemp_tunePseudoPriors_longSample()
+
                     fout.close()
 
+                    self.simTemp_nTempChangeProposals = 0
+                    self.simTemp_nTempChangeAccepts = 0
+                    self.simTemp_tNums = []
+                    #self.simTemp_tunerSamples = []
+                    for tmp in self.simTemp_temps:
+                        tmp.occupancy = 0
+                        tmp.nProposalsUp = 0
+                        tmp.nAcceptedUp = 0
+                        tmp.rValsUp = []
+                        tmp.nProposalsDn = 0
+                        tmp.nAcceptedDn = 0
+                        tmp.rValsDn = []
 
                     
 

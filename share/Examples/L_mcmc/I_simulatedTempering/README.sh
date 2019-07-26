@@ -21,8 +21,13 @@ p4 sPlotTemperature.py
 # We can make a consensus tree from the last checkpoint.
 p4 sCons.py
 
+# Look at some baffling diagnostics
+# It is best if the occupancy is roughly equal in all the temps.
+# And acceptances should be not too high, not too low.
+cat mcmc_simTemp_0
 
-# Optionally compare with MCMCMC with MrBayes
+
+# Optionally compare with MCMCMC using MrBayes
 # mb326 m.nex      # or whatever your mrbayes is called ...
 
 
