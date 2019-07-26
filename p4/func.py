@@ -2432,10 +2432,7 @@ def recipes(writeToFile=var.recipesWriteToFile):
         rec = recipesList[recNum]
         print("%s.  %s" % (string.ascii_uppercase[recNum], rec[0]))
 
-    if sys.version_info < (3,):
-        ret = raw_input('Tell me a letter: ')
-    else:
-        ret = input('Tell me a letter: ')
+    ret = input('Tell me a letter: ')
     
     # print "Got %s" % ret
     if ret == '':
@@ -2500,10 +2497,7 @@ and the documentation in the directory
 
 """ % (installation.p4ScriptPath, installation.p4LibDir, installation.p4DocDir))
 
-    if sys.version_info < (3,):
-        ret = raw_input('Ok to do this? [y/n]')
-    else:
-        ret = input('Ok to do this? [y/n]')
+    ret = input('Ok to do this? [y/n]')
 
     ret = ret.lower()
     if ret not in ['y', 'yes']:

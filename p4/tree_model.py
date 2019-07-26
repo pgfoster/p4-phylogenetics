@@ -298,7 +298,7 @@ if True:
 
         Calculation of probability matrices for likelihood calcs etc are
         wrong when there are any comp values that are zero, so that is not
-        allowed.  Any zeros are converted to var.PIVEC_MIN, which is 1e-18
+        allowed.  Any zeros are converted to var.PIVEC_MIN, which is 1e-13
         this week.  Hopefully close enough to zero for you.
         """
 
@@ -796,16 +796,6 @@ if True:
         if self.model.cModel:
             self.deleteCStuff()
         self.model.parts[partNum].relRate = v
-
-    def setRjComp(self, partNum=0, val=True):
-        if self.model.cModel:
-            self.deleteCStuff()
-        self.model.parts[partNum].rjComp = val
-
-    def setRjRMatrix(self, partNum=0, val=True):
-        if self.model.cModel:
-            self.deleteCStuff()
-        self.model.parts[partNum].rjRMatrix = val
 
     def setModelThing(self, theModelThing, node=None, clade=1):
         complaintHead = '\nTree.setModelThing()'

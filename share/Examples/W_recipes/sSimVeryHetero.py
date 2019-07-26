@@ -11,7 +11,7 @@ import math
 def randomNumbersThatSumTo1(length, minimum):
     maximum = 1.0 - ((length - 1) * minimum)
     myRange = maximum - minimum
-    rnn = [random.random() for i in range(length)]
+    rnn = [random.random() for i in range(int(length))]
     mySum = sum(rnn)
     rnn = [minimum + (rn / (mySum / myRange)) for rn in rnn]
     assert math.fabs(sum(rnn) - 1.0) < 1.0e-14

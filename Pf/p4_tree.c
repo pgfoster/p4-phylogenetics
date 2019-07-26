@@ -1055,7 +1055,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
                 //rateLike = 0.0;
                 for(i = 0; i < mp->dim; i++) {
 
-                    if ((1)) {
+                    if ((0)) {
                         double addend;
                         addend = mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
                         if(addend <= 0.0) {
@@ -1095,7 +1095,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
 
         if(like <= 0.0) {
 
-            if ((1)) {
+            if ((0)) {
                 // Catch any likes that are less than zero.  If any are found
                 // that would be a serious problem, and so the program should give
                 // an error message and die.  The most likely reason, I think, is
@@ -1141,7 +1141,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
             //     }
             // }
 
-            // return -1.0e99;
+            return -1.0e99;
         }
         //printf("finished rate cats: seqPos = %i, lnL = %7.4f, like = %7.4f\n", seqPos, lnL, like);
         //printf("site=%i, like=%f, logLike=%f\n", seqPos, like, log(like));

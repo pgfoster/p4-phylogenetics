@@ -135,7 +135,7 @@ if True:
             self.propTree.setPreAndPostOrder()
 
         else:
-            # Neither curNode nor dest is not the root. Need to rearrange.
+            # Neither curNode nor dest is the root. Need to rearrange.
 
             # Remove the current root.  
             if oldRoot.parent:
@@ -895,7 +895,7 @@ if True:
                 return
 
         if 1:
-            complain = True
+            complain = False
             if c.br.len < var.BRLEN_MIN:
                 if complain:
                     self.mcmc.logger.info("proposeLocal() tempNum=%i gen=%i  br c too short" % (self.tempNum, self.mcmc.gen))

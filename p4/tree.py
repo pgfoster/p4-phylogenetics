@@ -187,10 +187,12 @@ class Tree(object):
         ~Tree.nni
         ~Tree.nni2
         ~Tree.pruneSubTreeWithoutParent
+        ~Tree.pruneSubTreeWithParent
         ~Tree.randomSpr
         ~Tree.randomizeTopology
         ~Tree.reRoot
         ~Tree.reconnectSubTreeWithoutParent
+        ~Tree.reconnectSubTreeWithParent
         ~Tree.removeEverythingExceptCladeAtNode
         ~Tree.removeNode
         ~Tree.removeAboveNode
@@ -224,9 +226,9 @@ class Tree(object):
 
     """
 
-    from p4.tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, nni2, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
+    from p4.tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, pruneSubTreeWithParent, reconnectSubTreeWithParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, nni2, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
     from p4.tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, ancestralStateDraw, getSiteLikes
-    from p4.tree_model import data, model, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setRjComp, setRjRMatrix, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
+    from p4.tree_model import data, model, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
     from p4.tree_write import patristicDistanceMatrix, tPickle, writeNexus, write, writePhylip, writeNewick, _getMcmcCommandComment, draw, textDrawList, eps
     from p4.tree_fit import simsForModelFitTests, modelFitTests, compoTestUsingSimulations, bigXSquaredSubM, compStatFromCharFreqs, getEuclideanDistanceFromSelfDataToExpectedComposition
 
@@ -1959,7 +1961,7 @@ class Tree(object):
                     splitList.append([x, 0])
                 n.br.rcList = [n.br.rc]
 
-    def makeSplitKeys(self, makeNodeForSplitKeyDict=False):
+    def makeSplitKeys(self, makeNodeForSplitKeyDict=True):
         """Make long integer-valued split keys.
 
         This needs to have self.taxNames set.
@@ -2592,7 +2594,7 @@ class Tree(object):
     ############################################
 
 
-    def isFullyBifurcating(self, verbose=False, biRoot=True):
+    def isFullyBifurcating(self, verbose=False, biRoot=False):
         """Returns True if the tree is fully bifurcating.  Else False. 
 
         If arg biRoot is True, then it is required that the tree be
@@ -2968,6 +2970,119 @@ class Tree(object):
 
     ##################################################
 
+    def drawTopologyCompare(self, treeB, showNodeNums=False):
+        """Graphically show topology differences between two trees.
+
+        The two trees (self and treeB) are drawn as text, with differences
+        highlighted with a thick branch.
+
+        The taxNames need to be set, and need to be the same for both
+        trees.
+
+        """
+
+        sd = self.topologyDistance(treeB)
+        if sd == 0:
+            print("The trees are the same. ")
+            return
+
+        self.splitKeyHash = {}
+        for n in self.iterInternalsNoRoot():
+            self.splitKeyHash[n.br.splitKey] = n
+        treeB.splitKeyHash = {}
+        for n in treeB.iterNodesNoRoot():
+            treeB.splitKeyHash[n.br.splitKey] = n
+        assert self.splitKeySet
+        assert treeB.splitKeySet
+        selfHasButTreeBDoesnt = self.splitKeySet.difference(treeB.splitKeySet)
+        treeBHasButSelfDoesnt = treeB.splitKeySet.difference(self.splitKeySet)
+
+        for spl in selfHasButTreeBDoesnt:
+            n = self.splitKeyHash[spl]
+            n.br.textDrawSymbol = '='
+        for spl in treeBHasButSelfDoesnt:
+            n = treeB.splitKeyHash[spl]
+            n.br.textDrawSymbol = '='
+
+        self.draw(showNodeNums=showNodeNums)
+        treeB.draw(showNodeNums=showNodeNums)
+
+
+    def getNodeOnReferenceTreeCorrespondingToSelfRoot(self, refTree, verbose=True):
+        """Find, on a ref tree, a node corresponding to where the self root is.
+
+        This works for both bifurcating and non-bifurcating roots (of
+        self).
+
+        The refTree should not be bi-rooted.
+
+        To facilitate doing a lot of (self) trees, a counter in the
+        corresponding node in the refTree is incremented.  The refTree
+        is rooted on the first taxon.  For bi-rooted trees, the
+        node.br.biRootCount is incremented, and for non-bi-rooted
+        trees the node.rootCount is incremented.  The root counts
+        should therefore be immune to reRoot()'ing.
+
+        """
+
+        gm = ["Tree.getNodeOnReferenceTreeCorrespondingToSelfRoot()"]
+        assert self is not refTree
+        assert self.taxNames
+        assert refTree.taxNames
+        assert self.taxNames == refTree.taxNames
+
+        isBiRoot = False
+        # sr = self.root; srnChildren = nChildren of self.root
+        srnChildren = self.root.getNChildren()
+        if srnChildren == 1:
+            gm.append("Self root has only one child; does not work")
+            raise P4Error(gm)
+        elif srnChildren == 2:
+            isBiRoot = True
+            for n in refTree.iterNodesNoRoot():
+                if not hasattr(n.br, "biRootCount"):
+                    n.br.biRootCount = 0
+        else:
+            for n in refTree.iterNodes():
+                if not hasattr(n, "rootCount"):
+                    n.rootCount = 0
+
+        #self.draw()
+        refTree.reRoot(self.taxNames[0])
+        #refTree.draw()
+
+        self.makeSplitKeys()  # default makeNodeForSplitKeyDict=True
+        refTree.makeSplitKeys()
+
+        for ch in self.root.iterChildren():
+            if ch.br.rawSplitKey & 1:
+                break
+        # ch clade has the first taxon, ch.parent is self.root
+        #print("self root child %i clade has the first taxon" % ch.nodeNum)
+        refNode = refTree.nodeForSplitKeyDict.get(ch.br.splitKey)
+        if refNode:
+            if isBiRoot:
+                refNode.br.biRootCount += 1
+                if verbose:
+                    #print("When the refTree is rooted on the first taxon,")
+                    #print("the bi-root is on the branch on refTree node %i" % refNode.nodeNum)
+                    print("Incrementing refTree node %i br.biRootCount by 1" % refNode.nodeNum)
+
+            else:
+                refNode.rootCount += 1
+                if verbose:
+                    #print("When the refTree is rooted on the first taxon,")
+                    #print("the root is at refTree node %i" % refNode.nodeNum)
+                    print("Incrementing refTree node %i rootCount by 1" % refNode.nodeNum)
+
+            return refNode
+        else:
+            if verbose:
+                print("There is no node in the refTree corresponding to the self.root")
+            return None
+                
+                
+
     def readPhyloXmlFile(self, fName, verbose=False):
         """Start with an empty Tree, read in a phyloxml file"""
 
@@ -3094,3 +3209,18 @@ class Tree(object):
         #if self._nTax:
         #    self._nTax -= 1
 
+    def isBiRoot(self):
+        """Answers whether self has a bifurcating root"""
+
+        rootNChildren = self.root.getNChildren()
+        if rootNChildren == 2:
+            return True
+        return False
+
+    def isTriRoot(self):
+        """Answers whether self has a trifurcating root"""
+
+        rootNChildren = self.root.getNChildren()
+        if rootNChildren == 3:
+            return True
+        return False

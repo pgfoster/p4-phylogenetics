@@ -57,7 +57,7 @@ if True:
             raise P4Error(gm)
 
         if nodeNum < 0 or nodeNum >= len(self.nodes):
-            gm.append("The node number is out of range.")
+            gm.append("The requested node number %i is out of range (of %i nodes)." % (nodeNum, len(self.nodes)))
             raise P4Error(gm)
 
         return self.nodes[nodeNum]
@@ -786,6 +786,178 @@ if True:
             stNode.sibling = bNode
 
         self._nTax = 0
+
+    def pruneSubTreeWithParent(self, specifier):
+        """Remove and return a subtree, with its parent node and branch
+
+        Arg *specifier* can be a nodeNum, name, or node object.
+
+        The node that is the parent of the specified node is returned.  
+
+        The nodes are left in self (ie they are not removed from the
+        self.nodes list; the idea being that the subtree will be added
+        back to the tree again (via reconnectSubTreeWithParent()).
+
+        Let's say that we want to detach the subtree composed of taxa E, F, and G, below
+
+        # +--------1:A
+        # |
+        # |--------2:B
+        # |
+        # 0        +---------4:C
+        # |        |
+        # |        |         +--------6:D
+        # |        |         |
+        # |        |---------5        +--------8:E
+        # +--------3         |        |
+        #          |         +--------7        +---------10:F
+        #          |                  +--------9
+        #          |                           +---------11:G
+        #          |
+        #          +---------12:H
+
+        This really means that we want to remove nodes 5 (yes!) and 7
+        as well, and their branches.  To specify that subtree, we can
+        use node 7 as the specifier when we call this method.  The
+        node that is returned in this case is node 5 ::
+
+            stNode = t.pruneSubTreeWithParent(7)
+            print("The returned object is a %s, nodeNum %i" % (stNode, stNode.nodeNum))
+            # The returned object is a <p4.node.Node object at 0x107748eb8>, nodeNum 5
+
+        At this point we will have the tree as shown here ---
+
+        # +-------1:A
+        # |
+        # |-------2:B
+        # 0
+        # |       +--------4:C
+        # |       |
+        # +-------3--------6:D
+        #         |
+        #         +--------10:G
+
+        Now we would use the companion method
+        reconnectSubTreeWithParent() to reconnect the subtree.  For
+        example we can reconnect it in the same place that it was, by
+        specifying node 6 as the arg attachNode ::
+
+            t.reconnectSubTreeWithParent(stNode, 6)
+
+        That restores the original tree, as shown above.
+
+        The subtree can be a single leaf if you wish.  In that case
+        the subtree is specified by the leaf, and is composed of the
+        leaf and its parent, including both their branches.
+
+        At the moment it does not work for nodes where the parent is
+        not bifurcating.
+
+        """
+
+        gm = ['Tree.pruneSubTreeWithParent()']
+
+        rNode = self.node(specifier)
+        if rNode == self.root:
+            gm.append("The specified node is the root.")
+            raise P4Error(gm)
+        rNodeParnt = rNode.parent
+        if rNodeParnt.getNChildren() != 2:
+                # self.draw()
+                gm.append("The parent of the specified node must have exactly two children")
+                raise P4Error(gm)
+        if rNodeParnt == self.root:
+            gm.append("The parent of the specified node may not be the root")
+            raise P4Error(gm)
+
+        theSib = rNode.sibling            # may be None
+        theLeftSib = rNode.leftSibling()  # may be None
+        theGrandParent = rNodeParnt.parent
+        rNodeParntLeftSib = rNodeParnt.leftSibling()
+        rNodeParntSib = rNodeParnt.sibling
+        theGrandParentLeftChild = theGrandParent.leftChild
+        
+
+        if theSib:
+            rNode.sibling = None
+            rNodeParnt.parent = None
+            theSib.parent = theGrandParent
+            if rNodeParntLeftSib:
+                rNodeParntLeftSib.sibling = theSib
+            if rNodeParntSib:
+                theSib.sibling = rNodeParntSib
+            if theGrandParentLeftChild == rNodeParnt:
+                theGrandParent.leftChild = theSib
+                
+
+        elif theLeftSib:
+            theLeftSib.sibling = None
+            rNodeParnt.parent = None
+            theLeftSib.parent = theGrandParent
+            if rNodeParntLeftSib:
+                rNodeParntLeftSib.sibling = theLeftSib
+            if rNodeParntSib:
+                theLeftSib.sibling = rNodeParntSib
+            if theGrandParentLeftChild == rNodeParnt:
+                theGrandParent.leftChild = theLeftSib
+
+        rNodeParnt.leftChild = rNode
+
+        self.preAndPostOrderAreValid = 0
+        self._nTax = 0
+        return rNodeParnt
+
+    def reconnectSubTreeWithParent(self, stNode, attachNode):
+        """Attach subtree stNode to the branch on attachNode
+
+        This is a companion method to Tree.pruneSubTreeWithParent()
+
+        The subtree is attached on the branch on attachNode.
+        """
+
+        gm = ["Tree.reconnectSubTreeWithParent()"]
+
+        myAttachNode = self.node(attachNode)
+        if not myAttachNode.br:
+            gm.append("The attachNode must have a branch")
+
+        myAttachNodeParent = myAttachNode.parent
+        myAttachNodeSib = myAttachNode.sibling              # may be None
+        myAttachNodeLeftSib = myAttachNode.leftSibling()    # may be None
+        stNodeLeftChild = stNode.leftChild                  # stNode has only one child
+
+        if 0:
+            print("myAttachNodeParent", myAttachNodeParent.nodeNum)
+            if myAttachNodeSib:
+                print("myAttachNodeSib", myAttachNodeSib.nodeNum)
+            else:
+                print("myAttachNodeSib", myAttachNodeSib)
+            if myAttachNodeLeftSib:
+                print("myAttachNodeLeftSib", myAttachNodeLeftSib.nodeNum)
+            else:
+                print("myAttachNodeLeftSib", myAttachNodeLeftSib)
+            print("stNodeLeftChild", stNodeLeftChild.nodeNum)
+
+        myAttachNode.parent = stNode
+        stNode.leftChild = myAttachNode
+        myAttachNode.sibling = stNodeLeftChild 
+        stNode.parent = myAttachNodeParent
+
+        if myAttachNodeSib:
+            stNode.sibling = myAttachNodeSib
+        else:
+            stNode.sibling = None
+
+        if myAttachNodeLeftSib:
+            myAttachNodeLeftSib.sibling = stNode
+        else:
+            myAttachNodeParent.leftChild = stNode
+
+        # self.dump(node=True)
+
+        self.preAndPostOrderAreValid = 0
+        self._nTax = 0
+
 
     def addNodeBetweenNodes(self, specifier1, specifier2):
         """Add a node between 2 exisiting nodes, which should be parent-child.
