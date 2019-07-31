@@ -748,7 +748,7 @@ class Mcmc(object):
         self.simTemp_tunerSamples = []
         self.simTemp_tunerSampleSize = 100
         self.simTemp_longTNumSampleSize = 5000
-        self.simTemp_tunePPLong_tunings = []
+        self.simTemp_longSampleTunings = [1.0] * self.simTemp
         if self.simTemp:
             try:
                 thisSimTempMax = float(simTempMax)
@@ -770,7 +770,8 @@ class Mcmc(object):
                     self.simTemp_temps.append(tmp)
             if 1:
                 # This makes more small temperatures and fewer big temperatures
-                logBase = 1.5       # should be a settable variable in the var module?
+                # The bigger the logBase, the more curvey the curve.  Smaller is more linear
+                logBase = var.mcmc_simTemp_tempCurveLogBase
                 factor = self.simTempMax / (math.pow(logBase, self.simTemp - 1) - 1.0)
                 self.simTemp_temps = [SimTempTemp(0.0)]
                 for tNum in range(1,self.simTemp):
@@ -2093,63 +2094,56 @@ class Mcmc(object):
         expected = self.simTemp_longTNumSampleSize / self.simTemp
         rats = [occs[i]/expected for i in range(self.simTemp)]
 
-        totalAdjusts = 0.0
-
-        t0 = self.simTemp_tunePPLong_tunings[0]
-        if rats[0] > 1.3 or rats[0] < 0.5:
-            if rats[0] > 3.:
-                t0 *= 1.6
-            elif rats[0] > 1.3:
-                t0 *= 1.2
-            elif rats[0] < 0.5:
-                t0 *= 0.8
-            myProd = rats[0] * t0
-            print("rats[0]=", "%5.2f," % rats[0], "    tunings[0]= %5.2f," % t0, 
-                  "prod= %6.2f" % myProd)
-            self.simTemp_temps[0].logPiDiff -= myProd
-            totalAdjusts -= myProd
-            self.simTemp_tunePPLong_tunings[0] = t0
-
-        t1 = self.simTemp_tunePPLong_tunings[1]
-        if rats[1] > 1.3 or rats[1] < 0.5:
-            if rats[1] > 1.3:
-                t1 *= 1.2
-            elif rats[1] < 0.5:
-                t1 *= 0.67
-            myProd = rats[1] * t1
-            print("rats[1]", "%5.2f" % rats[1], "    tunings[1]= %5.2f, " % t1, 
-                  "prod= %6.2f" % myProd)
-            self.simTemp_temps[1].logPiDiff -= myProd
-            self.simTemp_temps[0].logPiDiff += myProd
-            # totalAdjusts cancels for this one
-            self.simTemp_tunePPLong_tunings[1] = t1
-
-        if 0 and factorB > 1.0:
-            fudgeB = 0.9
-            self.simTemp_temps[self.simTemp - 3].logPiDiff += (fudgeB * factorB)
-            self.simTemp_temps[self.simTemp - 2].logPiDiff -= (fudgeB * factorB)
-            self.simTemp_temps[self.simTemp - 2].logPiDiff += factorB * 2.7
-
-        for tNum in range(self.simTemp - 1):
-            self.simTemp_temps[tNum].logPiDiff += totalAdjusts/self.simTemp
-        print("tunings are currently %s" % self.simTemp_tunePPLong_tunings)
+        for tNum in range(self.simTemp):
+            ratio = rats[tNum]
+            if ratio > 1.2 or ratio < 0.7:
+                if ratio > 3.:
+                    adjust = 1.6
+                elif ratio > 1.2:
+                    adjust = 1.2
+                elif ratio < 0.7:
+                    adjust = 0.8
+                self.simTemp_longSampleTunings[tNum] *= adjust
+                # Adjusting the tunings to below 1 seems to lead to overshooting.
+                if self.simTemp_longSampleTunings[tNum] < 1.0:
+                    self.simTemp_longSampleTunings[tNum] = 1.0
+            
+        print("longSampleTunings:")
+        for tNum in range(self.simTemp):
+            print("[%2i]" % tNum, "%7.2f" % self.simTemp_longSampleTunings[tNum])
 
     def simTemp_tunePseudoPriors(self):
         occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
         expected = self.simTemp_longTNumSampleSize / self.simTemp
 
         if 1:
-            t0 = self.simTemp_tunePPLong_tunings[0]
-            self.simTemp_temps[0].logPiDiff -= t0
-            t1 = self.simTemp_tunePPLong_tunings[1]
-            self.simTemp_temps[1].logPiDiff -= t1
-            self.simTemp_temps[0].logPiDiff += t1
-            #self.simTemp_temps[self.simTemp - 3].logPiDiff += 0.7
-            #self.simTemp_temps[self.simTemp - 2].logPiDiff -= 0.7
-            #self.simTemp_temps[self.simTemp - 2].logPiDiff += 2.
-            
-            for tNum in range(self.simTemp - 1):
-                self.simTemp_temps[tNum].logPiDiff + t0/6.
+            totalAdjusts = 0.0
+
+            # To increase the occupation of the cold temp, boost the cold logPiDiff
+            # To decrease the occupation, decrease it.
+            tNum = 0
+            cTuning = self.simTemp_longSampleTunings[tNum]
+            if cTuning > 1.0:
+                self.simTemp_temps[tNum].logPiDiff -= cTuning
+                totalAdjusts += cTuning
+
+            # To increase the occupation of the hottest temp, decrease the hottest-1 logPiDiff 
+            # To decrease the occupation, increase the hottest-1 logPiDiff
+            tNum = self.simTemp - 1
+            cTuning = self.simTemp_longSampleTunings[tNum]
+            if cTuning > 1.0:
+                self.simTemp_temps[tNum].logPiDiff += cTuning
+                # Is this needed? It does not make an obvious difference.  Is it in the right direction?
+                #totalAdjusts -= cTuning   
+
+            for tNum in range(1, self.simTemp):
+                cTuning = self.simTemp_longSampleTunings[tNum]
+                if cTuning > 1.0:
+                    self.simTemp_temps[tNum].logPiDiff -= cTuning
+                    self.simTemp_temps[tNum - 1].logPiDiff += cTuning
+
+            #for tNum in range(self.simTemp - 1):
+            #    self.simTemp_temps[tNum].logPiDiff + totalAdjusts/self.simTemp
 
         if 1:
             myFudge = -10.0
@@ -2193,7 +2187,9 @@ class Mcmc(object):
                     self.simTemp_temps[tNum-1].logPiDiff -= howMuch
                 
 
-
+        if 0:
+            for tNum in range(self.simTemp -1):
+                self.simTemp_temps[tNum].logPiDiff += 10.0
 
                 
             
