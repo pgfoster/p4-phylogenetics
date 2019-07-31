@@ -19,6 +19,10 @@ nGen = 100000
 nCp = 2        # number of checkPoints
 cpInterv = int(nGen / nCp)
 
+# The tempCurveLogBase affects the spacing of the temperatures, which
+# in turn affects the logPiDiffs and the acceptances.
+var.mcmc_simTemp_tempCurveLogBase = 3.0
+
 # We use only one chain.  The sampleInterval is ignored --- Whenever
 # the chain has a temperature of zero, it is sampled.  -- Potentially a
 # lot of samples!  Setting simTemp and simTempMax turns on simulated
@@ -30,12 +34,14 @@ m = Mcmc(t, nChains=1, runNum=0, checkPointInterval=cpInterv, simTemp=6, simTemp
 # Mystery hack.
 m.simTemp_tunePPLong_tunings = [3., 1.]
 
-# A pre-run, writing neither samples nor checkPoint.  Then zero the gen number. 
+# A pre-run, without writing samples or a checkPoint.  Then zero the gen number. 
 m.run(20000, writeSamples=False)
 m.gen = -1
 
-for n in range(10):
-    m.simTemp_trialAndError(6000)
+for rNum in range(10):
+    print("-" * 50)
+    print("trial and error %i" % rNum)
+    m.simTemp_trialAndError(m.simTemp * 1000)
 
 # The main run
 m.run(nGen)
