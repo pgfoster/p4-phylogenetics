@@ -86,7 +86,7 @@ class TreeFileLite(object):
         tLine = self.tLines[treeNum]
         if self.verbose >= 3:
             print(tLine)
-        f = io.BytesIO(tLine)
+        f = io.StringIO(tLine)
         t = Tree()
         if tLine.startswith("("):
             t.parseNewick(f, translationHash=self.translationHash)
@@ -171,7 +171,7 @@ class TreeFileLite(object):
                 lNum += 1
                 aLine = fLines[lNum].strip()
             translateLines.append(aLine)
-            translateFlob = io.BytesIO(' '.join(translateLines))
+            translateFlob = io.StringIO(' '.join(translateLines))
             nx = Nexus()
             self.translationHash = nx.readTranslateCommand(translateFlob)
             # print self.translationHash
