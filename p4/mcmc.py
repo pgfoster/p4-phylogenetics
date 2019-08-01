@@ -748,8 +748,9 @@ class Mcmc(object):
         self.simTemp_tunerSamples = []
         self.simTemp_tunerSampleSize = 100
         self.simTemp_longTNumSampleSize = 5000
-        self.simTemp_longSampleTunings = [1.0] * self.simTemp
         if self.simTemp:
+            self.simTemp_longSampleTunings = [1.0] * self.simTemp
+
             try:
                 thisSimTempMax = float(simTempMax)
             except (ValueError, TypeError):
@@ -2942,9 +2943,10 @@ class Mcmc(object):
         if verbose:
             print("Finished %s generations." % nGensToDo)
 
-        treeFile = open(self.treeFileName, 'a')
-        treeFile.write('end;\n\n')
-        treeFile.close()
+        if writeSamples:
+            treeFile = open(self.treeFileName, 'a')
+            treeFile.write('end;\n\n')
+            treeFile.close()
 
     def _writeSample(self, coldChainNum=0):
         likesFile = open(self.likesFileName, 'a')
