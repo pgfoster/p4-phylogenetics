@@ -380,9 +380,11 @@ something like this::
     def read(self, inThing, skip=0, max=None, taxNames=None):
         """Read in a tree, or some trees, or a file of trees.
 
-        Arg inThing can be a file name, a Tree instance, or a
-        Trees instance.  Args skip and max only come into play if
-        inThing is a file."""
+        Arg inThing can be a file name, a Tree instance, or a list of
+        Tree objects, or a Trees instance.  Args skip and max only
+        come into play if inThing is a file.
+
+        """
 
         gm = ['TreePartitions.read()']
 
@@ -394,9 +396,7 @@ something like this::
         # If we already have self.taxNames from a previous read()
         if self.taxNames:
             if taxNames:
-                for txNum in range(self.nTax):
-                    assert self.taxNames[txNum] == taxNames[
-                        txNum], "Mismatched tax names."
+                assert self.taxNames == taxNames, "Mismatched tax names."
         else:
             if taxNames:
                 self.taxNames = taxNames
@@ -788,6 +788,8 @@ something like this::
             else:
                 theWeight = 1.0 / theTree.recipWeight
 
+        # self.isBiRoot is initialized to None.  Then, when we read
+        # the first tree, it is set to True or False
         if self.isBiRoot == None:   # to start
             # It is the first tree, so get the taxNames, nTax, and isBiRoot
             if not self.taxNames:
@@ -833,10 +835,9 @@ something like this::
             # print "node %s, splitKey %s  parent=%s" % (n.nodeNum, theSKey,
             # n.parent.nodeNum)
 
-            # Either we have seen this splitKey before, in which
-            # case we get it from self.splitsHash, or we have to
-            # make a new one.
-
+            # Either we have seen this splitKey before, in which case
+            # we get the Split object from self.splitsHash, or we have
+            # to make a new Split object.
             if theSKey in self.splitsHash:
                 theSplit = self.splitsHash[theSKey]
             else:
