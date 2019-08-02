@@ -2109,7 +2109,7 @@ class Mcmc(object):
                 if self.simTemp_longSampleTunings[tNum] < 1.0:
                     self.simTemp_longSampleTunings[tNum] = 1.0
             
-        print("longSampleTunings:")
+        print("\nlongSampleTunings:")
         for tNum in range(self.simTemp):
             print("[%2i]" % tNum, "%7.2f" % self.simTemp_longSampleTunings[tNum])
 
