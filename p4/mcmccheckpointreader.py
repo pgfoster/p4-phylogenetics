@@ -279,7 +279,7 @@ class McmcCheckPointReader(object):
         #print("var =  %.2g", vect.var())
 
         print()
-        print("Pairwise maximum differences in split supports between the two runs ---")
+        print("Pairwise maximum differences in split supports between the runs ---")
         print(maxDiffs)
         print()
         print("For the %i values in one triangle," % nItems)
