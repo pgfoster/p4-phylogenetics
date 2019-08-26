@@ -2876,8 +2876,8 @@ class Mcmc(object):
                     print("gen+1 %11i" % (self.gen + 1), file=fout)
                     self.simTemp_dumpTemps(flob=fout)
 
-                    myMsg = "\n...invoking simTemp_tunePseudoPriors_longSample()"
-                    print(myMsg, file=fout)
+                    #myMsg = "\n...invoking simTemp_tunePseudoPriors_longSample()"
+                    #print(myMsg, file=fout)
                     self.simTemp_tunePseudoPriors_longSample()
 
                     fout.close()
