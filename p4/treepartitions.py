@@ -2214,11 +2214,6 @@ something like this::
             if self.taxNames[tNum] != otp.taxNames[tNum]:
                 gm.append("taxNames differ.")
                 raise P4Error(gm)
-        if self.isBiRoot or otp.isBiRoot:
-            gm.append("self.isBiRoot = %s, other.isBiRoot = %s" %
-                      (self.isBiRoot, otp.isBiRoot))
-            gm.append("not tested yet for biRoots")
-            raise P4Error(gm)
         if self.doModelComments or otp.doModelComments:
             gm.append("self.doModelComments = %s, other.doModelComments = %s" % (
                 self.doModelComments, otp.doModelComments))
