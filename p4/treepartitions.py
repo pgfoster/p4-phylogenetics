@@ -1751,14 +1751,30 @@ something like this::
         # have that maxRootCount.  There will be at least one, and
         # maybe more.  Then re-root.
         if self.isBiRoot:
-            maxRootCount = 0
+            sumBiRootCount = 0
             for n in conTree.iterNodesNoRoot():
-                if n.br.biRootCount > maxRootCount:
-                    maxRootCount = n.br.biRootCount
+                sumBiRootCount += n.br.biRootCount
+            conTree.sumBiRootCount = sumBiRootCount     # ad hoc
+            nodesWithBiRootProportions = []
+            for n in conTree.iterNodesNoRoot():
+                if n.br.biRootCount:
+                    n.biRootProportion = n.br.biRootCount / sumBiRootCount  # should be on the n.br, not the node, but I need it on the node to sort it
+                    nodesWithBiRootProportions.append(n)
+            nodesWithBiRootProportions = p4.func.sortListOfObjectsOnAttribute(nodesWithBiRootProportions, "biRootProportion")
+            nodesWithBiRootProportions.reverse()
+
+            maxRootCount = nodesWithBiRootProportions[0].br.biRootCount
+            #print("Got maxRootCount %i" % maxRootCount)
+
+            # Now that the nodes are sorted, move biRootProportion to the n.br, where it belongs.
             maxRootNodes = []
-            for n in conTree.iterNodesNoRoot():
+            for nNum,n in enumerate(nodesWithBiRootProportions):
                 if n.br.biRootCount == maxRootCount:
                     maxRootNodes.append(n)
+                n.br.biRootProportion = n.biRootProportion
+                del(n.biRootProportion)
+                n.br.biRootRank = nNum
+
             if 0 and showRootInfo:
                 print("maxRootCount = %i" % maxRootCount)
                 print("maxRootNodes (nodeNums) = ", end=' ')
@@ -1984,25 +2000,31 @@ something like this::
                 print()
                 print(gm[0])
                 print(longMessage1)  # see top of file
-                sumBiRootCount = 0
-                print("node  br.biRootCount")
+                
+                nnn = []
                 for n in conTree.iterNodesNoRoot():
+                    if n.br.biRootCount:
+                        n.biRootRank = n.br.biRootRank   # moved to n for sorting
+                        nnn.append(n)
+                nnn = p4.func.sortListOfObjectsOnAttribute(nnn, 'biRootRank')
+
+                print("node  br.biRootCount  proportion   rank")
+                for n in nnn:
                     if not n.br.biRootCount:  # None or zero
                         pass
                     else:
                         if n == biRootChild:
-                            # Point out that it has been rooted on that branch.
-                            print("%4i  %6.1f <==" % (n.nodeNum, n.br.biRootCount))
+                            # Point out, with the arrow, that it has been rooted on that branch.
+                            print("%4i   %11.1f       %5.3f    %5i  <==" % (n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
                         else:
-                            print("%4i  %6.1f" % (n.nodeNum, n.br.biRootCount))
+                            print("%4i   %11.1f       %5.3f    %5i" % (n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
                         if n.br.biRootCount:
                             if n.isLeaf:
                                 n.oldName = n.name
-                                n.name += "_%i" % n.br.biRootCount
+                                n.name += "_BiR_%5.3f_%i" % (n.br.biRootProportion, n.br.biRootRank)
                             else:
-                                n.name = "%i" % n.br.biRootCount
-                            sumBiRootCount += n.br.biRootCount
-                print("Total biRootCount is %i, for %i trees" % (sumBiRootCount, self.nTrees))
+                                n.name = "BiR_%5.3f_%i" % (n.br.biRootProportion, n.br.biRootRank)
+                print("Total biRootCount is %i, for %i trees" % (conTree.sumBiRootCount, self.nTrees))
                 #conTree.draw()
                 if 0 and isinstance(showRootInfo, str):           # this does not work because leaf node names are modified.
                     if showRootInfo.endswith(".nex"):
@@ -2013,10 +2035,10 @@ something like this::
                     print("to nexus tree file '%s'" % rootOutFileName)
                     conTree.writeNexus(rootOutFileName)
                 else:
-                    conTree.draw()
-                    print("Cons tree with root counts --- picture above, and tree string below ---")
+                    conTree.draw(width=130)
+                    print("Cons tree with root proportions and ranks --- picture above, and tree string below ---")
                     print("Roots were sampled on branches leading towards the root")
-                    print("   from the nodes (including leaves) with numbers.")
+                    print("   from the nodes (including leaves) with BiR numbers.")
                     conTree.write()
                     print()
 
