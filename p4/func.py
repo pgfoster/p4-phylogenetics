@@ -13,6 +13,7 @@ import random
 import inspect
 import datetime
 import subprocess
+import shutil
 
 from p4.var import var
 # from p4.sequencelist import Sequence, SequenceList
@@ -1038,23 +1039,26 @@ def splash2(outFile=None, verbose=True):
     lp = os.path.dirname(inspect.getfile(p4))
     stuff.append("%16s: %s" % ("Library path", lp))
 
-    # Get git version.
-    if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
-        try:
-            # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
-            # subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-            # ret = subprocess.check_output(['git', '-C', '%s' % lp, 'rev-parse', '--short', 'HEAD'])
-            ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
-            #ret = ret.strip()    # get rid of newline, needed for rev-parse
-            ret = ret[1:-1]       # get rid of quotes, needed for log
-            stuff.append("%16s: %s" % ("git hash", ret))
+    # Check that git is installed:
+    if shutil.which("git"):
+        # Get git version.
+        if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
+            try:
+                # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
+                # subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+                # ret = subprocess.check_output(['git', '-C', '%s' % lp, 'rev-parse', '--short', 'HEAD'])
+                ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
+                #ret = ret.strip()    # get rid of newline, needed for rev-parse
+                ret = ret[1:-1]       # get rid of quotes, needed for log
+                stuff.append("%16s: %s" % ("git hash", ret))
 
-        except subprocess.CalledProcessError:
-            #print("%16s: %s" % ("git hash", "Not a git repo?"))
-            pass
+            except subprocess.CalledProcessError:
+                #print("%16s: %s" % ("git hash", "Not a git repo?"))
+                pass
+        else:
+            stuff.append("%16s: %s" % ("git hash", "Not a git repo"))
     else:
-        stuff.append("%16s: %s" % ("git hash", "Not a git repo"))
-
+        stuff.append("%16s: %s" % ("git hash", "No git executable"))
 
     stuff.append("%16s: %s" % ("Python version", ".".join([str(i) for i in sys.version_info[:-2]])))
     #print("%16s: %s" % ("Date" , datetime.datetime.now().strftime("%d/%m/%Y")))
