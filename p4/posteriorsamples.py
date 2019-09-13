@@ -186,13 +186,7 @@ class PosteriorSamples(object):
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
         
-        #translateFlob = io.StringIO(' '.join(translateLines))
-
-        if 1:
-            if sys.version_info < (3,):
-                translateFlob = io.BytesIO(' '.join(translateLines))
-            else:
-                translateFlob = io.StringIO(' '.join(translateLines))
+        translateFlob = io.StringIO(' '.join(translateLines))
 
         nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)
@@ -381,11 +375,7 @@ class PosteriorSamples(object):
             aLine = fLines[lNum].strip()
         translateLines.append(aLine)
 
-        if 1:
-            if sys.version_info < (3,):
-                translateFlob = io.BytesIO(' '.join(translateLines))
-            else:
-                translateFlob = io.StringIO(' '.join(translateLines))
+        translateFlob = io.StringIO(' '.join(translateLines))
 
         nx = p4.nexus.Nexus()
         self.translationHash = nx.readTranslateCommand(translateFlob)

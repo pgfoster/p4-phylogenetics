@@ -146,7 +146,7 @@ void p4_newtAround(p4_tree *aTree, double epsilon, double likeDelta)
 
                 // Newt it
                 //printf("    Now newtNode %i\n", aNode->nodeNum);
-                p4_newtNode(aNode, epsilon);
+                p4_newtNode(aNode, epsilon,  aTree->model->BRLEN_MIN[0], aTree->model->BRLEN_MAX[0]);
 
                 // Flag nodes above aNode->parent that cl2NeedsUpdating
                 p4_getPreOrderNodeNumsAbove(aTree, aNode); // gets put into aTree->ints
@@ -204,7 +204,7 @@ void p4_newtAround(p4_tree *aTree, double epsilon, double likeDelta)
 }
 
 
-void p4_newtNode(p4_node *aNode, double epsilon)
+void p4_newtNode(p4_node *aNode, double epsilon, double BRLEN_MIN, double BRLEN_MAX)
 {
     double oldBrLen, currentGuess, previousGuess, nextGuess;
     double lnL, firstD, secondD;
@@ -538,13 +538,22 @@ void p4_newtNode(p4_node *aNode, double epsilon)
         }
 
         // break if the brLen is too short
-        if(nextGuess <= BRLEN_MIN) {
-            nextGuess = previousGuess / 4.0;
+        if((0)) {
             if(nextGuess <= BRLEN_MIN) {
-                aNode->brLen[0] = BRLEN_MIN - (BRLEN_MIN * 0.1) + ((BRLEN_MIN * 0.1) * ranDoubleUpToOne());
+                nextGuess = previousGuess / 4.0;
+                if(nextGuess <= BRLEN_MIN) {
+                    aNode->brLen[0] = BRLEN_MIN - (BRLEN_MIN * 0.1) + ((BRLEN_MIN * 0.1) * ranDoubleUpToOne());
+                    break;
+                }
+            }
+        }
+        else {
+            if(nextGuess < BRLEN_MIN) {
+                aNode->brLen[0] = BRLEN_MIN;
                 break;
             }
         }
+
 
         // We break and return if the brLen is too long, or if we have
         // iterated more than the max, or if the likelihood curve is

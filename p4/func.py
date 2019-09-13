@@ -1075,7 +1075,7 @@ def splash2(outFile=None, verbose=True):
     return stuff
 
 
-def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None):
+def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None, randomlyReRoot=True):
     """Make a simple random Tree.
 
     You can supply a list of taxNames, or simply specify nTax.  In the
@@ -1122,6 +1122,15 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
 
     if constraints:
         assert isinstance(constraints, Constraints)
+
+    # if we are asking for a biRoot tree, that does not have a random root, then we need a bi-rooted constraint
+    if biRoot and not randomlyReRoot:
+        if not constraints or constraints.tree.root.getNChildren() != 2:
+            gm.append("For a biRoot'ed tree, that has a specified root (ie randomlyReRoot=False),")
+            gm.append("a constraints object is needed, specified with a constraint tree as")
+            gm.append("((all, the, taxon), (names, in, two, forks));")
+            gm.append("although you can have additional internal constraints.")
+            raise P4Error(gm)
 
     # Make a random list of indices for the taxNames
     if seed != None:  # it might be 0
@@ -1345,28 +1354,37 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
         t.postOrder = None
         t.preAndPostOrderAreValid = False
         t.draw()
-        # t.summarizeNodes()
 
     if biRoot:
-        # pick a random node, with a parent
-        n = t.nodes[random.randrange(1, len(t.nodes))]
-
         # addNodeBetweenNodes() requires t.preOrder.
-        if 1:
-            t.preOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
-            t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
-            if len(t.nodes) > 1:
-                t.setPreAndPostOrder()
-        nodeNum = t.addNodeBetweenNodes(n, n.parent)
-        t.reRoot(nodeNum, moveInternalName=False)
+        t.preOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
+        t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
+        if len(t.nodes) > 1:
+            t.setPreAndPostOrder()
+        if randomlyReRoot:
+            # pick a random node, with a parent
+            n = t.nodes[random.randrange(1, len(t.nodes))]
+            newNode = t.addNodeBetweenNodes(n, n.parent)
+            t.reRoot(newNode, moveInternalName=False)
+        else:
+            # We have checked that we have a valid constraints and constraints tree, above
+            theKey = constraints.tree.root.leftChild.br.splitKey
+            t.makeSplitKeys()
+            for kNode in t.nodes:
+                if kNode.br and kNode.br.splitKey == theKey:
+                    break
+            assert kNode.br.splitKey == theKey
+            newNode = t.addNodeBetweenNodes(kNode, kNode.parent)
+            t.reRoot(newNode, moveInternalName=False)
     else:
-        # The way it is now, the root rightmost child is always a
-        # leaf.  Not really random, then, right?  So choose a random
-        # internal node, and re-root it there.
-        # print "nTax=%i, len(t.nodes)=%i" % (nTax, len(t.nodes))
-        if nTax > 3:
-            n = t.nodes[random.randrange(nTax + 1, len(t.nodes))]
-            t.reRoot(n, moveInternalName=False)
+        if randomlyReRoot:
+            # The way it is now, the root rightmost child is always a
+            # leaf.  Not really random, then, right?  So choose a random
+            # internal node, and re-root it there.
+            # print "nTax=%i, len(t.nodes)=%i" % (nTax, len(t.nodes))
+            if nTax > 3:
+                n = t.nodes[random.randrange(nTax + 1, len(t.nodes))]
+                t.reRoot(n, moveInternalName=False)
 
     # The default is to have randomBrLens, where internal nodes get
     # brLens of 0.02 - 0.05, and terminal nodes get brLens of 0.2 -
@@ -2414,10 +2432,7 @@ def recipes(writeToFile=var.recipesWriteToFile):
         rec = recipesList[recNum]
         print("%s.  %s" % (string.ascii_uppercase[recNum], rec[0]))
 
-    if sys.version_info < (3,):
-        ret = raw_input('Tell me a letter: ')
-    else:
-        ret = input('Tell me a letter: ')
+    ret = input('Tell me a letter: ')
     
     # print "Got %s" % ret
     if ret == '':
@@ -2482,10 +2497,7 @@ and the documentation in the directory
 
 """ % (installation.p4ScriptPath, installation.p4LibDir, installation.p4DocDir))
 
-    if sys.version_info < (3,):
-        ret = raw_input('Ok to do this? [y/n]')
-    else:
-        ret = input('Ok to do this? [y/n]')
+    ret = input('Ok to do this? [y/n]')
 
     ret = ret.lower()
     if ret not in ['y', 'yes']:

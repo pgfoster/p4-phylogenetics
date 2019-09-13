@@ -1,4 +1,3 @@
-from __future__ import print_function
 import sys,traceback
 import os
 from p4.var import var
@@ -13,12 +12,9 @@ def invoke_editor(extractedTraceback):
         p4.func.writeInColour("%2i" % teItemNum, colour='red')
         print("  line %4i,  %s" %  (theTeItem[1], theTeItem[0]))
     p4.func.setTerminalColour("blue")
-    if sys.version_info < (3,):
-        ret = raw_input('Tell me a number (or nothing to do nothing): ')
-    else:
-        ret = input('Tell me a number (or nothing to do nothing): ')
+    ret = input('Tell me a number (or nothing to do nothing): ')
     p4.func.unsetTerminalColour()
-    #print "Got %s" % ret
+    #print("Got %s" % ret)
     retNum = None
     if ret == '':
         pass
@@ -36,6 +32,9 @@ def invoke_editor(extractedTraceback):
             try:
                 theLineNum = int(theTeItem[1])
                 theCommand = "%s +%i %s" % (var.excepthookEditor, theLineNum, theFileName)
+                #print(theCommand)
+                # It was sometimes not working well, so do it twice
+                os.system(theCommand)
                 os.system(theCommand)
             except:
                 print("...could not make an int from theLineNum '%s'" % theLineNum)
