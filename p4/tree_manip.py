@@ -47,8 +47,7 @@ if True:
                     return n
             # if we haven't found a node matching the specier...
             if nodeNum == None:
-                gm.append(
-                    "Specifier string '%s' is not a node name.  What gives?" % specifier)
+                gm.append("Specifier string '%s' is not a node name.  What gives?" % specifier)
                 raise P4Error(gm)
 
         else:

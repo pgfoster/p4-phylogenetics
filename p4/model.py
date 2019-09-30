@@ -782,6 +782,8 @@ class Model(object):
                     theSpec = 117
                 elif mt.spec == 'stmtREV':
                     theSpec = 118
+                elif mt.spec == 'vt':
+                    theSpec = 119
                 else:
                     gm = [complaintHead]
                     gm.append("Programming error.")
