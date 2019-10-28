@@ -239,7 +239,8 @@ class Var(object):
         self.rMatrixProteinSpecs = ['cpREV', 'd78', 'jtt', 'mtREV24', 'mtmam',
                                     'wag', 'rtRev', 'tmjtt94', 'tmlg99', 'lg',
                                     'blosum62', 'hivb', 'mtart', 'mtzoa',
-                                    'gcpREV', 'stmtREV', 'prasREV', 'gnetREV']
+                                    'gcpREV', 'stmtREV', 'prasREV', 'gnetREV',
+                                    'vt']
         """A list of the currently available protein models."""
 
         self.rMatrixSpecs = [
@@ -309,7 +310,7 @@ class Var(object):
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
         #self.mcmc_doTuneChainTemp = False
         self.mcmc_allowUnresolvedStartingTree = False
-        self.mcmc_simTemp_tuningInterval = 5000    # this is multiplied by the number of temps, m.simTemp
+        self.mcmc_simTemp_tempCurveLogBase = 2.8    # higher -> more curvey; lower -> more linear
         self.mcmc_logTunings = False  # verbose logging of on-the-fly changes to tunings 
 
     def _del_nothing(self):

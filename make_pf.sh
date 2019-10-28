@@ -7,7 +7,7 @@
 # If you are not sure, it is ok to do it anyway.
 
 # Might be python 36 or python 37
-rm -f p4/pf.cpython-3?m-darwin.so
+#rm -f p4/pf.cpython-3?m-darwin.so
 
 python3 setup.py build_ext -i
 

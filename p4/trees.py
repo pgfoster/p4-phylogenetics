@@ -920,9 +920,9 @@ class Trees(object):
 
         f.close()
     
-    def getNodeOnReferenceTreeCorrespondingToSelfRoots(self, refTree, verbose=False, drawWidth=150):
+    def getNodesOnReferenceTreeCorrespondingToSelfRoots(self, refTree, verbose=False, drawWidth=150, printNodeNumsList=False):
 
-        gm = ["Trees.getNodeOnReferenceTreeCorrespondingToSelfRoots()"]
+        gm = ["Trees.getNodesOnReferenceTreeCorrespondingToSelfRoots()"]
 
         rtnChildren = refTree.root.getNChildren()
         if rtnChildren == 2:
@@ -969,14 +969,16 @@ class Trees(object):
             nodesInOrder = p4.func.sortListOfObjectsOnAttribute(nodesList, 'rootCount')
             nodesInOrder.reverse()
             sumRootCount = 0
-            print("node    rootCount")
-            print("-----    --------")
+            print("node     rootCount")
+            print("----     --------")
             for n in nodesInOrder:
                 print("%3i       %i" % (n.nodeNum, n.rootCount))
                 sumRootCount += n.rootCount
             print("The sum of rootCounts is %i, for %i trees" % (sumRootCount, len(self.trees)))
             refTree.draw(width=drawWidth)
-            print(nodeNums)
+            if printNodeNumsList:
+                print(nodeNums)
+            return nodeNums
 
         elif biRootCountAttrs:
             nodesList = []
@@ -993,13 +995,15 @@ class Trees(object):
             nodeNumsInOrder.reverse()
             sumBiRootCount = 0
             print("node     biRootCount")
-            print("-----    --------")
+            print("----     -----------")
             for n in nodeNumsInOrder:
                 print("%3i       %i" % (n[0], n[1]))
                 sumBiRootCount += n[1]
             print("The sum of biRootCounts is %i, for %i trees" % (sumBiRootCount, len(self.trees)))
             refTree.draw(width=drawWidth)
-            print(nodeNums)
+            if printNodeNumsList:
+                print(nodeNums)
+            return nodeNums
             
 
                 

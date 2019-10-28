@@ -272,7 +272,7 @@ class Numbers(object):
         if padMin != None:
             assert padMin <= self.min
         if padMax != None:
-            assert padMax >= self.max
+            assert padMax >= self.max, "padMax is %f, self.max is %f" % (padMax, self.max)
         if binSize:
             # a property, so it checks to make sure it is a float
             self.binSize = binSize
