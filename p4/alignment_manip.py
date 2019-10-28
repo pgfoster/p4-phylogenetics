@@ -2646,7 +2646,7 @@ if True:
             for rowNum in range(20):
                 f.write("%5g\n" % evecs[rowNum][colNum])
         f.close()
-        commands = "equi\nq\n\nevec\n%i" % n_bins
+        commands = b"equi\nq\n\nevec\n%i" % n_bins
         n = 0
         while n < 10:
             # Sometimes ais fails with the error "Warning: Eigenvectors are

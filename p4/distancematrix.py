@@ -3,7 +3,6 @@ import os
 import p4.func
 from p4.var import var
 from p4.p4exceptions import P4Error
-from subprocess import Popen, PIPE
 
 
 class DistanceMatrix:

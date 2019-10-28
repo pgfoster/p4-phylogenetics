@@ -2442,14 +2442,6 @@ class Mcmc(object):
                 gm.append("by the sampleInterval (%i)." % self.sampleInterval)
                 raise P4Error(gm)
 
-        # The swap vector is just the diagonal of the swap matrix
-        if self.swapVector and self.nChains > 1:
-            # These are differences in temperatures between adjacent chains.  The last one is not used.
-            self.chainTempDiffs = [self.chainTemp] * self.nChains 
-            # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
-            self.chainTemps = [0.0]
-            for dNum in range(self.nChains - 1):
-                self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
 
         if self.props.proposals:  # It is a re-start
 
@@ -2475,6 +2467,16 @@ class Mcmc(object):
                     self.swapMatrix.append([0] * self.nChains)
 
         else:
+            # The swap vector is just the diagonal of the swap matrix
+            if self.swapVector and self.nChains > 1:
+                print("======= Resetting chainTempDiffs and chainTemps") 
+                # These are differences in temperatures between adjacent chains.  The last one is not used.
+                self.chainTempDiffs = [self.chainTemp] * self.nChains 
+                # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+                self.chainTemps = [0.0]
+                for dNum in range(self.nChains - 1):
+                    self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
+
             self._makeChainsAndProposals()
             self._setOutputTreeFile()
             if self.simulate:
@@ -2623,7 +2625,7 @@ class Mcmc(object):
             ch.verifyIdentityOfTwoTreesInChain()
 
         abortableProposals = ['local', 'polytomy', 'compLocation',
-                              'rMatrixLocation', 'gdasrvLocation', 'rjComp', 'rjRMatrix']
+                              'rMatrixLocation', 'gdasrvLocation']
 
         ##################################################
         ############### Main loop ########################
@@ -2943,10 +2945,11 @@ class Mcmc(object):
         if verbose:
             print("Finished %s generations." % nGensToDo)
 
-        if writeSamples:
-            treeFile = open(self.treeFileName, 'a')
-            treeFile.write('end;\n\n')
-            treeFile.close()
+        # if writeSamples:
+        # Write "end;" regardeless of writeSamples, or else subsequent attempts to remove it will fail.
+        treeFile = open(self.treeFileName, 'a')
+        treeFile.write('end;\n\n')
+        treeFile.close()
 
     def _writeSample(self, coldChainNum=0):
         likesFile = open(self.likesFileName, 'a')

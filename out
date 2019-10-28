@@ -1,0 +1,83 @@
+diff --git a/make_pf.sh b/make_pf.sh
+index 31dbae4..ca2be35 100644
+--- a/make_pf.sh
++++ b/make_pf.sh
+@@ -7,7 +7,7 @@
+ # If you are not sure, it is ok to do it anyway.
+ 
+ # Might be python 36 or python 37
+-rm -f p4/pf.cpython-3?m-darwin.so
++#rm -f p4/pf.cpython-3?m-darwin.so
+ 
+ python3 setup.py build_ext -i
+ 
+diff --git a/p4/func.py b/p4/func.py
+index 8eb4617..9db37cb 100644
+--- a/p4/func.py
++++ b/p4/func.py
+@@ -13,6 +13,7 @@ import random
+ import inspect
+ import datetime
+ import subprocess
++import shutil
+ 
+ from p4.var import var
+ # from p4.sequencelist import Sequence, SequenceList
+@@ -1038,23 +1039,26 @@ def splash2(outFile=None, verbose=True):
+     lp = os.path.dirname(inspect.getfile(p4))
+     stuff.append("%16s: %s" % ("Library path", lp))
+ 
+-    # Get git version.
+-    if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
+-        try:
+-            # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
+-            # subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+-            # ret = subprocess.check_output(['git', '-C', '%s' % lp, 'rev-parse', '--short', 'HEAD'])
+-            ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
+-            #ret = ret.strip()    # get rid of newline, needed for rev-parse
+-            ret = ret[1:-1]       # get rid of quotes, needed for log
+-            stuff.append("%16s: %s" % ("git hash", ret))
+-
+-        except subprocess.CalledProcessError:
+-            #print("%16s: %s" % ("git hash", "Not a git repo?"))
+-            pass
++    # Check that git is installed:
++    if shutil.which("git"):
++        # Get git version.
++        if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
++            try:
++                # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
++                # subprocess.check_output(['git', 'rev-parse', 'HEAD'])
++                # ret = subprocess.check_output(['git', '-C', '%s' % lp, 'rev-parse', '--short', 'HEAD'])
++                ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
++                #ret = ret.strip()    # get rid of newline, needed for rev-parse
++                ret = ret[1:-1]       # get rid of quotes, needed for log
++                stuff.append("%16s: %s" % ("git hash", ret))
++
++            except subprocess.CalledProcessError:
++                #print("%16s: %s" % ("git hash", "Not a git repo?"))
++                pass
++        else:
++            stuff.append("%16s: %s" % ("git hash", "Not a git repo"))
+     else:
+-        stuff.append("%16s: %s" % ("git hash", "Not a git repo"))
+-
++        stuff.append("%16s: %s" % ("git hash", "No git executable"))
+ 
+     stuff.append("%16s: %s" % ("Python version", ".".join([str(i) for i in sys.version_info[:-2]])))
+     #print("%16s: %s" % ("Date" , datetime.datetime.now().strftime("%d/%m/%Y")))
+diff --git a/setup.py b/setup.py
+index 356856f..1259634 100644
+--- a/setup.py
++++ b/setup.py
+@@ -44,8 +44,8 @@ except ImportError:
+ #my_include_dirs = ["/my/weird/include"]
+ #my_lib_dirs = ["/my/weird/lib"]
+ 
+-my_include_dirs = []
+-my_lib_dirs = ["/usr/local/lib64"]
++my_include_dirs = ["/share/apps/include"]
++my_lib_dirs = ["/usr/local/lib64", "/share/apps/lib64"]
+ 
+ likelyDirs = [ "/usr",
+                "/usr/local",
