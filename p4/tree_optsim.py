@@ -78,7 +78,7 @@ if True:
         gm = ['Tree._allocCStuff()']
 
         # Make sure the nodeNums go from zero to N-1
-        for i in range(len(self.nodes)):
+        for i,n in enumerate(self.iterNodes()):           # allow NO_ORDER nodes at the end
             if self.nodes[i].nodeNum != i:
                 gm.append(
                     "Programming error: Problem with node number %i." % i)
@@ -99,7 +99,7 @@ if True:
             if not self.cTree:
                 gm.append("Unable to allocate a cTree")
                 raise P4Error(gm)
-            for n in self.nodes:
+            for n in self.iterNodes():
                 n.doDataPart = 1
                 # print 'about to dp_newNode (%i)' % n.nodeNum
                 cNode = pf.dp_newNode(
@@ -110,17 +110,20 @@ if True:
                 n.cNode = cNode
         else:
             nLeaves = 0
-            for n in self.nodes:
+            for n in self.iterNodes():
                 if n.isLeaf:
                     nLeaves += 1
             self.partLikes = numpy.zeros(self.model.nParts, numpy.float)
-            self.cTree = pf.p4_newTree(len(self.nodes), nLeaves, self.preOrder,
-                                       self.postOrder, self.partLikes, self.data.cData, self.model.cModel)
+            self.cTree = pf.p4_newTree(len(list(self.iterNodes())), nLeaves, self.preOrder,
+                                       self.postOrder, var._newtAndBrentPowellOptPassLimit, self.partLikes, 
+                                       self.data.cData, self.model.cModel)
             if not self.cTree:
                 gm.append("Unable to allocate a cTree")
                 raise P4Error(gm)
             for i in range(len(self.nodes)):
                 n = self.nodes[i]
+                if n.nodeNum == var.NO_ORDER:
+                    continue                 # seems a little mixed up.
                 if i in self.preOrder:
                     inTree = 1
                 else:
@@ -135,7 +138,6 @@ if True:
                     gm.append("Unable to allocate a cNode")
                     raise P4Error(gm)
 
-        # print "finished Tree._allocCStuff()"
 
     def setCStuff(self):
         """Transfer info about self to c-language stuff.
@@ -153,7 +155,7 @@ if True:
         # pf.p4_setRelative(int theCNode, int relation, int relNum)
         # parent- relation = 0, leftChild- relation = 1, sibling- relation
         # = 2
-        for n in self.nodes:
+        for n in self.iterNodes():
             if n.parent:
                 pf.p4_setNodeRelation(n.cNode, 0, n.parent.nodeNum)
             else:
@@ -182,7 +184,7 @@ if True:
             for pNum in range(self.model.nParts):
                 if self.model.parts[pNum].isHet:
                     # print "setCStuff().  about to setCompNum"
-                    for n in self.nodes:
+                    for n in self.iterNodes():
                         pf.p4_setCompNum(n.cNode, pNum, n.parts[pNum].compNum)
                         if n != self.root:
                             pf.p4_setRMatrixNum(
@@ -208,17 +210,18 @@ if True:
             gm.append("    theTree.data = theData")
             raise P4Error(gm)
 
-        # print "self.cTree = %s" % self.cTree
+        #print("self.cTree = %s" % self.cTree)
         if not self.cTree:
             # This calls self.modelSanityCheck(), which calls
             # self.setEmpiricalComps()
             self._allocCStuff(resetEmpiricalComps=resetEmpiricalComps)
-        # print "About to self.model.setCStuff()"
+        #print("About to self.model.setCStuff()")
         self.model.setCStuff()
-        # print "About to self.setCStuff()"
+        #print("About to self.setCStuff()")
         self.setCStuff()
-        # print "about to p4_setPrams()..."
+        #print("about to p4_setPrams()...")
         pf.p4_setPrams(self.cTree, -1)  # "-1" means do all parts
+        #print("finished _commonCStuff()")
 
     def calcLogLike(self, verbose=1, resetEmpiricalComps=True):
         """Calculate the likelihood of the tree, without optimization."""
@@ -230,38 +233,41 @@ if True:
         if verbose:
             print("Tree.calcLogLike(). %f" % self.logLike)
 
-    def optLogLike(self, verbose=1, newtAndBrentPowell=1, allBrentPowell=0):
+
+    def optLogLike(self, verbose=1, method="newtAndBrentPowell"):
         """Calculate the likelihood of the tree, with optimization.
 
-        There are two optimization methods-- choose one.  I've made
+        There are different optimization methods-- choose one.  I've made
         'newtAndBrentPowell' the default, as it is fast and seems to be
         working.  The 'allBrentPowell' optimizer used to be the default,
         as it seems to be the most robust, although it is slow.  It would
-        be good for checking important calculations.  
+        be good for checking important calculations. 
+
+        There are two new optimization methods from the nlopt library --- 'newtAndBOBYQA' and 'BOBYQA'.  They are fast and seem to work well.
+
+        For difficult optimizations it may help to repeat the call to optLogLike(), perhaps with a different method.
         """
 
         if verbose:
             theStartTime = time.clock()
         self._commonCStuff()
 
-        # We want only one opt method.
-        if newtAndBrentPowell:
-            newtAndBrentPowell = 1
-        if allBrentPowell:
-            allBrentPowell = 1
-        if (newtAndBrentPowell + allBrentPowell) != 1:
-            gm = ['Tree.optLogLike()']
-            gm.append("Choose 1 opt method.")
-            raise P4Error(gm)
-
-        # Do the opt.
-        if allBrentPowell:
-            pf.p4_allBrentPowellOptimize(self.cTree)
-        else:
+        if method == "newtAndBrentPowell":
             pf.p4_newtSetup(self.cTree)
             pf.p4_newtAndBrentPowellOpt(self.cTree)
+        elif method == "allBrentPowell":
+            pf.p4_allBrentPowellOptimize(self.cTree)
+        elif method == "newtAndBOBYQA":
+            pf.p4_newtSetup(self.cTree)
+            pf.p4_newtAndBOBYQAOpt(self.cTree)
+        elif method == "BOBYQA":
+            pf.p4_allBOBYQAOptimize(self.cTree)
+        else:
+            gm = ["Tree.optLogLike()"]
+            gm.append('method should be one of "newtAndBrentPowell", "allBrentPowell", "newtAndBOBYQA", or "BOBYQA"')
+            raise P4Error(gm)
 
-        # second arg is getSiteLikes
+        # Do a final like calc.  (second arg is getSiteLikes)
         self.logLike = pf.p4_treeLogLike(self.cTree, 0)
 
         # get the brLens
@@ -277,6 +283,7 @@ if True:
             print("optLogLike = %f" % self.logLike)
             theEndTime = time.clock()
             print("cpu time %s seconds." % (theEndTime - theStartTime))
+
 
     def optTest(self):
         self._commonCStuff()

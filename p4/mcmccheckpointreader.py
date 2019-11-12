@@ -109,8 +109,11 @@ class McmcCheckPointReader(object):
             for i in range(len(self.mm)):
                 m = self.mm[i]
                 assert m.checkPointInterval % m.sampleInterval == 0
-                thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
-                assert thisNSamps == m.treePartitions.nTrees
+                if m.simTemp:
+                    thisNSamps = m.treePartitions.nTrees
+                else:
+                    thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
+                    assert thisNSamps == m.treePartitions.nTrees
                 # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
                 print("%12s %12s %12s %12s %12s %12s %12s" % (
                     " ", i, m.runNum, m.gen + 1, m.checkPointInterval, m.sampleInterval, thisNSamps))
@@ -122,8 +125,11 @@ class McmcCheckPointReader(object):
             for i in range(len(self.mm)):
                 m = self.mm[i]
                 assert m.checkPointInterval % m.sampleInterval == 0
-                thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
-                assert thisNSamps == m.treePartitions.nTrees
+                if hasattr(m, "simTemp") and m.simTemp:
+                    thisNSamps = m.treePartitions.nTrees
+                else:
+                    thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
+                    assert thisNSamps == m.treePartitions.nTrees
                 # print "    %2i    run %2i,  gen+1 %11i" % (i, m.runNum, m.gen+1)
                 print("%12s %12s %12s %12s %12s" % (
                     " ", i, m.runNum, m.gen + 1, thisNSamps))
@@ -229,10 +235,14 @@ class McmcCheckPointReader(object):
             None
 
         """
+        for m in self.mm:
+            m.treePartitions.finishSplits()
+
         nM = len(self.mm)
         nItems = int(((nM * nM) - nM) / 2)
         asdosses = numpy.zeros((nM, nM), dtype=numpy.float64)
         vect = numpy.zeros(nItems, dtype=numpy.float64)
+        mdvect = numpy.zeros(nItems, dtype=numpy.float64)
         maxDiffs = numpy.zeros((nM, nM), dtype=numpy.float64)
 
         vCounter = 0
@@ -246,9 +256,10 @@ class McmcCheckPointReader(object):
                 asdosses[mNum1][mNum2] = thisAsdoss
                 asdosses[mNum2][mNum1] = thisAsdoss
                 vect[vCounter] = thisAsdoss
-                vCounter += 1
                 maxDiffs[mNum1][mNum2] = thisMaxDiff
                 maxDiffs[mNum2][mNum1] = thisMaxDiff
+                mdvect[vCounter] = thisMaxDiff
+                vCounter += 1
 
                 if 0:
                     print(" %10i " % mNum1, end=' ')
@@ -262,14 +273,21 @@ class McmcCheckPointReader(object):
         print(asdosses)
         print()
         print("For the %i values in one triangle," % nItems)
-        print("max =  ", vect.max())
-        print("min =  ", vect.min())
-        print("mean = ", vect.mean())
-        print("var =  ", vect.var())
+        print("max =  %.3f" % vect.max())
+        print("min =  %.3f" % vect.min())
+        print("mean = %.3f" % vect.mean())
+        #print("var =  %.2g", vect.var())
 
         print()
-        print("Pairwise maximum differences in split supports between the two runs ---")
+        print("Pairwise maximum differences in split supports between the runs ---")
         print(maxDiffs)
+        print()
+        print("For the %i values in one triangle," % nItems)
+        print("max =  %.3f" % mdvect.max())
+        print("min =  %.3f" % mdvect.min())
+        print("mean = %.3f" % mdvect.mean())
+        #print("var =  ", mdvect.var())
+        
 
         # Reset printoptions back to what it was
         numpy.set_printoptions(

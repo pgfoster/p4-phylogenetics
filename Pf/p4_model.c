@@ -9,7 +9,7 @@
 #include "util.h"
 
 
-p4_model *p4_newModel(int nParts, int doRelRates, int relRatesAreFree, int nFreePrams, int isHet, int *rMatrixNormalizeTo1)
+p4_model *p4_newModel(int nParts, int doRelRates, int relRatesAreFree, int nFreePrams, int isHet, int *rMatrixNormalizeTo1, double *PINVAR_MIN, double *PINVAR_MAX, double *KAPPA_MIN, double *KAPPA_MAX, double *GAMMA_SHAPE_MIN, double *GAMMA_SHAPE_MAX, double *PIVEC_MIN, double *PIVEC_MAX, double *RATE_MIN, double *RATE_MAX, double *RELRATE_MIN, double *RELRATE_MAX, double *BRLEN_MIN, double *BRLEN_MAX)
 {
     p4_model  *aModel = NULL;
 
@@ -32,6 +32,20 @@ p4_model *p4_newModel(int nParts, int doRelRates, int relRatesAreFree, int nFree
     aModel->nFreePrams = nFreePrams;
     aModel->isHet = isHet;
     aModel->rMatrixNormalizeTo1 = rMatrixNormalizeTo1;
+    aModel->PINVAR_MIN = PINVAR_MIN;
+    aModel->PINVAR_MAX = PINVAR_MAX;
+    aModel->KAPPA_MIN  = KAPPA_MIN;
+    aModel->KAPPA_MAX  = KAPPA_MAX;
+    aModel->GAMMA_SHAPE_MIN = GAMMA_SHAPE_MIN;
+    aModel->GAMMA_SHAPE_MAX = GAMMA_SHAPE_MAX;
+    aModel->PIVEC_MIN = PIVEC_MIN;
+    aModel->PIVEC_MAX = PIVEC_MAX;
+    aModel->RATE_MIN = RATE_MIN;
+    aModel->RATE_MAX = RATE_MAX;
+    aModel->RELRATE_MIN = RELRATE_MIN;
+    aModel->RELRATE_MAX = RELRATE_MAX;
+    aModel->BRLEN_MIN = BRLEN_MIN;
+    aModel->BRLEN_MAX = BRLEN_MAX;
 
     return aModel;
 }
@@ -403,7 +417,6 @@ void p4_newRMatrix(p4_model *aModel, int pNum, int mNum, int free, int spec)
     else if(spec == RMATRIX_GNETREV) {
         gnetREVRMatrix(aRMatrix->bigR);
     }
-
     //else if(spec == RMATRIX_BLOSUM62_B) {
     //	printf("blosum62b is not ready yet.\n");
     //	exit(1);

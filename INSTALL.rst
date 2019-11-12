@@ -18,7 +18,7 @@ You need Xcode, available from the Apple App Store, or theCommand Line Tools (CL
 You probably want to install `Homebrew <http://brew.sh>`_ and install Python3 from there.
 
 You need the ``gsl`` library (Gnu
-Scientific Library).  For this, `Homebrew <http://brew.sh>`_ is recommended.
+Scientific Library), and the ``nlopt`` library.  For this, `Homebrew <http://brew.sh>`_ is recommended.
 
 You can install ``scipy`` with ``pip3``; it will install ``numpy`` as well.
 
@@ -32,7 +32,8 @@ need what on Ubuntu would be called 'python-dev'.
 I have recently installed p4 on Ubuntu 16.04, and had to::
 
     sudo apt-get install libgsl-dev
-    sudo apt-get install python-dev
+    sudo apt-get install libnlopt-dev
+    sudo apt-get install python3-dev
 
 You can use ``pip3`` to install ``scipy``.
 
@@ -213,7 +214,7 @@ Occasionally there may have been changes to the C-language code in the ``pf``
 module.  If that is the case (would you be able to see those files as they are
 updated?), and you use the ``pf`` module then you would need to do::
 
-  python setup.py build_ext -i
+  python3 setup.py build_ext -i
 
 You would also need to do that when you install it in-place for the
 first time, or if you make any changes to the C-language code

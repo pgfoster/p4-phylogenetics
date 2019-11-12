@@ -1,0 +1,13 @@
+#nexus
+
+begin mrbayes;
+  log filename=mbout.log replace start;
+  execute d.nex;
+
+  lset nst=6 rates=equal;
+  mcmc ngen=100000 samplefreq=500 printfreq=20000 mcmcdiagn=yes diagnfreq=50000 relburnin=yes burninfrac=0.5 savetrees=yes checkpoint=no autotune=yes filename=mbout;
+
+  sump filename=mbout outputname=mbout relburnin=yes burninfrac=0.5 ;
+  sumt filename=mbout outputname=mbout relburnin=yes burninfrac=0.5 contype=allcompat conformat=simple;
+  quit;
+end;

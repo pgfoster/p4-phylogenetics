@@ -2278,7 +2278,7 @@ if True:
         dof2 = dof - zcount
         assert dof2
 
-        # Now calculate SB, Stuart's stat.  For that we need the d vector
+        # Now calculate QS, Stuart's stat.  For that we need the d vector
         # and the V matrix.  Oddly, d is dim-1 long, and V is (dim-1,dim-1).
 
         # Lesson in sum().  sum() is a Python function, not in numpy.
@@ -2646,7 +2646,7 @@ if True:
             for rowNum in range(20):
                 f.write("%5g\n" % evecs[rowNum][colNum])
         f.close()
-        commands = "equi\nq\n\nevec\n%i" % n_bins
+        commands = b"equi\nq\n\nevec\n%i" % n_bins
         n = 0
         while n < 10:
             # Sometimes ais fails with the error "Warning: Eigenvectors are

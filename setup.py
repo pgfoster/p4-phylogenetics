@@ -51,7 +51,9 @@ likelyDirs = [ "/usr",
                "/usr/local",
                "/sw",
                "/opt/local",
-               os.path.expanduser('~')
+               os.path.expanduser('~'),
+               os.path.join(os.path.expanduser('~'), ".linuxbrew"),
+	       "/home/linuxbrew/.linuxbrew"
                ]
 
 import glob
@@ -205,5 +207,5 @@ setup(name="p4",
                              # If you need to link the gsl stuff statically, uncomment the extra_link_args line below,
                              # and adjust the rpath to the location of your gsl libs.
                              #extra_link_args = ['-Wl,-rpath=/home/peter/Secret/lib' ],
-                             libraries=["gsl", "gslcblas"])])
+                             libraries=["gsl", "gslcblas", "nlopt"])])
     

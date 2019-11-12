@@ -71,7 +71,7 @@ if True:
             # Check for same number of taxa
             treeNTax = len(self.taxNames)
             dataNTax = len(theData.taxNames)
-            if self.nTax != dataNTax:
+            if treeNTax != dataNTax:
                 gm.append("The number of taxa in the tree (%s)" % treeNTax)
                 gm.append("is not the same as in the data (%s)" % dataNTax)
                 raise P4Error(gm)
@@ -132,7 +132,7 @@ if True:
             # Check for same number of taxa
             treeNTax = 0
             treeTaxNames = []
-            for n in self.nodes:
+            for n in self.iterNodes():
                 if n.isLeaf:
                     treeNTax += 1
                     treeTaxNames.append(n.name)
@@ -176,12 +176,12 @@ if True:
             # print "_setData.  len(theData.parts) = %s" % len(theData.parts)
             # calls self.deleteCStuff()
             self.model = Model(len(theData.parts))
-            for n in self.nodes:
+            for n in self.iterNodes():
                 if n.parts:
                     n.parts = []
                 for i in range(self.model.nParts):
                     n.parts.append(NodePart())
-            for n in self.nodes:
+            for n in self.iterNodes():
                 if n != self.root:
                     n.br.parts = []
                     for i in range(self.model.nParts):
@@ -198,7 +198,7 @@ if True:
                 p.pInvar = None
 
             # Set seqNum
-            for n in self.nodes:
+            for n in self.iterNodes():
                 if n.isLeaf:
                     n.seqNum = self.taxNames.index(n.name)
 
@@ -298,7 +298,7 @@ if True:
 
         Calculation of probability matrices for likelihood calcs etc are
         wrong when there are any comp values that are zero, so that is not
-        allowed.  Any zeros are converted to var.PIVEC_MIN, which is 1e-18
+        allowed.  Any zeros are converted to var.PIVEC_MIN, which is 1e-13
         this week.  Hopefully close enough to zero for you.
         """
 
@@ -348,8 +348,7 @@ if True:
             if len(val) == dim or len(val) == dim - 1:
                 pass
             else:
-                gm.append(
-                    "Bad length for val arg.  Should be dim or dim-1 long.")
+                gm.append("Bad length for val arg (%i).  Should be dim or dim-1 long." % len(val))
                 gm.append("(Dim for this part is %i)" % dim)
                 raise P4Error(gm)
 
@@ -605,6 +604,11 @@ if True:
         -   'hivb'
         -   'mtart'
         -   'mtzoa'
+        -   'gcpREV'
+        -   'stmtREV'
+        -   'vt'
+
+        See var.rMatrixProteinSpecs
 
         You do not set the 'val' arg unless the spec is 'specified' or
         '2p'.  If spec='2p', then you set val to kappa.
@@ -797,16 +801,6 @@ if True:
             self.deleteCStuff()
         self.model.parts[partNum].relRate = v
 
-    def setRjComp(self, partNum=0, val=True):
-        if self.model.cModel:
-            self.deleteCStuff()
-        self.model.parts[partNum].rjComp = val
-
-    def setRjRMatrix(self, partNum=0, val=True):
-        if self.model.cModel:
-            self.deleteCStuff()
-        self.model.parts[partNum].rjRMatrix = val
-
     def setModelThing(self, theModelThing, node=None, clade=1):
         complaintHead = '\nTree.setModelThing()'
         gm = [complaintHead]
@@ -911,8 +905,7 @@ if True:
 
         for i in self.preOrder:
             if i == var.NO_ORDER:
-                gm.append(
-                    "This method does not work if any nodes are not used in the tree.")
+                gm.append("This method does not work if any nodes are not used in the tree.")
                 raise P4Error(gm)
 
         for pNum in range(self.model.nParts):
@@ -1260,7 +1253,7 @@ if True:
                 partIsBad = 1
 
             if mp.ndch2:
-                if mp.nComps != len(self.nodes):
+                if mp.nComps != len(list(self.iterNodes())):
                     complaints.append('Part %i, ndch2 needs a comp for each node' % pNum)
                     partIsBad = 1
 
@@ -1303,9 +1296,8 @@ if True:
             # node.br.parts[pNum].gdasrvNum are set to 0.
             if not mp.isHet:
                 # print "model part %i is not het" % pNum
-                for n in self.nodes:
-                    # print "pNum = %i, n.nodeNum=%i, len n.parts = %i" %
-                    # (pNum, n.nodeNum, len(n.parts))
+                for n in self.iterNodes():
+                    # print("pNum = %i, n.nodeNum=%i, len n.parts = %i" % (pNum, n.nodeNum, len(n.parts)))
                     n.parts[pNum].compNum = 0
                     if n != self.root:
                         n.br.parts[pNum].rMatrixNum = 0
@@ -1316,14 +1308,14 @@ if True:
                 # If there is only one comp, rMatrix, or gdasrv, then
                 # simply set it.
                 if mp.nComps == 1:
-                    for n in self.nodes:
+                    for n in self.iterNodes():
                         n.parts[pNum].compNum = 0
                 if mp.nRMatrices == 1:
-                    for n in self.nodes:
+                    for n in self.iterNodes():
                         if n != self.root:
                             n.br.parts[pNum].rMatrixNum = 0
                 if mp.nGammaCat > 1 and mp.nGdasrvs == 1:
-                    for n in self.nodes:
+                    for n in self.iterNodes():
                         if n != self.root:
                             n.br.parts[pNum].gdasrvNum = 0
 
@@ -1338,14 +1330,13 @@ if True:
                     mt.isUsed = 0
 
                 # Does every node have all required things?
-                for n in self.nodes:
+                for n in self.iterNodes():
                     mtNum = n.parts[pNum].compNum
                     if mtNum >= 0 and mtNum < mp.nComps:
                         mt = mp.comps[mtNum]
                         mt.isUsed = 1
                     else:
-                        complaints.append(
-                            '    Part %s, node %s has no comp.' % (pNum, n.nodeNum))
+                        complaints.append('    Part %s, node %s has no comp.' % (pNum, n.nodeNum))
                         partIsBad = 1
 
                     if n != self.root:
@@ -1354,8 +1345,7 @@ if True:
                             mt = mp.rMatrices[n.br.parts[pNum].rMatrixNum]
                             mt.isUsed = 1
                         else:
-                            complaints.append(
-                                '    Part %s, node %s has no rMatrix.' % (pNum, n.nodeNum))
+                            complaints.append('    Part %s, node %s has no rMatrix.' % (pNum, n.nodeNum))
                             partIsBad = 1
                         if mp.nGammaCat > 1:
                             mtNum = n.br.parts[pNum].gdasrvNum
@@ -1373,18 +1363,15 @@ if True:
                                 partIsBad = 1
 
                 # Is every model thing used?
-                if not mp.rjComp:
-                    for mt in mp.comps:
-                        if not mt.isUsed:
-                            complaints.append(
-                                '    Part %s, comp %s is not used.' % (pNum, mt.num))
-                            partIsBad = 1
-                if not mp.rjRMatrix:
-                    for mt in mp.rMatrices:
-                        if not mt.isUsed:
-                            complaints.append(
-                                '    Part %s, rMatrix %s is not used.' % (pNum, mt.num))
-                            partIsBad = 1
+                for mt in mp.comps:
+                    if not mt.isUsed:
+                        complaints.append('    Part %s, comp %s is not used.' % (pNum, mt.num))
+                        partIsBad = 1
+                for mt in mp.rMatrices:
+                    if not mt.isUsed:
+                        complaints.append(
+                            '    Part %s, rMatrix %s is not used.' % (pNum, mt.num))
+                        partIsBad = 1
                 for mt in mp.gdasrvs:
                     if not mt.isUsed:
                         complaints.append(
@@ -1515,7 +1502,7 @@ if True:
                         #    print "node %2i seqNum=%3i n.parts[%i].compNum=%3i" % (
                         # n.nodeNum, n.seqNum, mp.num, n.parts[mp.num].compNum)
 
-                        for n in self.nodes:
+                        for n in self.iterNodes():
                             # Is the comp used by the node?
                             if n.parts[mp.num].compNum == c.num:
                                 # print "comp %s is used by node %s" % (c.num,
@@ -1632,9 +1619,7 @@ class Gdasrv(object):
         if self.c:
             pf.gdasrvCalcRates(self.c)
         else:
-            # this week, this is the one that is used
-            pf.gdasrvCalcRates_np(
-                self.nGammaCat, self._val[0], self.freqs, self.rates)
+            pf.gdasrvCalcRates_np(self.nGammaCat, self._val[0], self.freqs, self.rates)
         # print('xxx self.rates = %s, val=%s' % (self.rates, self._val[0]))
 
 
