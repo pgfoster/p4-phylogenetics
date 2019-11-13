@@ -182,6 +182,7 @@ class Tree(object):
         ~Tree.addSubTree
         ~Tree.allBiRootedTrees
         ~Tree.collapseNode
+        ~Tree.collapseClade
         ~Tree.ladderize
         ~Tree.lineUpLeaves
         ~Tree.nni
@@ -226,7 +227,7 @@ class Tree(object):
 
     """
 
-    from p4.tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, pruneSubTreeWithParent, reconnectSubTreeWithParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, nni2, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
+    from p4.tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, collapseClade, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, pruneSubTreeWithParent, reconnectSubTreeWithParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, nni2, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
     from p4.tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, ancestralStateDraw, getSiteLikes
     from p4.tree_model import data, model, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
     from p4.tree_write import patristicDistanceMatrix, tPickle, writeNexus, write, writePhylip, writeNewick, _getMcmcCommandComment, draw, textDrawList, eps
