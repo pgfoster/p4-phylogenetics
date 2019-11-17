@@ -302,6 +302,11 @@ class McmcCheckPointReader(object):
             if m.nChains > 1:
                 m.writeSwapMatrix()
 
+    def writeSwapVectors(self):
+        for m in self.mm:
+            if m.nChains > 1:
+                m.writeSwapVector()
+
     def writeProposalProbs(self):
         for m in self.mm:
             m.writeProposalProbs()

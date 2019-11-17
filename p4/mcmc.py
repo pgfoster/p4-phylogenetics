@@ -354,7 +354,7 @@ class Proposals(object):
 
 
 class SwapTuner(object):
-    """Continuous tuning for swap temperature"""
+    """Continuous tuning for swap temperature, matrix version"""
 
     def __init__(self, sampleSize):
         assert sampleSize >= 100
@@ -409,7 +409,7 @@ class SwapTuner(object):
             theMcmc.logger.info(message)
 
 class SwapTunerV(object):
-    """Continuous tuning for swap temperature"""
+    """Continuous tuning for swap temperature, vector version"""
 
     def __init__(self, theMcmc):
         assert var.mcmc_swapTunerSampleSize >= 100
@@ -889,18 +889,6 @@ class Mcmc(object):
             self.swapMatrix = []
             for i in range(self.nChains):
                 self.swapMatrix.append([0] * self.nChains)
-        #     if var.mcmc_swapVector:
-        #         self.swapTuner = SwapTunerV(self)
-        #     else:
-        #         if swapTuner:             # a kwarg
-        #             myST = int(swapTuner)
-        #             if myST >= 100:
-        #                 self.swapTuner = SwapTuner(myST)
-        #             else:
-        #                 gm.append("The swapTuner kwarg, the sample size, should be at least 100.  Got %i." % myST)
-        #                 raise P4Error(gm)
-        #         else:
-        #             self.swapTuner = None
         else:
             self.swapMatrix = None
 
@@ -1962,6 +1950,12 @@ class Mcmc(object):
                     print()
 
     def writeSwapMatrix(self):
+        gm = ["Mcmc.writeSwapMatrix()"]
+        if self.swapVector:
+            gm.append("yourMcmc.swapVector is turned on, so you should use Mcmc.writeSwapVector() instead.")
+            gm.append("or yourMcmcCheckPointReader.writeSwapVectors()")
+            raise P4Error(gm)
+        # swapVector is default now, so this would not be used.
         print("\nChain swapping, for %i gens, from gens %i to %i, inclusive." % (
             (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
         #print("    Swaps are presented as a square matrix, nChains * nChains.")
@@ -1989,6 +1983,53 @@ class Mcmc(object):
                     else:
                         print("  %5.1f" % (100.0 * float(self.swapMatrix[i][j]) / float(self.swapMatrix[j][i])), end=' ')
             print()
+
+    def writeSwapVector(self):
+        assert self.swapVector
+        assert self.nChains > 1
+        # swapVector is default now.  However, self.swapMatrix is used and has the info.
+        print("\nMcmc.writeSwapVector(). Chain swapping, for %i gens, from gens %i to %i, inclusive." % (
+            (self.gen - self.startMinusOne), self.startMinusOne + 1, self.gen))
+        print("    swapVector is on, so swaps occur only between adjacent chains.")
+        chTmpString = '  '.join([f"{it:6.3f}" for it in self.chainTemps])
+        print(f"    last chainTemps      {chTmpString}")
+        chTmpDiffsString = '  '.join([f"{it:6.3f}" for it in self.chainTempDiffs])
+        print(f"    last chainTempDiffs  {chTmpDiffsString}")
+        print(f"    var.mcmc_swapTunerSampleSize is {var.mcmc_swapTunerSampleSize}")
+        print()
+
+        print(f"{'chains':10}", end=' ')
+        for i in range(1, self.nChains):
+            s = f"{i-1}--{i}"
+            print(f"{s:>9s}", end=' ')
+        print()
+
+        print(f"{' ':10}", end=' ')
+        for i in range(1, self.nChains):
+            print(f"{'------':>9s}", end=' ')
+        print()
+        
+        print(f"{'proposed':10}", end=' ')
+        for i in range(1, self.nChains):
+            j = i - 1
+            print(f"{self.swapMatrix[j][i]:9}", end=' ')
+        print()
+
+        print(f"{'accepted':10}", end=' ')
+        for i in range(1, self.nChains):
+            j = i - 1
+            print(f"{self.swapMatrix[i][j]:9}", end=' ')
+        print()
+
+        print(f"{'accepted':10}", end=' ')
+        for i in range(1, self.nChains):
+            j = i - 1
+            if self.swapMatrix[j][i] == 0:  # no proposals
+                myProportion = "-"
+            else:
+                myProportion = f"{self.swapMatrix[i][j] / self.swapMatrix[j][i]:.6f}"
+            print(f"{myProportion:>9}", end=' ')
+        print()
 
 
     def _makeChainsAndProposals(self):
