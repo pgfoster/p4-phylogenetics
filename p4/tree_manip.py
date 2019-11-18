@@ -693,6 +693,21 @@ if True:
         self.setPreAndPostOrder()
         self._nInternalNodes -= 1
 
+    def collapseClade(self, specifier):
+        """Collapse all nodes within a clade, but not the clade itself
+
+        Arg *specifier*, as usual, can be a node, node number, or node
+        name.  It calls Tree.collapseNode repeatedly until the clade
+        is a comb.  Should be useful for making constraint trees.
+        """
+        rNode = self.node(specifier)
+        assert rNode != self.root
+        assert not rNode.isLeaf
+        toCollapse = [n for n in rNode.iterPostOrder() if n != rNode and not n.isLeaf]
+        for n in toCollapse:
+            # print(f'collapsing node {n.nodeNum}')
+            self.collapseNode(n)
+
     def pruneSubTreeWithoutParent(self, specifier, allowSingleChildNode=False):
         """Remove and return a node, together with everything above it.
 
