@@ -239,7 +239,7 @@ class Var(object):
         self.rMatrixProteinSpecs = ['cpREV', 'd78', 'jtt', 'mtREV24', 'mtmam',
                                     'wag', 'rtRev', 'tmjtt94', 'tmlg99', 'lg',
                                     'blosum62', 'hivb', 'mtart', 'mtzoa',
-                                    'gcpREV', 'stmtREV', 'vt']
+                                    'gcpREV', 'stmtREV', 'vt', 'pmb']
         """A list of the currently available protein models."""
 
         self.rMatrixSpecs = [

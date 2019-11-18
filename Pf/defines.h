@@ -28,6 +28,7 @@
 #define RMATRIX_GCPREV 117
 #define RMATRIX_STMTREV 118
 #define RMATRIX_VT 119
+#define RMATRIX_PMB 120
 
 #define GAP_CODE       -1
 #define QMARK_CODE     -2

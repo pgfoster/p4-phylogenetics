@@ -570,6 +570,15 @@ if True:
             theSum = sum(mt.val)
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
+        elif spec == 'pmb':  # from iqtree
+            mt.val = [0.076, 0.054, 0.038, 0.045, 0.028, 
+                      0.034, 0.053, 0.078, 0.030, 0.060, 
+                      0.096, 0.052, 0.022, 0.045, 0.042, 
+                      0.068, 0.056, 0.016, 0.036, 0.071]
+            theSum = sum(mt.val)
+            for i in range(len(mt.val)):
+                mt.val[i] /= theSum
+
 
         return mt
 
@@ -598,6 +607,7 @@ if True:
         -   'gcpREV'
         -   'stmtREV'
         -   'vt'
+        -   'pmb'
 
         See var.rMatrixProteinSpecs
 
@@ -606,8 +616,8 @@ if True:
 
         If the spec is 'specified', you specify all the numerical values
         in a list given as the 'val' arg.  The length of that list will be
-        (((dim * dim) - dim) / 2) - 1, so for DNA, where dim=4, you would
-        specify a list containing 5 numbers.  """
+        (((dim * dim) - dim) / 2), so for DNA, where dim=4, you would
+        specify a list containing 6 numbers.  """
 
         # not implemented:
         # 'blosum62a'
@@ -660,7 +670,7 @@ if True:
                     raise P4Error(gm)
             else:
                 gm.append("spec is 'specified', but there are no specified rMatrix values.")
-                gm.append("Specify rMatrix values by eg val=[2.0, 3.0, 4.0, 5.0,6.0]")
+                gm.append("Specify rMatrix values by eg val=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]")
                 raise P4Error(gm)
         elif spec == 'ones':
             v = numpy.array([1.0] * goodLen)
@@ -689,7 +699,7 @@ if True:
                 gm.append('The rMatrix should not be free if it is an empirical protein matrix.')
                 raise P4Error(gm)
 
-        mt.val = v  # type numpy.ndarray, or None for protein
+        mt.val = v  # type numpy.ndarray, or None for specified protein
         return mt
 
     def newGdasrv(self, partNum=0, free=0, val=None, symbol=None):
