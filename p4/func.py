@@ -29,22 +29,6 @@ from p4.pnumbers import Numbers
 import p4.version
 from p4.nexustoken import nextTok
 
-# # From http://python3porting.com/problems.html#bytes-strings-and-unicode
-# if sys.version_info < (3,):
-#     def b(x):
-#         return x
-# else:
-#     import codecs
-#     def b(x):
-#         return codecs.latin_1_encode(x)[0]
-
-# # Py2/3 compatibility
-# try:
-#   basestring
-# except NameError:
-#   basestring = str
-
-
 
 
 def nexusCheckName(theName):
@@ -3465,3 +3449,64 @@ def readJplace(fName, verbose=False):
         print("Sum of heats", heatSum)
         print("returning a tuple of the heat-decorated Tree from %s, and heatSum..." % fName)
     return (t, heatSum)
+
+
+def matrixLowerTriangleToUpperTriangle(ltList, dim):
+    """Rearrange matrix from a lower triangle to an upper triangle list
+
+    Args:
+        ltList (list): a lower triangle of a matrix in the form of a list
+
+        dim (int): the dimension of the (square) matrix
+
+    Returns:
+        the same items rearranged as the upper triangle, in the form of a list.
+
+    If your matrix is like this::
+
+        - - - -
+        A - - -
+        B D - -
+        C E F -
+
+    where the dim is 4, then the lower triangle is the list [A,B,D,C,E,F].
+    This function rearranges that so that it is the upper triangle::
+
+        - A B C
+        - - D E
+        - - - F
+        - - - -
+
+    and returns the list [A,B,C,D,E,F].
+
+    This is useful for user-specified empirical protein rate matrices
+    where the rate matrix is given as a PAML-style lower triangle, but
+    you need a p4-style upper triangle::
+
+        pamlStyleRates = [190 rates]
+        upTriangle = func.matrixLowerTriangleToUpperTriangle(pamlStyleRates, 20)
+        # then when you specify your model ...
+        t.newRMatrix(free=0, spec='specified', val=upTriangle)
+
+    """
+    
+    assert isinstance(dim, int)
+    expectedLen = int(((dim * dim) - dim)/2)
+    assert len(ltList) == expectedLen, f"Lower triangle len is {len(ltList)}, expected {expectedLen}"
+
+    bigM = []
+    for rNum in range(dim):
+        bigM.append(['0.0'] * dim)
+
+    i = 0
+    for rNum in range(1,dim):
+        for cNum in range(rNum):
+            #print(ltList[i])
+            bigM[cNum][rNum] = ltList[i]
+            i += 1
+    upper = []
+    for rNum in range(dim-1):
+        for cNum in range(rNum+1, dim):
+            #print(rNum, cNum, bigM[rNum][cNum])
+            upper.append(bigM[rNum][cNum])
+    return upper
