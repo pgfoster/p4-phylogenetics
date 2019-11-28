@@ -6,8 +6,8 @@
 # module changes, and so this build_ext will need to be done again.
 # If you are not sure, it is ok to do it anyway.
 
-# Might be python 36 or python 37
-#rm -f p4/pf.cpython-3?m-darwin.so
+# Accommodate different versions of python3, and different machines
+rm -f p4/pf.cpython-3?m-*.so
 
 python3 setup.py build_ext -i
 

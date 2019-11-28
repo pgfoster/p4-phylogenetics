@@ -1995,7 +1995,8 @@ class Mcmc(object):
         print(f"    last chainTemps      {chTmpString}")
         chTmpDiffsString = '  '.join([f"{it:6.3f}" for it in self.chainTempDiffs])
         print(f"    last chainTempDiffs  {chTmpDiffsString}")
-        print(f"    var.mcmc_swapTunerSampleSize is {var.mcmc_swapTunerSampleSize}")
+        # This may be set differently in the run, but it is not saved, so this could be invalid.  Fix this!
+        #print(f"    var.mcmc_swapTunerSampleSize is {var.mcmc_swapTunerSampleSize}")
         print()
 
         print(f"{'chains':10}", end=' ')
