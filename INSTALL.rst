@@ -20,7 +20,7 @@ You probably want to install `Homebrew <http://brew.sh>`_ and install Python3 fr
 You need the ``gsl`` library (Gnu
 Scientific Library), and the ``nlopt`` library.  For this, `Homebrew <http://brew.sh>`_ is recommended.
 
-You can install ``scipy`` with ``pip3``; it will install ``numpy`` as well.
+You can install ``scipy`` with ``pip3``; it will install ``numpy`` as well.  You will also need ``bitarray``.
 
 
  
@@ -35,7 +35,7 @@ I have recently installed p4 on Ubuntu 16.04, and had to::
     sudo apt-get install libnlopt-dev
     sudo apt-get install python3-dev
 
-You can use ``pip3`` to install ``scipy``.
+You can use ``pip3`` to install ``scipy`` and ``bitarray``.
 
 And if you want to use the GUI tree-drawing::
 
@@ -49,7 +49,7 @@ Installing p4 using setup.py
 
 This is the usual way that Python packages are installed; however if you plan on
 keeping up with the git repo you it may be easier to install p4 in-place as
-described below.
+described in another section below.
 
 If you are upgrading and you want a clean install, you can un-install the
 previous version with the p4 func.uninstall() function --- see below.
@@ -218,7 +218,7 @@ updated?), and you use the ``pf`` module then you would need to do::
 
 You would also need to do that when you install it in-place for the
 first time, or if you make any changes to the C-language code
-yourself.  If you are not sure it is needed, it's OK to do it anyway.
+yourself.  If you are not sure rebuilding is needed, it's OK to do it anyway.
 
 
 Installing scqdist, the sub-cubic quartet distance module
@@ -234,7 +234,7 @@ If, in your shell, you are still in the same directory that you built it from,
 go to some other directory, or the following test will not work.  Even better,
 use a new shell.
 
-To see if you can load the package, start up python and then::
+To see if you can load the package, start up python3 and then::
 
     import p4
 
