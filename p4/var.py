@@ -311,6 +311,8 @@ class Var(object):
         self.mcmc_allowUnresolvedStartingTree = False
         self.mcmc_simTemp_tempCurveLogBase = 2.8    # higher -> more curvey; lower -> more linear
         self.mcmc_logTunings = False  # verbose logging of on-the-fly changes to tunings 
+        self.mcmc_swapTunerVTnLimitHi = 1000000.  # Decrease (to eg 3?) if it is unstable. 
+        self.mcmc_swapTunerVTnLimitLo = 0.0001    # Raise (to eg 0.2?) if unstable.
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]

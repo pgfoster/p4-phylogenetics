@@ -431,8 +431,8 @@ class SwapTunerV(object):
         self.tnFactorLo = 0.9
         self.tnFactorVeryLo = 0.6
         self.tnFactorZero = 0.4
-        self.tnLimitHi = 3.0
-        self.tnLimitLo = 0.2
+        self.tnLimitHi = var.mcmc_swapTunerVTnLimitHi
+        self.tnLimitLo = var.mcmc_swapTunerVTnLimitLo
 
 
 
