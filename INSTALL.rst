@@ -12,12 +12,16 @@ libraries, headers, and so on.
 
 **Preparations for the full install on the Mac**
 
-
-You need Xcode, available from the Apple App Store, or theCommand Line Tools (CLT) for Xcode.
-
 You probably want to install `Homebrew <http://brew.sh>`_ and install Python3 from there.
+The command-line tools for development need to be installed for Homebrew to work, but 
+the last time I installed Homebrew on my mac it did the installation of those command-line tools itself.  
+If that does not work, you may be able to install them via::
 
-You need the ``gsl`` library (Gnu
+    xcode-select --install
+
+You don't need the full Xcode for this (but if you want it, it is available from the Apple App Store).
+
+You will need the ``gsl`` library (Gnu
 Scientific Library), and the ``nlopt`` library.  For this, `Homebrew <http://brew.sh>`_ is recommended.
 
 You can install ``scipy`` with ``pip3``; it will install ``numpy`` as well.  You will also need ``bitarray``.
