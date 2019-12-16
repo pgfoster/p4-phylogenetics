@@ -1993,7 +1993,7 @@ class Mcmc(object):
         print("    swapVector is on, so swaps occur only between adjacent chains.")
         chTmpString = '  '.join([f"{it:6.3f}" for it in self.chainTemps])
         print(f"    last chainTemps      {chTmpString}")
-        chTmpDiffsString = '  '.join([f"{it:6.3f}" for it in self.chainTempDiffs])
+        chTmpDiffsString = '  '.join([f"{it:6.3f}" for it in self.chainTempDiffs[:-1]])
         print(f"    last chainTempDiffs  {chTmpDiffsString}")
         # This may be set differently in the run, but it is not saved, so this could be invalid.  Fix this!
         #print(f"    var.mcmc_swapTunerSampleSize is {var.mcmc_swapTunerSampleSize}")
