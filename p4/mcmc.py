@@ -431,8 +431,8 @@ class SwapTunerV(object):
         self.tnFactorLo = 0.9
         self.tnFactorVeryLo = 0.6
         self.tnFactorZero = 0.4
-        self.tnLimitHi = 3.0
-        self.tnLimitLo = 0.2
+        self.tnLimitHi = var.mcmc_swapTunerVTnLimitHi
+        self.tnLimitLo = var.mcmc_swapTunerVTnLimitLo
 
 
 
@@ -1993,7 +1993,7 @@ class Mcmc(object):
         print("    swapVector is on, so swaps occur only between adjacent chains.")
         chTmpString = '  '.join([f"{it:6.3f}" for it in self.chainTemps])
         print(f"    last chainTemps      {chTmpString}")
-        chTmpDiffsString = '  '.join([f"{it:6.3f}" for it in self.chainTempDiffs])
+        chTmpDiffsString = '  '.join([f"{it:6.3f}" for it in self.chainTempDiffs[:-1]])
         print(f"    last chainTempDiffs  {chTmpDiffsString}")
         # This may be set differently in the run, but it is not saved, so this could be invalid.  Fix this!
         #print(f"    var.mcmc_swapTunerSampleSize is {var.mcmc_swapTunerSampleSize}")
@@ -2124,7 +2124,7 @@ class Mcmc(object):
         self.run(nGensToDo, verbose=False, equiProbableProposals=False, writeSamples=False)
 
         if showTable:
-            print("simTemp_trialAndError().  After %i gens, showing occupancy, before adjustment" % nGensToDo)
+            print("simTemp_trialAndError().  After %i gens, showing occupancy, before tuning" % nGensToDo)
             self.simTemp_dumpTemps()
         
         self.simTemp_tunePseudoPriors_longSample()
@@ -2132,7 +2132,7 @@ class Mcmc(object):
         self.gen = -1 
 
         
-    def simTemp_tunePseudoPriors_longSample(self):
+    def simTemp_tunePseudoPriors_longSample(self, flob=sys.stdout):
         occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
         expected = self.simTemp_longTNumSampleSize / self.simTemp
         rats = [occs[i]/expected for i in range(self.simTemp)]
@@ -2151,9 +2151,9 @@ class Mcmc(object):
                 if self.simTemp_longSampleTunings[tNum] < 1.0:
                     self.simTemp_longSampleTunings[tNum] = 1.0
             
-        print("\nlongSampleTunings:")
+        print("\nlongSampleTunings (after tuning):", file=flob)
         for tNum in range(self.simTemp):
-            print("[%2i]" % tNum, "%7.2f" % self.simTemp_longSampleTunings[tNum])
+            print(f"m.simTemp_longSampleTunings[{tNum}] = {self.simTemp_longSampleTunings[tNum]:7.2f}", file=flob)
 
     def simTemp_tunePseudoPriors(self):
         occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
@@ -2239,6 +2239,7 @@ class Mcmc(object):
 
     def simTemp_dumpTemps(self, flob=sys.stdout):
         """Arg flob should be a file-like object."""
+
         print("%4s %10s %12s %10s %10s %10s %10s %10s %10s %10s" % (
             "indx", "temp", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "meanLnR_Up", "nPropsDn", "accptDn", "meanLnR_Dn"), 
               file=flob)
@@ -2607,6 +2608,11 @@ class Mcmc(object):
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
+                    if var.mcmc_swapTunerDoTuning:
+                        print("Temperatures are tuned, but not if the difference in temperature")
+                        print(f"between adjacent chains is bigger than {var.mcmc_swapTunerVTnLimitHi}")
+                    else:
+                        print("var.mcmc_swapTunerDoTuning is turned off, so temperatures will not be tuned.")
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 if self.simTemp:
@@ -2920,9 +2926,8 @@ class Mcmc(object):
                     print("gen+1 %11i" % (self.gen + 1), file=fout)
                     self.simTemp_dumpTemps(flob=fout)
 
-                    #myMsg = "\n...invoking simTemp_tunePseudoPriors_longSample()"
-                    #print(myMsg, file=fout)
-                    self.simTemp_tunePseudoPriors_longSample()
+                    # tuning results are written to self.simTempFileName
+                    self.simTemp_tunePseudoPriors_longSample(flob=fout)
 
                     fout.close()
 
@@ -3094,9 +3099,10 @@ class Mcmc(object):
                 self.swapTuner.nAttempts[chain1.tempNum] += 1
                 if acceptSwap:
                     self.swapTuner.nSwaps[chain1.tempNum] += 1
-                if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
-                    self.swapTuner.tune(chain1.tempNum)
-                    # tune() zeros nAttempts and nSwaps counters
+                if var.mcmc_swapTunerDoTuning:   
+                    if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
+                        self.swapTuner.tune(chain1.tempNum)
+                        # tune() zeros nAttempts and nSwaps counters
 
             if acceptSwap:
                 # Use the lower triangle of swapMatrix to keep track of

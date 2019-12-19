@@ -305,6 +305,7 @@ class Var(object):
         self.allowEmptyCharSetsAndTaxSets = False
 
         #self.mcmc_swapVector = False  # (old) matrix or (new) vector, both mcmc and stmcmc
+        self.mcmc_swapTunerDoTuning = True  # whether to do swap tuning
         self.mcmc_swapTunerSampleSize = 250  # mcmc and stmcmc
         self.stmcmc_useFastSpa = False
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
@@ -312,6 +313,20 @@ class Var(object):
         self.mcmc_allowUnresolvedStartingTree = False
         self.mcmc_simTemp_tempCurveLogBase = 2.8    # higher -> more curvey; lower -> more linear
         self.mcmc_logTunings = False  # verbose logging of on-the-fly changes to tunings 
+
+        # This mcmc_swapTunerVTnLimitHi refers to the swapTunerV, the
+        # vector (non-matrix) version of the swap tuner that only
+        # allows swaps between adjacent temperatures.  The "TnLimitHi"
+        # part refers to an upper limit that a temperature difference
+        # can have before further increases are not allowed.  So if
+        # the limit is set to 50, and the temperature difference is
+        # 55, then further proposed increases will be ignored.  The
+        # problem it attempts to address is that I have found that
+        # very large temperature differences will sometimes slow the
+        # chain down to a crawl.  So if the MCMCMC slows down during
+        # the run, lowering this limit might fix it.
+        self.mcmc_swapTunerVTnLimitHi = 100.  # Decrease (to eg 50?, 30?) if the MCMCMC slows. 
+        self.mcmc_swapTunerVTnLimitLo = 0.0001
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
