@@ -2608,6 +2608,11 @@ class Mcmc(object):
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
+                    if var.mcmc_swapTunerDoTuning:
+                        print("Temperatures are tuned, but not if the difference in temperature")
+                        print(f"between adjacent chains is bigger than {var.mcmc_swapTunerVTnLimitHi}")
+                    else:
+                        print("var.mcmc_swapTunerDoTuning is turned off, so temperatures will not be tuned.")
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 if self.simTemp:
@@ -3094,9 +3099,10 @@ class Mcmc(object):
                 self.swapTuner.nAttempts[chain1.tempNum] += 1
                 if acceptSwap:
                     self.swapTuner.nSwaps[chain1.tempNum] += 1
-                if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
-                    self.swapTuner.tune(chain1.tempNum)
-                    # tune() zeros nAttempts and nSwaps counters
+                if var.mcmc_swapTunerDoTuning:   
+                    if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
+                        self.swapTuner.tune(chain1.tempNum)
+                        # tune() zeros nAttempts and nSwaps counters
 
             if acceptSwap:
                 # Use the lower triangle of swapMatrix to keep track of

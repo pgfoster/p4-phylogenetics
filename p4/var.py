@@ -304,6 +304,7 @@ class Var(object):
         self.allowEmptyCharSetsAndTaxSets = False
 
         #self.mcmc_swapVector = False  # (old) matrix or (new) vector, both mcmc and stmcmc
+        self.mcmc_swapTunerDoTuning = True  # whether to do swap tuning
         self.mcmc_swapTunerSampleSize = 250  # mcmc and stmcmc
         self.stmcmc_useFastSpa = False
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
