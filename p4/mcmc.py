@@ -2992,11 +2992,12 @@ class Mcmc(object):
         if verbose:
             print("Finished %s generations." % nGensToDo)
 
-        # if writeSamples:
-        # Write "end;" regardeless of writeSamples, or else subsequent attempts to remove it will fail.
-        treeFile = open(self.treeFileName, 'a')
-        treeFile.write('end;\n\n')
-        treeFile.close()
+        if writeSamples:
+            # Write "end;" regardless of writeSamples, or else subsequent attempts to remove it will fail.
+            # No, that does not work for simTemp trialAndError.  Why not?
+            treeFile = open(self.treeFileName, 'a')
+            treeFile.write('end;\n\n')
+            treeFile.close()
 
     def _writeSample(self, coldChainNum=0):
         likesFile = open(self.likesFileName, 'a')

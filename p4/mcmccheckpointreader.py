@@ -225,7 +225,7 @@ class McmcCheckPointReader(object):
         compareSplitsBetweenTwoTreePartitions)
 
     def compareSplitsAll(self, precision=3, linewidth=120):
-        """Do the compareSplits() method between all pairs
+        """Do func.compareSplitsBetweenTreePartitions() for all pairs
 
         Output is verbose.  Shows 
         - average standard deviation of split frequencies (or supports), like MrBayes
@@ -235,63 +235,8 @@ class McmcCheckPointReader(object):
             None
 
         """
-        for m in self.mm:
-            m.treePartitions.finishSplits()
-
-        nM = len(self.mm)
-        nItems = int(((nM * nM) - nM) / 2)
-        asdosses = numpy.zeros((nM, nM), dtype=numpy.float64)
-        vect = numpy.zeros(nItems, dtype=numpy.float64)
-        mdvect = numpy.zeros(nItems, dtype=numpy.float64)
-        maxDiffs = numpy.zeros((nM, nM), dtype=numpy.float64)
-
-        vCounter = 0
-        for mNum1 in range(1, nM):
-            for mNum2 in range(mNum1):
-                thisAsdoss, thisMaxDiff, thisMeanDiff = self.compareSplits(mNum1, mNum2, verbose=False)
-                #print("+++ thisAsdoss = %s  thisMaxDiff=%f, mNum1=%i, mNum2=%i" % (
-                #      thisAsdoss, thisMaxDiff, mNum1, mNum2))
-                if thisAsdoss == None:
-                    thisAsdoss = 0.0
-                asdosses[mNum1][mNum2] = thisAsdoss
-                asdosses[mNum2][mNum1] = thisAsdoss
-                vect[vCounter] = thisAsdoss
-                maxDiffs[mNum1][mNum2] = thisMaxDiff
-                maxDiffs[mNum2][mNum1] = thisMaxDiff
-                mdvect[vCounter] = thisMaxDiff
-                vCounter += 1
-
-                if 0:
-                    print(" %10i " % mNum1, end=' ')
-                    print(" %10i " % mNum2, end=' ')
-                    print("%.3f" % thisAsdoss)
-
-        # Save current numpy printoptions, and restore, below.
-        curr = numpy.get_printoptions()
-        numpy.set_printoptions(precision=precision, linewidth=linewidth)
-        print("Pairwise asdoss values ---")
-        print(asdosses)
-        print()
-        print("For the %i values in one triangle," % nItems)
-        print("max =  %.3f" % vect.max())
-        print("min =  %.3f" % vect.min())
-        print("mean = %.3f" % vect.mean())
-        #print("var =  %.2g", vect.var())
-
-        print()
-        print("Pairwise maximum differences in split supports between the runs ---")
-        print(maxDiffs)
-        print()
-        print("For the %i values in one triangle," % nItems)
-        print("max =  %.3f" % mdvect.max())
-        print("min =  %.3f" % mdvect.min())
-        print("mean = %.3f" % mdvect.mean())
-        #print("var =  ", mdvect.var())
-        
-
-        # Reset printoptions back to what it was
-        numpy.set_printoptions(
-            precision=curr['precision'], linewidth=curr['linewidth'])
+        tpp = [m.treePartitions for m in self.mm]
+        p4.func.compareSplitsBetweenTreePartitions(tpp)
 
     def writeProposalAcceptances(self):
         for m in self.mm:
