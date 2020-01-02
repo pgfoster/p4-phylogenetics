@@ -2068,6 +2068,11 @@ class Mcmc(object):
 
         gm = ['Mcmc._setOutputTreeFile()']
 
+        # Check if it exists.
+        if os.path.isfile(self.treeFileName):
+            gm.append(f"The file '{self.treeFileName}' already exists.")
+            raise P4Error(gm)
+
         # Write the preamble for the trees outfile.
         treeFile = open(self.treeFileName, 'w')
         treeFile.write('#nexus\n\n')
