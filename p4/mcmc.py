@@ -2107,7 +2107,7 @@ class Mcmc(object):
                     treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
                     treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
                 treeFile.write(']\n')
-        treeFile.write('  [Tree numbers are gen+1]\n')
+        treeFile.write('  [Tree numbers are gen+1]\nend;\n')
         treeFile.close()
 
         if 0:
@@ -2562,33 +2562,33 @@ class Mcmc(object):
         #         gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
         #         raise P4Error(gm)
 
-        if self.gen > -1:
-
-            if 1:
-                # it is a re-start, so we need to back over the "end;" in the tree
-                # files.
-                f2 = open(self.treeFileName, 'r+b')
-                # print(f2, type(f2), f2.tell())   
-                # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
-                pos = -1
-                while 1:
-                    f2.seek(pos, 2)
-                    c = f2.read(1)
-                    if c == b';':
-                        break
-                    pos -= 1
-                # print "pos now %i" % pos
-                pos -= 3  # end;
+        if writeSamples:
+            # it is a re-start, so we need to back over the "end;" in the tree
+            # files.
+            f2 = open(self.treeFileName, 'r+b')
+            # print(f2, type(f2), f2.tell())   
+            # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
+            pos = -1
+            while 1:
                 f2.seek(pos, 2)
-                c = f2.read(4)
-                # print "got c = '%s'" % c
-                if c != b"end;":
-                    gm.append("Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
-                    raise P4Error(gm)
-                else:
-                    f2.seek(pos, 2)
-                    f2.truncate()
-                f2.close()
+                c = f2.read(1)
+                if c == b';':
+                    break
+                pos -= 1
+            # print "pos now %i" % pos
+            pos -= 3  # end;
+            f2.seek(pos, 2)
+            c = f2.read(4)
+            # print "got c = '%s'" % c
+            if c != b"end;":
+                gm.append("Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
+                raise P4Error(gm)
+            else:
+                f2.seek(pos, 2)
+                f2.truncate()
+            f2.close()
+
+        if self.gen > -1:
 
             self.logger.info("Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen))
 
