@@ -88,7 +88,7 @@ class McmcTunings(object):
         self.default['brLenPriorLambdaForInternals'] = 1000.0
         self.default['doInternalBrLenPrior'] = False
         self.default['brLenPriorType'] = 'exponential'
-        self.default['allBrLens'] = 2.0 * math.log(1.02)
+        self.default['allBrLens'] = 2.0 * math.log(1.02)   # 0.0396
         self.default['root2'] = 0.1
         #self.default['root3'] = 10.0
         #self.default['root3n'] = 10.0
@@ -193,6 +193,8 @@ class Proposal(object):
         #self.mtNum = -1
         self.weight = 1.0
         self.tuning = None
+        self.tuningLimitHi = None
+        self.tuningLimitLo = None
         self.tunings = {}
         self.nProposals = [0] * theMcmc.nChains
         self.nAcceptances = [0] * theMcmc.nChains
@@ -243,12 +245,18 @@ class Proposal(object):
             else:
                 self.tuning[tempNum] *= self.tnFactorLo
             doMessage = True
+        extraMessage = None
+        if doMessage and self.tuningLimitHi and (self.tuning[tempNum] > self.tuningLimitHi):
+            self.tuning[tempNum] = self.tuningLimitHi
+            extraMessage = " (tuningLimitHi)"
         self.tnNSamples[tempNum] = 0
         self.tnNAccepts[tempNum] = 0
         if var.mcmc_logTunings and doMessage:
             message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % (self.name, self.mcmc.gen, tempNum, acc)
             message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
             message += "Adjusting tuning from %g to %g" % (oldTn, self.tuning[tempNum])
+            if extraMessage:
+                message += extraMessage
             #print(message)
             self.mcmc.logger.info(message)
 
@@ -1178,6 +1186,7 @@ class Mcmc(object):
             p = Proposal(self)
             p.name = 'allBrLens'
             p.tuning = [self._tunings.default[p.name]] * self.nChains
+            p.tuningLimitHi = 0.2
             p.brLenPriorType = self._tunings.default['brLenPriorType']
             p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
             p.weight = self.prob.allBrLens * \
