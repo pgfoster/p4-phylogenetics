@@ -452,19 +452,20 @@ class SwapTunerV(object):
         # print("tempDiffs %s" % self.mcmc.chainTempDiffs)
         # print("temps     %s" % self.mcmc.chainTemps)
 
+        tnLimitHi = 1.0e6
         doMessage = False
         direction = None
         oldTn = self.mcmc.chainTempDiffs[theTempNum]
         if acc > self.tnAccHi:
-            #if self.mcmc.chainTempDiffs[theTempNum] >= self.tnLimitHi:
-            #    direction = "no change"
-            #else:
-            if acc > self.tnAccVeryHi:
-                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryHi
+            if self.mcmc.chainTempDiffs[theTempNum] >= tnLimitHi:
+                direction = "no change"
             else:
-                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorHi
-            doMessage = True
-            direction = 'Increase'
+                if acc > self.tnAccVeryHi:
+                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryHi
+                else:
+                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorHi
+                doMessage = True
+                direction = 'Increase'
         elif acc < self.tnAccLo:
             #if self.mcmc.chainTempDiffs[theTempNum] <= self.tnLimitLo:
             #    direction = "no change"
@@ -479,13 +480,13 @@ class SwapTunerV(object):
             direction = 'Decrease'
         self.nAttempts[theTempNum] = 0
         self.nSwaps[theTempNum] = 0
-        #if direction != "no change":
-        if doMessage:
-            message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % ('chainTemp', self.mcmc.gen, theTempNum, acc)
-            message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
-            message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.mcmc.chainTempDiffs[theTempNum])
-            #print(message)
-            self.mcmc.logger.info(message)
+        if direction != "no change":
+            if doMessage:
+                message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % ('chainTemp', self.mcmc.gen, theTempNum, acc)
+                message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
+                message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.mcmc.chainTempDiffs[theTempNum])
+                #print(message)
+                self.mcmc.logger.info(message)
         # Make chainTemps from chainTempDiffs
         if self.mcmc.doHeatingHack:
             self.mcmc.chainTemps = [self.mcmc.heatingHackTemperature]
