@@ -452,7 +452,7 @@ class SwapTunerV(object):
         # print("tempDiffs %s" % self.mcmc.chainTempDiffs)
         # print("temps     %s" % self.mcmc.chainTemps)
 
-        tnLimitHi = 1.0e6
+        tnLimitHi = 1.0e5
         doMessage = False
         direction = None
         oldTn = self.mcmc.chainTempDiffs[theTempNum]
