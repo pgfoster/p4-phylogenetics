@@ -168,9 +168,9 @@ class McmcCheckPointReader(object):
                 #    print i
                 print(" %10i " % m.treePartitions.nTrees)
 
-        asdos, maxDiff, meanDiff = self.compareSplitsBetweenTwoTreePartitions(
+        asdos, maxDiff, meanDiff = p4.func._compareSplitsBetweenTwoTreePartitions(
             tp1, tp2, minimumProportion, verbose=verbose)
-        asdos2, maxDiff2, meanDiff2= self.compareSplitsBetweenTwoTreePartitions(
+        asdos2, maxDiff2, meanDiff2= p4.func._compareSplitsBetweenTwoTreePartitions(
             tp2, tp1, minimumProportion, verbose=verbose)
         if math.fabs(asdos - asdos2) > 0.000001:
             print("Reciprocal assdos differs:  %s  %s" % (asdos, asdos2))
@@ -179,53 +179,9 @@ class McmcCheckPointReader(object):
             print("No splits > %s" % minimumProportion)
         return asdos, maxDiff, meanDiff
 
-    def compareSplitsBetweenTwoTreePartitions(tp1, tp2, minimumProportion, verbose=False):
-        """Returns a tuple of asdoss, maximum of the differences and mean of the differences
-
-        This calls the method TreePartitions.compareSplits(), and digests the
-        results returned from that.
-
-        Args:
-            tp1, tp2 (TreePartition): TreePartition objects
-            minimumProportion (float): passed to TreePartitions.compareSplits()
-        
-        Returns:
-            (asdoss, maxOfDiffs, meanOfDiffs)
-
-        """
-
-        ret = tp1.compareSplits(tp2, minimumProportion=minimumProportion)
-
-        #print(ret)  # a list of 3-item lists
-        #  1. The split key
-        #  2. The split string
-        #  3. A list of the 2 supports
-
-        if not ret:
-            return None
-
-        sumOfStdDevs = 0.0
-        nSplits = len(ret)
-        diffs = []
-        for i in ret:
-            # print "            %.3f  %.3f    " % (i[2][0], i[2][1]),
-            stdDev = math.sqrt(p4.func.variance(i[2]))
-            # print "%.5f" % stdDev
-            sumOfStdDevs += stdDev
-            diffs.append(math.fabs(i[2][0] - i[2][1]))
-        asdoss = sumOfStdDevs / nSplits
-        maxOfDiffs = max(diffs)
-        meanOfDiffs = sum(diffs)/nSplits
-        if verbose:
-            print("     nSplits=%i, average of std devs of split supports %.4f " % (nSplits, asdoss))
-            print("     max of differences %f, mean of differences %f" % (maxOfDiffs, meanOfDiffs))
-        return (asdoss, maxOfDiffs, meanOfDiffs)
-
-    compareSplitsBetweenTwoTreePartitions = staticmethod(
-        compareSplitsBetweenTwoTreePartitions)
 
     def compareSplitsAll(self, precision=3, linewidth=120):
-        """Do the compareSplits() method between all pairs
+        """Do func.compareSplitsBetweenTreePartitions() for all pairs
 
         Output is verbose.  Shows 
         - average standard deviation of split frequencies (or supports), like MrBayes
@@ -235,63 +191,8 @@ class McmcCheckPointReader(object):
             None
 
         """
-        for m in self.mm:
-            m.treePartitions.finishSplits()
-
-        nM = len(self.mm)
-        nItems = int(((nM * nM) - nM) / 2)
-        asdosses = numpy.zeros((nM, nM), dtype=numpy.float64)
-        vect = numpy.zeros(nItems, dtype=numpy.float64)
-        mdvect = numpy.zeros(nItems, dtype=numpy.float64)
-        maxDiffs = numpy.zeros((nM, nM), dtype=numpy.float64)
-
-        vCounter = 0
-        for mNum1 in range(1, nM):
-            for mNum2 in range(mNum1):
-                thisAsdoss, thisMaxDiff, thisMeanDiff = self.compareSplits(mNum1, mNum2, verbose=False)
-                #print("+++ thisAsdoss = %s  thisMaxDiff=%f, mNum1=%i, mNum2=%i" % (
-                #      thisAsdoss, thisMaxDiff, mNum1, mNum2))
-                if thisAsdoss == None:
-                    thisAsdoss = 0.0
-                asdosses[mNum1][mNum2] = thisAsdoss
-                asdosses[mNum2][mNum1] = thisAsdoss
-                vect[vCounter] = thisAsdoss
-                maxDiffs[mNum1][mNum2] = thisMaxDiff
-                maxDiffs[mNum2][mNum1] = thisMaxDiff
-                mdvect[vCounter] = thisMaxDiff
-                vCounter += 1
-
-                if 0:
-                    print(" %10i " % mNum1, end=' ')
-                    print(" %10i " % mNum2, end=' ')
-                    print("%.3f" % thisAsdoss)
-
-        # Save current numpy printoptions, and restore, below.
-        curr = numpy.get_printoptions()
-        numpy.set_printoptions(precision=precision, linewidth=linewidth)
-        print("Pairwise asdoss values ---")
-        print(asdosses)
-        print()
-        print("For the %i values in one triangle," % nItems)
-        print("max =  %.3f" % vect.max())
-        print("min =  %.3f" % vect.min())
-        print("mean = %.3f" % vect.mean())
-        #print("var =  %.2g", vect.var())
-
-        print()
-        print("Pairwise maximum differences in split supports between the runs ---")
-        print(maxDiffs)
-        print()
-        print("For the %i values in one triangle," % nItems)
-        print("max =  %.3f" % mdvect.max())
-        print("min =  %.3f" % mdvect.min())
-        print("mean = %.3f" % mdvect.mean())
-        #print("var =  ", mdvect.var())
-        
-
-        # Reset printoptions back to what it was
-        numpy.set_printoptions(
-            precision=curr['precision'], linewidth=curr['linewidth'])
+        tpp = [m.treePartitions for m in self.mm]
+        p4.func.compareSplitsBetweenTreePartitions(tpp)
 
     def writeProposalAcceptances(self):
         for m in self.mm:

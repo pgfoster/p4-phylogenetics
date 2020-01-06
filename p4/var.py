@@ -325,8 +325,9 @@ class Var(object):
         # very large temperature differences will sometimes slow the
         # chain down to a crawl.  So if the MCMCMC slows down during
         # the run, lowering this limit might fix it.
-        self.mcmc_swapTunerVTnLimitHi = 100.  # Decrease (to eg 50?, 30?) if the MCMCMC slows. 
-        self.mcmc_swapTunerVTnLimitLo = 0.0001
+        # Update: this was probably not the way to solve the slowing problem, so I am removing this
+        #self.mcmc_swapTunerVTnLimitHi = 100.  # Decrease (to eg 50?, 30?) if the MCMCMC slows. 
+        #self.mcmc_swapTunerVTnLimitLo = 0.0001
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]

@@ -345,7 +345,7 @@ void p4_calculateBigPDecksPart(p4_node *aNode, int pNum)
         }
     }
 
-    if ((0)) {
+    if ((1)) {
         // Find any negative values in the bigPDecks.  If any are found
         // that would be a serious problem, and so the program should give
         // an error message and die.  The most likely reason, I think, is
@@ -814,7 +814,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
             } // for symb
         } // for rate
     }
-#if 0    // slow check for negative cond likes
+#if 1    // slow check for negative cond likes
     // printf("   node %i condLikes: \n", aNode->nodeNum);
     for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
         for(rate = 0; rate < mp->nCat; rate++){

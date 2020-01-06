@@ -88,7 +88,7 @@ class McmcTunings(object):
         self.default['brLenPriorLambdaForInternals'] = 1000.0
         self.default['doInternalBrLenPrior'] = False
         self.default['brLenPriorType'] = 'exponential'
-        self.default['allBrLens'] = 2.0 * math.log(1.02)
+        self.default['allBrLens'] = 2.0 * math.log(1.02)   # 0.0396
         self.default['root2'] = 0.1
         #self.default['root3'] = 10.0
         #self.default['root3n'] = 10.0
@@ -193,6 +193,8 @@ class Proposal(object):
         #self.mtNum = -1
         self.weight = 1.0
         self.tuning = None
+        self.tuningLimitHi = None
+        self.tuningLimitLo = None
         self.tunings = {}
         self.nProposals = [0] * theMcmc.nChains
         self.nAcceptances = [0] * theMcmc.nChains
@@ -243,12 +245,18 @@ class Proposal(object):
             else:
                 self.tuning[tempNum] *= self.tnFactorLo
             doMessage = True
+        extraMessage = None
+        if doMessage and self.tuningLimitHi and (self.tuning[tempNum] > self.tuningLimitHi):
+            self.tuning[tempNum] = self.tuningLimitHi
+            extraMessage = " (tuningLimitHi)"
         self.tnNSamples[tempNum] = 0
         self.tnNAccepts[tempNum] = 0
         if var.mcmc_logTunings and doMessage:
             message = "%s tune  gen=%i tempNum=%i acceptance=%.3f " % (self.name, self.mcmc.gen, tempNum, acc)
             message += "(target %.3f -- %.3f) " % (self.tnAccLo, self.tnAccHi)
             message += "Adjusting tuning from %g to %g" % (oldTn, self.tuning[tempNum])
+            if extraMessage:
+                message += extraMessage
             #print(message)
             self.mcmc.logger.info(message)
 
@@ -431,8 +439,8 @@ class SwapTunerV(object):
         self.tnFactorLo = 0.9
         self.tnFactorVeryLo = 0.6
         self.tnFactorZero = 0.4
-        self.tnLimitHi = var.mcmc_swapTunerVTnLimitHi
-        self.tnLimitLo = var.mcmc_swapTunerVTnLimitLo
+        #self.tnLimitHi = var.mcmc_swapTunerVTnLimitHi
+        #self.tnLimitLo = var.mcmc_swapTunerVTnLimitLo
 
 
 
@@ -444,11 +452,12 @@ class SwapTunerV(object):
         # print("tempDiffs %s" % self.mcmc.chainTempDiffs)
         # print("temps     %s" % self.mcmc.chainTemps)
 
+        tnLimitHi = 1.0e5
         doMessage = False
         direction = None
         oldTn = self.mcmc.chainTempDiffs[theTempNum]
         if acc > self.tnAccHi:
-            if self.mcmc.chainTempDiffs[theTempNum] >= self.tnLimitHi:
+            if self.mcmc.chainTempDiffs[theTempNum] >= tnLimitHi:
                 direction = "no change"
             else:
                 if acc > self.tnAccVeryHi:
@@ -458,17 +467,17 @@ class SwapTunerV(object):
                 doMessage = True
                 direction = 'Increase'
         elif acc < self.tnAccLo:
-            if self.mcmc.chainTempDiffs[theTempNum] <= self.tnLimitLo:
-                direction = "no change"
+            #if self.mcmc.chainTempDiffs[theTempNum] <= self.tnLimitLo:
+            #    direction = "no change"
+            #else:
+            if acc == 0.0:   # no swaps at all
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
+            elif acc < self.tnAccVeryLo:
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryLo
             else:
-                if acc == 0.0:   # no swaps at all
-                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorZero
-                elif acc < self.tnAccVeryLo:
-                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorVeryLo
-                else:
-                    self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorLo
-                doMessage = True
-                direction = 'Decrease'
+                self.mcmc.chainTempDiffs[theTempNum] *= self.tnFactorLo
+            doMessage = True
+            direction = 'Decrease'
         self.nAttempts[theTempNum] = 0
         self.nSwaps[theTempNum] = 0
         if direction != "no change":
@@ -478,18 +487,18 @@ class SwapTunerV(object):
                 message += "%s chainTempDiff from %g to %g" % (direction, oldTn, self.mcmc.chainTempDiffs[theTempNum])
                 #print(message)
                 self.mcmc.logger.info(message)
-            # Make chainTemps from chainTempDiffs
-            if self.mcmc.doHeatingHack:
-                self.mcmc.chainTemps = [self.mcmc.heatingHackTemperature]
-            else:
-                self.mcmc.chainTemps = [0.0]
-            for dNum in range(self.mcmc.nChains - 1):
-                self.mcmc.chainTemps.append(self.mcmc.chainTempDiffs[dNum] + self.mcmc.chainTemps[-1])
-            if doMessage:
-                message = "new chainTemps gen=%i " % (self.mcmc.gen)
-                for cT in self.mcmc.chainTemps:
-                    message += "%10.2f" % cT
-                self.mcmc.logger.info(message)
+        # Make chainTemps from chainTempDiffs
+        if self.mcmc.doHeatingHack:
+            self.mcmc.chainTemps = [self.mcmc.heatingHackTemperature]
+        else:
+            self.mcmc.chainTemps = [0.0]
+        for dNum in range(self.mcmc.nChains - 1):
+            self.mcmc.chainTemps.append(self.mcmc.chainTempDiffs[dNum] + self.mcmc.chainTemps[-1])
+        if doMessage:
+            message = "new chainTemps gen=%i " % (self.mcmc.gen)
+            for cT in self.mcmc.chainTemps:
+                message += "%10.2f" % cT
+            self.mcmc.logger.info(message)
 
 
 class SimTempTemp(object):
@@ -1178,6 +1187,7 @@ class Mcmc(object):
             p = Proposal(self)
             p.name = 'allBrLens'
             p.tuning = [self._tunings.default[p.name]] * self.nChains
+            p.tuningLimitHi = 0.2
             p.brLenPriorType = self._tunings.default['brLenPriorType']
             p.brLenPriorLambda = self._tunings.default['brLenPriorLambda']
             p.weight = self.prob.allBrLens * \
@@ -2068,6 +2078,11 @@ class Mcmc(object):
 
         gm = ['Mcmc._setOutputTreeFile()']
 
+        # Check if it exists.
+        if os.path.isfile(self.treeFileName):
+            gm.append(f"The file '{self.treeFileName}' already exists.")
+            raise P4Error(gm)
+
         # Write the preamble for the trees outfile.
         treeFile = open(self.treeFileName, 'w')
         treeFile.write('#nexus\n\n')
@@ -2102,7 +2117,7 @@ class Mcmc(object):
                     treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
                     treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
                 treeFile.write(']\n')
-        treeFile.write('  [Tree numbers are gen+1]\n')
+        treeFile.write('  [Tree numbers are gen+1]\nend;\n')
         treeFile.close()
 
         if 0:
@@ -2557,33 +2572,33 @@ class Mcmc(object):
         #         gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
         #         raise P4Error(gm)
 
-        if self.gen > -1:
-
-            if 1:
-                # it is a re-start, so we need to back over the "end;" in the tree
-                # files.
-                f2 = open(self.treeFileName, 'r+b')
-                # print(f2, type(f2), f2.tell())   
-                # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
-                pos = -1
-                while 1:
-                    f2.seek(pos, 2)
-                    c = f2.read(1)
-                    if c == b';':
-                        break
-                    pos -= 1
-                # print "pos now %i" % pos
-                pos -= 3  # end;
+        if writeSamples:
+            # it is a re-start, so we need to back over the "end;" in the tree
+            # files.
+            f2 = open(self.treeFileName, 'r+b')
+            # print(f2, type(f2), f2.tell())   
+            # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
+            pos = -1
+            while 1:
                 f2.seek(pos, 2)
-                c = f2.read(4)
-                # print "got c = '%s'" % c
-                if c != b"end;":
-                    gm.append("Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
-                    raise P4Error(gm)
-                else:
-                    f2.seek(pos, 2)
-                    f2.truncate()
-                f2.close()
+                c = f2.read(1)
+                if c == b';':
+                    break
+                pos -= 1
+            # print "pos now %i" % pos
+            pos -= 3  # end;
+            f2.seek(pos, 2)
+            c = f2.read(4)
+            # print "got c = '%s'" % c
+            if c != b"end;":
+                gm.append("Mcmc.run().  Failed to find and remove the 'end;' at the end of the tree file.")
+                raise P4Error(gm)
+            else:
+                f2.seek(pos, 2)
+                f2.truncate()
+            f2.close()
+
+        if self.gen > -1:
 
             self.logger.info("Re-starting the MCMC run %i from gen=%i" % (self.runNum, self.gen))
 
@@ -2609,8 +2624,9 @@ class Mcmc(object):
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
                     if var.mcmc_swapTunerDoTuning:
-                        print("Temperatures are tuned, but not if the difference in temperature")
-                        print(f"between adjacent chains is bigger than {var.mcmc_swapTunerVTnLimitHi}")
+                        print("Temperatures are tuned (var.mcmc_swapTunerDoTuning is on)")
+                        #print("Temperatures are tuned, but not if the difference in temperature")
+                        #print(f"between adjacent chains is bigger than {var.mcmc_swapTunerVTnLimitHi}")
                     else:
                         print("var.mcmc_swapTunerDoTuning is turned off, so temperatures will not be tuned.")
                 else:
@@ -2992,11 +3008,12 @@ class Mcmc(object):
         if verbose:
             print("Finished %s generations." % nGensToDo)
 
-        # if writeSamples:
-        # Write "end;" regardeless of writeSamples, or else subsequent attempts to remove it will fail.
-        treeFile = open(self.treeFileName, 'a')
-        treeFile.write('end;\n\n')
-        treeFile.close()
+        if writeSamples:
+            # Write "end;" regardless of writeSamples, or else subsequent attempts to remove it will fail.
+            # No, that does not work for simTemp trialAndError.  Why not?
+            treeFile = open(self.treeFileName, 'a')
+            treeFile.write('end;\n\n')
+            treeFile.close()
 
     def _writeSample(self, coldChainNum=0):
         likesFile = open(self.likesFileName, 'a')
