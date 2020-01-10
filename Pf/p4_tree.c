@@ -1095,7 +1095,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
 
         if(like <= 0.0) {
 
-            if ((1)) {
+            if ((0)) {
                 // Catch any likes that are less than zero.  If any are found
                 // that would be a serious problem, and so the program should give
                 // an error message and die.  The most likely reason, I think, is
