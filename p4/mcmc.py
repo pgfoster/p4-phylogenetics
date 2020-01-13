@@ -458,6 +458,9 @@ class SwapTunerV(object):
         oldTn = self.mcmc.chainTempDiffs[theTempNum]
         if acc > self.tnAccHi:
             if self.mcmc.chainTempDiffs[theTempNum] >= tnLimitHi:
+                message = f"chainTemp tune  gen={self.mcmc.gen} tempNum={theTempNum}  diff %g >= tnLimitHi %g --- no change" % (
+                    self.mcmc.chainTempDiffs[theTempNum], tnLimitHi)
+                self.mcmc.logger.info(message)
                 direction = "no change"
             else:
                 if acc > self.tnAccVeryHi:
