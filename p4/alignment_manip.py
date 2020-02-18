@@ -2233,6 +2233,7 @@ if True:
         Args txNumA and txNumB are not used in the calculations -- they
         are only used to help isolate problems.
 
+        February 2020, changed degrees of freedom for PR to match symtest.
         """
 
         # Calculate 3 stats -- Bowker's stat QB, Stuart's stat QS, and
@@ -2258,7 +2259,7 @@ if True:
                     diff = (bigF[i, j] - bigF[j, i])
                     QB += (diff * diff) / mySum
         dof2 = dof - zcount
-        assert dof2
+        assert dof2, "Got zero degrees of freedom for Bowkers.  Identical sequences?"
 
         # Now calculate QS, Stuart's stat.  For that we need the d vector
         # and the V matrix.  Oddly, d is dim-1 long, and V is (dim-1,dim-1).
@@ -2287,10 +2288,12 @@ if True:
                     theItem = -1 * (bigF[i, j] + bigF[j, i])
                     V[i, j] = theItem
                     V[j, i] = theItem
-        # print d
-        # print V
+        #print("d = ", d)
+        #print("V = ")
+        #print(V)
+
         try:
-            VtoTheMinus1 = numpy.linalg.solve(V, numpy.identity(dim - 1))
+            Vinv = numpy.linalg.inv(V)
         except numpy.linalg.LinAlgError:
             print()
             print(V)
@@ -2300,17 +2303,22 @@ if True:
             print(bigF)
             print('sumOfColumns = ', sumOfColumns)
             print('sumOfRows = ', sumOfRows)
-            VtoTheMinus1 = numpy.linalg.solve(V, numpy.identity(dim - 1))
-        # print VtoTheMinus1
-        QS = numpy.dot(numpy.dot(d, VtoTheMinus1), d)
+            Vinv = numpy.linalg.inv(V)
+        #print("Vinv = ")
+        #print(Vinv)
+        QS = numpy.dot(numpy.dot(d, Vinv), d)
         QR = QB - QS
+        #print(f"Got QS:{QS} and QR:{QR}")
 
         # We are finished calculating the 3 stats.
         if doProbs:
             # The dof should be an int.
+            dof_S = dim - 1
+            dof_R = dof2 - dof_S
+            #print(f"got dof2 {dof2}, dof_S {dof_S}, and dof_R {dof_R}")
+
             PB = p4.func.chiSquaredProb(QB, dof2)
-            PS = p4.func.chiSquaredProb(QS, dim - 1)
-            dof_R = int((dim - 1) * (dim - 2) / 2)
+            PS = p4.func.chiSquaredProb(QS, dof_S)
             PR = p4.func.chiSquaredProb(QR, dof_R)
             return (QB, QS, QR, PB, PS, PR)
         else:
@@ -2359,8 +2367,7 @@ if True:
                 if doProbs:
                     QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(
                         bigF, self.dim, txNumA, txNumB, doProbs=True)
-                    # print "%10.2f   %10.2f   %10.2f          |    %.3f   %.3f
-                    # %.3f" % (QB, QS, QR, PB, PS, PR)
+                    #print(f"QB:{QB:10.6f} QS:{QS:10.6f} QR:{QR:10.6f} | PB:{PB:.8f} PS:{PS:.8f} PR:{PR:.8f}")
                     QBB.matrix[txNumA][txNumB] = QB
                     QBB.matrix[txNumB][txNumA] = QB
                     QSS.matrix[txNumA][txNumB] = QS
