@@ -560,90 +560,90 @@ pf_pointChi2(PyObject *self, PyObject *args)
 // -----------------------------------
 
 
-static PyObject *
-pf_setRellMemory(PyObject *self, PyObject *args)
-{
-    int   nTrees;
-    int   nChar;
-    int   gslrng_seed;
-    rellStuff *rStuff;
-    const gsl_rng_type * T;
+// static PyObject *
+// pf_setRellMemory(PyObject *self, PyObject *args)
+// {
+//     int   nTrees;
+//     int   nChar;
+//     int   gslrng_seed;
+//     rellStuff *rStuff;
+//     const gsl_rng_type * T;
 	
-    if(!PyArg_ParseTuple(args, "iii", &nTrees, &nChar, &gslrng_seed)) {
-        printf("Error pf_setRellMemory: couldn't parse tuple\n");
-        return NULL;
-    }
-    rStuff = malloc(sizeof(rellStuff));
-    if(!rStuff) {
-        printf("Failed to make rellStuff\n");
-        exit(1);
-    }
-    rStuff->nTrees = nTrees;
-    rStuff->nChar = nChar;
-    rStuff->mat = pdmatrix(nTrees, nChar);
-    gsl_rng_env_setup();  // make a generator.  See gsl docs.
-    T = gsl_rng_default;
-    rStuff->gsl_rng = gsl_rng_alloc(T);
-    if(!rStuff->gsl_rng) {
-        printf("setRellMemory.  Failed to make a gsl_rng.\n");
-        exit(1);
-    }
-    // set the seed for the random number generator
-    gsl_rng_set(rStuff->gsl_rng, (unsigned long int)gslrng_seed);
+//     if(!PyArg_ParseTuple(args, "iii", &nTrees, &nChar, &gslrng_seed)) {
+//         printf("Error pf_setRellMemory: couldn't parse tuple\n");
+//         return NULL;
+//     }
+//     rStuff = malloc(sizeof(rellStuff));
+//     if(!rStuff) {
+//         printf("Failed to make rellStuff\n");
+//         exit(1);
+//     }
+//     rStuff->nTrees = nTrees;
+//     rStuff->nChar = nChar;
+//     rStuff->mat = pdmatrix(nTrees, nChar);
+//     gsl_rng_env_setup();  // make a generator.  See gsl docs.
+//     T = gsl_rng_default;
+//     rStuff->gsl_rng = gsl_rng_alloc(T);
+//     if(!rStuff->gsl_rng) {
+//         printf("setRellMemory.  Failed to make a gsl_rng.\n");
+//         exit(1);
+//     }
+//     // set the seed for the random number generator
+//     gsl_rng_set(rStuff->gsl_rng, (unsigned long int)gslrng_seed);
 
-    return Py_BuildValue("l", (long int)rStuff);
-}
+//     return Py_BuildValue("l", (long int)rStuff);
+// }
 
-static PyObject *
-pf_pokeRellMemory(PyObject *self, PyObject *args)
-{
-    int        treeNum;
-    int        charNum;
-    double     val;
-    rellStuff *rStuff;
+// static PyObject *
+// pf_pokeRellMemory(PyObject *self, PyObject *args)
+// {
+//     int        treeNum;
+//     int        charNum;
+//     double     val;
+//     rellStuff *rStuff;
 	
-    if(!PyArg_ParseTuple(args, "iidl", &treeNum, &charNum, &val, &rStuff)) {
-        printf("Error pf_pokeRellMemory: couldn't parse tuple\n");
-        return NULL;
-    }
-    rStuff->mat[treeNum][charNum] = val;
-    Py_INCREF(Py_None);
-    return Py_None;
-}
+//     if(!PyArg_ParseTuple(args, "iidl", &treeNum, &charNum, &val, &rStuff)) {
+//         printf("Error pf_pokeRellMemory: couldn't parse tuple\n");
+//         return NULL;
+//     }
+//     rStuff->mat[treeNum][charNum] = val;
+//     Py_INCREF(Py_None);
+//     return Py_None;
+// }
 
 
-static PyObject *
-pf_rell(PyObject *self, PyObject *args)
-{
-    int   nBoots;
-    rellStuff *rStuff;
+// static PyObject *
+// pf_rell(PyObject *self, PyObject *args)
+// {
+//     int   nBoots;
+//     rellStuff *rStuff;
 	
-    if(!PyArg_ParseTuple(args, "il", &nBoots, &rStuff)) {
-        printf("Error pf_rell: couldn't parse tuple\n");
-        return NULL;
-    }
-    return rell(nBoots, rStuff);
-}
+//     if(!PyArg_ParseTuple(args, "il", &nBoots, &rStuff)) {
+//         printf("Error pf_rell: couldn't parse tuple\n");
+//         return NULL;
+//     }
+//     return rell(nBoots, rStuff);
+// }
 
 
-static PyObject *
-pf_freeRellMemory(PyObject *self, PyObject *args)
-{
-    rellStuff *rStuff;
+// static PyObject *
+// pf_freeRellMemory(PyObject *self, PyObject *args)
+// {
+//     rellStuff *rStuff;
 	
-    if(!PyArg_ParseTuple(args, "l", &rStuff)) {
-        printf("Error pf_freeRellMemory: couldn't parse tuple\n");
-        return NULL;
-    }
-    if(rStuff->gsl_rng) {
-        gsl_rng_free((gsl_rng *)rStuff->gsl_rng);
-        rStuff->gsl_rng = NULL;
-    }
-    free_pdmatrix(rStuff->mat);
-    free(rStuff);
-    Py_INCREF(Py_None);
-    return Py_None;
-}
+//     if(!PyArg_ParseTuple(args, "l", &rStuff)) {
+//         printf("Error pf_freeRellMemory: couldn't parse tuple\n");
+//         return NULL;
+//     }
+//     if(rStuff->gsl_rng) {
+//         gsl_rng_free((gsl_rng *)rStuff->gsl_rng);
+//         rStuff->gsl_rng = NULL;
+//     }
+//     free_pdmatrix(rStuff->mat);
+//     free(rStuff);
+//     Py_INCREF(Py_None);
+//     return Py_None;
+// }
 
 
 // -----------------------------------
@@ -2644,10 +2644,10 @@ static PyMethodDef pfMethods[] = {
     {"normPDF", pf_normPDF, METH_VARARGS},
     {"pointChi2", pf_pointChi2, METH_VARARGS},
 
-    {"setRellMemory", pf_setRellMemory, METH_VARARGS},
-    {"pokeRellMemory", pf_pokeRellMemory, METH_VARARGS},
-    {"rell", pf_rell, METH_VARARGS},
-    {"freeRellMemory", pf_freeRellMemory, METH_VARARGS},
+    //{"setRellMemory", pf_setRellMemory, METH_VARARGS},
+    //{"pokeRellMemory", pf_pokeRellMemory, METH_VARARGS},
+    //{"rell", pf_rell, METH_VARARGS},
+    //{"freeRellMemory", pf_freeRellMemory, METH_VARARGS},
 
     {"get_gsl_rng", pf_get_gsl_rng, METH_VARARGS},
     {"gsl_rng_set", pf_gsl_rng_set, METH_VARARGS},

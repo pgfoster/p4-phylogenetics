@@ -2842,8 +2842,7 @@ def reseedCRandomizer(newSeed):
         # for the Python random library
         random.seed(0)
         
-        # for Numpy and Scipy.  Possiby should use "random_state" parameter insted; see docs,
-        # https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html
+        # for Numpy and Scipy.
         numpy.random.seed(0)
 
     """

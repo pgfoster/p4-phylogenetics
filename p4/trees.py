@@ -684,74 +684,74 @@ class Trees(object):
         if returnResults:
             return results
 
-    def rell(self, bootCount=10000, seedIsPid=1):
-        """This compares several trees by the RELL method.
+    # def rell(self, bootCount=10000, seedIsPid=1):
+    #     """This compares several trees by the RELL method.
 
-        The trees in self should all be optimized, and all should have
-        models attached.
+    #     The trees in self should all be optimized, and all should have
+    #     models attached.
 
-        Self, the Trees object, should have a Data object attached,
-        as self.data.
+    #     Self, the Trees object, should have a Data object attached,
+    #     as self.data.
 
-        Calculations are done in C, so it is fast.  It uses the gsl random
-        number generator.  Setting the *seedIsPid* (ie turning it on) is
-        appropriate, and is the default.  """
+    #     Calculations are done in C, so it is fast.  It uses the gsl random
+    #     number generator.  Setting the *seedIsPid* (ie turning it on) is
+    #     appropriate, and is the default.  """
 
-        gm = ['Trees.rell()']
+    #     gm = ['Trees.rell()']
 
-        if not self.trees or len(self.trees) == 0:
-            gm.append("No trees?")
-            raise P4Error(gm)
+    #     if not self.trees or len(self.trees) == 0:
+    #         gm.append("No trees?")
+    #         raise P4Error(gm)
 
-        # Can we make siteLikes?
-        if not self.data:
-            gm.append(
-                "No data.  You need to 'myTreesObject.data = myDataObject'")
-            raise P4Error(gm)
-        for t in self.trees:
-            if not t.model:
-                gm.append("Tree %s has no model." % t.name)
-                raise P4Error(gm)
+    #     # Can we make siteLikes?
+    #     if not self.data:
+    #         gm.append(
+    #             "No data.  You need to 'myTreesObject.data = myDataObject'")
+    #         raise P4Error(gm)
+    #     for t in self.trees:
+    #         if not t.model:
+    #             gm.append("Tree %s has no model." % t.name)
+    #             raise P4Error(gm)
 
-        # Attach self.data to the trees, if needed
-        for t in self.trees:
-            if not t.data:
-                t.data = self.data
+    #     # Attach self.data to the trees, if needed
+    #     for t in self.trees:
+    #         if not t.data:
+    #             t.data = self.data
 
-        # print "Calculating siteLikes ..."
-        for t in self.trees:
-            t.getSiteLikes()
-            # Be memory efficient, but there is still a lot of inefficient
-            # re-malloc'ing.
-            t.deleteCStuff()
+    #     # print "Calculating siteLikes ..."
+    #     for t in self.trees:
+    #         t.getSiteLikes()
+    #         # Be memory efficient, but there is still a lot of inefficient
+    #         # re-malloc'ing.
+    #         t.deleteCStuff()
 
-        nTrees = len(self.trees)
-        for t in self.trees:
-            t.siteLikes = [math.log(sl) for sl in t.siteLikes]
-        nChar = len(self.trees[0].siteLikes)
+    #     nTrees = len(self.trees)
+    #     for t in self.trees:
+    #         t.siteLikes = [math.log(sl) for sl in t.siteLikes]
+    #     nChar = len(self.trees[0].siteLikes)
 
-        theSeed = 0
-        if seedIsPid:
-            theSeed = os.getpid()
+    #     theSeed = 0
+    #     if seedIsPid:
+    #         theSeed = os.getpid()
 
-        # print "Setting C-memory..."
-        rStuff = pf.setRellMemory(nTrees, nChar, theSeed)
-        for i in range(nTrees):
-            t = self.trees[i]
-            for j in range(nChar):
-                pf.pokeRellMemory(i, j, t.siteLikes[j], rStuff)
+    #     # print "Setting C-memory..."
+    #     rStuff = pf.setRellMemory(nTrees, nChar, theSeed)
+    #     for i in range(nTrees):
+    #         t = self.trees[i]
+    #         for j in range(nChar):
+    #             pf.pokeRellMemory(i, j, t.siteLikes[j], rStuff)
 
-        # print "Doing bootstrap ..."
-        winners = pf.rell(bootCount, rStuff)  # see data.c
-        pf.freeRellMemory(rStuff)
+    #     # print "Doing bootstrap ..."
+    #     winners = pf.rell(bootCount, rStuff)  # see data.c
+    #     pf.freeRellMemory(rStuff)
 
-        # print winners
+    #     # print winners
 
-        print("\nRELL bootstrap results")
-        print("======================")
-        for i in range(nTrees):
-            t = self.trees[i]
-            print("%3i   %20s  %1.3f" % (i, t.name, (float(winners[i]) / float(bootCount))))
+    #     print("\nRELL bootstrap results")
+    #     print("======================")
+    #     for i in range(nTrees):
+    #         t = self.trees[i]
+    #         print("%3i   %20s  %1.3f" % (i, t.name, (float(winners[i]) / float(bootCount))))
 
     def trackSplitsFromTree(self, theTree, windowSize=200, stride=100, fName='trackSplitsOut.py'):
         """See how slits from theTree changes over the trees in self.
