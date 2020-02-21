@@ -651,39 +651,154 @@ pf_pointChi2(PyObject *self, PyObject *args)
 // -----------------------------------
 
 
+// static PyObject *
+// pf_get_gsl_rng(PyObject *self, PyObject *args)
+// {
+//     const gsl_rng_type * T;
+//     const gsl_rng  *gsl_rng;
+	
+	
+//     gsl_rng_env_setup();  // make a generator.  See gsl docs.
+//     T = gsl_rng_default;
+//     gsl_rng = gsl_rng_alloc(T);
+//     if(!gsl_rng) {
+//         printf("pf_get_gsl_rng.  Failed to make a gsl_rng.\n");
+//         exit(1);
+//     }
+//     return Py_BuildValue("l", (long int)gsl_rng);
+// }
+
+
 static PyObject *
-pf_get_gsl_rng(PyObject *self, PyObject *args)
+pf_gsl_rng_get(PyObject *self, PyObject *args)
 {
     const gsl_rng_type * T;
-    const gsl_rng  *gsl_rng;
+    const gsl_rng  *g;
 	
 	
     gsl_rng_env_setup();  // make a generator.  See gsl docs.
     T = gsl_rng_default;
-    gsl_rng = gsl_rng_alloc(T);
-    if(!gsl_rng) {
-        printf("pf_get_gsl_rng.  Failed to make a gsl_rng.\n");
+    g = gsl_rng_alloc(T);
+    if(!g) {
+        printf("pf_gsl_rng_get.  Failed to make a gsl_rng.\n");
         exit(1);
     }
-    return Py_BuildValue("l", (long int)gsl_rng);
+    return Py_BuildValue("l", (long int)g);
+}
+
+static PyObject *
+pf_gsl_rng_free(PyObject *self, PyObject *args)
+{
+    gsl_rng  *g;   // not const
+	
+    if(!PyArg_ParseTuple(args, "l", &g)) {
+        printf("Error pf_gsl_rng_free: couldn't parse tuple\n");
+        return NULL;
+    }
+
+    gsl_rng_free(g);
+    Py_INCREF(Py_None);
+    return Py_None;
+	
 }
 
 
 static PyObject *
 pf_gsl_rng_set(PyObject *self, PyObject *args)
 {
-    const gsl_rng  *gsl_rng;
+    const gsl_rng  *g;
     long int        newSeed;
 	
-	
-    if(!PyArg_ParseTuple(args, "ll", &gsl_rng, &newSeed)) {
+    if(!PyArg_ParseTuple(args, "ll", &g, &newSeed)) {
         printf("Error pf_gsl_rng_set: couldn't parse tuple\n");
         return NULL;
     }
 
-    gsl_rng_set(gsl_rng, (unsigned long int)newSeed);
+    gsl_rng_set(g, (unsigned long int)newSeed);
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+static PyObject *
+pf_gsl_rng_size(PyObject *self, PyObject *args)
+{
+    const gsl_rng  *g;
+    size_t          theSize;
+	
+    if(!PyArg_ParseTuple(args, "l", &g)) {
+        printf("Error pf_gsl_rng_size: couldn't parse tuple\n");
+        return NULL;
+    }
+
+    theSize = gsl_rng_size(g);
+    return Py_BuildValue("i", (int)theSize);
+}
+
+static PyObject *
+pf_gsl_rng_uniform(PyObject *self, PyObject *args)
+{
+    const gsl_rng  *g;	
+	
+    if(!PyArg_ParseTuple(args, "l", &g)) {
+        printf("Error pf_gsl_rng_uniform: couldn't parse tuple\n");
+        return NULL;
+    }
+
+    return Py_BuildValue("d", (double)gsl_rng_uniform(g));
+}
+
+static PyObject *
+pf_gsl_rng_getstate(PyObject *self, PyObject *args)
+{
+    const gsl_rng * r;	
+    PyArrayObject * oByteArray;
+    void * state;
+    size_t n;
+    
+    if(!PyArg_ParseTuple(args, "lO", &r, &oByteArray)) {
+        printf("Error pf_gsl_rng_getstate: couldn't parse tuple\n");
+        return NULL;
+    }
+
+    // The C library function 
+    // void *memcpy(void *str1, const void *str2, size_t n) 
+    // copies n characters from memory area str2 to
+    // memory area str1.
+
+    state = gsl_rng_state(r);
+    n = gsl_rng_size(r);
+    memcpy(oByteArray->data, state, n);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+    
+}
+
+static PyObject *
+pf_gsl_rng_setstate(PyObject *self, PyObject *args)
+{
+    const gsl_rng * r;	
+    PyArrayObject * oByteArray;
+    void * state;
+    size_t n;
+	
+    if(!PyArg_ParseTuple(args, "lO", &r, &oByteArray)) {
+        printf("Error pf_gsl_rng_setstate: couldn't parse tuple\n");
+        return NULL;
+    }
+
+    // The C library function 
+    // void *memcpy(void *str1, const void *str2, size_t n) 
+    // copies n characters from memory area str2 to
+    // memory area str1.
+
+    state = gsl_rng_state(r);
+    n = gsl_rng_size(r);
+    memcpy(state, oByteArray->data, n);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+    
 }
 
 
@@ -2649,8 +2764,14 @@ static PyMethodDef pfMethods[] = {
     //{"rell", pf_rell, METH_VARARGS},
     //{"freeRellMemory", pf_freeRellMemory, METH_VARARGS},
 
-    {"get_gsl_rng", pf_get_gsl_rng, METH_VARARGS},
+    //{"get_gsl_rng", pf_get_gsl_rng, METH_VARARGS},
+    {"gsl_rng_get", pf_gsl_rng_get, METH_VARARGS},
+    {"gsl_rng_free", pf_gsl_rng_free, METH_VARARGS},
     {"gsl_rng_set", pf_gsl_rng_set, METH_VARARGS},
+    {"gsl_rng_size", pf_gsl_rng_size, METH_VARARGS},
+    {"gsl_rng_uniform", pf_gsl_rng_uniform, METH_VARARGS},
+    {"gsl_rng_getstate", pf_gsl_rng_getstate, METH_VARARGS},
+    {"gsl_rng_setstate", pf_gsl_rng_setstate, METH_VARARGS},
     {"gsl_ran_chisq_pdf", pf_gsl_ran_chisq_pdf, METH_VARARGS, doc_gsl_ran_chisq_pdf},
     {"gsl_ran_gamma", pf_gsl_ran_gamma, METH_VARARGS, doc_gsl_ran_gamma},
     {"gsl_ran_gamma_pdf", pf_gsl_ran_gamma_pdf, METH_VARARGS, doc_gsl_ran_gamma_pdf},

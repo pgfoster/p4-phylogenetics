@@ -718,7 +718,7 @@ class Data:
 
         isNewGSL_RNG = 0
         if not var.gsl_rng:
-            var.gsl_rng = pf.get_gsl_rng()
+            var.gsl_rng = pf.gsl_rng_get()
             isNewGSL_RNG = 1
             # print "got var.gsl_rng = %i" % var.gsl_rng
 

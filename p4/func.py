@@ -2836,7 +2836,7 @@ def reseedCRandomizer(newSeed):
         func.reseedCRandomizer(0)
         
         # for gsl
-        var.gsl_rng = pf.get_gsl_rng()
+        var.gsl_rng = pf.gsl_rng_get()
         pf.gsl_rng_set(var.gsl_rng, 0)
         
         # for the Python random library
@@ -2902,7 +2902,7 @@ def gsl_ran_gamma(a, b, seed=None):
 
     isNewGSL_RNG = 0
     if not var.gsl_rng:
-        var.gsl_rng = pf.get_gsl_rng()
+        var.gsl_rng = pf.gsl_rng_get()
         isNewGSL_RNG = 1
         # print "got var.gsl_rng = %i" % var.gsl_rng
         # sys.exit()
@@ -2991,7 +2991,7 @@ def gsl_ran_dirichlet(alpha, theta, seed=None):
 
     isNewGSL_RNG = 0
     if not var.gsl_rng:
-        var.gsl_rng = pf.get_gsl_rng()
+        var.gsl_rng = pf.gsl_rng_get()
         isNewGSL_RNG = 1
         # print "got var.gsl_rng = %i" % var.gsl_rng
         # sys.exit()
