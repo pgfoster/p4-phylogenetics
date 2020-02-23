@@ -1108,6 +1108,12 @@ class Mcmc(object):
 
         var.randomState = None    # for python random library
 
+        # For re-starts, if these values have changed or have been forgotten, allow checking and warning in Mcmc.run()
+        self.init_PIVEC_MIN = var.PIVEC_MIN
+        self.init_RATE_MIN = var.RATE_MIN
+        self.init_BRLEN_MIN = var.BRLEN_MIN
+        self.init_GAMMA_SHAPE_MIN = var.GAMMA_SHAPE_MIN
+
     def _setLogger(self):
         """Make a logger."""
 
@@ -2436,6 +2442,27 @@ class Mcmc(object):
 
         # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
+
+        # Don't forget to set the PIVEC_MIN etc in a restart.
+        if var.mcmc_doCheck_PIVEC_MIN_etc:
+            doWarning = False
+            if var.PIVEC_MIN != self.init_PIVEC_MIN:
+                gm.append(f"Initial var.PIVEC_MIN for this run was {self.init_PIVEC_MIN}, but now is {var.PIVEC_MIN}")
+                doWarning = True
+            if var.RATE_MIN != self.init_RATE_MIN:
+                gm.append(f"Initial var.RATE_MIN for this run was {self.init_RATE_MIN}, but now is {var.RATE_MIN}")
+                doWarning = True
+            if var.BRLEN_MIN != self.init_BRLEN_MIN:
+                gm.append(f"Initial var.BRLEN_MIN for this run was {self.init_BRLEN_MIN}, but now is {var.BRLEN_MIN}")
+                doWarning = True
+            if var.GAMMA_SHAPE_MIN != self.init_GAMMA_SHAPE_MIN:
+                gm.append(f"Initial var.GAMMA_SHAPE_MIN for this run was {self.init_GAMMA_SHAPE_MIN}, but now is {var.GAMMA_SHAPE_MIN}")
+                doWarning = True
+            if doWarning:
+                gm.append("Were these values forgotten in a restart?  If so, add them to the restart script.")
+                gm.append("Are these values intentionally different?  If so, you can turn off checking by setting, in your script ---")
+                gm.append("var.mcmc_doCheck_PIVEC_MIN_etc = False")
+                raise P4Error(gm)
 
         # Hidden experimental hack
         if self.doHeatingHack:

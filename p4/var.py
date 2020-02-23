@@ -312,6 +312,7 @@ class Var(object):
         self.mcmc_allowUnresolvedStartingTree = False
         self.mcmc_simTemp_tempCurveLogBase = 2.8    # higher -> more curvey; lower -> more linear
         self.mcmc_logTunings = False  # verbose logging of on-the-fly changes to tunings 
+        self.mcmc_doCheck_PIVEC_MIN_etc = True  # check PIVEC_MIN, RATE_MIN, BRLEN_MIN, GAMMA_SHAPE_MIN in Mcmc
 
         # This mcmc_swapTunerVTnLimitHi refers to the swapTunerV, the
         # vector (non-matrix) version of the swap tuner that only
