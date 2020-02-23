@@ -1,4 +1,17 @@
 # Do an MCMC with more than one data partition.
+
+# The defaults for these values are much smaller.  These suggested
+# changes may not be needed all the time, but seems to help for
+# difficult data.
+var.PIVEC_MIN = 1.e-6
+var.RATE_MIN = 1.e-6
+var.BRLEN_MIN = 1.e-5
+var.GAMMA_SHAPE_MIN = 0.15
+
+# Assuming more than one run, we set the run number by calling this script as
+# p4 sMcmcMultiPart.py -- 0     # 0, 1, 2, ...
+rNum = int(var.argvAfterDoubleDash[0])
+
 read("d.nex")
 a = var.alignments[0]
 a.setCharPartition('p1')
@@ -24,8 +37,14 @@ t.setRelRate(partNum=pNum, val=2.0)
 
 t.model.relRatesAreFree = True
 
-m = Mcmc(t, nChains=4, runNum=0, sampleInterval=10, checkPointInterval=2000)
-m.run(4000)
-func.summarizeMcmcPrams(skip=200)
+nGen = 1000000
+nSamples = 2000
+sInterv = int(nGen / nSamples)
+nCheckPoints = 2
+cpInterv = int(nGen / nCheckPoints)  # or None
+
+m = Mcmc(t, nChains=4, runNum=rNum, sampleInterval=sInterv, checkPointInterval=cpInterv)
+m.run(nGen)
+# func.summarizeMcmcPrams(skip=200)
 
 
