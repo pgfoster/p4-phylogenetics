@@ -967,7 +967,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         for(rate = 0; rate < mp->nCat; rate++) {
             for(i = 0; i < mp->dim; i++) {
                 if(aTree->root->cl[pNum][rate][i][seqPos] < 0.0) {
-                    printf("p4_partLogLike()  aTree->root->cl[pNum %i][rate %if][symb %i][seqPos %i]  %g\n", 
+                    printf("p4_partLogLike()  aTree->root->cl[pNum %i][rate %i][symb %i][seqPos %i]  %g\n", 
                            pNum, rate, i, seqPos, aTree->root->cl[pNum][rate][i][seqPos]);
                 }
             }

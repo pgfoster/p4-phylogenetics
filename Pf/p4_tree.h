@@ -1,4 +1,6 @@
 #include "Python.h"
+#include <gsl/gsl_rng.h>
+
 
 // p4_tree.c
 p4_tree *p4_newTree(int nNodes, int nLeaves, int *preOrder, int *postOrder, double *partLikes, data *aData, p4_model *aModel, int *newtAndBrentPowellOptPassLimit);
@@ -34,7 +36,7 @@ double LocalMin(double a, double b, double eps, double t, double (*f)(double *),
 void BracketMinimum(double *pA, double *pB, double (*func)(double []), double minAllowed, double maxAllowed);
 
 // p4_treeSim.c
-void p4_simulate(p4_tree *t, p4_tree *refTree);
+void p4_simulate(p4_tree *t, p4_tree *refTree, const gsl_rng  *g);
 void p4_drawAncState(p4_tree *t, int partNum, int seqPos);
 void p4_drawAncStateP(p4_tree *t, int partNum, int seqPos, int *draw);
 PyObject *p4_expectedCompositionCounts(p4_tree *t, int partNum);

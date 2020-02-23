@@ -2245,8 +2245,9 @@ pf_p4_simulate(PyObject *self, PyObject *args)
 {
     p4_tree *aTree;
     p4_tree *refTree;
+    const gsl_rng  *g;
 	
-    if(!PyArg_ParseTuple(args, "ll", &aTree, &refTree)) {
+    if(!PyArg_ParseTuple(args, "lll", &aTree, &refTree, &g)) {
         printf("Error pf_simulate: couldn't parse tuple\n");
         return NULL;
     }
@@ -2254,7 +2255,7 @@ pf_p4_simulate(PyObject *self, PyObject *args)
     // if(refTree == NULL) {
     //     printf("pf_p4_simulate() refTree is NULL\n");
     // }
-    p4_simulate(aTree, refTree);
+    p4_simulate(aTree, refTree, g);
     Py_INCREF(Py_None);
     return Py_None;
 }

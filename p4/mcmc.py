@@ -1099,7 +1099,14 @@ class Mcmc(object):
         # self.doRoot3Tuning = False
         # self.doRoot3nTuning = False
 
-        
+        if not var.gsl_rng:
+            var.gsl_rng = pf.gsl_rng_get()
+            pf.gsl_rng_set(var.gsl_rng, int(time.time()))
+        the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
+        # A place to store the state.  Empty to start.  It is stored during a checkpoint.
+        self.gsl_rng_state_ndarray = numpy.array(['0'] * the_gsl_rng_size, numpy.dtype('B'))  # B is unsigned byte
+
+        var.randomState = None    # for python random library
 
     def _setLogger(self):
         """Make a logger."""
@@ -3306,6 +3313,14 @@ class Mcmc(object):
         self.logger = None
         savedLoggerPrinter = self.loggerPrinter
         self.loggerPrinter = None
+
+        # gsl_rng state
+        the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
+        assert self.gsl_rng_state_ndarray.shape[0] == the_gsl_rng_size
+        pf.gsl_rng_getstate(var.gsl_rng, self.gsl_rng_state_ndarray)
+
+        # random (python module) state
+        self.randomState = random.getstate()
 
         if self.setupPfLogging:
             # Get rid of the mcmcTreeCallbacks

@@ -2,7 +2,7 @@
 #include "p4_tree.h"
 #include "pmatrices.h"
 #include "defines.h"
-#include "util.h"
+// #include "util.h"
 #include "p4_node.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,7 @@
 
 
 
-void p4_simulate(p4_tree *t, p4_tree *refTree)
+void p4_simulate(p4_tree *t, p4_tree *refTree, const gsl_rng  *g)
 {
 
     double  theRanDoubleUpToOne;
@@ -294,7 +294,7 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
             mp = t->model->parts[pNum];
             if(mp->nCat > 1) {
                 for(i = 0; i < dp->nChar; i++) {
-                    dp->simCats[i] = (int)floor(((double)mp->nCat) * ranDoubleUpToOne());
+                    dp->simCats[i] = (int)floor(((double)mp->nCat) * gsl_rng_uniform(g));
                 }
             } else {
                 for(i = 0; i < dp->nChar; i++) {
@@ -332,7 +332,7 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
 
             // simulate root sequence
             for(j = 0; j < d->parts[pNum]->nChar; j++) {
-                theRanDoubleUpToOne = ranDoubleUpToOne();
+                theRanDoubleUpToOne = gsl_rng_uniform(g);
                 for(k = 0; k < mp->dim; k++) {
                     if(theRanDoubleUpToOne < mp->charStatePicker[k]) {
                         t->simSequences[pNum][t->root->nodeNum][j] = k;
@@ -366,7 +366,7 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
             mp = t->model->parts[pNum];
             if(mp->pInvar->val[0] > 0.0) {
                 for(i = 0; i < dp->nChar; i++) {
-                    theRanDoubleUpToOne = ranDoubleUpToOne();
+                    theRanDoubleUpToOne = gsl_rng_uniform(g);
                     if(theRanDoubleUpToOne < mp->pInvar->val[0]) {
                         dp->globalInvarSitesVec[i] = 1;
                     }
@@ -451,7 +451,7 @@ void p4_simulate(p4_tree *t, p4_tree *refTree)
                         }
                         else {
                             simCat = d->parts[pNum]->simCats[k]; // if nCat is 1, this will be zero.
-                            theRanDoubleUpToOne = ranDoubleUpToOne();
+                            theRanDoubleUpToOne = gsl_rng_uniform(g);
                             for(l = 0; l < mp->dim; l++) {
                                 if(theRanDoubleUpToOne < n->pickerDecks[pNum][simCat][parentState][l]) {
                                     t->simSequences[pNum][tOrd][k] = l;

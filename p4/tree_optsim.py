@@ -363,7 +363,9 @@ if True:
             assert refTree.model.cModel
             assert refTree.data.cData
             
-            
+        if not var.gsl_rng:
+            var.gsl_rng = pf.gsl_rng_get()
+            pf.gsl_rng_set(var.gsl_rng, int(time.time()))
 
         self._commonCStuff()
         if refTree:
@@ -391,9 +393,9 @@ if True:
 
         # print "About to pf.p4_simulate(self.cTree)"
         if refTree:
-            pf.p4_simulate(self.cTree, refTree.cTree)
+            pf.p4_simulate(self.cTree, refTree.cTree, var.gsl_rng)
         else:
-            pf.p4_simulate(self.cTree, 0)
+            pf.p4_simulate(self.cTree, 0, var.gsl_rng)
         if calculatePatterns:
             for p in self.data.parts:
                 pf.makePatterns(p.cPart)
