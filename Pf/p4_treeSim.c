@@ -775,7 +775,8 @@ void p4_drawAncState(p4_tree *t, int partNum, int seqPos)
 
     // The random number is not from zero to one, it is from zero to sLike.
     // That way we do not need to change the ancStPicker
-    theRanDouble = ((double)random()) / ((double)((long)RAND_MAX));
+    //theRanDouble = ((double)random()) / ((double)((long)RAND_MAX));
+    theRanDouble = (double)random() / ((double)(RAND_MAX) + 1.0) ;
     theRanDouble *= sLike;
     // printf("Got theRanDouble %.10f\n", theRanDouble);
                 

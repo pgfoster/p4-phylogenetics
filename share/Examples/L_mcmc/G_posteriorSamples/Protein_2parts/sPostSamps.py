@@ -1,4 +1,3 @@
-from __future__ import print_function
 read("d.nex")
 read('sets.nex')
 a = var.alignments[0]
@@ -24,9 +23,6 @@ t.setPInvar(partNum=pNum, free=1, val=0.1)
 t.setRelRate(partNum=pNum, val=2.0)
 
 t.model.relRatesAreFree = True
-t.calcLogLike()
-
-func.reseedCRandomizer(os.getpid())
 t.calcLogLike()
 
 ps = PosteriorSamples(t, runNum=0, program='p4', verbose=3)

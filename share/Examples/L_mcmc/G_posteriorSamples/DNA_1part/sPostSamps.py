@@ -1,4 +1,3 @@
-from __future__ import print_function
 read("d.nex")
 d = Data()
 t = func.randomTree(taxNames=d.taxNames)
@@ -9,7 +8,6 @@ t.setNGammaCat(nGammaCat=4)
 t.newGdasrv(free=0, val=0.5)
 t.setPInvar(free=0, val=0.0)
 
-func.reseedCRandomizer(os.getpid())
 t.calcLogLike()
 
 ps = PosteriorSamples(t, runNum=0, program='p4', verbose=3)

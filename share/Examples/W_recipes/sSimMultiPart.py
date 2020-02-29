@@ -29,6 +29,5 @@ t.setNGammaCat(partNum=pNum, nGammaCat=1)
 t.setPInvar(partNum=pNum, free=0, val=0.35)
 t.setRelRate(partNum=pNum, val=0.3)
 
-func.reseedCRandomizer(os.getpid())
 t.simulate()
 d.writeNexus('d.nex')

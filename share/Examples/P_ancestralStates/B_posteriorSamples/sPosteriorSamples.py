@@ -20,8 +20,6 @@ t.model.parts[pNum].ndch2_writeComps = True
 
 t.calcLogLike(verbose=False)
 
-func.reseedCRandomizer(os.getpid())
-
 # Instantiate
 ps = PosteriorSamples(t, runNum=0, program='p4', verbose=0)
 

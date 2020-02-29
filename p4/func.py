@@ -2843,17 +2843,17 @@ def reseedCRandomizer(newSeed):
     this (where I am using a seed of zero for all -- you could use
     your own seed, and they do not need to be the same)::
 
-        # for C random() function
+        # for C random() function, used in Brent-Powell optimization
         func.reseedCRandomizer(0)
         
-        # for gsl
+        # for gsl, used in simulations (amongst other places)
         var.gsl_rng = pf.gsl_rng_get()
         pf.gsl_rng_set(var.gsl_rng, 0)
         
-        # for the Python random library
+        # for the Python random library, used a lot in python code
         random.seed(0)
         
-        # for Numpy and Scipy.
+        # for Numpy and Scipy.  Used in func.dirichlet2()
         numpy.random.seed(0)
 
     """

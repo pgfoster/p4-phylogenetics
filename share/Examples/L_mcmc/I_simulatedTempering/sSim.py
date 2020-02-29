@@ -12,7 +12,6 @@ t.setNGammaCat(nGammaCat=1)
 #t.newGdasrv(free=0, val=0.5)
 t.setPInvar(free=0, val=0.0)
 
-func.reseedCRandomizer(os.getpid())
 t.simulate()
 
 d.writeNexus('d.nex', writeDataBlock=True)
