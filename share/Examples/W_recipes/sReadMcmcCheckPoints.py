@@ -12,7 +12,7 @@ cpr.writeProposalAcceptances()
 #cpr.compareSplits(0, 1)
 
 # How was swapping between heated chains?
-#cpr.writeSwapMatrices()
+#cpr.writeSwapVectors()
 
 #cpr.writeProposalProbs()
 

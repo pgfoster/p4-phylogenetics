@@ -9,7 +9,7 @@ print('Original unconstrained log like is %s' % unk)
 print('Here is the posterior predictive distribution:')
 n.histo()
 n.tailAreaProbability(unk)
-
+print()
 
 # do bigXSq
 ret = d.compoChiSquaredTest(verbose=0)
