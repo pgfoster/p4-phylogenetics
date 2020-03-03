@@ -2596,8 +2596,16 @@ class Mcmc(object):
                     gm.append("m.prob.compLocation = 0.0")
                     raise P4Error(gm)
                     
+        # Find the cold chain, the one where tempNum is 0
+        coldChainNum = -1
+        for i in range(len(self.chains)):
+            if self.chains[i].tempNum == 0:
+                coldChainNum = i
+                break
+        if coldChainNum == -1:
+            gm.append("Unable to find which chain is the cold chain.  That is Bad.")
+            raise P4Error(gm)
 
-        coldChainNum = 0
 
         # # If polytomy is turned on, then it is possible to get a star
         # # tree, in which case local will not work.  So if we have both
@@ -2909,6 +2917,7 @@ class Mcmc(object):
                 else:
                     self.treePartitions = TreePartitions(
                         self.chains[coldChainNum].curTree)
+
                 # After _getSplitsFromTree, need to follow, at some point,
                 # with _finishSplits().  Do that when it is pickled, or at the
                 # end of the run.
@@ -2948,10 +2957,11 @@ class Mcmc(object):
             if not writeSamples:
                 doCheckPoint = False
             else:
-                if self.checkPointInterval and (self.gen + 1) % self.checkPointInterval == 0:
+                if self.checkPointInterval and (gNum + 1) % self.checkPointInterval == 0:
                     doCheckPoint = True                
             
             if doCheckPoint:
+                # print(f"writing checkpoint at self.gen {self.gen}, gNum {gNum}")
                 self.checkPoint()
 
                 # The stuff below needs to be done in a re-start as well.
