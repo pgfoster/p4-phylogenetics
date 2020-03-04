@@ -67,7 +67,6 @@ for aNum in range(len(aa)):
     t.setRelRate(partNum=aNum, val=mP.relRate)
 
 t.model.relRatesAreFree = True
-func.reseedCRandomizer(os.getpid())
 t.simulate()
 t.name = 'simTree'
 

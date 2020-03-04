@@ -315,16 +315,25 @@ if True:
 
         The tree self needs to have a data and model attached.
 
-        This week, generation of random numbers uses the C language random
-        function, which is in stdlib on Linux.  It will use the same
-        series of random numbers over and over, unless you tell it
-        otherwise.  That means that (unless you tell it otherwise) it will
-        generate the same simulated data if you run it twice.  To reset
-        the randomizer, you can use p4.func.reseedCRandomizer(), eg
+        Generation of random numbers uses the GSL random number
+        generator.  The state is held in var.gsl_rng, which is None by
+        default.  If you do a simulation using this method, it will
+        use ``var.gsl_rng`` if it exists, or make it if it does not exist
+        yet.  When it makes it, it seeds the state based on the
+        current time.  That should give you lots of variation in the
+        simulations.
 
-        func.reseedCRandomizer(os.getpid())
+        If on the other hand you want to make simulations that are the
+        same you can reseed the randomizer with the same seed whenever
+        you do it, like this::
 
-        The usual way to simulate does not use reference data.  An unsual way to
+            if not var.gsl_rng:
+                var.gsl_rng = pf.gsl_rng_get()
+            # unusually, set the seed with each simulation
+            mySeed = 23    # your chosen int seed
+            pf.gsl_rng_set(var.gsl_rng, mySeed)
+
+        The usual way to simulate does not use reference data.  An unusual way to
         simulate comes from (inspired by?) PhyloBayes, where the simulation is
         conditional on the original data.  It uses conditional likelihoods of
         that reference data at the root.  To turn that on, set refTree to the
@@ -363,7 +372,9 @@ if True:
             assert refTree.model.cModel
             assert refTree.data.cData
             
-            
+        if not var.gsl_rng:
+            var.gsl_rng = pf.gsl_rng_get()
+            pf.gsl_rng_set(var.gsl_rng, int(time.time()))
 
         self._commonCStuff()
         if refTree:
@@ -391,9 +402,9 @@ if True:
 
         # print "About to pf.p4_simulate(self.cTree)"
         if refTree:
-            pf.p4_simulate(self.cTree, refTree.cTree)
+            pf.p4_simulate(self.cTree, refTree.cTree, var.gsl_rng)
         else:
-            pf.p4_simulate(self.cTree, 0)
+            pf.p4_simulate(self.cTree, 0, var.gsl_rng)
         if calculatePatterns:
             for p in self.data.parts:
                 pf.makePatterns(p.cPart)

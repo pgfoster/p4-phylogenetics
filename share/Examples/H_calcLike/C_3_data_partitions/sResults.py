@@ -1,4 +1,3 @@
-from __future__ import print_function
 read('opt.p4_tPickle')
 t = var.trees[0]
 

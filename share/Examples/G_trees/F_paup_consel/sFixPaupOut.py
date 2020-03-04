@@ -1,4 +1,3 @@
-from __future__ import print_function
 import sys
 nTrees = 15
 nSites = 400

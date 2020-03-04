@@ -1,4 +1,3 @@
-from __future__ import print_function
 var.verboseRead = 0
 var.warnReadNoFile = 0
 read('d.nex')
@@ -27,7 +26,6 @@ print(t.model.parts[0].comps[0].val)
 print('...and the composition of the root model is:')
 print(t.model.parts[0].comps[1].val)
 t.write()
-func.reseedCRandomizer(os.getpid())
 
 counts = [0] * 4
 for rep in range(100):

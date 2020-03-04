@@ -1,4 +1,3 @@
-from __future__ import print_function
 read('d.nex')
 a=var.alignments[0]
 a.writePhylip()

@@ -1,4 +1,3 @@
-from __future__ import print_function
 read('inTrees.phy')
 inTrees = var.trees
 var.trees = []

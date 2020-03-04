@@ -37,7 +37,8 @@ void checkpointOneInt(char *location, int theInt)
 
 double ranDoubleUpToOne(void)
 {
-    return ((double)random()) / ((double)((long)RAND_MAX)) ;
+    // return ((double)random()) / ((double)((long)RAND_MAX)) ;  // old
+    return (double)random() / ((double)(RAND_MAX) + 1.0) ;     // Feb 2020 added +1 to exclude 1.0  [0,1)
 }
 
 void setBigQFromRMatrixDotCharFreq(double **theBigQ, double **theRMatrix, double *charFreq, int dim)

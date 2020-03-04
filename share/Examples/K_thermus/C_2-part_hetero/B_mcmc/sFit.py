@@ -1,4 +1,3 @@
-from __future__ import print_function
 read('../../noTRuberNoGapsNoAmbiguities.nex')
 d = Data()
 

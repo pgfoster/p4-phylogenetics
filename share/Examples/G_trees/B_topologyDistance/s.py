@@ -1,4 +1,3 @@
-from __future__ import print_function
 read('t.nex')
 t1 = var.trees[0]
 t2 = var.trees[1]

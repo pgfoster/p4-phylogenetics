@@ -1,7 +1,6 @@
-from __future__ import print_function
 cpr = McmcCheckPointReader()
 cpr.writeProposalAcceptances()
-cpr.writeSwapMatrices()
+cpr.writeSwapVectors()
 #cpr.writeProposalProbs()
 m = cpr.mm[0]
 m.tunings.dump(advice=False)

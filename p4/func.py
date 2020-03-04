@@ -2277,6 +2277,17 @@ def unPickleMcmc(runNum, theData, verbose=True):
     m = pickle.load(f)
     f.close()
 
+    # Restore gsl_rng state
+    if not var.gsl_rng:
+        var.gsl_rng = pf.gsl_rng_get()
+    the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
+    assert m.gsl_rng_state_ndarray.shape[0] == the_gsl_rng_size
+    pf.gsl_rng_setstate(var.gsl_rng, m.gsl_rng_state_ndarray)
+
+    # restore random (python module) state
+    assert m.randomState
+    random.setstate(m.randomState)
+
     m.tree.data = theData
     m.tree.calcLogLike(verbose=False, resetEmpiricalComps=False)
     if m.simulate:
@@ -2838,18 +2849,17 @@ def reseedCRandomizer(newSeed):
     this (where I am using a seed of zero for all -- you could use
     your own seed, and they do not need to be the same)::
 
-        # for C random() function
+        # for C random() function, used in Brent-Powell optimization
         func.reseedCRandomizer(0)
         
-        # for gsl
-        var.gsl_rng = pf.get_gsl_rng()
+        # for gsl, used in simulations (amongst other places)
+        var.gsl_rng = pf.gsl_rng_get()
         pf.gsl_rng_set(var.gsl_rng, 0)
         
-        # for the Python random library
+        # for the Python random library, used a lot in python code
         random.seed(0)
         
-        # for Numpy and Scipy.  Possiby should use "random_state" parameter insted; see docs,
-        # https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html
+        # for Numpy and Scipy.  Used in func.dirichlet2()
         numpy.random.seed(0)
 
     """
@@ -2909,7 +2919,7 @@ def gsl_ran_gamma(a, b, seed=None):
 
     isNewGSL_RNG = 0
     if not var.gsl_rng:
-        var.gsl_rng = pf.get_gsl_rng()
+        var.gsl_rng = pf.gsl_rng_get()
         isNewGSL_RNG = 1
         # print "got var.gsl_rng = %i" % var.gsl_rng
         # sys.exit()
@@ -2970,18 +2980,18 @@ def dirichlet2(inSeq, outSeq, alpha, theMin):
             raise P4Error(gm)
 
 
-def gsl_ran_dirichlet(alpha, theta, seed=None):
+def gsl_ran_dirichlet(alpha, theta):
     """Make a random draw from a dirichlet distribution.
 
-    Args *alpha* and *theta* should be NumPy arrays, both the same
-    length (more than 1).  The length is the dimension of the
-    dirichlet.  The contents of *theta* are over-written (without
-    being used).  The draw ends up in *theta*.  It is normalized
-    so that it sums to 1.0.
+    Args:
 
-    This handles making the GSL random number generator, or
-    re-using it if it was made before.  If it is newly made, you
-    can optionally set its *seed*; otherwise the pid is used.
+        alpha and theta (numpy arrays): both the same length (more
+            than 1).  The length is the dimension of the dirichlet.
+            The contents of *theta* are over-written (without being
+            used).  The draw ends up in *theta*.  It is normalized so
+            that it sums to 1.0.
+
+
     """
 
     complaintHead = '\nfunc.gsl_ran_dirichlet()'
@@ -2996,26 +3006,9 @@ def gsl_ran_dirichlet(alpha, theta, seed=None):
     assert len(alpha) > 1
     assert len(theta) == len(alpha)
 
-    isNewGSL_RNG = 0
     if not var.gsl_rng:
-        var.gsl_rng = pf.get_gsl_rng()
-        isNewGSL_RNG = 1
-        # print "got var.gsl_rng = %i" % var.gsl_rng
-        # sys.exit()
-
-        # Set the GSL random number generator seed, only if it is a new GSL_RNG
-        if isNewGSL_RNG:
-            if seed != None:
-                try:
-                    newSeed = int(seed)
-                    pf.gsl_rng_set(var.gsl_rng, newSeed)
-                except ValueError:
-                    print(complaintHead)
-                    print("    The seed should be convertable to an integer")
-                    print("    Using the process id instead.")
-                    pf.gsl_rng_set(var.gsl_rng,  os.getpid())
-            else:
-                pf.gsl_rng_set(var.gsl_rng,  os.getpid())
+        var.gsl_rng = pf.gsl_rng_get()
+        pf.gsl_rng_set(var.gsl_rng, int(time.time()))
 
     pf.gsl_ran_dirichlet(var.gsl_rng, len(theta), alpha, theta)
 

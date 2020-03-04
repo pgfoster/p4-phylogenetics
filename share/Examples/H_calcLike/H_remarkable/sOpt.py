@@ -1,4 +1,3 @@
-from __future__ import print_function
 var.verboseRead = 0
 var.warnReadNoFile = 0
 read('data.nex')

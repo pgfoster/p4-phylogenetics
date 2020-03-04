@@ -1,4 +1,3 @@
-from __future__ import print_function
 read('../A_NavidiAlignFromYang/navidiSSRNA.nex')
 d = Data()
 read('t.nex')

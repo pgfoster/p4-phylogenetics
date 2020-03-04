@@ -24,7 +24,6 @@ t.setPInvar(partNum=pNum, free=0, val=0.2)
 t.setRelRate(partNum=pNum, val=1.5)
 
 t.model.relRatesAreFree = 1
-func.reseedCRandomizer(os.getpid())
 t.simulate()
 
 a.bluntEndLigate(b)

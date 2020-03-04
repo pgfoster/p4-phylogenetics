@@ -1099,7 +1099,20 @@ class Mcmc(object):
         # self.doRoot3Tuning = False
         # self.doRoot3nTuning = False
 
-        
+        if not var.gsl_rng:
+            var.gsl_rng = pf.gsl_rng_get()
+            pf.gsl_rng_set(var.gsl_rng, int(time.time()))
+        the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
+        # A place to store the state.  Empty to start.  It is stored during a checkpoint.
+        self.gsl_rng_state_ndarray = numpy.array(['0'] * the_gsl_rng_size, numpy.dtype('B'))  # B is unsigned byte
+
+        var.randomState = None    # for python random library
+
+        # For re-starts, if these values have changed or have been forgotten, allow checking and warning in Mcmc.run()
+        self.init_PIVEC_MIN = var.PIVEC_MIN
+        self.init_RATE_MIN = var.RATE_MIN
+        self.init_BRLEN_MIN = var.BRLEN_MIN
+        self.init_GAMMA_SHAPE_MIN = var.GAMMA_SHAPE_MIN
 
     def _setLogger(self):
         """Make a logger."""
@@ -2430,6 +2443,27 @@ class Mcmc(object):
         # Keep track of the first gen of this call to run(), maybe restart
         firstGen = self.gen + 1
 
+        # Don't forget to set the PIVEC_MIN etc in a restart.
+        if var.mcmc_doCheck_PIVEC_MIN_etc:
+            doWarning = False
+            if var.PIVEC_MIN != self.init_PIVEC_MIN:
+                gm.append(f"Initial var.PIVEC_MIN for this run was {self.init_PIVEC_MIN}, but now is {var.PIVEC_MIN}")
+                doWarning = True
+            if var.RATE_MIN != self.init_RATE_MIN:
+                gm.append(f"Initial var.RATE_MIN for this run was {self.init_RATE_MIN}, but now is {var.RATE_MIN}")
+                doWarning = True
+            if var.BRLEN_MIN != self.init_BRLEN_MIN:
+                gm.append(f"Initial var.BRLEN_MIN for this run was {self.init_BRLEN_MIN}, but now is {var.BRLEN_MIN}")
+                doWarning = True
+            if var.GAMMA_SHAPE_MIN != self.init_GAMMA_SHAPE_MIN:
+                gm.append(f"Initial var.GAMMA_SHAPE_MIN for this run was {self.init_GAMMA_SHAPE_MIN}, but now is {var.GAMMA_SHAPE_MIN}")
+                doWarning = True
+            if doWarning:
+                gm.append("Were these values forgotten in a restart?  If so, add them to the restart script.")
+                gm.append("Are these values intentionally different?  If so, you can turn off checking by setting, in your script ---")
+                gm.append("var.mcmc_doCheck_PIVEC_MIN_etc = False")
+                raise P4Error(gm)
+
         # Hidden experimental hack
         if self.doHeatingHack:
             print("Heating hack is turned on.")
@@ -2562,8 +2596,16 @@ class Mcmc(object):
                     gm.append("m.prob.compLocation = 0.0")
                     raise P4Error(gm)
                     
+        # Find the cold chain, the one where tempNum is 0
+        coldChainNum = -1
+        for i in range(len(self.chains)):
+            if self.chains[i].tempNum == 0:
+                coldChainNum = i
+                break
+        if coldChainNum == -1:
+            gm.append("Unable to find which chain is the cold chain.  That is Bad.")
+            raise P4Error(gm)
 
-        coldChainNum = 0
 
         # # If polytomy is turned on, then it is possible to get a star
         # # tree, in which case local will not work.  So if we have both
@@ -2875,6 +2917,7 @@ class Mcmc(object):
                 else:
                     self.treePartitions = TreePartitions(
                         self.chains[coldChainNum].curTree)
+
                 # After _getSplitsFromTree, need to follow, at some point,
                 # with _finishSplits().  Do that when it is pickled, or at the
                 # end of the run.
@@ -2914,10 +2957,11 @@ class Mcmc(object):
             if not writeSamples:
                 doCheckPoint = False
             else:
-                if self.checkPointInterval and (self.gen + 1) % self.checkPointInterval == 0:
+                if self.checkPointInterval and (gNum + 1) % self.checkPointInterval == 0:
                     doCheckPoint = True                
             
             if doCheckPoint:
+                # print(f"writing checkpoint at self.gen {self.gen}, gNum {gNum}")
                 self.checkPoint()
 
                 # The stuff below needs to be done in a re-start as well.
@@ -3306,6 +3350,14 @@ class Mcmc(object):
         self.logger = None
         savedLoggerPrinter = self.loggerPrinter
         self.loggerPrinter = None
+
+        # gsl_rng state
+        the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
+        assert self.gsl_rng_state_ndarray.shape[0] == the_gsl_rng_size
+        pf.gsl_rng_getstate(var.gsl_rng, self.gsl_rng_state_ndarray)
+
+        # random (python module) state
+        self.randomState = random.getstate()
 
         if self.setupPfLogging:
             # Get rid of the mcmcTreeCallbacks

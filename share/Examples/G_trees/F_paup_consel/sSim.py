@@ -1,6 +1,5 @@
 var.warnReadNoFile = 0
 var.verboseRead = 0
-func.reseedCRandomizer(os.getpid())
 
 nTax = 5
 taxNames = list(string.ascii_uppercase[:nTax])

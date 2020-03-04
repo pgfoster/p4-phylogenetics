@@ -20,8 +20,6 @@ t.model.parts[pNum].ndch2_writeComps = True
 
 t.calcLogLike(verbose=False)
 
-func.reseedCRandomizer(os.getpid())
-
 # Instantiate
 ps = PosteriorSamples(t, runNum=0, program='p4', verbose=0)
 
@@ -32,9 +30,9 @@ ps = PosteriorSamples(t, runNum=0, program='p4', verbose=0)
 
 counts = [0] * 4
 
-# In this example we have 2000 samples.
+# In this example we have 200 samples.
 for sampNum in range(100,200):
-    print(sampNum)
+    print(sampNum)              # uselessly
     t2 = ps.getSample(sampNum)
     t2.data = d
     asd = t2.ancestralStateDraw()

@@ -32,7 +32,6 @@ Here is an example simulation using p4.  It uses a GTR+G model; the pInvar model
     t.newGdasrv(free=0, val=0.5)
     t.setPInvar(free=0, val=0.0)
 
-    func.reseedCRandomizer(os.getpid())
     t.simulate()
 
     d.writeNexus('d.nex', writeDataBlock=True)
@@ -273,8 +272,6 @@ I ran an MCMC using p4 with the same data ``d.phy`` as above, with the GTR+G mod
 
     # Instantiate
     ps = PosteriorSamples(t, runNum=0, program='p4', verbose=0)
-
-    func.reseedCRandomizer(os.getpid())
 
     myDiffs = []
     myDiffsWithRefTree = []

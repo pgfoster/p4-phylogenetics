@@ -48,61 +48,61 @@ void dumpData(data *theData)
 }
 
 
-PyObject *rell(int nBoots, rellStuff *rStuff)
-{
-	PyObject *thePyList;
-	int i,j,k;
-	int *winners;
-	double *sums;
-	int  *indxs;
-	float theMax;
-	int   theIndx;
+// PyObject *rell(int nBoots, rellStuff *rStuff)
+// {
+// 	PyObject *thePyList;
+// 	int i,j,k;
+// 	int *winners;
+// 	double *sums;
+// 	int  *indxs;
+// 	float theMax;
+// 	int   theIndx;
 	
-	winners = pivector(rStuff->nTrees);
-	indxs = pivector(rStuff->nChar);
-	sums = pdvector(rStuff->nTrees);
+// 	winners = pivector(rStuff->nTrees);
+// 	indxs = pivector(rStuff->nChar);
+// 	sums = pdvector(rStuff->nTrees);
 
-	for(j = 0; j < rStuff->nTrees; j++) {
-		winners[j] = 0;
-	}	
+// 	for(j = 0; j < rStuff->nTrees; j++) {
+// 		winners[j] = 0;
+// 	}	
 
-	for(i = 0; i < nBoots; i++) {
+// 	for(i = 0; i < nBoots; i++) {
 		
-		for(j = 0; j < rStuff->nChar; j++) {
-			indxs[j] = (int)gsl_rng_uniform_int(rStuff->gsl_rng, (unsigned long int)(rStuff->nChar));
-		}
-		for(j = 0; j < rStuff->nTrees; j++) {
-			sums[j] = 0.0;
-		}
-		for(j = 0; j < rStuff->nTrees; j++) {
-			for(k = 0; k < rStuff->nChar; k++) {
-				sums[j] = sums[j] + rStuff->mat[j][indxs[k]];
-			}
-		}
-		theMax = sums[0];
-		theIndx = 0;
-		for(j = 0; j < rStuff->nTrees; j++) {
-			if(sums[j] > theMax) {
-				theMax = sums[j];
-				theIndx = j;
-			}
-		}
+// 		for(j = 0; j < rStuff->nChar; j++) {
+// 			indxs[j] = (int)gsl_rng_uniform_int(rStuff->gsl_rng, (unsigned long int)(rStuff->nChar));
+// 		}
+// 		for(j = 0; j < rStuff->nTrees; j++) {
+// 			sums[j] = 0.0;
+// 		}
+// 		for(j = 0; j < rStuff->nTrees; j++) {
+// 			for(k = 0; k < rStuff->nChar; k++) {
+// 				sums[j] = sums[j] + rStuff->mat[j][indxs[k]];
+// 			}
+// 		}
+// 		theMax = sums[0];
+// 		theIndx = 0;
+// 		for(j = 0; j < rStuff->nTrees; j++) {
+// 			if(sums[j] > theMax) {
+// 				theMax = sums[j];
+// 				theIndx = j;
+// 			}
+// 		}
 		
-		winners[theIndx] = winners[theIndx] + 1;
-	}
+// 		winners[theIndx] = winners[theIndx] + 1;
+// 	}
 		
 	
 
 	   
-	thePyList = PyList_New(rStuff->nTrees);
-	for(i = 0; i < rStuff->nTrees; i++) {
-            PyList_SetItem(thePyList, i, PyLong_FromLong((long int)winners[i]));
-	}
-	free(winners);
-	free(indxs);
-	free(sums);
-	return thePyList;
-}
+// 	thePyList = PyList_New(rStuff->nTrees);
+// 	for(i = 0; i < rStuff->nTrees; i++) {
+//             PyList_SetItem(thePyList, i, PyLong_FromLong((long int)winners[i]));
+// 	}
+// 	free(winners);
+// 	free(indxs);
+// 	free(sums);
+// 	return thePyList;
+// }
 
 void bootstrapData(data *reference, data *toFill, const gsl_rng *gsl_rng)
 {

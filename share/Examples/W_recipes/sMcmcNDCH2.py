@@ -1,12 +1,17 @@
 # Do an MCMC with the NDCH2 model
 # Here I assume only one data partition, part 0
 
-# Hopefully these will not be needed, but in the event of 
-# a bad matrix exponentiation these might be useful
-# var.PIVEC_MIN = 1.e-7
-# var.RATE_MIN = 1.e-7
-# var.BRLEN_MIN = 1.e-6
-# var.GAMMA_SHAPE_MIN = 0.1
+# The defaults for these values are much smaller.  These suggested
+# changes may not be needed all the time, but seems to help for
+# difficult data.
+var.PIVEC_MIN = 1.e-6
+var.RATE_MIN = 1.e-6
+var.BRLEN_MIN = 1.e-5
+var.GAMMA_SHAPE_MIN = 0.15
+
+# Assuming more than one run, we set the run number by calling this script as
+# p4 sMcmcNDCH2.py -- 0     # 0, 1, 2, ...
+rNum = int(var.argvAfterDoubleDash[0])
 
 read("d.nex")
 d = Data()
@@ -33,10 +38,10 @@ nGen = 1000000
 nSamples = 2000
 sInterv = int(nGen / nSamples)
 nCheckPoints = 2
-cpInterv = int(nGen / nCheckPoints)
+cpInterv = int(nGen / nCheckPoints)  # or None
 
 # Instantiate an Mcmc object.  Adjust nChains and runNum appropriately.
-m = Mcmc(t, nChains=4, runNum=0, sampleInterval=sInterv, checkPointInterval=cpInterv)
+m = Mcmc(t, nChains=4, runNum=rNum, sampleInterval=sInterv, checkPointInterval=cpInterv)
 
 # Check what proposals are turned on
 # print(m.prob)

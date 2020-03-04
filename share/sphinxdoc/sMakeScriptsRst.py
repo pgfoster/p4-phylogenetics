@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Make the rst file scripts.rst
 from p4.P4Error import P4Error
 

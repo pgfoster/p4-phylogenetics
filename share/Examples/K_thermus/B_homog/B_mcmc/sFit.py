@@ -1,4 +1,3 @@
-from __future__ import print_function
 read('../../noTRuberNoGapsNoAmbiguities.nex')
 d = Data()
 
@@ -10,7 +9,7 @@ print('Original unconstrained log like is %s' % unk)
 print('Here is the posterior predictive distribution:')
 n.histo()
 n.tailAreaProbability(unk)
-
+print()
 
 # do bigXSq
 ret = d.compoChiSquaredTest(verbose=0)

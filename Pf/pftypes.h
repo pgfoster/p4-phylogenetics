@@ -1,4 +1,4 @@
-#include <gsl/gsl_rng.h>
+// #include <gsl/gsl_rng.h>
 #include <Python.h>
 
 
@@ -6,7 +6,7 @@ typedef struct dataStruct data;
 typedef struct partStruct part;
 typedef struct eigStruct eig;
 typedef struct pcomplexStruct pcomplex;
-typedef struct rellStuffStruct rellStuff;
+//typedef struct rellStuffStruct rellStuff;
 
 typedef struct p4_treeStruct p4_tree;
 typedef struct p4_nodeStruct p4_node;
@@ -78,12 +78,12 @@ struct pcomplexStruct{
 };
 
 
-struct rellStuffStruct{
-    int             nTrees;
-    int             nChar;
-    double        **mat;
-    const gsl_rng  *gsl_rng;
-};
+// struct rellStuffStruct{
+//     int             nTrees;
+//     int             nChar;
+//     double        **mat;
+//     const gsl_rng  *gsl_rng;
+// };
 
 
 

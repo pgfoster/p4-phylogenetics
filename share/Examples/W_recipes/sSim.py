@@ -26,7 +26,6 @@ t.setNGammaCat(nGammaCat=4)
 t.newGdasrv(free=0, val=0.5)
 t.setPInvar(free=0, val=0.2)
 
-func.reseedCRandomizer(os.getpid())
 t.simulate()
 
 if 1:

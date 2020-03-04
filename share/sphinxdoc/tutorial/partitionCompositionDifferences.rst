@@ -195,8 +195,6 @@ The simulations were done as described in this listing, saving the ``xSq`` value
     t.data = d
     t.calcLogLike(verbose=False)
 
-    func.reseedCRandomizer(os.getpid())
-
     for myRunNum in [1,2]:
         # Instantiate
         ps = PosteriorSamples(t, runNum=myRunNum, program='mrbayes', mbBaseName='mbout', verbose=0)

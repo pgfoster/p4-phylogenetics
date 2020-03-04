@@ -1,7 +1,5 @@
-from __future__ import print_function
 var.warnReadNoFile = 0
 var.verboseRead = 0
-func.reseedCRandomizer(os.getpid())
 
 read('d.nex')
 d = Data()
