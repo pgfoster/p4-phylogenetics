@@ -2444,7 +2444,8 @@ class Mcmc(object):
         firstGen = self.gen + 1
 
         # Don't forget to set the PIVEC_MIN etc in a restart.
-        if var.mcmc_doCheck_PIVEC_MIN_etc:
+        # The hasattr() part is for older checkpoints that do not have self.init_PIVEC_MIN
+        if var.mcmc_doCheck_PIVEC_MIN_etc and hasattr(self, "init_PIVEC_MIN"):
             doWarning = False
             if var.PIVEC_MIN != self.init_PIVEC_MIN:
                 gm.append(f"Initial var.PIVEC_MIN for this run was {self.init_PIVEC_MIN}, but now is {var.PIVEC_MIN}")
