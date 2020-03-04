@@ -1106,7 +1106,7 @@ class Mcmc(object):
         # A place to store the state.  Empty to start.  It is stored during a checkpoint.
         self.gsl_rng_state_ndarray = numpy.array(['0'] * the_gsl_rng_size, numpy.dtype('B'))  # B is unsigned byte
 
-        var.randomState = None    # for python random library
+        self.randomState = None    # for python random library
 
         # For re-starts, if these values have changed or have been forgotten, allow checking and warning in Mcmc.run()
         self.init_PIVEC_MIN = var.PIVEC_MIN

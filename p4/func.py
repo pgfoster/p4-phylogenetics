@@ -2274,13 +2274,26 @@ def unPickleMcmc(runNum, theData, verbose=True):
     # Restore gsl_rng state
     if not var.gsl_rng:
         var.gsl_rng = pf.gsl_rng_get()
-    the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
-    assert m.gsl_rng_state_ndarray.shape[0] == the_gsl_rng_size
-    pf.gsl_rng_setstate(var.gsl_rng, m.gsl_rng_state_ndarray)
 
-    # restore random (python module) state
-    assert m.randomState
-    random.setstate(m.randomState)
+    # accommodate old checkpoints that do not have this stuff
+    if hasattr(m, "gsl_rng_state_ndarray"):
+        the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
+        assert m.gsl_rng_state_ndarray.shape[0] == the_gsl_rng_size
+        pf.gsl_rng_setstate(var.gsl_rng, m.gsl_rng_state_ndarray)
+    else:
+        # an old checkpoint with no random state; these steps are also done in Mcmc.__init__()
+        pf.gsl_rng_set(var.gsl_rng, int(time.time()))
+        the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
+        # A place to store the state.  Empty to start.  It is stored during a checkpoint.
+        m.gsl_rng_state_ndarray = numpy.array(['0'] * the_gsl_rng_size, numpy.dtype('B'))  # B is unsigned byte
+
+    if hasattr(m, 'randomState'):
+        # restore random (python module) state
+        assert m.randomState
+        random.setstate(m.randomState)
+    else:
+        # an old checkpoint, that does not have this yet.
+        m.randomState = None
 
     m.tree.data = theData
     m.tree.calcLogLike(verbose=False, resetEmpiricalComps=False)
