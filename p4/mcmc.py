@@ -1106,7 +1106,7 @@ class Mcmc(object):
         # A place to store the state.  Empty to start.  It is stored during a checkpoint.
         self.gsl_rng_state_ndarray = numpy.array(['0'] * the_gsl_rng_size, numpy.dtype('B'))  # B is unsigned byte
 
-        var.randomState = None    # for python random library
+        self.randomState = None    # for python random library
 
         # For re-starts, if these values have changed or have been forgotten, allow checking and warning in Mcmc.run()
         self.init_PIVEC_MIN = var.PIVEC_MIN
@@ -2444,7 +2444,8 @@ class Mcmc(object):
         firstGen = self.gen + 1
 
         # Don't forget to set the PIVEC_MIN etc in a restart.
-        if var.mcmc_doCheck_PIVEC_MIN_etc:
+        # The hasattr() part is for older checkpoints that do not have self.init_PIVEC_MIN
+        if var.mcmc_doCheck_PIVEC_MIN_etc and hasattr(self, "init_PIVEC_MIN"):
             doWarning = False
             if var.PIVEC_MIN != self.init_PIVEC_MIN:
                 gm.append(f"Initial var.PIVEC_MIN for this run was {self.init_PIVEC_MIN}, but now is {var.PIVEC_MIN}")
