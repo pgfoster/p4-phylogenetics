@@ -2883,7 +2883,15 @@ class Mcmc(object):
             else:
                 if self.simTemp:
                     if self.simTemp_curTemp == 0:
-                        doWrite = True
+                        # Thinning the simTemp chain is awkward.  Here is a hack.
+                        # var.mcmc_simTemp_thinning is a list of digit strings, by default ['0']
+                        if var.mcmc_simTemp_thinning:
+                            genString = f"{self.gen + 1}"
+                            for ending in var.mcmc_simTemp_thinning:
+                                if genString.endswith(ending):
+                                    doWrite = True
+                        else:
+                            doWrite = True
                 else:
                     if ((self.gen + 1) % self.sampleInterval) == 0:
                         doWrite = True

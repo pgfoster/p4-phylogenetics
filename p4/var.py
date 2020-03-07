@@ -311,6 +311,11 @@ class Var(object):
         #self.mcmc_doTuneChainTemp = False
         self.mcmc_allowUnresolvedStartingTree = False
         self.mcmc_simTemp_tempCurveLogBase = 2.8    # higher -> more curvey; lower -> more linear
+
+        # This next one is a list of digit strings, used to thin the
+        # chain in a simTemp MCMC.  Samples taken only if f"{mcmc.gen
+        # + 1}" ends with one of these.
+        self.mcmc_simTemp_thinning = ['0']
         self.mcmc_logTunings = False  # verbose logging of on-the-fly changes to tunings 
         self.mcmc_doCheck_PIVEC_MIN_etc = True  # check PIVEC_MIN, RATE_MIN, BRLEN_MIN, GAMMA_SHAPE_MIN in Mcmc
 
