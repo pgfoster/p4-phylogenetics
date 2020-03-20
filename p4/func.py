@@ -1930,9 +1930,9 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
     #cList2Pat = re.compile('(.+)\\\\(\d+)')
     #cListAllPat = re.compile('all\\\\?(\d+)?')
 
-    # print "char list is: %s" % nexusCharListString
+    # print("char list is: %s" % nexusCharListString)
     cList = nexusCharListString.split()
-    # print "cList is %s" % cList
+    # print("cList is %s" % cList)
     mask = ['0'] * maskLength
     for c in cList:        # eg 6-10\2
         first = None       # the first item eg 6
@@ -1940,12 +1940,12 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
         third = None       # the third item eg 2
         result = cListPat.match(c)
         if result:
-            # print "%s\t%s" % (result.group(1), result.group(2))
+            # print("%s\t%s" % (result.group(1), result.group(2)))
             first = result.group(1)
             if result.group(2):
                 r2 = cList2Pat.match(result.group(2))
                 if r2:
-                    # print "%s\t%s" % (r2.group(1), r2.group(2))
+                    # print("%s\t%s" % (r2.group(1), r2.group(2)))
                     second = r2.group(1)
                     third = r2.group(2)
                 else:
@@ -1960,7 +1960,7 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
                 gm.append(
                     "Can't parse maskFromNexusCharacterList '%s'" % nexusCharListString)
                 raise P4Error(gm)
-        # print "first = %s, second = %s, third = %s" % (first, second, third)
+        # print("first = %s, second = %s, third = %s" % (first, second, third))
         if not first:
             gm.append("Can't parse maskFromNexusCharacterList '%s'" %
                       nexusCharListString)
