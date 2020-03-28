@@ -654,14 +654,11 @@ if True:
         l = self.length
         orMask = ['0'] * self.length
         for i in range(l):
-            # if maskA[i] == '1' and maskB[i] == '1':
-            #    orMask[i] = '1'
             try:
                 iA = int(maskA[i])
                 iB = int(maskB[i])
             except ValueError:
-                gm.append(
-                    "All mask characters must be convertable to integers")
+                gm.append("All mask characters must be convertable to integers")
                 raise P4Error(gm)
             if iA not in [0, 1] or iB not in [0, 1]:
                 gm.append("All mask characters must be zero or 1")
@@ -693,8 +690,13 @@ if True:
 
         andMask = ['0'] * self.length
         for i in range(self.length):
-            # if maskA[i] == '1' and maskB[i] == '1':
-            #    orMask[i] = '1'
+            try:
+                iA = int(maskA[i])
+                iB = int(maskB[i])
+            except ValueError:
+                gm.append("All mask characters must be convertable to integers")
+                raise P4Error(gm)
+
             if iA not in [0, 1] or iB not in [0, 1]:
                 gm.append("All mask characters must be zero or 1")
                 raise P4Error(gm)
