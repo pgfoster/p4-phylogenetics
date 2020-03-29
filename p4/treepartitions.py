@@ -391,7 +391,7 @@ something like this::
         if not inThing:
             gm.append("No input?")
             raise P4Error(gm)
-        # print "inThing = %s, type %s" % (inThing, type(inThing))
+        # print("inThing = %s, type %s" % (inThing, type(inThing)))
 
         # If we already have self.taxNames from a previous read()
         if self.taxNames:
@@ -402,10 +402,11 @@ something like this::
                 self.taxNames = taxNames
                 self.nTax = len(taxNames)
 
-        self.splits = []
-        self.splitsHash = {}
-        self.biSplits = []
-        self.biSplitsHash = {}
+        if 0:
+            self.splits = []
+            self.splitsHash = {}
+            self.biSplits = []
+            self.biSplitsHash = {}
 
         if isinstance(inThing, str):
             if not os.path.isfile(inThing):
