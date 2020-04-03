@@ -45,7 +45,7 @@ m = Mcmc(t, nChains=1, runNum=0, checkPointInterval=cpInterv, simTemp=8, simTemp
 m.run(20000, writeSamples=False)
 m.gen = -1
 
-# This adjusts the the longSampleTunings, hopefully so that
+# This adjusts the longSampleTunings, hopefully so that
 # occupancies are more or less equal in all the temperatures.
 for rNum in range(10):
     print("-" * 50)
