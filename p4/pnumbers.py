@@ -299,7 +299,7 @@ class Numbers(object):
                 print("padMin=%s, padMax=%s" % (padMin, padMax))
             print("%i points at min, %i points at max" % (self.data.count(self.min), self.data.count(self.max)))
             for bin in self.bins:
-                print(" %-8s  %i" % (bin[0], bin[1]))
+                print(f"{bin[0]:.10}  {bin[1]}")
 
     def dump(self):
         print("%i data points, " % len(self.data), end=' ')
