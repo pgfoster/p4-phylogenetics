@@ -193,7 +193,7 @@ class McmcCheckPointReader(object):
 
         """
         tpp = [m.treePartitions for m in self.mm]
-        p4.func.compareSplitsBetweenTreePartitions(tpp)
+        p4.func.compareSplitsBetweenTreePartitions(tpp, precision=precision, linewidth=linewidth)
 
     def writeProposalAcceptances(self):
         for m in self.mm:
