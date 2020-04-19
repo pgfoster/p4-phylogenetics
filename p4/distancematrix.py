@@ -218,7 +218,11 @@ class DistanceMatrix:
                         p4.func.nexusFixNameIfQuotesAreNeeded(self.names[i]))
             for j in range(self.dim):
                 #f.write('%10.6f' % self.matrix[i][j])
-                f.write(numberFormat % self.matrix[i][j])
+                if self.matrix[i][j] != None:
+                    f.write(numberFormat % self.matrix[i][j])
+                else:
+                    noneFormat = '%' + '%is' % totWid
+                    f.write(noneFormat % None)
             f.write('\n')
 
         f.write('\n')
