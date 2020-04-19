@@ -47,6 +47,11 @@ class Chain(object):
         pf.p4_copyBigPDecks(self.curTree.cTree, self.propTree.cTree, 1)
         pf.p4_copyModelPrams(self.curTree.cTree, self.propTree.cTree)
 
+        # One more likelihood calculation, so that
+        # self.verifyIdentityOfTwoTreesInChain() does not fail due to
+        # part likes differing, below.
+        self.propTree.calcLogLike(verbose=0)
+        
         if 0:
             self.testTree = aMcmc.tree.dupe()
             self.testTree.data = aMcmc.tree.data

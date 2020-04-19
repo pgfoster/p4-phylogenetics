@@ -654,14 +654,11 @@ if True:
         l = self.length
         orMask = ['0'] * self.length
         for i in range(l):
-            # if maskA[i] == '1' and maskB[i] == '1':
-            #    orMask[i] = '1'
             try:
                 iA = int(maskA[i])
                 iB = int(maskB[i])
             except ValueError:
-                gm.append(
-                    "All mask characters must be convertable to integers")
+                gm.append("All mask characters must be convertable to integers")
                 raise P4Error(gm)
             if iA not in [0, 1] or iB not in [0, 1]:
                 gm.append("All mask characters must be zero or 1")
@@ -693,8 +690,13 @@ if True:
 
         andMask = ['0'] * self.length
         for i in range(self.length):
-            # if maskA[i] == '1' and maskB[i] == '1':
-            #    orMask[i] = '1'
+            try:
+                iA = int(maskA[i])
+                iB = int(maskB[i])
+            except ValueError:
+                gm.append("All mask characters must be convertable to integers")
+                raise P4Error(gm)
+
             if iA not in [0, 1] or iB not in [0, 1]:
                 gm.append("All mask characters must be zero or 1")
                 raise P4Error(gm)
@@ -2245,7 +2247,7 @@ if True:
         return bigF
 
     # A function, not an Alignment method.
-    def _ababnehEtAlStatsAndProbs(bigF, dim, txNumA, txNumB, doProbs=True):
+    def _ababnehEtAlStatsAndProbs(bigF, dim, txNumA, txNumB):
         """Re-write of Ababneh et al 2006 Testpairs function for a single pair.
 
         Args txNumA and txNumB are not used in the calculations -- they
@@ -2255,7 +2257,7 @@ if True:
         """
 
         # Calculate 3 stats -- Bowker's stat QB, Stuart's stat QS, and
-        # "Internal", QR.  Optionally calculate the probs of those stats,
+        # "Internal", QR.  And calculate the probs of those stats,
         # PB, PS, PR.
 
         gm = ["_ababnehEtAlStatsAndProbs()"]
@@ -2277,7 +2279,17 @@ if True:
                     diff = (bigF[i, j] - bigF[j, i])
                     QB += (diff * diff) / mySum
         dof2 = dof - zcount
-        assert dof2, "Got zero degrees of freedom for Bowkers.  Identical sequences?"
+        assert dof2
+
+        # if dof2 == 0:
+        #     print(f"Between (zero-based) seqs {txNumA} and {txNumB}, got zero degrees of freedom for Bowkers.  Identical sequences?")
+        #     QB = None
+        #     QS = None
+        #     QR = None
+        #     PB = 1.0
+        #     PS = None
+        #     PR = None
+        #     return (QB, QS, QR, PB, PS, PR)
 
         # Now calculate QS, Stuart's stat.  For that we need the d vector
         # and the V matrix.  Oddly, d is dim-1 long, and V is (dim-1,dim-1).
@@ -2300,8 +2312,7 @@ if True:
             d[i] = sumOfRows[i] - sumOfColumns[i]
             for j in range(i, dim - 1):  # yes, i to dim-1
                 if i == j:
-                    V[i, j] = (sumOfRows[i] + sumOfColumns[i]) - \
-                        (2. * bigF[i, i])
+                    V[i, j] = (sumOfRows[i] + sumOfColumns[i]) - (2. * bigF[i, i])
                 else:
                     theItem = -1 * (bigF[i, j] + bigF[j, i])
                     V[i, j] = theItem
@@ -2312,105 +2323,209 @@ if True:
 
         try:
             Vinv = numpy.linalg.inv(V)
-        except numpy.linalg.LinAlgError:
-            print()
-            print(V)
-            print('Trying to invert the V matrix, printed out above.')
-            print('txNumA = %i, txNumB = %i' % (txNumA, txNumB))
-            print('bigF =')
-            print(bigF)
-            print('sumOfColumns = ', sumOfColumns)
-            print('sumOfRows = ', sumOfRows)
-            Vinv = numpy.linalg.inv(V)
-        #print("Vinv = ")
-        #print(Vinv)
-        QS = numpy.dot(numpy.dot(d, Vinv), d)
-        QR = QB - QS
+            QS = numpy.dot(numpy.dot(d, Vinv), d)
+            QR = QB - QS
+        except numpy.linalg.linalg.LinAlgError:
+            if 0:
+                print("Got a numpy LinAlgError while trying to invert the V matrix between (zero-based)")
+                print('sequences %i and %i' % (txNumA, txNumB), end=' ')
+                print("as part of the test for marginal symmetry (Stuart's test).")
+            if 0:
+                print("V matrix =")
+                print(V)
+                print()
+                print('bigF =')
+                print(bigF)
+                print('sumOfColumns = ', sumOfColumns)
+                print('sumOfRows = ', sumOfRows)
+            QS = None
+            QR = None
+            
         #print(f"Got QS:{QS} and QR:{QR}")
 
-        # We are finished calculating the 3 stats.
-        if doProbs:
-            # The dof should be an int.
-            dof_S = dim - 1
-            dof_R = dof2 - dof_S
-            #print(f"got dof2 {dof2}, dof_S {dof_S}, and dof_R {dof_R}")
+        # We are finished calculating the 3 stats.  Now do the P-values
+        # The dof should be an int.
+        dof_S = dim - 1
+        dof_R = dof2 - dof_S
+        # print(f"{txNumA} {txNumB} got dof2 {dof2}, dof_S {dof_S}, and dof_R {dof_R}, QB {QB}, QS {QS}, QR {QR}")
 
-            PB = p4.func.chiSquaredProb(QB, dof2)
+        PB = p4.func.chiSquaredProb(QB, dof2)
+        if QS is not None:
             PS = p4.func.chiSquaredProb(QS, dof_S)
             PR = p4.func.chiSquaredProb(QR, dof_R)
-            return (QB, QS, QR, PB, PS, PR)
         else:
-            return (QB, QS, QR)
+            PS = None
+            PR = None
+        return (QB, QS, QR, PB, PS, PR)
 
-    def matchedPairsTests(self, doProbs=True):
-        """Get all Ababneh et al 2006 matched pairs stats, and, optionally, probabilies.
+    def matchedPairsTests(self, mostSignificantOnly=False):
+        """Get all Ababneh et al 2006 matched pairs stats and probabilies.
 
-        Returns 3 (or, if doProbs is turned on, 6) DistanceMatrix objects.
-        If not doProbs, returns QB, QS, and QR (QR=Internal) matrices.
-        If doProbs is turned on (the default), returns QB, QS, QR, PB, PS, PR.
+        Returns six DistanceMatrix objects.
+        Returns QB, QS, and QR (QR=Internal) matrices, containing the statistics,
+        and PB, PS, and PR containing the P-values.
 
         For example::
 
           a = var.alignments[0]
           QB, QS, QR, PB, PS, PR = a.matchedPairsTests()
 
-        or::
+        The tests are pair-wize on all pairs of sequences.  Note that
+        it may fail to do the calculations for a pair.  If so it will
+        return None for that test for that pair, and that will end up
+        in DistanceMatrix objects that are returned.
 
-          QB, QS, QR = a.matchedPairsTests(doProbs=False)
+          Args: mostSignificantOnly: False by default, which gives the
+        full matrices.  Setting this to True returns the three most
+        significant values only, as a tuple.
+
+          Returns: By default it returns 6 DistanceMatrix objects.  If
+        arg mostSignificantOnly is turned on then it only returns the
+        three smalles P-values, as a tuple.
 
         """
+
         QBB = DistanceMatrix()
         QSS = DistanceMatrix()
         QRR = DistanceMatrix()
         for dm in [QBB, QSS, QRR]:
             dm.setDim(self.nTax)
             dm.names = self.taxNames
-        if doProbs:
-            PBB = DistanceMatrix()
-            PSS = DistanceMatrix()
-            PRR = DistanceMatrix()
-            for dm in [PBB, PSS, PRR]:
-                dm.setDim(self.nTax)
-                dm.names = self.taxNames
+        PBB = DistanceMatrix()
+        PSS = DistanceMatrix()
+        PRR = DistanceMatrix()
+        for dm in [PBB, PSS, PRR]:
+            dm.setDim(self.nTax)
+            dm.names = self.taxNames
+
+        smallestPB = None
+        smallestPS = None
+        smallestPR = None
+        badVInverts = 0
+        identicals = 0
+        
 
         for txNumA in range(self.nTax - 1):
             for txNumB in range(txNumA + 1, self.nTax):
-                # print txNumA, txNumB
+                # print(txNumA, txNumB)
                 bigF = self.getSimpleBigF(txNumA, txNumB)
-                if 0:
-                    print(bigF) # it is a numpy array
-                    print("sum of columns", bigF.sum(axis=0))
-                    print("sum of rows", bigF.sum(axis=1))
+                sumAll = bigF.sum()
+                sumOffDiags = sumAll - bigF.diagonal().sum()
 
-                if doProbs:
-                    QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(
-                        bigF, self.dim, txNumA, txNumB, doProbs=True)
-                    #print(f"QB:{QB:10.6f} QS:{QS:10.6f} QR:{QR:10.6f} | PB:{PB:.8f} PS:{PS:.8f} PR:{PR:.8f}")
-                    QBB.matrix[txNumA][txNumB] = QB
-                    QBB.matrix[txNumB][txNumA] = QB
-                    QSS.matrix[txNumA][txNumB] = QS
-                    QSS.matrix[txNumB][txNumA] = QS
-                    QRR.matrix[txNumA][txNumB] = QR
-                    QRR.matrix[txNumB][txNumA] = QR
-                    PBB.matrix[txNumA][txNumB] = PB
-                    PBB.matrix[txNumB][txNumA] = PB
-                    PSS.matrix[txNumA][txNumB] = PS
-                    PSS.matrix[txNumB][txNumA] = PS
-                    PRR.matrix[txNumA][txNumB] = PR
-                    PRR.matrix[txNumB][txNumA] = PR
+                if 0:
+                    print("bigF is\n", bigF) # it is a numpy array
+                    #print("sum of columns", bigF.sum(axis=0))
+                    #print("sum of rows", bigF.sum(axis=1))
+                    print(f"sumOffDiags = {sumOffDiags}")
+
+                if sumOffDiags == 0.0:
+                    identicals += 1
+                    QB, QS, QR, PB, PS, PR = (None, None, None, None, None, None)
                 else:
-                    QB, QS, QR = _ababnehEtAlStatsAndProbs(
-                        bigF, self.dim, txNumA, txNumB, doProbs=False)
-                    QBB.matrix[txNumA][txNumB] = QB
-                    QBB.matrix[txNumB][txNumA] = QB
-                    QSS.matrix[txNumA][txNumB] = QS
-                    QSS.matrix[txNumB][txNumA] = QS
-                    QRR.matrix[txNumA][txNumB] = QR
-                    QRR.matrix[txNumB][txNumA] = QR
-        if doProbs:
-            return QBB, QSS, QRR, PBB, PSS, PRR
+                    QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(bigF, self.dim, txNumA, txNumB)
+                    # print(f"QB:{QB} QS:{QS} QR:{QR} | PB:{PB} PS:{PS} PR:{PR}")
+
+                if PB != None:
+                    if smallestPB != None:
+                        if PB < smallestPB:
+                            smallestPB = PB
+                    else:
+                        smallestPB = PB
+
+                if PS != None:
+                    if smallestPS != None:
+                        if PS < smallestPS:
+                            smallestPS = PS
+                    else:
+                        smallestPS = PS
+
+                if PR != None:
+                    if smallestPR != None:
+                        if PR < smallestPR:
+                            smallestPR = PR
+                    else:
+                        smallestPR = PR
+
+                if QS == None:
+                    badVInverts += 1
+
+                QBB.matrix[txNumA][txNumB] = QB
+                QBB.matrix[txNumB][txNumA] = QB
+                QSS.matrix[txNumA][txNumB] = QS
+                QSS.matrix[txNumB][txNumA] = QS
+                QRR.matrix[txNumA][txNumB] = QR
+                QRR.matrix[txNumB][txNumA] = QR
+                PBB.matrix[txNumA][txNumB] = PB
+                PBB.matrix[txNumB][txNumA] = PB
+                PSS.matrix[txNumA][txNumB] = PS
+                PSS.matrix[txNumB][txNumA] = PS
+                PRR.matrix[txNumA][txNumB] = PR
+                PRR.matrix[txNumB][txNumA] = PR
+
+        nPairs = ((self.nTax * self.nTax) - self.nTax) / 2
+        print("Matched Pairs Tests: ")
+        print(f"{int(nPairs)} pairs tested, ")
+        
+        if identicals or badVInverts:
+            if identicals:
+                print(f"{identicals} pairs identical, ")
+            if badVInverts:
+                print(f"{badVInverts} failed matrix inversions ",)
+        print(f"smallest PB (Bowker's) {smallestPB} \nsmallest PS (Stuart's, Marginal) {smallestPS} \nsmallest PR (Ababneh, Internal) {smallestPR}")
+        
+        if mostSignificantOnly:
+            return (smallestPB, smallestPS, smallestPR)
         else:
-            return QBB, QSS, QRR
+            return QBB, QSS, QRR, PBB, PSS, PRR
+
+    def symtestAsInIQTreeNaserKdour(self):
+        """Matched-pairs tests of one pair, as in IQTree
+
+        """
+
+        # Make a list to hold the bigFs with the biggest diversity.
+        bigFs = []
+        txNumPairs = []
+        biggestDiversity = 0.0
+
+        for txNumA in range(self.nTax - 1):
+            for txNumB in range(txNumA + 1, self.nTax):
+                # print(txNumA, txNumB)
+                bigF = self.getSimpleBigF(txNumA, txNumB)
+                sumAll = bigF.sum()
+                sumOffDiags = sumAll - bigF.diagonal().sum()
+                diversity = sumOffDiags / sumAll
+                if diversity < biggestDiversity:
+                    continue
+                elif diversity == biggestDiversity:
+                    bigFs.append(bigF)
+                    txNumPairs.append((txNumA, txNumB))
+                else:
+                    # its bigger, so wipe previous results
+                    bigFs = [bigF]
+                    txNumPairs = [(txNumA, txNumB)]
+                    biggestDiversity = diversity
+                    
+        if 1:
+            print(bigFs)
+            print(biggestDiversity)
+            print(txNumPairs)
+        assert biggestDiversity > 0.0, "Got zero diversity between the sequences"
+
+        myBigF = None
+        myTxNumPair = None
+        if len(bigFs) == 1:
+            myBigF = bigFs[0]
+            myTxNumPair = txNumPairs[0]
+        else:
+            myIndex = random.randrange(len(bigFs))
+            myBigF = bigFs[myIndex]
+            myTxNumPair = txNumPairs[myIndex]
+        
+        QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(myBigF, self.dim, myTxNumPair[0], myTxNumPair[1])
+        print(f"PB:{PB} PS:{PS} PR:{PR}")
+        
+        
 
     def testOverallFromAbabnehEtAl2006(self):
         """Marginal symmetry (Stuarts's) test for more than two matched sequences
