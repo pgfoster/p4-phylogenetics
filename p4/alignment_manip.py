@@ -2460,9 +2460,13 @@ if True:
         else:
             return QBB, QSS, QRR, PBB, PSS, PRR
 
-    def symtestAsInIQTreeNaserKdour(self):
+    def symtestAsInIQTreeNaserKhdour(self):
         """Matched-pairs tests of one pair, as in IQTree
 
+        This has appeared in IQTree betas from about 1.7beta onwards,
+        and is at the time of writing (April 2020) in IQTree2beta.
+
+        See Naser-Khdour et al GBE 2019 https://doi.org/10.1093/gbe/evz193
         """
 
         # Make a list to hold the bigFs with the biggest diversity.
