@@ -2467,36 +2467,53 @@ if True:
         and is at the time of writing (April 2020) in IQTree2beta.
 
         See Naser-Khdour et al GBE 2019 https://doi.org/10.1093/gbe/evz193
+
+        This is my attempt to replicate it.  It looks like I do not
+        have the choice of which pair to report correct yet.
+
         """
 
         # Make a list to hold the bigFs with the biggest diversity.
         bigFs = []
         txNumPairs = []
-        biggestDiversity = 0.0
+        biggestDivergence = 0.0
 
         for txNumA in range(self.nTax - 1):
             for txNumB in range(txNumA + 1, self.nTax):
-                # print(txNumA, txNumB)
                 bigF = self.getSimpleBigF(txNumA, txNumB)
                 sumAll = bigF.sum()
-                sumOffDiags = sumAll - bigF.diagonal().sum()
-                diversity = sumOffDiags / sumAll
-                if diversity < biggestDiversity:
+                if not sumAll:        # eg if there are no chars that line up
                     continue
-                elif diversity == biggestDiversity:
+                sumOffDiags = sumAll - bigF.diagonal().sum()
+                divergence = sumOffDiags / sumAll
+                if 0:  # extreme debug
+                    print("=" * 50)
+                    print(txNumA, txNumB)
+                    print(bigF)
+                    print(f"sumAll {sumAll}")
+                    print(f"bigF.diagonal().sum() {bigF.diagonal().sum()}")
+                    print(f"sumOffDiags = {sumOffDiags}")
+                    print(f"divergence {divergence}")
+                    print("-" * 50, "\n\n")
+                if divergence < biggestDivergence:
+                    continue
+                elif divergence == biggestDivergence:
                     bigFs.append(bigF)
                     txNumPairs.append((txNumA, txNumB))
                 else:
                     # its bigger, so wipe previous results
                     bigFs = [bigF]
                     txNumPairs = [(txNumA, txNumB)]
-                    biggestDiversity = diversity
+                    biggestDivergence = divergence
                     
         if verbose:
+            print("divergence matrices (F-matrix):")
             print(bigFs)
-            print(biggestDiversity)
+            print("biggest divergences")
+            print(biggestDivergence)
+            print("... between these (zero-based)sequence numbers:")
             print(txNumPairs)
-        assert biggestDiversity > 0.0, "Got zero diversity between the sequences"
+        assert biggestDivergence > 0.0, "Got zero divergence between the sequences"
 
         myBigF = None
         myTxNumPair = None
@@ -2504,6 +2521,7 @@ if True:
             myBigF = bigFs[0]
             myTxNumPair = txNumPairs[0]
         else:
+            print(f"Got {len(bigFs)} pairs with the same divergence.  Choosing randomly.", file=sys.stderr)
             myIndex = random.randrange(len(bigFs))
             myBigF = bigFs[myIndex]
             myTxNumPair = txNumPairs[myIndex]
