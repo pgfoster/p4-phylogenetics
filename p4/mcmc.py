@@ -1079,6 +1079,28 @@ class Mcmc(object):
             print(aLine)
             self.logger.info(aLine)
 
+        # Check the data for blank sequences, partition by partition
+        hasBlanks = False
+        blankSeqNums = []
+        for partNum in range(self.tree.data.nParts):
+            p = self.tree.data.parts[partNum]
+            partBlankSeqNums = []
+            for taxNum in range(self.tree.data.nTax):
+                nSites = pf.partSequenceSitesCount(p.cPart, taxNum)  # no gaps, no missings
+                # print(f"Mcmc.__init__()  partNum {partNum} taxNum {taxNum} nSites {nSites}")
+                if not nSites:
+                    partBlankSeqNums.append(taxNum)
+            if partBlankSeqNums:
+                hasBlanks = True
+            blankSeqNums.append(partBlankSeqNums)
+        if hasBlanks:
+            self.logger.info("Blank sequences were found.  For each partition, the sequence numbers are ---")
+            self.logger.info(f"{blankSeqNums}")
+            self.logger.info("These will be skipped in bigXSq simulations.")
+            self.blankSeqNums = blankSeqNums
+        else:
+            self.blankSeqNums = None
+
         self.swapVector = True
         if self.nChains > 1:
             print("%-16s: %s" % ('swapVector', "on"))
@@ -3303,17 +3325,24 @@ class Mcmc(object):
         if 1 & self.simulate:
             for p in self.simTree.data.parts:
                 simFile.write(' %f' % pf.getUnconstrainedLogLike(p.cPart))
+
         if 2 & self.simulate:  # If self.simulate contains a 2, do bigX^2
-            #ret2 = self.simTree.data.compoChiSquaredTest(verbose=0, skipColumnZeros=True)
-            # for pNum in range(self.simTree.model.nParts):
-            #    simFile.write(' %f' % ret[pNum][0])
-            ret = self.simTree.data.simpleBigXSquared()
-            for pNum in range(self.simTree.model.nParts):
-                simFile.write(' %f' % ret[pNum])
+            if self.blankSeqNums == None:
+                ret = self.simTree.data.simpleBigXSquared()
+                for pNum in range(self.simTree.model.nParts):
+                    simFile.write(' %f' % ret[pNum])
+            else:
+                # We do not want sims corresponding to blank seqs to contribute to the bigXSq
+                ret2 = self.simTree.data.compoChiSquaredTest(verbose=0, skipTaxNums=self.blankSeqNums, skipColumnZeros=True)
+                for pNum in range(self.simTree.model.nParts):
+                    simFile.write(' %f' % ret2[pNum][0])
+
+            # check ...
             # for i in range(len(ret)):
             #    if math.fabs(ret[i][0] - ret2[i]) > 0.000001:
             # print "The two methods of bigXSquared calculations differed.  %f
             # and %f" % (ret[i], ret2[i])
+
         # If self.simulate contains a 4, do meanNCharPerSite
         if 4 & self.simulate:
             ret = self.simTree.data.meanNCharsPerSite()
