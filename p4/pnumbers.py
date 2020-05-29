@@ -335,7 +335,10 @@ class Numbers(object):
 
         instructionsFileName = 'gNupLot_inStruCts'
         f1 = open(instructionsFileName, 'w')
-        f1.write('set term %s\n' % term)
+        if term == 'qt':
+            f1.write('set term %s font "Helvetica"\n' % term)
+        else:
+            f1.write('set term %s\n' % term)
         if output:
             f1.write('set output "%s"\n' % output)
         f1.write('plot "%s" notitle\n' % weirdName)
