@@ -249,7 +249,7 @@ if True:
         """
 
         if verbose:
-            theStartTime = time.clock()
+            theStartTime = time.time()
         self._commonCStuff()
 
         if method == "newtAndBrentPowell":
@@ -281,13 +281,13 @@ if True:
 
         if verbose:
             print("optLogLike = %f" % self.logLike)
-            theEndTime = time.clock()
+            theEndTime = time.time()
             print("cpu time %s seconds." % (theEndTime - theStartTime))
 
 
     def optTest(self):
         self._commonCStuff()
-        theStartTime = time.clock()
+        theStartTime = time.time()
         doXfer = 0
         for i in range(1):
             if doXfer:
@@ -308,7 +308,7 @@ if True:
                 prams = pf.p4_getFreePrams(self.cTree)
                 self.model.restoreFreePrams(prams)
 
-        print("time %s seconds." % (time.clock() - theStartTime))
+        print("time %s seconds." % (time.time() - theStartTime))
 
     def simulate(self, calculatePatterns=True, resetSequences=True, resetNexusSetsConstantMask=True, refTree=None):
         """Simulate into the attached data.
