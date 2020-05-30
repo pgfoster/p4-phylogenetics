@@ -310,26 +310,26 @@ if True:
                         else:
                             sList.append(',')
                         break
-        sList.append(';\n')
+
+        sList.append(';')
         if toString:
-            return "".join(sList)
+            return "".join(sList)  # no newline
         elif fName == None:
-            print("".join(sList), end='')  # avoid a redundant newling
-        elif isinstance(fName, str):
+            print("".join(sList))  # with default newline from print
+
+        sList.append('\n')         # now all will have a newline
+        if isinstance(fName, str):
             if append:
                 fName2 = open(fName, 'a')
             else:
                 fName2 = open(fName, 'w')
             fName2.write(''.join(sList))
-    #        fName2.write('\n')
             fName2.close()
         elif hasattr(fName, 'write'):
             fName.write(''.join(sList))
-            # fName.write('\n')
             # Somebody else opened the fName, so somebody else can close it.
         else:
-            gm.append(
-                "I don't understand (%s) passed to me to write to." % fName)
+            gm.append("I don't understand (%s) passed to me to write to." % fName)
             raise P4Error(gm)
 
     def _getMcmcCommandComment(self, theNode):
