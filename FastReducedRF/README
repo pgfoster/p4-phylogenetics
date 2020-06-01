@@ -2,22 +2,27 @@ This makes the fastReducedRF module, which is for fast calculation of RF distanc
 
 This needs boost-python and boost dynamic-bitset.  On my mac, I installed boost and boost-python with Homebrew; for the latter be sure to specify Python 3, ie
 
-  brew install --with-python3 boost-python
+  brew install boost-python3
 
-It also needs PyUblas.   Using PyUblas, we can use the p4.tree.Tree.postOrder numpy array directly in fastReducedRF.  On my mac, I had trouble installing PyUblas using pip3 because of an older PyUblas installation which left behind a file (~/.aksetup-defaults.py) that had old settings and so caused grief.  I fixed it by removing that file.  Then it built almost completely with pip3, but failed on linking because it was expecting libboost_python-py36 and my mac Homebrew lib was named libboost_python3.  My solution, on my mac, was to make symbolic links in /usr/local/lib, as
+It also needs PyUblas.   Using PyUblas, we can use the p4.tree.Tree.postOrder numpy array directly in fastReducedRF.  In previous installations on my mac, I had trouble installing PyUblas using pip3 because of an older PyUblas installation which left behind a file (~/.aksetup-defaults.py) that had old settings and so caused grief.  I fixed it by removing that file.  
 
-  ln -s /usr/local/Cellar/boost-python/1.66.0/lib/libboost_python3-mt.a libboost_python-py36-mt.a 
-  ln -s //usr/local/Cellar/boost-python/1.66.0/lib/libboost_python3-mt.dylib libboost_python-py36-mt.dylib
-  ln -s //usr/local/Cellar/boost-python/1.66.0/lib/libboost_python3.a libboost_python-py36.a
-  ln -s //usr/local/Cellar/boost-python/1.66.0/lib/libboost_python3.dylib libboost_python-py36.dylib
+Then, on my mac, it built almost completely with pip3, but failed on linking because it was expecting libboost_python-py38 and my mac Homebrew lib was named libboost_python38.  My solution, on my mac, was to make symbolic links in /usr/local/lib, as
 
-Then pip3 built (and linked) PyUblas.
+  ln -s libboost_python38-mt.a libboost_python-py38-mt.a 
+  ln -s libboost_python38-mt.dylib libboost_python-py38-mt.dylib
+  ln -s libboost_python38.a libboost_python-py38.a
+  ln -s libboost_python38.dylib libboost_python-py38.dylib
 
-Using pip3 to install PyUblas just worked on my ubuntu 14.04.
+(not sure if all the above are needed).  Then pip3 built (and linked) PyUblas.
+
+On ubuntu 16.04, I had to cd to /usr/local/lib and do
+  ln -s libboost_python37.so libboost_python-py37.so
+and then PyUblas installation worked, with
+  pip3 install PyUblas
 
 To build the fastReducedRF module, first take a look at setup.py and make sure the paths and lib names are correct for your computer.  Then do
 
   python3 setup.py build_ext --inplace
 
-and look for error messages.  If you get error messages, it probably can't find something that it needs, which might be corrected by adjusting the setup.py file.  If it works, you get fastReducedRF.so (with Python 2, or with a more complex suffix with Python 3), which you can move into your python path, eg in the p4 modules directory.
+and look for error messages.  If you get error messages, it probably can't find something that it needs, which might be corrected by adjusting the setup.py file.  If it works, you get something like fastReducedRF.cpython-38-darwin.so, which you can move into your python path, eg in the p4 package.
 
