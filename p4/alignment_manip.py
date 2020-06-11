@@ -2460,7 +2460,7 @@ if True:
         else:
             return QBB, QSS, QRR, PBB, PSS, PRR
 
-    def symtestAsInIQTreeNaserKhdour(self, verbose=False):
+    def symtestAsInIQTreeNaserKhdour(self, verbose=True):
         """Matched-pairs tests of one pair, as in IQTree
 
         This has appeared in IQTree betas from about 1.7beta onwards,
@@ -2536,6 +2536,7 @@ if True:
         QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(myBigF, self.dim, myTxNumPair[0], myTxNumPair[1])
         if verbose:
             print(f"PB:{PB} PS:{PS} PR:{PR}")
+            print("(Turn off this verbose output by setting arg vebose=False)")
         return PB, PS, PR
         
         
