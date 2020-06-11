@@ -2464,16 +2464,23 @@ if True:
         """Matched-pairs tests of one pair, as in IQTree
 
         This has appeared in IQTree betas from about 1.7beta onwards,
-        and is at the time of writing (April 2020) in IQTree2beta.
+        and is part of iqtree2.  (There was a small bug in --symtest
+        that was fixed in v 2.0.6, June 2020.)
 
         See Naser-Khdour et al GBE 2019 https://doi.org/10.1093/gbe/evz193
 
-        This is my attempt to replicate it.  It looks like I do not
-        have the choice of which pair to report correct yet.
+        This is my attempt to replicate it.  That implementation
+        chooses the sequence pair with the biggest divergence, and
+        only reports stats for that pair.  It does not necessarily
+        show the smallest stats.
+
+        If it is verbose, it speaks the results to stdout.
+
+        It returns the 3 stats.
 
         """
 
-        # Make a list to hold the bigFs with the biggest diversity.
+        # Make a list to hold the bigFs with the biggest divergence.
         bigFs = []
         txNumPairs = []
         biggestDivergence = 0.0
