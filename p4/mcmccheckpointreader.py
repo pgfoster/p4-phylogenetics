@@ -99,6 +99,12 @@ class McmcCheckPointReader(object):
         if verbose:
             self.dump()
 
+    def read(self, fName):
+        f = open(fName, 'rb')
+        m = pickle.load(f)
+        f.close()
+        self.mm.append(m)
+
     def dump(self, extras=False):
         print("McmcCheckPoints (%i checkPoints read)" % len(self.mm))
         if extras:
