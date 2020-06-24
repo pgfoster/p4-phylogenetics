@@ -150,7 +150,7 @@ class McmcProposalProbs(dict):
         if item in theKeys:
             try:
                 val = float(val)
-                if val < 1e-9:
+                if val < 1e-15:
                     val = 0
                 object.__setattr__(self, item, val)
             except:
@@ -2172,6 +2172,7 @@ class Mcmc(object):
         
     def simTemp_trialAndError(self, nGensToDo, showTable=True, verbose=False):
         gm = ['Mcmc.simTemp_trialAndError()']
+        savedGenNum = self.gen
         assert self.simTemp
 
         self.run(nGensToDo, verbose=False, equiProbableProposals=False, writeSamples=False)
@@ -2182,7 +2183,7 @@ class Mcmc(object):
         
         self.simTemp_tunePseudoPriors_longSample()
 
-        self.gen = -1 
+        self.gen = savedGenNum
 
         
     def simTemp_tunePseudoPriors_longSample(self, flob=sys.stdout):
@@ -2455,6 +2456,24 @@ class Mcmc(object):
             # But it did not turn out well, so deleted.  It decreased
             # the first and last occupancies too much.
             tmpI.logPiDiff = logTempRatio
+
+    def simTemp_resetSimTempMax(self, newSimTempMax):
+        newVal = float(newSimTempMax)
+        print(f"Mcmc.simTemp_resetSimTempMax(), changing from old value {self.simTempMax} to new value {newVal}") 
+        self.simTempMax = newVal
+        logBase = var.mcmc_simTemp_tempCurveLogBase
+        factor = self.simTempMax / (math.pow(logBase, self.simTemp - 1) - 1.0)
+        for tNum in range(1,self.simTemp):
+            newTemp = (math.pow(logBase, tNum) - 1.) * factor
+            tmp = self.simTemp_temps[tNum]
+            tmp.temp = newTemp
+
+        if 1:
+            print("New settings of simTemp temperatures ---")
+            for tNum,tmp in enumerate(self.simTemp_temps):
+                print(f"{tNum:2}  {tmp.temp:10.3f}")
+        self.logger.info(f"Resetting simulated tempering MCMC, with new highest temperature {self.simTempMax:.2f}")
+
 
 
     def run(self, nGensToDo, verbose=True, equiProbableProposals=False, writeSamples=True):
