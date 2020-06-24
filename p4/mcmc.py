@@ -2475,7 +2475,6 @@ class Mcmc(object):
         self.logger.info(f"Resetting simulated tempering MCMC, with new highest temperature {self.simTempMax:.2f}")
 
 
-
     def run(self, nGensToDo, verbose=True, equiProbableProposals=False, writeSamples=True):
         """Start the Mcmc running."""
 
