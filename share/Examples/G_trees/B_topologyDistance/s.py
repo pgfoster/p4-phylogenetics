@@ -12,4 +12,8 @@ print("The 'branch-length distance' = %.4f" % ret)
 
 # And this one may work if you have scqdist installed
 ret = t1.topologyDistance(t2, metric='scqdist')
-print("The quartet distance from scqdist = %i" % ret)
+print("The quartet distance (qdist) from scqdist.qdist() = %i" % ret)
+
+# And this one may work if you have tqdist installed
+ret = t1.topologyDistance(t2, metric='tqdist')
+print("The quartet distance (tqdist) from pytqdist.qdistFromStrings() = %i" % ret)

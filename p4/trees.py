@@ -321,9 +321,10 @@ class Trees(object):
     def getTreesWithSplit(self, someTaxa):
         """Return a list of trees that have a split.
 
-        The arg *someTaxa* is a list of taxNames that define the split
+        The arg ``someTaxa`` is a list of taxNames that define the split
         that you are looking for.  It returns a list, not a Trees
-        object.  (If no trees are found, it returns an empty list.)"""
+        object.  (If no trees are found, it returns an empty list.)
+        """
 
         sk = p4.func.getSplitKeyFromTaxNames(self.taxNames, someTaxa)
         foundTrees = []
@@ -344,15 +345,15 @@ class Trees(object):
     def topologyDistanceMatrix(self, metric='sd', resetSplitKeySet=False):
         """Returns a DistanceMatrix object showing topology distances.
 
-        Uses the :meth:`Tree.Tree.topologyDistance` method to compare
+        Uses the :meth:`p4.tree.Tree.topologyDistance` method to compare
         trees.  That method returns distances between pairs of trees,
         and this method simply collates those distances into a
-        :class:`DistanceMatrix.DistanceMatrix` object, which is
+        :class:`p4.distancematrix.DistanceMatrix` object, which is
         returned.
 
-        See :meth:`Tree.Tree.topologyDistance` for an explanation of the
-        different metrics.  The metrics are given in
-        ``var.topologyDistanceMetrics``"""
+        See :meth:`p4.tree.Tree.topologyDistance` for an explanation of the
+        different metrics.  
+        """
 
         from p4.distancematrix import DistanceMatrix
         d = DistanceMatrix()

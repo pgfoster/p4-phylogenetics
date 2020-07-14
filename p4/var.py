@@ -151,10 +151,12 @@ class Var(object):
         """
 
         self.topologyDistanceMetrics = [
-            'sd', 'wrf', 'bld', 'diffs', 'scqdist']  # 'triplet'? 'thquartet',
+            'sd', 'wrf', 'bld', 'diffs', 'scqdist', 'tqdist']  # 'triplet'?
         """A list of metrics.
 
-        Used by :meth:`Tree.Tree.topologyDistance` and :meth:`Trees.Trees.topologyDistanceMatrix`
+        At the time of writing, ``sd``, ``wrf``, ``bld``, ``diffs``, ``scqdist``, ``tqdist``.
+
+        Used by :meth:`p4.tree.Tree.topologyDistance` and :meth:`p4.trees.Trees.topologyDistanceMatrix`
         """
 
         # These are used by TreePicture

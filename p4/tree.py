@@ -2721,7 +2721,8 @@ class Tree(object):
     def topologyDistance(self, tree2, metric='sd', resetSplitKeySet=False):
         """Compares the topology of self with tree2.
 
-        The complete list of metrics is given in var.topologyDistanceMetrics
+        The complete list of metrics is given in
+        var.topologyDistanceMetrics
 
         For most metrics using this method, taxNames needs to be set,
         to the same in the two trees.  If the taxa differ, this method
@@ -2761,16 +2762,24 @@ class Tree(object):
         symmetric difference split into its 2 parts.)
 
         If you calculate a distance and then make a topology change, a
-        subsequent sd topologyDistance calculation will be wrong, as it
-        uses previous splits.  So then you need to 'resetSplitKeySet'.
+        subsequent sd topologyDistance calculation will be wrong, as
+        it uses previous splits.  So then you need to
+        'resetSplitKeySet'.
 
-        The 'scqdist' metric also gives quartet distances.  It was
-        written by Anders Kabell Kristensen for his Masters degree at
-        Aarhus University, 2010.  http://www.cs.au.dk/~dalko/thesis/
-        It has two versions -- a pure Python version (that needs
-        scipy) that I do not include here, and a fast C++ version,
-        that I wrapped in python.  Its speedy -- the 'sc' in 'scqdist'
-        is for 'sub-cubic', ie better than O(n^3).
+        The 'scqdist' metric calculates quartet distances.  The code
+        was written by Anders Kabell Kristensen for his Masters degree
+        at Aarhus University, 2010.
+        http://www.cs.au.dk/~dalko/thesis/ It has two versions -- a
+        pure Python version (that needs scipy) that I do not include
+        here, and a fast C++ version, that I wrapped in python.  Its
+        speedy -- the 'sc' in 'scqdist' is for 'sub-cubic', ie better
+        than O(n^3).
+
+        I have also incorporated the tqDist v1.0.2 code, from 2014,
+        also for quartet distance calculations, from Christian N.  S.
+        Pedersen and his group at BiRC in Aarhus.  See
+        https://users-cs.au.dk/cstorm/software/tqdist/ 2014.
+        It is available here via the 'tqdist' metric.
 
         """
 
@@ -2785,14 +2794,24 @@ class Tree(object):
             try:
                 import p4.scqdist as scqdist
             except ImportError:
-                gm.append(
-                    "Could not find the 'scqdist' module needed for this metric.")
-                gm.append(
-                    "See the instructions for making it in the p4 source, in the Qdist directory.")
+                gm.append("Could not find the 'scqdist' module needed for this metric.")
+                gm.append("See the instructions for making it in the p4 source, in the Qdist directory.")
                 raise P4Error(gm)
             tsSelf = self.writeNewick(toString=True)
             tsTree2 = tree2.writeNewick(toString=True)
             return scqdist.qdist(tsSelf, tsTree2)
+
+        elif metric == 'tqdist':  # no need for taxNames
+            try:
+                import p4.pytqdist as pytqdist
+            except ImportError:
+                gm.append("Could not find the 'tqdist' module needed for this metric.")
+                gm.append("See the instructions for making it in the p4 source, in the tqDist directory.")
+                raise P4Error(gm)
+            tsSelf = self.writeNewick(toString=True, spaceAfterComma=False)
+            tsTree2 = tree2.writeNewick(toString=True, spaceAfterComma=False)
+            return pytqdist.qdistFromStrings(tsSelf, tsTree2)
+
         if not self.taxNames or not tree2.taxNames:
             gm.append("This method requires taxNames to be set.")
             raise P4Error(gm)
