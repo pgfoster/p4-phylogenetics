@@ -8,7 +8,6 @@ import copy
 from p4.var import var
 from p4.p4exceptions import P4Error
 from subprocess import Popen, PIPE
-from builtins import object       # For Py2/3 compatibility, needed for redefinition of __bool__() below in Py2
 
 class Sequence(object):
 

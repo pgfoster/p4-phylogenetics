@@ -16,7 +16,6 @@ from p4.var import var
 from p4.part import Part
 import numpy
 import numpy.linalg
-from builtins import object       # For Py2/3 compatibility, needed for redefinition of __bool__() below in Py2
 
 cListPat = re.compile('(\d+)-?(.+)?')
 cList2Pat = re.compile('(.+)\\\\(\d+)')
@@ -388,9 +387,7 @@ class Alignment(SequenceList):
     # AssertionError, basing that response on the result of len(self).  Having
     # __bool__() redefined here makes "assert self" work, even with no sequence
     # length.  Previously, python 2 only, I had to over-ride __nonzero__() for
-    # the same reason --- but that does not work with Python 3.  In order to
-    # make this redefinition of __bool__() work for Python 2, I need to "from
-    # builtins import object" above, which makes it Py2/3 compatible.
+    # the same reason --- but that does not work with Python 3.  
 
     def __bool__(self):
         return True
