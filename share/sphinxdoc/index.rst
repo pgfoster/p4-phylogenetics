@@ -21,14 +21,9 @@ data.
 
 It is hosted at `<https://github.com/pgfoster/p4-phylogenetics>`_
 
-..
-   test
-   test2
-
 
 .. toctree::
    :maxdepth: 3
-   :hidden:
 
    introduction
    new

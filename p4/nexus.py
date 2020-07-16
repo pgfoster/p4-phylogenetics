@@ -4,7 +4,7 @@ from p4.var import var
 from p4.alignment import Alignment
 from p4.nexustoken import nextTok, nexusSkipPastNextSemiColon, nexusSkipPastBlockEnd, safeNextTok
 from p4.nexussets import NexusSets
-from p4.sequencelist import Sequence
+from p4.sequence import Sequence
 from p4.p4exceptions import P4Error
 from p4.tree import Tree
 

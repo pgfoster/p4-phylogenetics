@@ -1,6 +1,10 @@
 News
 ====
 
+* 2020 Fixed up symmetry tests for SRH violations in aligned sequences
+
+* 2019 Simulated tempering MCMC
+
 * 2018 Moved to Python 3.
 
 * 2016-05-30 :doc:`tutorial/partitionCompositionDifferences`

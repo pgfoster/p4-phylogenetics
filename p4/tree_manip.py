@@ -804,31 +804,33 @@ if True:
     def pruneSubTreeWithParent(self, specifier):
         """Remove and return a subtree, with its parent node and branch
 
-        Arg *specifier* can be a nodeNum, name, or node object.
+        Args:
+            specifier: Arg ``specifier`` can be a nodeNum, node name, or node object.
 
-        The node that is the parent of the specified node is returned.  
+        Returns:
+            The node that is the parent of the specified node is returned.
 
         The nodes are left in self (ie they are not removed from the
         self.nodes list; the idea being that the subtree will be added
-        back to the tree again (via reconnectSubTreeWithParent()).
+        back to the tree again (via :meth:`~p4.tree.Tree.reconnectSubTreeWithParent()`).
 
-        Let's say that we want to detach the subtree composed of taxa E, F, and G, below
+        Let's say that we want to detach the subtree composed of taxa E, F, and G, below::
 
-        # +--------1:A
-        # |
-        # |--------2:B
-        # |
-        # 0        +---------4:C
-        # |        |
-        # |        |         +--------6:D
-        # |        |         |
-        # |        |---------5        +--------8:E
-        # +--------3         |        |
-        #          |         +--------7        +---------10:F
-        #          |                  +--------9
-        #          |                           +---------11:G
-        #          |
-        #          +---------12:H
+            # +--------1:A
+            # |
+            # |--------2:B
+            # |
+            # 0        +---------4:C
+            # |        |
+            # |        |         +--------6:D
+            # |        |         |
+            # |        |---------5        +--------8:E
+            # +--------3         |        |
+            #          |         +--------7        +---------10:F
+            #          |                  +--------9
+            #          |                           +---------11:G
+            #          |
+            #          +---------12:H
 
         This really means that we want to remove nodes 5 (yes!) and 7
         as well, and their branches.  To specify that subtree, we can
@@ -836,23 +838,23 @@ if True:
         node that is returned in this case is node 5 ::
 
             stNode = t.pruneSubTreeWithParent(7)
-            print("The returned object is a %s, nodeNum %i" % (stNode, stNode.nodeNum))
+            print(f"The returned object is a {stNode}, nodeNum {stNode.nodeNum}")
             # The returned object is a <p4.node.Node object at 0x107748eb8>, nodeNum 5
 
-        At this point we will have the tree as shown here ---
+        At this point we will have the tree as shown here::
 
-        # +-------1:A
-        # |
-        # |-------2:B
-        # 0
-        # |       +--------4:C
-        # |       |
-        # +-------3--------6:D
-        #         |
-        #         +--------10:G
+            # +-------1:A
+            # |
+            # |-------2:B
+            # 0
+            # |       +--------4:C
+            # |       |
+            # +-------3--------6:D
+            #         |
+            #         +--------10:G
 
         Now we would use the companion method
-        reconnectSubTreeWithParent() to reconnect the subtree.  For
+        :meth:`~p4.tree.Tree.reconnectSubTreeWithParent` to reconnect the subtree.  For
         example we can reconnect it in the same place that it was, by
         specifying node 6 as the arg attachNode ::
 

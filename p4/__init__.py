@@ -48,7 +48,8 @@ from .mcmccheckpointreader import McmcCheckPointReader
 from .chain import Chain
 from .stmcmc import STMcmc, STMcmcCheckPointReader
 from .distancematrix import DistanceMatrix
-from .sequencelist import Sequence, SequenceList
+from .sequence import Sequence
+from .sequencelist import SequenceList
 from .tree import Tree
 from .node import Node, NodeBranch
 #from .nexus import Nexus

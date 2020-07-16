@@ -1,4 +1,5 @@
-from p4.sequencelist import SequenceList, Sequence
+from p4.sequence import Sequence
+from p4.sequencelist import SequenceList
 from p4.nexussets import NexusSets
 from p4.p4exceptions import P4Error
 import string
@@ -142,7 +143,7 @@ class Alignment(SequenceList):
 
     From SequenceList, this inherits
 
-    * ``sequences``, a list of :class:`~p4.sequencelist.Sequence` objects
+    * ``sequences``, a list of :class:`~p4.sequence.Sequence` objects
     * ``fName``, the file name, by default None
     * ``sequenceForNameDict``, a dictionary which allows you to get a
       Sequence given its name.  This week it is not made by default
