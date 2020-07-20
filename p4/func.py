@@ -338,6 +338,9 @@ def read(stuff):
 
     """
 
+    if var.verboseRead:
+        print("var.verboseRead is turned on")
+
     # Is this still a Bug?: single node phylip or raw newick trees must be specified as
     # ()A; they cannot be specified simply as A.
 
@@ -676,84 +679,78 @@ def _tryToReadFastaFile(fName, flob, firstLine=None):
             else:
                 # print "blank line"
                 pass
-        # if firstLine:
-        #    print "got firstLine = %s" % firstLine
-        # else:
-        #    print "Got a blank file."
+        if 0:
+            if var.verboseRead:
+                print("got firstLine = %s" % firstLine)
+            else:
+                print("Got a blank file.")
     if not firstLine:
         gm = ["_tryToReadFastaFile: the file '%s' is empty!" % fName]
         raise P4Error(gm)
     else:
         if var.verboseRead:
             print("Trying to read '%s' as a fasta file..." % fName)
-        if len(firstLine) > 1:
-            if firstLine[0] == '>' or firstLine[0] == ';':
-                flob.seek(0)
-                try:
-                    # this code is useless -- it always succeeds, never
-                    # excepts.
-                    sl = p4.sequencelist.SequenceList(flob)
-                except:
-                    if var.verboseRead:
-                        print("Reading it as a fasta file didn't work (no 'SequenceList' object returned)")
-                    return None
-                else:
-                    if hasattr(flob, 'name'):
-                        sl.fName = flob.name
-                        var.fileNames.append(flob.name)
-                    sl.checkNamesForDupes()
-
-                    # If we have equal sequence lengths, then it might be an
-                    # alignment
-                    hasEqualSequenceLens = True
-                    if len(sl.sequences) <= 1:
-                        hasEqualSequenceLens = None  # ie not applicable
-                    else:
-                        len0 = len(sl.sequences[0].sequence)
-                        for s in sl.sequences[1:]:
-                            if len(s.sequence) != len0:
-                                hasEqualSequenceLens = False
-
-                    if not hasEqualSequenceLens:
-                        if var.verboseRead:
-                            print("The sequences appear to be different lengths")
-                        var.sequenceLists.append(sl)
-                    else:
-                        if var.verboseRead:
-                            print("The sequences appear to be all the same length")
-                        try:
-                            # includes a call to checkLengthsAndTypes()
-                            a = sl.alignment()
-                            # a.checkLengthsAndTypes()
-                        except:
-                            if var.verboseRead:
-                                print("Its not an alignment, even tho the sequences are all the same length.")
-                                print("    Maybe p4 (erroneously?) thinks that the sequences are different dataTypes.")
-                            var.sequenceLists.append(sl)
-                            if var.verboseRead:
-                                print("Got fasta file '%s'." % fName)
-                            return 1
-
-                        if var.verboseRead:
-                            print("The fasta file appears to be an alignment.")
-
-                        if var.doCheckForAllGapColumns:
-                            a.checkForAllGapColumns()
-                        if var.doCheckForBlankSequences:
-                            a.checkForBlankSequences()
-                        if var.doCheckForDuplicateSequences:
-                            a.checkForDuplicateSequences()
-                        var.alignments.append(a)
-
-                    if var.verboseRead:
-                        print("Got fasta file '%s'." % fName)
-                    return 1
-            else:
-                if var.verboseRead:
-                    print("First char is neither '>' nor ';' ---not fasta")
-        else:
+        if len(firstLine) <= 1:
             if var.verboseRead:
                 print("First line is blank--- not fasta")
+            return
+        if firstLine[0] not in ">;":
+            if var.verboseRead:
+                print("First char is neither '>' nor ';' ---not fasta")
+            return
+
+        flob.seek(0)
+        sl = p4.sequencelist.SequenceList(flob)   # this parses the file contents
+        if hasattr(flob, 'name'):
+            sl.fName = flob.name
+            var.fileNames.append(flob.name)
+        sl.checkNamesForDupes()
+
+        # If we have equal sequence lengths, then it might be an
+        # alignment
+        hasEqualSequenceLens = True
+        if len(sl.sequences) <= 1:
+            hasEqualSequenceLens = None  # ie not applicable
+        else:
+            len0 = len(sl.sequences[0].sequence)
+            for s in sl.sequences[1:]:
+                if len(s.sequence) != len0:
+                    hasEqualSequenceLens = False
+
+        if not hasEqualSequenceLens:
+            if var.verboseRead:
+                print("The sequences appear to be different lengths")
+            var.sequenceLists.append(sl)
+        else:
+            if var.verboseRead:
+                print("The sequences appear to be all the same length")
+            try:
+                # includes a call to checkLengthsAndTypes()
+                a = sl.alignment()
+                # a.checkLengthsAndTypes()
+            except:
+                if var.verboseRead:
+                    print("Its not an alignment, even tho the sequences are all the same length.")
+                    print("    Maybe p4 (erroneously?) thinks that the sequences are different dataTypes.")
+                var.sequenceLists.append(sl)
+                if var.verboseRead:
+                    print("Got fasta file '%s'." % fName)
+                return 1
+
+            if var.verboseRead:
+                print("The fasta file appears to be an alignment.")
+
+            if var.doCheckForAllGapColumns:
+                a.checkForAllGapColumns()
+            if var.doCheckForBlankSequences:
+                a.checkForBlankSequences()
+            if var.doCheckForDuplicateSequences:
+                a.checkForDuplicateSequences()
+            var.alignments.append(a)
+
+        if var.verboseRead:
+            print("Got fasta file '%s'." % fName)
+        return 1
 
 
 def _tryToReadPhylipFile(fName, flob, firstLine):

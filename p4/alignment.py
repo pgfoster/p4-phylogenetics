@@ -387,7 +387,8 @@ class Alignment(SequenceList):
     # AssertionError, basing that response on the result of len(self).  Having
     # __bool__() redefined here makes "assert self" work, even with no sequence
     # length.  Previously, python 2 only, I had to over-ride __nonzero__() for
-    # the same reason --- but that does not work with Python 3.  
+    # the same reason --- but that does not work with Python 3. 
+    # Checked July 2020, this is still needed.  See similar in Sequence class. 
 
     def __bool__(self):
         return True
