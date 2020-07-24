@@ -64,8 +64,9 @@ class Chain(object):
         #self.lastProposal = None
         ret = self.verifyIdentityOfTwoTreesInChain()
         if ret == var.DIFFERENT:
-            raise P4Error(
-                "Chain.init().  Programming error. The prop tree should be identical to the cur tree, and it is not.")
+            eMessg = "Chain.init().  Programming error. The prop tree "
+            eMessg += "should be identical to the cur tree, and it is not."
+            raise P4Error(eMessg)
 
     def propose(self, theProposal):
         gm = ['Chain.propose()']
