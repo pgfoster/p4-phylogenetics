@@ -50,7 +50,8 @@ class Chain(object):
         # One more likelihood calculation, so that
         # self.verifyIdentityOfTwoTreesInChain() does not fail due to
         # part likes differing, below.
-        self.propTree.calcLogLike(verbose=0)
+        # July 2020, comment out, see if it causes any problems.
+        #self.propTree.calcLogLike(verbose=0)
         
         if 0:
             self.testTree = aMcmc.tree.dupe()
@@ -1593,8 +1594,7 @@ class Chain(object):
             return ret
 
         # cStuff.  This does model prams, tree and node stuff.
-        # print "about to pf.p4_verifyIdentityOfTwoTrees(self.curTree.cTree,
-        # self.propTree.cTree)"
+        # print("about to pf.p4_verifyIdentityOfTwoTrees(self.curTree.cTree,self.propTree.cTree)")
         ret = pf.p4_verifyIdentityOfTwoTrees(
             self.curTree.cTree, self.propTree.cTree)
         # print "ret = %s" % ret
