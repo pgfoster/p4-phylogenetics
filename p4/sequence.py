@@ -211,9 +211,9 @@ class Sequence(object):
         if self.nChar % 3 != 0:
             gm.append("The length of self should be a multiple of 3")
             raise P4Error(gm)
-        nTriplets = self.nChar / 3
+        nTriplets = int(self.nChar / 3)
 
-        from geneticcode import GeneticCode
+        from p4.geneticcode import GeneticCode
         gc = GeneticCode(transl_table)
 
         prSeq = Sequence()
