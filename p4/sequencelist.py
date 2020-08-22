@@ -196,7 +196,7 @@ class SequenceList(object):
                     if bads > 10:
                         break
                 if bads:
-                    gm.append("Got bad characters.")
+                    gm.append("Got bad characters.  See above.")
                     raise P4Error(gm)
             if self.sequences[0].dataType == 'protein':
                 for s in self.sequences:
@@ -215,7 +215,7 @@ class SequenceList(object):
                     if bads > 10:
                         break
                 if bads:
-                    gm.append("Got bad characters.")
+                    gm.append("Got bad characters.  See above.")
                     raise P4Error(gm)
         flob.close()
 
