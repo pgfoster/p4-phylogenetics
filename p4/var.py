@@ -71,7 +71,7 @@ class Var(object):
 
         #: If you give read() a string that is not a file, p4 points
         #: it out, in case its a mistake.
-        self.warnReadNoFile = 1
+        self.warnReadNoFile = 0
 
         #: In the p4 script, non-filename command-line args are accommodated,
         #: awkwardly.  They need to be put after
