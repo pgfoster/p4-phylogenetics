@@ -544,7 +544,21 @@ def _decideFromContent(fName, flob):
             if var.verboseRead:
                 print("Guessing that '%s' is a phylip file..." % fName)
             # either data or trees
+
+            # Deal with what punctuation is considered to be, for the tokenizer
+            # This week, the default is that punctuation is nexus_punctuation
+            # but it could be set by the user
+            punctuationWasNexusPunctuation = False
+            if var.punctuation == var.nexus_punctuation:
+                punctuationWasNexusPunctuation = True
+                var.punctuation = var.phylip_punctuation
+                
             ret = _tryToReadPhylipFile(fName, flob, firstLine)
+            
+            # Reset the punctuation if it was default, not if it was set by the user
+            if punctuationWasNexusPunctuation:
+                var.punctuation = var.nexus_punctuation
+
             if not ret:
                 if var.verboseRead:
                     print("Failed to read '%s' as a phylip file." % fName)

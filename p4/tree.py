@@ -546,6 +546,7 @@ class Tree(object):
             print("    translationHash=%s, self.taxNames=%s" % (translationHash, self.taxNames))
             print("    flob type is %s, pos is %i" % (type(flob), flob.tell()))
             print("wyy var.nexus_getAllCommandComments is %s" % var.nexus_getAllCommandComments)
+            print(f"    var.punctuation is {var.punctuation}")
 
         if self.name:
             gm = ["Tree.parseNewick(), tree '%s'" % self.name]
@@ -654,8 +655,7 @@ class Tree(object):
                     raise P4Error(gm)
 
             elif tok[0] in string.ascii_letters or tok[0] in string.digits or tok[0] in var.nexus_safeChars \
-                 or isQuotedTok or tok[0] in [
-                    '_', '#', '\\', '/', '"', '(', ')']:
+                 or isQuotedTok or tok[0] in ['_', '#', '\\', '/', '"', '(', ')']:
                 # A single-node tree, not ()aName, rather just aName.
                 if len(self.nodes) == 0:
                     isAfterParen = 1
@@ -668,14 +668,10 @@ class Tree(object):
                                 # a second name after a node name, eg (A foo, B)   =>foo is bad
                                 # or eg (A, B)foo bar    => bar is bad
                                 gm.append("Badly placed token '%s'." % tok)
-                                gm.append(
-                                    "Appears to be a second node name, after '%s'" % stack[-1].name)
-                                gm.append(
-                                    'Missing comma maybe?  Or punctuation or spaces in an unquoted name?')
-                                gm.append(
-                                    "To allow reading Newick (or Nexus) with spaces, ")
-                                gm.append(
-                                    "turn var.newick_allowSpacesInNames on")
+                                gm.append("Appears to be a second node name, after '%s'" % stack[-1].name)
+                                gm.append('Missing comma maybe?  Or punctuation or spaces in an unquoted name?')
+                                gm.append("To allow reading Newick (or Nexus) with spaces, ")
+                                gm.append("turn var.newick_allowSpacesInNames on")
                                 raise P4Error(gm)
                             else:
                                 stack[-1].name += ' '
