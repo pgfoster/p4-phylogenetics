@@ -47,6 +47,17 @@ And if you want to use the GUI tree-drawing::
 
 Presumably other Ubuntu versions will be similar or identical.
 
+**Installing by getting dependencies using conda**
+
+This works without sudo.  I recently installed p4 on a redhat cluster
+with help from conda (actually miniconda).  To get the dependencies I
+did::
+
+    conda install scipy gsl nlopt bitarray
+
+Then I added the conda include and lib paths to the p4 ``setup.py``
+file in lists ``my_include_dirs`` and ``my_lib_dirs``.
+
 
 Installing it in-place
 ======================
