@@ -50,8 +50,11 @@ class Chain(object):
         # One more likelihood calculation, so that
         # self.verifyIdentityOfTwoTreesInChain() does not fail due to
         # part likes differing, below.
-        # July 2020, comment out, see if it causes any problems.
-        #self.propTree.calcLogLike(verbose=0)
+
+        # July 2020, comment out, see if it causes any problems.  It
+        # did, with a similar problem.  This needs a better fix.  In
+        # the meantime, un-comment-out.
+        self.propTree.calcLogLike(verbose=0)
         
         if 0:
             self.testTree = aMcmc.tree.dupe()
