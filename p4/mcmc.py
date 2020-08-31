@@ -959,6 +959,7 @@ class Mcmc(object):
         nNodes = len(list(self.tree.iterNodes()))
         for pNum in range(self.tree.model.nParts):
             mp = self.tree.model.parts[pNum]
+            dp = self.tree.data.parts[pNum]
             if mp.ndch2:
                 if mp.nComps != nNodes:
                     gm.append("Model part %i, ndch2 is on, nNodes is %i, nComps is %i" % (
@@ -976,14 +977,27 @@ class Mcmc(object):
                     gm.append("This week, for ndch2 there should be only one gdasrv.")
                     raise P4Error(gm)
 
-                mp.ndch2_globalComp = numpy.array(self.tree.data.parts[pNum].composition())
+                for n in self.tree.iterNodes():
+                    assert n.nodeNum == n.parts[pNum].compNum
+
+                # Set leaf node mt.empiricalComp
+                for n in self.tree.iterLeavesNoRoot():
+                    mt = mp.comps[n.parts[pNum].compNum]
+                    # print(n.name, mt.val, "seqNum", n.seqNum)
+                    # print("part[seq] composition:", dp.composition([n.seqNum]))
+                    mt.empiricalComp = numpy.array(dp.composition([n.seqNum]))
+                    while mt.empiricalComp.min()  < var.PIVEC_MIN:
+                        for i in range(mp.dim):
+                            if mt.empiricalComp[i] < var.PIVEC_MIN:
+                                mt.empiricalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                        mt.empiricalComp /= mt.empiricalComp.sum()
+
+                mp.ndch2_globalComp = numpy.array(dp.composition())
                 while mp.ndch2_globalComp.min()  < var.PIVEC_MIN:
                     for i in range(mp.dim):
                         if mp.ndch2_globalComp[i] < var.PIVEC_MIN:
-                            mp.ndch2_globalComp[i] += (1.0 + random.random()) * var.PIVEC_MIN
-                    thisSum = mp.ndch2_globalComp.sum()
-                    for i in range(mp.dim):
-                        mp.ndch2_globalComp[i] /= thisSum
+                            mp.ndch2_globalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                    mp.ndch2_globalComp /= mp.ndch2_globalComp.sum()
 
                 # ususal comp proposals should not be on if we are doing ndch2
                 self.prob.compDir = 0.0

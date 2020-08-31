@@ -296,7 +296,8 @@ class Chain(object):
     def proposeSp(self, theProposal):
         gm = ['Chain.proposeSp()']
         # if self.mcmc.gen > 1300:
-        # print("proposeSp().  gen %5i,  %30s" % (self.mcmc.gen, theProposal.name), end=' ')
+        # print("proposeSp().  gen %5i,  %30s" % (self.mcmc.gen, theProposal.name), end='\n')
+        # sys.stdout.flush()
 
         if theProposal.name == 'comp':
             # print "theProposal.name = comp, pNum=%i" % theProposal.pNum
@@ -983,7 +984,7 @@ class Chain(object):
             logLikeRatio = self.propTree.logLike - self.curTree.logLike
 
         # To run "without the data", which shows the effect of priors.
-        #logLikeRatio = 0.0
+        # logLikeRatio = 0.0
 
         # Heating via Heating hack, simulated tempering, or MCMCMC
         if self.mcmc.doHeatingHack:
@@ -2223,9 +2224,8 @@ class Chain(object):
             while  mtProp.val.min() < var.PIVEC_MIN:
                 for i in range(mpCur.dim):
                     if mtProp.val[i] < var.PIVEC_MIN:
-                        mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
-                thisSum = mtProp.val.sum()
-                mtProp.val /= thisSum
+                        mtProp.val[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                mtProp.val /= mtProp.val.sum()
 
             # log proposal ratios
             forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
@@ -2235,12 +2235,11 @@ class Chain(object):
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
-            thisComp = mtCur.val
-            dirPrams = mpCur.ndch2_leafAlpha * thisComp
+            dirPrams = mpCur.ndch2_leafAlpha * mtCur.empiricalComp
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs 
-            # self.logPriorRatio = 0.0
+            # self.logPriorRatio = 0.0   # to turn off prior 
 
 
     def proposeNdch2_internalCompsDir(self, theProposal):
@@ -2400,17 +2399,14 @@ class Chain(object):
             meanNeighbors = mpCur.ndch2_globalComp
             #print("proposeAllCompsDirAlphaL() meanNeighbors ", meanNeighbors)
 
-        for nCur in self.curTree.iterNodes():
+        for nCur in self.curTree.iterLeavesNoRoot():
             mtNum = nCur.parts[theProposal.pNum].compNum
             mtCur = mpCur.comps[mtNum]
 
-            # Leaf nodes use their own comp, only.
-            if nCur.isLeaf:
-                thisComp = mtCur.val
-                #thisComp = mpCur.ndch2_globalComp
-                lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, newVal * thisComp, mtCur.val)
-                lnPdfCur = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, oldVal * thisComp, mtCur.val)
-                self.logPriorRatio += lnPdfProp - lnPdfCur
+            thisComp = mtCur.empiricalComp
+            lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, newVal * thisComp, mtCur.val)
+            lnPdfCur = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, oldVal * thisComp, mtCur.val)
+            self.logPriorRatio += lnPdfProp - lnPdfCur
 
     def proposeNdch2_internalCompsDirAlpha(self, theProposal):
         # The Dirichlet hyperparameter alpha 
@@ -2421,7 +2417,7 @@ class Chain(object):
         mpProp = self.propTree.model.parts[theProposal.pNum]
 
         NDCH2_ALPHAI_MIN = 1.0 
-        NDCH2_ALPHAI_MAX = 2000.
+        NDCH2_ALPHAI_MAX = 10000.
 
         self.logProposalRatio = 0.0
         if 0:
