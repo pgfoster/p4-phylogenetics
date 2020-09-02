@@ -1360,7 +1360,7 @@ class NexusData:
         haveToDoIt = False
 
         for aSeq in self.sequences[1:]:
-            if self.nexus_matchcar in aSeq:
+            if self.nexus_matchchar in aSeq:
                 haveToDoIt = True
                 break
         if haveToDoIt:
