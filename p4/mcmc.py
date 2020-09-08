@@ -1675,7 +1675,7 @@ class Mcmc(object):
 
             # compLocation
             if self.prob.compLocation:
-                if mp.nComps > 1 and not mp.cmd1:
+                if mp.nComps > 1:
                     p = Proposal(self)
                     p.name = 'compLocation'
                     p.tuning = None #self._tunings.parts[pNum].default[p.name]

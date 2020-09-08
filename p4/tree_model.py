@@ -1574,8 +1574,6 @@ class RMatrix(object):
         self.symbol = None
         self.val = None
         self.nNodes = 0
-        self.rj_isInPool = False
-        self.rj_f = 0.0
 
 
 class Gdasrv(object):
@@ -1634,8 +1632,6 @@ class Comp(object):
         self.symbol = None
         self._val = None
         self.nNodes = 0
-        #self.rj_isInPool = False
-        #self.rj_f = 0.0
 
     def _getVal(self):
         return self._val

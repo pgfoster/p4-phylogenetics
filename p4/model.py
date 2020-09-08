@@ -126,25 +126,9 @@ class ModelPart(object):
 
         self.nCat = 0      # This is set by Tree.modelSanityCheck()
 
-        self.rjComp = False
-        self.rjComp_k = 1
-        self.rjRMatrix = False
-        self.rjRMatrix_k = 1
-
-        self.cmd1 = False
-        self.cmd1_alpha = 100.0
-        self.cmd1_alphaLogScaleProposalTuning = 10
-        self.cmd1_alphaLinearScaleProposalTuning = 100.
-        self.cmd1_pi0 = None
-        self.cmd1_p = 500.0
-        self.cmd1_q = 500.0
-        self.cmd1_s = 1.0
-        self.cmd1_LN_a = 10.0
-        self.cmd1_LN_t = 1.0
-
         self.ndch2 = False
-        self.ndch2_leafAlpha = 100.0      # Leaf
-        self.ndch2_internalAlpha = 1.0  # Internal
+        self.ndch2_leafAlpha = 50.0      # Leaf
+        self.ndch2_internalAlpha = 30.0  # Internal
         self.ndch2_globalComp = None
         self.ndch2_writeComps = True
         
@@ -232,8 +216,6 @@ class ModelPart(object):
             if sp.isHet:
                 omt = op.comps[mtNum]
                 omt.nNodes = smt.nNodes
-                # omt.rj_isInPool = smt.rj_isInPool
-                # omt.rj_f = smt.rj_f
 
         # rMatrices
         for mtNum in range(sp.nRMatrices):
@@ -251,8 +233,6 @@ class ModelPart(object):
                             omt.val[i] = smt.val[i]
                 if sp.isHet:
                     omt.nNodes = smt.nNodes
-                    # omt.rj_isInPool = smt.rj_isInPool
-                    # omt.rj_f = smt.rj_f
 
         # gdasrvs
         for mtNum in range(sp.nGdasrvs):
@@ -268,9 +248,6 @@ class ModelPart(object):
         # relRate
         op.relRate = sp.relRate
 
-        # rjComp_k, rjRMatrix_k
-        # op.rjComp_k = sp.rjComp_k
-        # op.rjRMatrix_k = sp.rjRMatrix_k
         op.ndch2_leafAlpha = sp.ndch2_leafAlpha
         op.ndch2_internalAlpha = sp.ndch2_internalAlpha
 
@@ -304,7 +281,6 @@ class ModelPart(object):
 class Model(object):
 
     def __init__(self, nParts):
-        #self.nParts = nParts
         self.parts = []
         self.cModel = None
         self.doRelRates = 0
@@ -969,14 +945,6 @@ class Model(object):
                         print("Model.verifyValsWith()  nNodes differ.")
                         isBad = 1
                         break
-                    # elif op.comps[mtNum].rj_isInPool != sp.comps[mtNum].rj_isInPool:
-                    #     print("Model.verifyValsWith()  rj_isInPool differs.")
-                    #     isBad = 1
-                    #     break
-                    # elif math.fabs(op.comps[mtNum].rj_f - sp.comps[mtNum].rj_f) > epsilon1:
-                    #     print("Model.verifyValsWith()  rj_f vals differ.")
-                    #     isBad = 1
-                    #     break
 
             # rMatrices
             for mtNum in range(sp.nRMatrices):
@@ -998,13 +966,6 @@ class Model(object):
                     if op.rMatrices[mtNum].nNodes != sp.rMatrices[mtNum].nNodes:
                         isBad = 1
                         break
-                    # elif op.rMatrices[mtNum].rj_isInPool != sp.rMatrices[mtNum].rj_isInPool:
-                    #     print("Model.verifyValsWith()  rj_isInPool differs.")
-                    #     isBad = 1
-                    #     break
-                    # elif math.fabs(op.rMatrices[mtNum].rj_f - sp.rMatrices[mtNum].rj_f) > epsilon1:
-                    #     isBad = 1
-                    #     break
 
             # gdasrvs
             for mtNum in range(sp.nGdasrvs):
@@ -1026,12 +987,6 @@ class Model(object):
             if self.doRelRates and self.relRatesAreFree:
                 if math.fabs(sp.relRate - op.relRate) > epsilon1:
                     isBad = 1
-            if isBad:
-                break
-
-            # rjComp_k
-            if sp.rjComp_k != op.rjComp_k:
-                isBad = 1
             if isBad:
                 break
 
