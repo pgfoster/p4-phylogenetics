@@ -131,7 +131,10 @@ If you want to make p4 forget the trees that it has read, say::
 
      var.trees = []  
 
-You can do the same for alignments and sequenceLists.
+You can do the same for alignments and sequenceLists.  To make p4
+forget any Nexus sets info that it has read, you can do::
+
+     var.nexusSets = None
 
 If you are sure that the file that you are trying to read has only one
 thing (Tree, Alignment, SequenceList), then you can use

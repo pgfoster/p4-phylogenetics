@@ -71,7 +71,7 @@ class Var(object):
 
         #: If you give read() a string that is not a file, p4 points
         #: it out, in case its a mistake.
-        self.warnReadNoFile = 1
+        self.warnReadNoFile = 0
 
         #: In the p4 script, non-filename command-line args are accommodated,
         #: awkwardly.  They need to be put after
@@ -151,10 +151,12 @@ class Var(object):
         """
 
         self.topologyDistanceMetrics = [
-            'sd', 'wrf', 'bld', 'diffs', 'scqdist']  # 'triplet'? 'thquartet',
+            'sd', 'wrf', 'bld', 'diffs', 'scqdist', 'tqdist']  # 'triplet'?
         """A list of metrics.
 
-        Used by :meth:`Tree.Tree.topologyDistance` and :meth:`Trees.Trees.topologyDistanceMatrix`
+        At the time of writing, ``sd``, ``wrf``, ``bld``, ``diffs``, ``scqdist``, ``tqdist``.
+
+        Used by :meth:`p4.tree.Tree.topologyDistance` and :meth:`p4.trees.Trees.topologyDistanceMatrix`
         """
 
         # These are used by TreePicture

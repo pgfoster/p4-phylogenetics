@@ -99,6 +99,12 @@ class McmcCheckPointReader(object):
         if verbose:
             self.dump()
 
+    def read(self, fName):
+        f = open(fName, 'rb')
+        m = pickle.load(f)
+        f.close()
+        self.mm.append(m)
+
     def dump(self, extras=False):
         print("McmcCheckPoints (%i checkPoints read)" % len(self.mm))
         if extras:
@@ -172,7 +178,7 @@ class McmcCheckPointReader(object):
         asdos, maxDiff, meanDiff = p4.func._compareSplitsBetweenTwoTreePartitions(
             tp1, tp2, minimumProportion, verbose=verbose)
         asdos2, maxDiff2, meanDiff2= p4.func._compareSplitsBetweenTwoTreePartitions(
-            tp2, tp1, minimumProportion, verbose=verbose)
+            tp2, tp1, minimumProportion, verbose=False)
         if math.fabs(asdos - asdos2) > 0.000001:
             print("Reciprocal assdos differs:  %s  %s" % (asdos, asdos2))
 

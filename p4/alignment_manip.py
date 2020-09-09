@@ -1,4 +1,5 @@
-from p4.sequencelist import SequenceList, Sequence
+from p4.sequence import Sequence
+from p4.sequencelist import SequenceList
 from p4.nexussets import NexusSets
 from p4.p4exceptions import P4Error
 import string
@@ -2361,27 +2362,32 @@ if True:
     def matchedPairsTests(self, mostSignificantOnly=False):
         """Get all Ababneh et al 2006 matched pairs stats and probabilies.
 
-        Returns six DistanceMatrix objects.
-        Returns QB, QS, and QR (QR=Internal) matrices, containing the statistics,
-        and PB, PS, and PR containing the P-values.
+        Args:
+
+            mostSignificantOnly (bool):  False by default, which gives the
+              full matrices.  Setting this to True returns the three most
+              significant values only, as a tuple.
+
+        Returns:
+
+            By default it returns six :class:`~p4.distancematrix.DistanceMatrix` 
+            objects.   QB, QS, and QR (QR=Internal) matrices contain the 
+            statistics, and PB, PS, and PR contain the P-values.
 
         For example::
 
           a = var.alignments[0]
           QB, QS, QR, PB, PS, PR = a.matchedPairsTests()
 
-        The tests are pair-wize on all pairs of sequences.  Note that
+        The tests are pairwise on all pairs of sequences.  Note that
         it may fail to do the calculations for a pair.  If so it will
         return None for that test for that pair, and that will end up
         in DistanceMatrix objects that are returned.
 
-          Args: mostSignificantOnly: False by default, which gives the
-        full matrices.  Setting this to True returns the three most
-        significant values only, as a tuple.
-
-          Returns: By default it returns 6 DistanceMatrix objects.  If
-        arg mostSignificantOnly is turned on then it only returns the
-        three smalles P-values, as a tuple.
+        The tests are pair-wize on all pairs of sequences.  Note that
+        it may fail to do the calculations for a pair.  If so it will
+        return None for that test for that pair, and that will end up
+        in ``DistanceMatrix`` objects that are returned.
 
         """
 
@@ -2478,39 +2484,67 @@ if True:
         else:
             return QBB, QSS, QRR, PBB, PSS, PRR
 
-    def symtestAsInIQTreeNaserKdour(self):
+    def symtestAsInIQTreeNaserKhdour(self, verbose=True):
         """Matched-pairs tests of one pair, as in IQTree
+
+        This has appeared in IQTree betas from about 1.7beta onwards,
+        and is part of ``iqtree2``.  (There was a small bug in ``--symtest``
+        that was fixed in v 2.0.6, June 2020.)
+
+        See Naser-Khdour et al GBE 2019 https://doi.org/10.1093/gbe/evz193
+
+        This is my attempt to replicate it.  That implementation
+        chooses the sequence pair with the biggest divergence, and
+        only reports stats for that pair.  This does not necessarily
+        show the smallest stats.
+
+        If it is verbose, it speaks the results to stdout.
+
+        It returns the 3 stats.
 
         """
 
-        # Make a list to hold the bigFs with the biggest diversity.
+        # Make a list to hold the bigFs with the biggest divergence.
         bigFs = []
         txNumPairs = []
-        biggestDiversity = 0.0
+        biggestDivergence = 0.0
 
         for txNumA in range(self.nTax - 1):
             for txNumB in range(txNumA + 1, self.nTax):
-                # print(txNumA, txNumB)
                 bigF = self.getSimpleBigF(txNumA, txNumB)
                 sumAll = bigF.sum()
-                sumOffDiags = sumAll - bigF.diagonal().sum()
-                diversity = sumOffDiags / sumAll
-                if diversity < biggestDiversity:
+                if not sumAll:        # eg if there are no chars that line up
                     continue
-                elif diversity == biggestDiversity:
+                sumOffDiags = sumAll - bigF.diagonal().sum()
+                divergence = sumOffDiags / sumAll
+                if 0:  # extreme debug
+                    print("=" * 50)
+                    print(txNumA, txNumB)
+                    print(bigF)
+                    print(f"sumAll {sumAll}")
+                    print(f"bigF.diagonal().sum() {bigF.diagonal().sum()}")
+                    print(f"sumOffDiags = {sumOffDiags}")
+                    print(f"divergence {divergence}")
+                    print("-" * 50, "\n\n")
+                if divergence < biggestDivergence:
+                    continue
+                elif divergence == biggestDivergence:
                     bigFs.append(bigF)
                     txNumPairs.append((txNumA, txNumB))
                 else:
                     # its bigger, so wipe previous results
                     bigFs = [bigF]
                     txNumPairs = [(txNumA, txNumB)]
-                    biggestDiversity = diversity
+                    biggestDivergence = divergence
                     
-        if 1:
+        if verbose:
+            print("divergence matrices (F-matrix):")
             print(bigFs)
-            print(biggestDiversity)
+            print("biggest divergences")
+            print(biggestDivergence)
+            print("... between these (zero-based)sequence numbers:")
             print(txNumPairs)
-        assert biggestDiversity > 0.0, "Got zero diversity between the sequences"
+        assert biggestDivergence > 0.0, "Got zero divergence between the sequences"
 
         myBigF = None
         myTxNumPair = None
@@ -2518,12 +2552,16 @@ if True:
             myBigF = bigFs[0]
             myTxNumPair = txNumPairs[0]
         else:
+            print(f"Got {len(bigFs)} pairs with the same divergence.  Choosing randomly.", file=sys.stderr)
             myIndex = random.randrange(len(bigFs))
             myBigF = bigFs[myIndex]
             myTxNumPair = txNumPairs[myIndex]
         
         QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(myBigF, self.dim, myTxNumPair[0], myTxNumPair[1])
-        print(f"PB:{PB} PS:{PS} PR:{PR}")
+        if verbose:
+            print(f"PB:{PB} PS:{PS} PR:{PR}")
+            print("(Turn off this verbose output by setting arg vebose=False)")
+        return PB, PS, PR
         
         
 

@@ -39,7 +39,7 @@ I have recently installed p4 on Ubuntu 16.04, and had to::
     sudo apt-get install libnlopt-dev
     sudo apt-get install python3-dev
 
-You can use ``pip3`` to install ``scipy`` and ``bitarray``.
+You can use ``pip3`` to install ``scipy`` (which gives you ``numpy``) and ``bitarray``.
 
 And if you want to use the GUI tree-drawing::
 
@@ -47,123 +47,31 @@ And if you want to use the GUI tree-drawing::
 
 Presumably other Ubuntu versions will be similar or identical.
 
+**Installing by getting dependencies using conda**
 
-Installing p4 using setup.py
-============================
+This works without sudo.  I recently installed p4 on a redhat cluster
+with help from conda (actually miniconda).  To get the dependencies I
+did::
 
-This is the usual way that Python packages are installed; however if you plan on
-keeping up with the git repo you it may be easier to install p4 in-place as
-described in another section below.
+    conda install scipy gsl nlopt bitarray
 
-If you are upgrading and you want a clean install, you can un-install the
-previous version with the p4 func.uninstall() function --- see below.
-
-Presumably you are starting with the file ``p4-x.y.z.tar.gz``.  Unpack it in
-your favourite source directory.  In the newly-created directory note
-the file ``setup.py``.  That file controls the build and installation.  
-
-**Simple install**
-
-First you can build it, without installing it, by saying::
-
-    python3 setup.py build
-
-(no need to be root or use sudo for the above step)
-
-After building it, you then install it.  The default location for
-installation is where python libraries are installed, and you as
-JoeUser may not have file-writing permission to put files there, so
-you may need to be root or use sudo for the next step.  Eg if you sudo
-it, you can say::
-
-    sudo python3 setup.py install
-
-
-**Installation variations**
-
-To get a description of the various installation options, do::
-    
-    python3 setup.py install --help. 
-
-To install it in your home directory, say::
-
-    python3 setup.py install --prefix=~
-
-Or some unusual place in your home directory::
-
-    python3 setup.py install --prefix=~/Unusual
-
-If you install it in your home directory, 
-    
-- there is no need to be root or to use sudo
-
-- if you do this you may need to setenv your ``PYTHONPATH`` to eg
-  ``~/lib/python``.  Eg in your ``~/.bash_profile`` or ``~/.profile`` you can put the
-  line::
-
-      export PYTHONPATH=$HOME/lib/python
-
-  (depending on where your P4 lib directory is, and what it is called), or
-  you can add ::
-
-      export PYTHONPATH=$PYTHONPATH:$HOME/lib/python
-
-  if you already have a ``PYTHONPATH`` defined.
-
-- you may also need to set your ``PATH`` environment variable to
-  include ``~/bin``.  In many cases this will already be done, but if it is
-  not, and you are using the bash shell, you can do something like::
-
-      PATH=$PATH:$HOME/bin
-
-  and then as usual after all your paths have been set, you should have a line that says::
-
-      export PATH
-
-
-
-**Where things go**
-
-
-The default installation location has a "root", which might be ``/usr`` or
-``/usr/local``, or your home directory.  These three things are installed:
-
-    1.  **The p4 package.**          Goes where 3rd party packages go
-        Eg ``/usr/local/lib/python3.6/site-packages``
-
-    2.  **The p4 script.**           Goes somewhere in your path
-        Eg ``/usr/local/bin``
-
-    3.  **The examples.**             Goes in a share/doc directory
-        Eg ``/usr/local/share/doc``
-
-The default location for installation of the modules is something like::
-
-    /usr/lib/python3.6/site-packages
-
-or::
-
-    ~/lib/python3.6
-
-depending on the "root" of the installation, of course.
-
-The default location for the script p4 is something like::
-
-    /usr/local/bin
-
-The default location for the examples is something like::
-
-    /usr/local/share/doc/p4-1.x.y/Examples
+Then I added the conda include and lib paths to the p4 ``setup.py``
+file in lists ``my_include_dirs`` and ``my_lib_dirs``.
 
 
 Installing it in-place
 ======================
 
-My fave way of using the git version of p4 is to install it in-place rather than
-installing it with ``setup.py``.  The advantage is that it makes it easier to
-keep up with the changes made to the git repo.  The first thing would be to
-clone it from GitHub.  After that, you need to make it usable.
+The usual way that Python packages are installed uses setup.py to
+installs in a separate location, but I don't recommend it in this
+case, because I am too slow in making releases.  It would be easier to
+install p4 *in-place* as described here.  I have removed the source
+tarballs from the git repo to underline this.  The advantage is that
+it makes it easier to keep up with the changes made to the git repo.
 
+The first thing would be to clone it from GitHub.  After that, you
+need to make it usable.  Making it usable is needed on first installation, and
+not needed subsequently.
 
 To make it usable in-place, you need to do three things, which in overview are
 
@@ -225,10 +133,12 @@ first time, or if you make any changes to the C-language code
 yourself.  If you are not sure rebuilding is needed, it's OK to do it anyway.
 
 
-Installing scqdist, the sub-cubic quartet distance module
-=========================================================
+Installing scqdist and pytqdist
+===============================
 
-See the directory Qdist in the source, with its own instructions.
+You will need one of these if you do tree-to-tree quartet distances.
+See the directories Qdist and tqDist in the source, with their own
+instructions.
 
 
 To see if it works

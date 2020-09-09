@@ -150,7 +150,7 @@ class McmcProposalProbs(dict):
         if item in theKeys:
             try:
                 val = float(val)
-                if val < 1e-9:
+                if val < 1e-15:
                     val = 0
                 object.__setattr__(self, item, val)
             except:
@@ -959,6 +959,7 @@ class Mcmc(object):
         nNodes = len(list(self.tree.iterNodes()))
         for pNum in range(self.tree.model.nParts):
             mp = self.tree.model.parts[pNum]
+            dp = self.tree.data.parts[pNum]
             if mp.ndch2:
                 if mp.nComps != nNodes:
                     gm.append("Model part %i, ndch2 is on, nNodes is %i, nComps is %i" % (
@@ -976,14 +977,27 @@ class Mcmc(object):
                     gm.append("This week, for ndch2 there should be only one gdasrv.")
                     raise P4Error(gm)
 
-                mp.ndch2_globalComp = numpy.array(self.tree.data.parts[pNum].composition())
+                for n in self.tree.iterNodes():
+                    assert n.nodeNum == n.parts[pNum].compNum
+
+                # Set leaf node mt.empiricalComp
+                for n in self.tree.iterLeavesNoRoot():
+                    mt = mp.comps[n.parts[pNum].compNum]
+                    # print(n.name, mt.val, "seqNum", n.seqNum)
+                    # print("part[seq] composition:", dp.composition([n.seqNum]))
+                    mt.empiricalComp = numpy.array(dp.composition([n.seqNum]))
+                    while mt.empiricalComp.min()  < var.PIVEC_MIN:
+                        for i in range(mp.dim):
+                            if mt.empiricalComp[i] < var.PIVEC_MIN:
+                                mt.empiricalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                        mt.empiricalComp /= mt.empiricalComp.sum()
+
+                mp.ndch2_globalComp = numpy.array(dp.composition())
                 while mp.ndch2_globalComp.min()  < var.PIVEC_MIN:
                     for i in range(mp.dim):
                         if mp.ndch2_globalComp[i] < var.PIVEC_MIN:
-                            mp.ndch2_globalComp[i] += (1.0 + random.random()) * var.PIVEC_MIN
-                    thisSum = mp.ndch2_globalComp.sum()
-                    for i in range(mp.dim):
-                        mp.ndch2_globalComp[i] /= thisSum
+                            mp.ndch2_globalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                    mp.ndch2_globalComp /= mp.ndch2_globalComp.sum()
 
                 # ususal comp proposals should not be on if we are doing ndch2
                 self.prob.compDir = 0.0
@@ -1078,6 +1092,28 @@ class Mcmc(object):
         for aLine in splash:
             print(aLine)
             self.logger.info(aLine)
+
+        # Check the data for blank sequences, partition by partition
+        hasBlanks = False
+        blankSeqNums = []
+        for partNum in range(self.tree.data.nParts):
+            p = self.tree.data.parts[partNum]
+            partBlankSeqNums = []
+            for taxNum in range(self.tree.data.nTax):
+                nSites = pf.partSequenceSitesCount(p.cPart, taxNum)  # no gaps, no missings
+                # print(f"Mcmc.__init__()  partNum {partNum} taxNum {taxNum} nSites {nSites}")
+                if not nSites:
+                    partBlankSeqNums.append(taxNum)
+            if partBlankSeqNums:
+                hasBlanks = True
+            blankSeqNums.append(partBlankSeqNums)
+        if hasBlanks:
+            self.logger.info("Blank sequences were found.  For each partition, the sequence numbers are ---")
+            self.logger.info(f"{blankSeqNums}")
+            self.logger.info("These will be skipped in bigXSq simulations.")
+            self.blankSeqNums = blankSeqNums
+        else:
+            self.blankSeqNums = None
 
         self.swapVector = True
         if self.nChains > 1:
@@ -2150,6 +2186,7 @@ class Mcmc(object):
         
     def simTemp_trialAndError(self, nGensToDo, showTable=True, verbose=False):
         gm = ['Mcmc.simTemp_trialAndError()']
+        savedGenNum = self.gen
         assert self.simTemp
 
         self.run(nGensToDo, verbose=False, equiProbableProposals=False, writeSamples=False)
@@ -2160,7 +2197,7 @@ class Mcmc(object):
         
         self.simTemp_tunePseudoPriors_longSample()
 
-        self.gen = -1 
+        self.gen = savedGenNum
 
         
     def simTemp_tunePseudoPriors_longSample(self, flob=sys.stdout):
@@ -2433,6 +2470,23 @@ class Mcmc(object):
             # But it did not turn out well, so deleted.  It decreased
             # the first and last occupancies too much.
             tmpI.logPiDiff = logTempRatio
+
+    def simTemp_resetSimTempMax(self, newSimTempMax):
+        newVal = float(newSimTempMax)
+        print(f"Mcmc.simTemp_resetSimTempMax(), changing from old value {self.simTempMax} to new value {newVal}") 
+        self.simTempMax = newVal
+        logBase = var.mcmc_simTemp_tempCurveLogBase
+        factor = self.simTempMax / (math.pow(logBase, self.simTemp - 1) - 1.0)
+        for tNum in range(1,self.simTemp):
+            newTemp = (math.pow(logBase, tNum) - 1.) * factor
+            tmp = self.simTemp_temps[tNum]
+            tmp.temp = newTemp
+
+        if 1:
+            print("New settings of simTemp temperatures ---")
+            for tNum,tmp in enumerate(self.simTemp_temps):
+                print(f"{tNum:2}  {tmp.temp:10.3f}")
+        self.logger.info(f"Resetting simulated tempering MCMC, with new highest temperature {self.simTempMax:.2f}")
 
 
     def run(self, nGensToDo, verbose=True, equiProbableProposals=False, writeSamples=True):
@@ -3303,17 +3357,24 @@ class Mcmc(object):
         if 1 & self.simulate:
             for p in self.simTree.data.parts:
                 simFile.write(' %f' % pf.getUnconstrainedLogLike(p.cPart))
+
         if 2 & self.simulate:  # If self.simulate contains a 2, do bigX^2
-            #ret2 = self.simTree.data.compoChiSquaredTest(verbose=0, skipColumnZeros=True)
-            # for pNum in range(self.simTree.model.nParts):
-            #    simFile.write(' %f' % ret[pNum][0])
-            ret = self.simTree.data.simpleBigXSquared()
-            for pNum in range(self.simTree.model.nParts):
-                simFile.write(' %f' % ret[pNum])
+            if self.blankSeqNums == None:
+                ret = self.simTree.data.simpleBigXSquared()
+                for pNum in range(self.simTree.model.nParts):
+                    simFile.write(' %f' % ret[pNum])
+            else:
+                # We do not want sims corresponding to blank seqs to contribute to the bigXSq
+                ret2 = self.simTree.data.compoChiSquaredTest(verbose=0, skipTaxNums=self.blankSeqNums, skipColumnZeros=True)
+                for pNum in range(self.simTree.model.nParts):
+                    simFile.write(' %f' % ret2[pNum][0])
+
+            # check ...
             # for i in range(len(ret)):
             #    if math.fabs(ret[i][0] - ret2[i]) > 0.000001:
             # print "The two methods of bigXSquared calculations differed.  %f
             # and %f" % (ret[i], ret2[i])
+
         # If self.simulate contains a 4, do meanNCharPerSite
         if 4 & self.simulate:
             ret = self.simTree.data.meanNCharsPerSite()

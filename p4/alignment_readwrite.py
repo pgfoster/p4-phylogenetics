@@ -1,4 +1,5 @@
-from p4.sequencelist import SequenceList, Sequence
+from p4.sequence import Sequence
+from p4.sequencelist import SequenceList
 from p4.nexussets import NexusSets, CharSet
 from p4.p4exceptions import P4Error
 import string

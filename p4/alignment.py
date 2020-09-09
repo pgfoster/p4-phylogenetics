@@ -1,4 +1,5 @@
-from p4.sequencelist import SequenceList, Sequence
+from p4.sequence import Sequence
+from p4.sequencelist import SequenceList
 from p4.nexussets import NexusSets
 from p4.p4exceptions import P4Error
 import string
@@ -15,7 +16,6 @@ from p4.var import var
 from p4.part import Part
 import numpy
 import numpy.linalg
-from builtins import object       # For Py2/3 compatibility, needed for redefinition of __bool__() below in Py2
 
 cListPat = re.compile('(\d+)-?(.+)?')
 cList2Pat = re.compile('(.+)\\\\(\d+)')
@@ -142,7 +142,7 @@ class Alignment(SequenceList):
 
     From SequenceList, this inherits
 
-    * ``sequences``, a list of :class:`~p4.sequencelist.Sequence` objects
+    * ``sequences``, a list of :class:`~p4.sequence.Sequence` objects
     * ``fName``, the file name, by default None
     * ``sequenceForNameDict``, a dictionary which allows you to get a
       Sequence given its name.  This week it is not made by default
@@ -290,7 +290,7 @@ class Alignment(SequenceList):
 
     """
 
-    from p4.alignment_manip import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,getMaskForAutapomorphies,getMaskForCharDiversity,getCharDiversityDistribution,orMasks,andMasks,sequenceSlice,bluntEndLigate, concatenate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, symtestAsInIQTreeNaserKdour, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups, mrpSlice
+    from p4.alignment_manip import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,getMaskForAutapomorphies,getMaskForCharDiversity,getCharDiversityDistribution,orMasks,andMasks,sequenceSlice,bluntEndLigate, concatenate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, symtestAsInIQTreeNaserKhdour, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups, mrpSlice
     from p4.alignment_readwrite import readOpenPhylipFile, _readPhylipSequential, _readPhylipInterleaved, _readPhylipSequentialStrict, _readPhylipInterleavedStrict, _readOpenClustalwFile,writeNexus,writePhylip,writeMolphy,_readOpenGdeFile
     from p4.alignment_part import _initParts,initDataParts,resetSequencesFromParts,resetPartsContentFromSequences
     from p4.alignment_logdet import logDet, _logDetSetReduceIgnores
@@ -387,9 +387,8 @@ class Alignment(SequenceList):
     # AssertionError, basing that response on the result of len(self).  Having
     # __bool__() redefined here makes "assert self" work, even with no sequence
     # length.  Previously, python 2 only, I had to over-ride __nonzero__() for
-    # the same reason --- but that does not work with Python 3.  In order to
-    # make this redefinition of __bool__() work for Python 2, I need to "from
-    # builtins import object" above, which makes it Py2/3 compatible.
+    # the same reason --- but that does not work with Python 3. 
+    # Checked July 2020, this is still needed.  See similar in Sequence class. 
 
     def __bool__(self):
         return True

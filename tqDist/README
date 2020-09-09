@@ -1,0 +1,57 @@
+Instructions for making a Python module from the Aarhus tqDist code.
+
+The code is from Christian N. S. Petersen and colleagues at
+Bioinformatics Research Centre (BiRC) at Aarhus U, and can be obtained
+from
+
+https://users-cs.au.dk/~cstorm/software/tqdist
+
+Many thanks to the authors and programmers for this.  I have a copy
+included here, file tqDist-1.0.2.tar.gz.
+
+There is a paper about it here --
+https://www.ncbi.nlm.nih.gov/pubmed/24651968
+
+To install it, make sure you have the prerequisites properly in place.
+
+Make sure you have Python.h in your include path.  You probably have
+that if you installed Python from source, from MacPorts, from
+Homebrew, or if you installed python-dev.
+
+You need the boost-python3 library.  On Ubuntu its something like sudo
+apt-get install libboost-python3.  On my very old ubuntu box, I built
+boost-python from source, and that worked, although I suppose
+installing a package would work as well.  On my mac, this week I have
+python3.8 from Homebrew, and I installed boost-python3 from homebrew
+as well.  That worked.
+
+Unpack the tqDist source.
+
+The source code for tqDist has python bindings included, but they use
+an interface via files, while I wanted it to interface in-memory as well,
+so I have made another python interface, included in P4TqDistPyStuff.
+Copy setup.py and pyquartet_dist.cpp into the tqDist-1.0.2/tqDist
+directory, and cd there.
+
+Edit the setup.py file to make the boost-pythonXX library the one you have.
+
+Then build it, by ---
+
+python3 setup.py build_ext --inplace
+
+and pay attention to any error messages as they fly by.  (Warnings are
+usually ok)
+
+If it works, you will get a module, eg pytqdist.cpython-38-darwin.so.
+You can test it in this location with the doTest.py script.  When you
+are sure it can be imported by Python, and is functional, you can put
+it in your p4 python lib directory.
+
+There are examples of its use in p4 in
+
+share/Examples/G_trees/B_topologyDistance
+share/Examples/G_trees/C_topologyDistanceMatrix
+
+
+
+
