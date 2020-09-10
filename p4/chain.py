@@ -2051,25 +2051,13 @@ class Chain(object):
         #gm = ["proposeRMatrixLocation()"]
         mp = self.propTree.model.parts[theProposal.pNum]
         #nMT = mp.nRMatrices
-        if mp.rjRMatrix:
-            pool = [c for c in mp.rMatrices if c.rj_isInPool]
-            # We need at least 2 rMatrices, because one of them will be the
-            # current rMatrix for the node chosen below, and we need at least
-            # one other to change to.
-            if len(pool) < 2:
-                theProposal.doAbort = True
-                return True
         validNodeNums = [
             n for n in self.propTree.preOrder if n != var.NO_ORDER]
         validNodeNums.remove(self.propTree.root.nodeNum)
         validNodes = [self.propTree.nodes[n] for n in validNodeNums]
 
-        if mp.rjRMatrix:
-            validNodes = [n for n in validNodes if (
-                mp.rMatrices[n.br.parts[theProposal.pNum].rMatrixNum].rj_isInPool)]
-        else:
-            validNodes = [n for n in validNodes if (
-                mp.rMatrices[n.br.parts[theProposal.pNum].rMatrixNum].nNodes > 1)]
+        validNodes = [n for n in validNodes if (
+            mp.rMatrices[n.br.parts[theProposal.pNum].rMatrixNum].nNodes > 1)]
 
         if not validNodes:
             theProposal.doAbort = True
@@ -2077,15 +2065,8 @@ class Chain(object):
         theNode = random.choice(validNodes)
         currentNum = theNode.br.parts[theProposal.pNum].rMatrixNum
 
-        if mp.rjRMatrix:
-            validRMatrixNumbers = [
-                c.num for c in pool if c.num is not currentNum]
-            if not validRMatrixNumbers:
-                theProposal.doAbort = True
-                return True
-        else:
-            validRMatrixNumbers = [
-                c.num for c in mp.rMatrices if c.num is not currentNum]
+        validRMatrixNumbers = [
+            c.num for c in mp.rMatrices if c.num is not currentNum]
 
         #proposedNum = currentNum
         # while proposedNum == currentNum:

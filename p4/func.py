@@ -1447,7 +1447,17 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
                 else:
                     n.br.len = 0.02 + (random.random() * 0.03)
 
+    # _initFinish() checks that leaf nodes have names, and sets preAndPostOrder
     t._initFinish()
+
+    # Added Sept 2020, because NDCH2 wants nodeNums in order.
+    newNodes = []
+    for i,n in enumerate(t.iterPreOrder()):
+        n.nodeNum = i
+        newNodes.append(n)
+    t.nodes = newNodes
+    t.setPreAndPostOrder()
+
     return t
 
 
