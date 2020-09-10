@@ -13,7 +13,6 @@ import random
 import inspect
 import datetime
 import subprocess
-import shutil
 
 from p4.var import var
 # from p4.sequencelist import Sequence, SequenceList
@@ -705,66 +704,14 @@ def _tryToReadFastaFile(fName, flob, firstLine=None):
     else:
         if var.verboseRead:
             print("Trying to read '%s' as a fasta file..." % fName)
-        if len(firstLine) > 1:
-            if firstLine[0] == '>' or firstLine[0] == ';':
-                flob.seek(0)
-                try:
-                    # this code is useless -- it always succeeds, never
-                    # excepts.
-                    sl = p4.sequencelist.SequenceList(flob)
-                except:
-                    if var.verboseRead:
-                        print("Reading it as a fasta file didn't work (no 'SequenceList' object returned)")
-                    return None
-                else:
-                    if hasattr(flob, 'name'):
-                        sl.fName = flob.name
-                        var.fileNames.append(flob.name)
-                    sl.checkNamesForDupes()
-
-                    # If we have equal sequence lengths, then it might be an
-                    # alignment
-                    hasEqualSequenceLens = True
-                    if len(sl.sequences) <= 1:
-                        hasEqualSequenceLens = None  # ie not applicable
-                    else:
-                        len0 = len(sl.sequences[0].sequence)
-                        for s in sl.sequences[1:]:
-                            if len(s.sequence) != len0:
-                                hasEqualSequenceLens = False
-
-                    if not hasEqualSequenceLens:
-                        if var.verboseRead:
-                            print("The sequences appear to be different lengths")
-                        var.sequenceLists.append(sl)
-                    else:
-                        if var.verboseRead:
-                            print("The sequences appear to be all the same length")
-                        try:
-                            # includes a call to checkLengthsAndTypes()
-                            a = sl.alignment()
-                            # a.checkLengthsAndTypes()
-                        except:
-                            if var.verboseRead:
-                                print("Its not an alignment, even tho the sequences are all the same length.")
-                                print("    Maybe p4 (erroneously?) thinks that the sequences are different dataTypes.")
-                                print("    If you are reading protein sequences, check whether there is a sequence of")
-                                print("    all gaps as this will be assumed to be DNA by p4")
-                            var.sequenceLists.append(sl)
-                            if var.verboseRead:
-                                print("Got fasta file '%s'." % fName)
-                            return 1
-
-                        if var.verboseRead:
-                            print("The fasta file appears to be an alignment.")
-
-                        if var.doCheckForAllGapColumns:
-                            a.checkForAllGapColumns()
-                        if var.doCheckForBlankSequences:
-                            a.checkForBlankSequences()
-                        if var.doCheckForDuplicateSequences:
-                            a.checkForDuplicateSequences()
-                        var.alignments.append(a)
+        if len(firstLine) <= 1:
+            if var.verboseRead:
+                print("First line is blank--- not fasta")
+            return
+        if firstLine[0] not in ">;":
+            if var.verboseRead:
+                print("First char is neither '>' nor ';' ---not fasta")
+            return
 
         flob.seek(0)
         sl = p4.sequencelist.SequenceList(flob)   # this parses the file contents
@@ -1084,26 +1031,23 @@ def splash2(outFile=None, verbose=True):
     lp = os.path.dirname(inspect.getfile(p4))
     stuff.append("%16s: %s" % ("Library path", lp))
 
-    # Check that git is installed:
-    if shutil.which("git"):
-        # Get git version.
-        if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
-            try:
-                # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
-                # subprocess.check_output(['git', 'rev-parse', 'HEAD'])
-                # ret = subprocess.check_output(['git', '-C', '%s' % lp, 'rev-parse', '--short', 'HEAD'])
-                ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
-                #ret = ret.strip()    # get rid of newline, needed for rev-parse
-                ret = ret[1:-1]       # get rid of quotes, needed for log
-                stuff.append("%16s: %s" % ("git hash", ret))
+    # Get git version.
+    if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
+        try:
+            # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
+            # subprocess.check_output(['git', 'rev-parse', 'HEAD'])
+            # ret = subprocess.check_output(['git', '-C', '%s' % lp, 'rev-parse', '--short', 'HEAD'])
+            ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
+            #ret = ret.strip()    # get rid of newline, needed for rev-parse
+            ret = ret[1:-1]       # get rid of quotes, needed for log
+            stuff.append("%16s: %s" % ("git hash", ret))
 
-            except subprocess.CalledProcessError:
-                #print("%16s: %s" % ("git hash", "Not a git repo?"))
-                pass
-        else:
-            stuff.append("%16s: %s" % ("git hash", "Not a git repo"))
+        except subprocess.CalledProcessError:
+            #print("%16s: %s" % ("git hash", "Not a git repo?"))
+            pass
     else:
-        stuff.append("%16s: %s" % ("git hash", "No git executable"))
+        stuff.append("%16s: %s" % ("git hash", "Not a git repo"))
+
 
     stuff.append("%16s: %s" % ("Python version", ".".join([str(i) for i in sys.version_info[:-2]])))
     #print("%16s: %s" % ("Date" , datetime.datetime.now().strftime("%d/%m/%Y")))
