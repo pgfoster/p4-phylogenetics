@@ -220,7 +220,7 @@ void pokeSequences(part *thePart, char *theString)
             if(!isCoded) {
                 printf("part.c pokeSequences.\n");
                 printf("    Got character %c.  This should not happen.\n", theChar);
-                printf("    It is not in the symbols nor equates.\n");
+                printf("    It is neither in the symbols nor in the equates.\n");
                 exit(1);
             }
 #endif	
@@ -251,7 +251,7 @@ void pokeSequences(part *thePart, char *theString)
             if(!isCoded) {
                 printf("part.c pokeSequences.\n");
                 printf("    Got character %c.  This should not happen.\n", theChar);
-                printf("    It is not in the symbols nor in the equates.\n");
+                printf("    It is neither in the symbols nor in the equates.\n");
                 exit(1);
             }	
 #endif
