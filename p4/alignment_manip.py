@@ -1340,23 +1340,29 @@ if True:
         if not firstLetter:
             self.symbols = ''.join(numeralSymbols)
 
-    def recodeRY(self, ambigsBecomeGaps=True):
+    def recodeRY(self, ambigsBecomeGaps=True, use01=False):
         """Recode DNA data into purines and pyrimidines, in place.
 
-        So A and G becomes R, and C and T becomes Y.  Gaps remain gaps,
-        missing (?) remains missing, and Rs and Ys remain as they are.
-        Depending on the setting of ambigsBecomeGaps, Ns may also remain
-        unmodified, but any other characters (DNA ambiguity characters)
-        become either gaps or N, depending on the setting of
-        ambigsBecomeGaps.  So if ambigsBecomeGaps is turned on, as it is
-        by default, then N, S, M, and so on become '-' ie gap characters.
-        If ambigsBecomeGaps is turned off, then they all become Ns. If
-        ambigsBecomeGaps is turned off, then the alignment gets an equate,
-        of N for R or Y.
+        So A and G becomes R, and C and T becomes Y.  Gaps remain
+        gaps, missing (?) remains missing, and Rs and Ys remain as
+        they are.  Depending on the setting of ambigsBecomeGaps, Ns
+        may also remain unmodified, but any other characters (DNA
+        ambiguity characters) become either gaps or N, depending on
+        the setting of ambigsBecomeGaps.  So if ambigsBecomeGaps is
+        turned on, as it is by default, then N, S, M, and so on become
+        '-' ie gap characters.  If ambigsBecomeGaps is turned off,
+        then they all become Ns.  If ambigsBecomeGaps is turned off,
+        then the alignment gets an equate, of N for R or Y.
+
+        If use01 is turned on (it is off by default) then we use 0 and
+        1 for characters, rather than R and Y.  This is a bit buggy
+        because any existing R or Y characters are ignored, and other
+        ambigs are encoded as N.
 
         The dataType becomes 'standard' and the dim becomes 2.
 
-        It does not make a new alignment-- it does the re-coding 'in-place'.
+        It does not make a new alignment-- it does the re-coding
+        'in-place'.
         """
 
         gm = ['Alignment.recodeRY()']
@@ -1364,15 +1370,22 @@ if True:
             gm.append("This is only for dna alignments.")
             raise P4Error(gm)
 
+        if use01:
+            theR = '0'
+            theY = '1'
+        else:
+            theR = 'r'
+            theY = 'y'
+
         for s in self.sequences:
             s.dataType = 'standard'
             s.sequence = list(s.sequence)
             for i in range(len(s.sequence)):
                 c = s.sequence[i]
                 if c in 'ag':
-                    s.sequence[i] = 'r'
+                    s.sequence[i] = theR
                 elif c in 'ct':
-                    s.sequence[i] = 'y'
+                    s.sequence[i] = theY
                 elif c in 'ry-?':
                     pass
                 else:
@@ -1382,7 +1395,10 @@ if True:
                         s.sequence[i] = 'n'
             s.sequence = ''.join(s.sequence)
         self.dataType = 'standard'
-        self.symbols = 'ry'
+        if use01:
+            self.symbols = '01'
+        else:
+            self.symbols = 'ry'
         if not ambigsBecomeGaps:
             self.equates = {'n': 'ry'}
         else:
