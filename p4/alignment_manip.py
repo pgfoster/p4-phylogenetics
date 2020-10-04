@@ -2486,10 +2486,11 @@ if True:
         """Matched-pairs tests of one pair, as in IQTree
 
         This has appeared in IQTree betas from about 1.7beta onwards,
-        and is part of ``iqtree2``.  (There was a small bug in ``--symtest``
-        that was fixed in v 2.0.6, June 2020.)
+        and is part of ``iqtree2``.  (There was a small bug in
+        ``--symtest`` that was fixed in v 2.0.6, June 2020.)
 
-        See Naser-Khdour et al GBE 2019 https://doi.org/10.1093/gbe/evz193
+        See Naser-Khdour et al GBE 2019
+        https://doi.org/10.1093/gbe/evz193
 
         This is my attempt to replicate it.  That implementation
         chooses the sequence pair with the biggest divergence, and
@@ -2498,8 +2499,8 @@ if True:
 
         If it is verbose, it speaks the results to stdout.
 
-        It returns the 3 stats.
-
+        It returns the 3 probabilities (not stats) -- PB, PS, PR,
+        which are Bowker's, Stuart's and Ababneh's.
         """
 
         # Make a list to hold the bigFs with the biggest divergence.
