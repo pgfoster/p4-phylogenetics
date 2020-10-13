@@ -2458,7 +2458,6 @@ class Mcmc(object):
             ch = self.chains[0]
             thisLogLike = ch.curTree.logLike
 
-        nTemps = self.simTemp
         for i,tmpI in enumerate(self.simTemp_temps[:-1]):
             j = i + 1
             tmpJ = self.simTemp_temps[j] 
