@@ -229,7 +229,7 @@ class Proposal(object):
     def tune(self, tempNum):
         assert self.tnSampleSize >= 100.
         assert self.tnNSamples[tempNum] >= self.tnSampleSize
-        acc = float(self.tnNAccepts[tempNum]) / self.tnNSamples[tempNum]   # float() for Py2
+        acc = self.tnNAccepts[tempNum] / self.tnNSamples[tempNum]
         doMessage = False
         if acc > self.tnAccHi:
             oldTn = self.tuning[tempNum]

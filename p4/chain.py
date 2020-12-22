@@ -984,9 +984,9 @@ class Chain(object):
             logLikeRatio = self.propTree.logLike - self.curTree.logLike
 
         # To run "without the data", which shows the effect of priors.
-        # logLikeRatio = 0.0
+        #logLikeRatio = 0.0
 
-        # Heating via Heating hack, simulated tempering, or MCMCMC
+        # Heating via Heating hack, 
         if self.mcmc.doHeatingHack:
             assert self.mcmc.swapVector
             if self.mcmc.heatingHackRamper:
@@ -1010,6 +1010,7 @@ class Chain(object):
             logLikeRatio *= heatFactor
             self.logPriorRatio *= heatFactor
 
+        # or simulated tempering, .. 
         elif self.mcmc.simTemp:
             myTmpO = self.mcmc.simTemp_temps[self.mcmc.simTemp_curTemp]  # SimTempTemp object
             myTmp = myTmpO.temp
@@ -1018,6 +1019,7 @@ class Chain(object):
             self.logPriorRatio *= heatFactor
 
         else:
+            #  ... or MCMCMC
             if self.mcmc.nChains > 1:
                 if self.mcmc.swapVector:
                     heatBeta = 1.0 / (1.0 + self.mcmc.chainTemps[self.tempNum])
