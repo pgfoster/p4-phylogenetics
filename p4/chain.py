@@ -1024,6 +1024,9 @@ class Chain(object):
 
         else:
             #  ... or MCMCMC
+            # See Altekar et al 2004.  Parallel Metropolis coupled Markov chain MonteCarlo for 
+            # Bayesian phylogenetic inference Bioinformatics 20:407 https://doi.org/10.1093/bioinformatics/btg427
+            # Both the likelihood ratio and the prior ratio are powered.  Not the proposal ratio.
             if self.mcmc.nChains > 1:
                 if self.mcmc.swapVector:
                     heatBeta = 1.0 / (1.0 + self.mcmc.chainTemps[self.tempNum])
@@ -1931,7 +1934,7 @@ class Chain(object):
 
     def proposeGdasrv(self, theProposal):
 
-        # This is a multiplier proposal.
+        # This is a "multiplier" proposal.
 
         gm = ["Chain.proposeGdasrv()"]
         assert self.propTree.model.parts[theProposal.pNum].nGdasrvs == 1
@@ -1940,7 +1943,9 @@ class Chain(object):
         # We can't have alpha less than about 1.e-16, or DiscreteGamma hangs.
         # But that is moot, as var.GAMMA_SHAPE_MIN is much bigger
 
-        # Dont' do something like the following, cuz mt.val is a property that invokes a function.
+        # Don't do something like the following, cuz mt.val is a property 
+        # that invokes a function, and we don't want to do that until later 
+        # (below).  See the Gdasrv class.
         #mt.val = newVal
         #mt.val /= theProposal.tuning
 
@@ -1961,9 +1966,24 @@ class Chain(object):
         # print(type(self.logProposalRatio), type(self.logPriorRatio), end=' ')
         self.logProposalRatio = math.log(newVal / oldVal)
 
-        self.logPriorRatio = 0.0
-        # as in proposeBrLen()
-        #self.logPriorRatio = self.mcmc.tunings.parts[theProposal.pNum].gdasrvPriorLambda * float(oldVal - newVal)
+        # prior
+        if theProposal.prior == None:
+            # Default exponential, lambda=1.0
+            self.logPriorRatio = oldVal - newVal
+        elif isinstance(theProposal.prior, float):
+            # Exponential with specified lambda
+            self.logPriorRatio = theProposal.prior * (oldVal - newVal)
+        elif theProposal.prior == 'uniform':
+            self.logPriorRatio = 0.0
+        elif hasattr(theProposal.prior, "logpdf"):  # a scipy.stats distribution
+            oldPr = theProposal.prior.logpdf(oldVal)
+            newPr = theProposal.prior.logpdf(newVal)
+            self.logPriorRatio = newPr - oldPr
+        else:
+            gm.append(f"prior '{theProposal.prior}' is not understood.")
+            raise P4Error(gm)
+
+        # Setting mt.val triggers recalculation of discrete gamma values
         mt.val = newVal
         assert type(mt.val) == numpy.ndarray
         # print(type(self.logProposalRatio), type(self.logPriorRatio), end= ' ')
