@@ -293,7 +293,7 @@ class Alignment(SequenceList):
     from p4.alignment_manip import simpleConstantMask, constantMask,gappedMask,getLikelihoodTopologyInformativeSitesMask,getMaskForAutapomorphies,getMaskForCharDiversity,getCharDiversityDistribution,orMasks,andMasks,sequenceSlice,bluntEndLigate, concatenate, constantSitesProportion, constantSitesCount, noGapsOrAmbiguitiesCopy, hasGapsOrAmbiguities, bootstrap, compositionEuclideanDistanceMatrix, covarionStats, pDistances, recodeDayhoff, recodeProteinIntoGroups, recodeRY, checkTranslation, translate, excludeCharSet, dupe, putGaps, setGBlocksCharSet, meanNCharsPerSite, getAllGapsMask, getEnoughCharsMask, simpleCharCounts, getSimpleBigF, matchedPairsTests, symtestAsInIQTreeNaserKhdour, testOverallFromAbabnehEtAl2006, getMinmaxChiSqGroups, getKosiolAISGroups, mrpSlice
     from p4.alignment_readwrite import readOpenPhylipFile, _readPhylipSequential, _readPhylipInterleaved, _readPhylipSequentialStrict, _readPhylipInterleavedStrict, _readOpenClustalwFile,writeNexus,writePhylip,writeMolphy,_readOpenGdeFile
     from p4.alignment_part import _initParts,initDataParts,resetSequencesFromParts,resetPartsContentFromSequences
-    from p4.alignment_logdet import logDet
+    # from p4.alignment_logdet import logDet
 
 
     def __init__(self):
