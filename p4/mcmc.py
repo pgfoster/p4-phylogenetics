@@ -217,6 +217,8 @@ class Proposal(object):
         self.tnFactorLo = None
         self.tnFactorVeryLo = None
 
+        self.prior = None
+
     def dump(self):
         print("proposal name=%-10s pNum=%2s, weight=%s, tuning=%s" % (
             '%s,' % self.name, self.pNum, self.weight, self.tuning))
@@ -270,6 +272,7 @@ class Proposals(object):
         self.cumPropWeights = []
         self.totalPropWeights = 0.0
         self.intended = None
+        self.pDict = {}
 
     def summary(self):
         print("There are %i proposals" % len(self.proposals))
@@ -2127,6 +2130,19 @@ class Mcmc(object):
                 for i in range(1, self.tree.nTax - 1):
                     p.logBigT[i] = math.log(bigT[i])
                 # print p.logBigT
+
+            # Make a dictionary.  If there is more than one partition,
+            # some proposals may have the same name, so it is a double
+            # index pDict[proposal.pNum][proposal.name].
+            # Some props (eg topology moves) have a pNum of -1, so that is extra.
+            self.props.pDict = {}
+            self.props.pDict[-1] = {}
+            for pNum in range(self.tree.data.nParts):
+                self.props.pDict[pNum] = {}
+            for pr in self.props.proposals:
+                self.props.pDict[pr.pNum][pr.name] = pr
+
+
 
     def _setOutputTreeFile(self):
         """Setup the (output) tree file for the mcmc."""
