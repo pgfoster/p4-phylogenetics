@@ -986,6 +986,10 @@ class Chain(object):
         # To run "without the data", which shows the effect of priors.
         #logLikeRatio = 0.0
 
+        if self.mcmc.ssBeta is not None:
+            logLikeRatio *= self.mcmc.ssBeta
+
+
         # Heating via Heating hack, 
         if self.mcmc.doHeatingHack:
             assert self.mcmc.swapVector

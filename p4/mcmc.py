@@ -1150,6 +1150,9 @@ class Mcmc(object):
         self.init_BRLEN_MIN = var.BRLEN_MIN
         self.init_GAMMA_SHAPE_MIN = var.GAMMA_SHAPE_MIN
 
+        # For stepping stone power posteriors
+        self.ssBeta = None
+
     def _setLogger(self):
         """Make a logger."""
 
