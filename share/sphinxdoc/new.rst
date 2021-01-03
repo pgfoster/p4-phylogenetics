@@ -1,6 +1,8 @@
 News
 ====
 
+* Added tqdist Aarhus BiRC code for quartet distances
+
 * 2020 Fixed up symmetry tests for SRH violations in aligned sequences
 
 * 2019 Simulated tempering MCMC
