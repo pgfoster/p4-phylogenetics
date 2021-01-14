@@ -337,12 +337,14 @@ if True:
         elif spec == 'empirical':
             assert mt.val is None
         elif spec == 'specified':
-            if not val:
-                gm.append("Specified comp, but no val.")
-                raise P4Error(gm)
+            # print(f"Got val {val}, type {type(val)}")
+            # if val == None or val == []:
+            #     gm.append("Specified comp, but no val.")
+            #     raise P4Error(gm)
             try:
                 val = list(val)
             except TypeError:
+                gm.append("Comp is 'specified', but bad 'val' arg.")
                 gm.append("The 'val' arg should be a list or tuple.")
                 raise P4Error(gm)
             if len(val) == dim or len(val) == dim - 1:
