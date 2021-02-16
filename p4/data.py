@@ -682,13 +682,31 @@ class Data:
 
         return Data(aligListCopy)
 
-    def bootstrap(self, seed=None):
+    def bootstrap(self):
         """Returns a new data object, filled with bootstrapped data.
 
         It is a non-parametric bootstrap.  Data partitions are handled
         properly, that is if your data has a charpartition, the
         bootstrap has the same charpartition, and sites are sampled
-        only from the appropriate charpartition subset.  """
+        only from the appropriate charpartition subset.
+
+        Generation of random numbers uses the GSL random number
+        generator.  The state is held in ``var.gsl_rng``, which is
+        None by default.  If you do a bootstrap using this method, it
+        will use ``var.gsl_rng`` if it exists, or make it if it does
+        not exist yet.  When it makes it, it seeds the state based on
+        the current time.  That should give you lots of variation.
+
+        If on the other hand you want to make a series of bootstraps
+        that are the same as a previous series you can reseed the
+        randomizer with the same seed before you do it, like this::
+
+            if not var.gsl_rng:
+                var.gsl_rng = pf.gsl_rng_get()
+            # unusually, set the seed 
+            mySeed = 23    # your chosen int seed
+            pf.gsl_rng_set(var.gsl_rng, mySeed)
+        """
 
         gm = ['Data.bootstrap()']
 
@@ -716,25 +734,10 @@ class Data:
             d.dump()
             raise P4Error
 
-        isNewGSL_RNG = 0
         if not var.gsl_rng:
             var.gsl_rng = pf.gsl_rng_get()
-            isNewGSL_RNG = 1
-            # print "got var.gsl_rng = %i" % var.gsl_rng
+            pf.gsl_rng_set(var.gsl_rng, int(time.time()))
 
-        # Set the GSL random number generator seed, only if it is a new GSL_RNG
-        if isNewGSL_RNG:
-            if seed != None:
-                try:
-                    newSeed = int(seed)
-                    pf.gsl_rng_set(var.gsl_rng, newSeed)
-                except ValueError:
-                    print(gm[0])
-                    print("    The seed should be convertable to an integer")
-                    print("    Using the process id instead.")
-                    pf.gsl_rng_set(var.gsl_rng,  os.getpid())
-            else:
-                pf.gsl_rng_set(var.gsl_rng,  os.getpid())
 
         pf.bootstrapData(self.cData, d.cData, var.gsl_rng)
 
