@@ -501,19 +501,19 @@ class Trees(object):
 
         return trprobs
 
-    def consel(self, rankByInputOrder=False, clobber=False, quiet=1, tidy=1, returnResults=False):
+    def consel(self, rankByInputOrder=False, clobber=False, quiet=1, tidy=1, returnResults=False, seed=0):
         """Use Shimo's consel programs to compare trees.
 
         The trees in self should all be optimized, and all should have
         models attached.
 
-        Self, the Trees object, should have a Data object attached,
-        as self.data.
+        Self, the Trees object, should have a Data object attached, as
+        self.data.
 
-        The default is to rank the output by support.  You
-        might rather have the output be in the same order as the
-        input.  Which output format is determined by the
-        'rankByInputOrder' arg.
+        The default is to rank the output by support.  You might
+        rather have the output be in the same order as the input.
+        Which output format is determined by the 'rankByInputOrder'
+        arg.
 
         The analysis produces various files.  Whether they are
         overwritten if they already exist is controlled by the arg
@@ -538,6 +538,9 @@ class Trees(object):
         set returnResults=True, and then this method will return a
         list of tuples of strings of the results table contents.
 
+        Setting arg seed to a number sets the random number generator
+        for makermt.  The default is zero, which then takes the seed
+        from the system clock.
         """
 
         gm = ['Trees.consel()']
@@ -624,12 +627,14 @@ class Trees(object):
             f.write('\n')
         f.close()
 
+        assert seed >= 0
+
         # print "Invoking makermt, consel, and catpv ..."
         if quiet:
-            os.system('makermt --puzzle siteLikes consel_out > /dev/null')
+            os.system(f'makermt -s {seed} --puzzle siteLikes consel_out > /dev/null')
             os.system('consel consel_out > /dev/null')
         else:
-            os.system('makermt --puzzle siteLikes consel_out')
+            os.system(f'makermt -s {seed} --puzzle siteLikes consel_out')
             os.system('consel consel_out')
         if rankByInputOrder:
             if quiet in [0, 1]:
