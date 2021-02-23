@@ -1011,10 +1011,10 @@ class Mcmc(object):
             if verbose:
                 print("\nInitiating across-tree heterogeneous model...")
 
-            self.tree.setModelThingsNNodes()
+            self.tree.setModelComponentsNNodes()
 
             if self.verbose:
-                self.tree.summarizeModelThingsNNodes()
+                self.tree.summarizeModelComponentsNNodes()
 
             for pNum in range(self.tree.model.nParts):
                 mp = self.tree.model.parts[pNum]
@@ -3464,7 +3464,7 @@ class Mcmc(object):
             for chNum in range(self.nChains):
                 ch = self.chains[chNum]
                 print("chain %i ==================" % chNum)
-                ch.curTree.summarizeModelThingsNNodes()
+                ch.curTree.summarizeModelComponentsNNodes()
 
         #print("Before removing data", end=' ')
         #self.chains[0].curTree.calcLogLike(verbose=True, resetEmpiricalComps=False)

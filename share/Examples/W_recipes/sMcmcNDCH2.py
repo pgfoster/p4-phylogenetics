@@ -21,7 +21,7 @@ t.data = d
 # Fully parameterize the comps, including a comp for the root
 for n in t.nodes:
     c = t.newComp(free=1, spec='empirical', symbol='-')
-    t.setModelThing(c, node=n, clade=0)
+    t.setModelComponentOnNode(c, node=n, clade=0)
 
 # adjust these appropriately ...
 t.newRMatrix(free=1, spec='ones')

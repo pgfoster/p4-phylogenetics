@@ -51,14 +51,14 @@ for aNum in range(len(aa)):
     for myNode in t.iterNodes():
         newVal = randomNumbersThatSumTo1(a.dim, var.PIVEC_MIN)
         mt = t.newComp(partNum=aNum, free=1, spec='specified', val=newVal)
-        t.setModelThing(mt, myNode, clade=False)
+        t.setModelComponentOnNode(mt, myNode, clade=False)
 
     if a.dataType != 'protein':
         for myNode in t.iterNodesNoRoot():
             nRates = ((a.dim * a.dim) - a.dim) / 2
             newVal = randomNumbersThatSumTo1(nRates, var.RATE_MIN)
             mt = t.newRMatrix(partNum=aNum, free=1, spec='specified', val=newVal)
-            t.setModelThing(mt, myNode, clade=False)
+            t.setModelComponentOnNode(mt, myNode, clade=False)
     else:
         t.newRMatrix(partNum=aNum, free=0, spec='wag')
     t.setNGammaCat(partNum=aNum, nGammaCat=4)

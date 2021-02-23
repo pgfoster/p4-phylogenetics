@@ -282,19 +282,19 @@ if True:
         This method returns a Comp object, which you can ignore if it is a
         tree-homogeneous model.  However, if it is a tree-hetero model
         then you may want to get that Comp object so that you can place
-        it on the tree explicitly with setModelThing(), like this::
+        it on the tree explicitly with setModelComponentOnNode(), like this::
 
             c0 = newComp(partNum=0, free=1, spec='empirical')
             c1 = newComp(partNum=0, free=1, spec='empirical')
-            myTree.setModelThing(c0, node=myTree.root, clade=1)
-            myTree.setModelThing(c1, node=5, clade=1)
-            myTree.setModelThing(c1, node=18, clade=0)
+            myTree.setModelComponentOnNode(c0, node=myTree.root, clade=1)
+            myTree.setModelComponentOnNode(c1, node=5, clade=1)
+            myTree.setModelComponentOnNode(c1, node=18, clade=0)
 
         Alternatively, you can simply let p4 place them randomly::
 
             newComp(partNum=0, free=1, spec='empirical')
             newComp(partNum=0, free=1, spec='empirical')
-            myTree.setModelThingsRandomly()
+            myTree.setModelComponentsOnNodesRandomly()
 
         Calculation of probability matrices for likelihood calcs etc are
         wrong when there are any comp values that are zero, so that is not
@@ -804,25 +804,25 @@ if True:
             self.deleteCStuff()
         self.model.parts[partNum].relRate = v
 
-    def setModelThing(self, theModelThing, node=None, clade=1):
-        complaintHead = '\nTree.setModelThing()'
+    def setModelComponentOnNode(self, theModelComponent, node=None, clade=1):
+        complaintHead = '\nTree.setModelComponentOnNode()'
         gm = [complaintHead]
 
-        if theModelThing and \
-            (isinstance(theModelThing, Comp) or
-                isinstance(theModelThing, RMatrix) or
-                isinstance(theModelThing, Gdasrv)):
+        if theModelComponent and \
+            (isinstance(theModelComponent, Comp) or
+                isinstance(theModelComponent, RMatrix) or
+                isinstance(theModelComponent, Gdasrv)):
             pass
         else:
             gm.append("Expecting a model thing instance of some sort.")
             gm.append("Ie a comp, rMatrix, or gdasrv, instance.")
-            gm.append("Got theModelThing = %s" % theModelThing)
+            gm.append("Got theModelComponent = %s" % theModelComponent)
             raise P4Error(gm)
 
         if self.model.cModel:
             self.deleteCStuff()
 
-        partNum = theModelThing.partNum
+        partNum = theModelComponent.partNum
 
         if node == None:
             theNode = self.root
@@ -830,17 +830,17 @@ if True:
             theNode = self.node(node)
 
         isBad = 0
-        if isinstance(theModelThing, Comp):
-            if theModelThing != self.model.parts[partNum].comps[theModelThing.num]:
+        if isinstance(theModelComponent, Comp):
+            if theModelComponent != self.model.parts[partNum].comps[theModelComponent.num]:
                 isBad = 1
-        elif isinstance(theModelThing, RMatrix):
-            if theModelThing != self.model.parts[partNum].rMatrices[theModelThing.num]:
+        elif isinstance(theModelComponent, RMatrix):
+            if theModelComponent != self.model.parts[partNum].rMatrices[theModelComponent.num]:
                 isBad = 1
-        elif isinstance(theModelThing, Gdasrv):
-            if theModelThing != self.model.parts[partNum].gdasrvs[theModelThing.num]:
+        elif isinstance(theModelComponent, Gdasrv):
+            if theModelComponent != self.model.parts[partNum].gdasrvs[theModelComponent.num]:
                 isBad = 1
         else:  # This will never happen-- we checked above.  Overkill.
-            gm.append("I don't recognise theModelThing.")
+            gm.append("I don't recognise theModelComponent.")
             raise P4Error(gm)
         if isBad:
             gm.append(
@@ -850,38 +850,44 @@ if True:
         # For the root, we set comps and nothing else.  For other nodes we
         # set anything.
         if theNode == self.root:
-            if isinstance(theModelThing, Comp):
-                theNode.parts[partNum].compNum = theModelThing.num
+            if isinstance(theModelComponent, Comp):
+                theNode.parts[partNum].compNum = theModelComponent.num
         else:
-            if isinstance(theModelThing, Comp):
-                theNode.parts[partNum].compNum = theModelThing.num
-            elif isinstance(theModelThing, RMatrix):
-                theNode.br.parts[partNum].rMatrixNum = theModelThing.num
-            elif isinstance(theModelThing, Gdasrv):
-                theNode.br.parts[partNum].gdasrvNum = theModelThing.num
+            if isinstance(theModelComponent, Comp):
+                theNode.parts[partNum].compNum = theModelComponent.num
+            elif isinstance(theModelComponent, RMatrix):
+                theNode.br.parts[partNum].rMatrixNum = theModelComponent.num
+            elif isinstance(theModelComponent, Gdasrv):
+                theNode.br.parts[partNum].gdasrvNum = theModelComponent.num
 
         if clade:
             aboves = self.getNodeNumsAbove(theNode, leavesOnly=0)
             for i in aboves:
-                if isinstance(theModelThing, Comp):
-                    self.nodes[i].parts[partNum].compNum = theModelThing.num
-                elif isinstance(theModelThing, RMatrix):
+                if isinstance(theModelComponent, Comp):
+                    self.nodes[i].parts[partNum].compNum = theModelComponent.num
+                elif isinstance(theModelComponent, RMatrix):
                     self.nodes[i].br.parts[
-                        partNum].rMatrixNum = theModelThing.num
-                elif isinstance(theModelThing, Gdasrv):
+                        partNum].rMatrixNum = theModelComponent.num
+                elif isinstance(theModelComponent, Gdasrv):
                     self.nodes[i].br.parts[
-                        partNum].gdasrvNum = theModelThing.num
+                        partNum].gdasrvNum = theModelComponent.num
 
     def setModelThingsRandomly(self, forceRepresentation=2):
+        """This method has been renamed to setModelComponentsOnNodesRandomly"""
+
+        gm = ["Tree.setModelThingsRandomly() has been renamed Tree.setModelComponentsOnNodesRandomly()"]
+        raise P4Error(gm)
+
+    def setModelComponentsOnNodesRandomly(self, forceRepresentation=2):
         """Place model things (semi-)randomly on the tree.
 
         For example, if there are 2 compositions in model part partNum,
         this method will decorate each node of the tree with zeros and
-        ones, randomly. The actual thing set is
-        node.parts[partNum].compNum.  If the model thing is homogeneous,
+        ones, randomly. The actual component set is
+        node.parts[partNum].compNum.  If the model is homogeneous,
         it will just put zeros in all the nodes.
 
-        We want to have each model thing on the tree somewhere, and so it
+        We want to have each model component on the tree somewhere, and so it
         is not really randomly set.  If the model thing numbers were
         assigned randomly on the tree, it may occur that some model thing
         numbers by chance would not be represented.  This is not allowed,
@@ -891,7 +897,7 @@ if True:
         if forceRepresentation is set to 2, then each model thing must get
         assigned to at least 2 nodes."""
 
-        gm = ['Tree.setModelThingsRandomly()']
+        gm = ['Tree.setModelComponentsOnNodesRandomly()']
 
         if not self.model or not self.model.nParts:
             gm.append("No model parts?")
@@ -1009,10 +1015,10 @@ if True:
 
         # self.dump(model=True)
 
-    def setModelThingsNNodes(self):
+    def setModelComponentsNNodes(self):
         """Set nNodes for all modelThings"""
 
-        gm = ['Tree.setModelThingsNNodes()']
+        gm = ['Tree.setModelComponentsNNodes()']
 
         if not self.model or not self.model.nParts:
             gm.append("No model parts?")
@@ -1062,10 +1068,10 @@ if True:
                     gm.append("No gdasrvs in part %i" % pNum)
                     raise P4Error(gm)
 
-    def summarizeModelThingsNNodes(self):
+    def summarizeModelComponentsNNodes(self):
         """Summarize nNodes for all modelThings if isHet"""
 
-        gm = ['Tree.summarizeModelThingsNNodes()']
+        gm = ['Tree.summarizeModelComponentsNNodes()']
 
         if not self.model or not self.model.nParts:
             gm.append("No model parts?")
@@ -1530,8 +1536,8 @@ if True:
                             gm.append(
                                 "This comp object has no sequences from which to get the empirical comp.")
                             gm.append(
-                                "Maybe you need to yourTree.setModelThing() or ")
-                            gm.append("yourTree.setModelThingsRandomly()")
+                                "Maybe you need to yourTree.setModelModelComponentOnNode() or ")
+                            gm.append("yourTree.setModelComponentsOnNodesRandomly()")
                             #gm.append(
                             #    "Or maybe its an extra comp in an RJ MCMC? -- If so, fix")
                             #gm.append("the comp val to eg 'equal'.")

@@ -129,8 +129,8 @@ and put 2 compositions on it, like this::
 
      A = t.newComp(spec='empirical', symbol='A')
      B = t.newComp(spec='empirical', symbol='B')
-     t.setModelThing(A, node=t.root, clade=1)
-     t.setModelThing(B, node=1, clade=1)
+     t.setModelComponentOnNode(A, node=t.root, clade=1)
+     t.setModelComponentOnNode(B, node=1, clade=1)
      t.draw(model=1)
 
 then we end up with a tree like this::
@@ -153,7 +153,7 @@ the entire tree.  Then we place composition B on node 1, also
 clade-wise, and in that part of the tree B displaces (ie over-rides) A.
 
 An alternative to placing model things on the tree explicitly like the
-above, you can also :meth:`Tree.Tree.setModelThingsRandomly`.
+above, you can also :meth:`Tree.Tree.setModelComponentsOnNodesRandomly`.
 
 The multinomial or unconstrained likelihood is a property of the data
 only, and does not need a tree or model.  It can only be calculated if

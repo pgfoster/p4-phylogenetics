@@ -27,12 +27,12 @@ for tNum in [0, 2, 14]:
     cH_sapiens = t.newComp(free=1, spec='empirical')
 
     if t.name != 't0':
-        t.setModelThing(cInternals, node=t.root, clade=1)
-    t.setModelThing(cRoot, node=t.root, clade=0)
-    t.setModelThing(cS_solfat, node=t.node('S_solfat'))
-    t.setModelThing(cH_salin, node=t.node('H_salin'))
-    t.setModelThing(cE_coli, node=t.node('E_coli'))
-    t.setModelThing(cH_sapiens, node=t.node('H_sapiens'))
+        t.setModelComponentOnNode(cInternals, node=t.root, clade=1)
+    t.setModelComponentOnNode(cRoot, node=t.root, clade=0)
+    t.setModelComponentOnNode(cS_solfat, node=t.node('S_solfat'))
+    t.setModelComponentOnNode(cH_salin, node=t.node('H_salin'))
+    t.setModelComponentOnNode(cE_coli, node=t.node('E_coli'))
+    t.setModelComponentOnNode(cH_sapiens, node=t.node('H_sapiens'))
 
     t.newRMatrix(free=1, spec='2p', val=2.0)
     t.setNGammaCat(nGammaCat=4)

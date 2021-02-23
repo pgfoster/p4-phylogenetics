@@ -10,7 +10,7 @@ pNum = 0
 #  comp for each node
 for n in t.iterNodes():
     c = t.newComp(partNum=pNum, free=1, spec='empirical', symbol="-")
-    t.setModelThing(c, node=n, clade=False)
+    t.setModelComponentOnNode(c, node=n, clade=False)
 t.newRMatrix(partNum=pNum, free=0, spec='ones')
 t.setNGammaCat(partNum=pNum, nGammaCat=1)
 #t.newGdasrv(free=1, val=0.5)
