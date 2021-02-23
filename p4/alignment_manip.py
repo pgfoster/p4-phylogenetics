@@ -967,9 +967,17 @@ if True:
     def bootstrap(self):
         """Returns a new Alignment, a bootstrap resampling of self.
 
-        This is done only in Python (ie no cParts involved), and does not
-        handle partitioned data.  If you want to bootstrap partitioned
-        data, use the :meth:`p4.data.Data.bootstrap` method.  """
+        This is done only in Python (ie no cParts involved), and does
+        not handle partitioned data.  If you want to bootstrap
+        partitioned data, use the :meth:`p4.data.Data.bootstrap`
+        method.
+
+        To make this exactly repeatable, set the seed for the Python
+        random module::
+
+            import random
+            random.seed(mySeed)
+        """
 
         gm = ["Alignment.bootstrap()"]
 
