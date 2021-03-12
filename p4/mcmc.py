@@ -217,6 +217,8 @@ class Proposal(object):
         self.tnFactorLo = None
         self.tnFactorVeryLo = None
 
+        self.prior = None
+
     def dump(self):
         print("proposal name=%-10s pNum=%2s, weight=%s, tuning=%s" % (
             '%s,' % self.name, self.pNum, self.weight, self.tuning))
@@ -229,7 +231,7 @@ class Proposal(object):
     def tune(self, tempNum):
         assert self.tnSampleSize >= 100.
         assert self.tnNSamples[tempNum] >= self.tnSampleSize
-        acc = float(self.tnNAccepts[tempNum]) / self.tnNSamples[tempNum]   # float() for Py2
+        acc = self.tnNAccepts[tempNum] / self.tnNSamples[tempNum]
         doMessage = False
         if acc > self.tnAccHi:
             oldTn = self.tuning[tempNum]
@@ -270,6 +272,7 @@ class Proposals(object):
         self.cumPropWeights = []
         self.totalPropWeights = 0.0
         self.intended = None
+        self.pDict = {}
 
     def summary(self):
         print("There are %i proposals" % len(self.proposals))
@@ -1149,6 +1152,9 @@ class Mcmc(object):
         self.init_RATE_MIN = var.RATE_MIN
         self.init_BRLEN_MIN = var.BRLEN_MIN
         self.init_GAMMA_SHAPE_MIN = var.GAMMA_SHAPE_MIN
+
+        # For stepping stone power posteriors
+        self.ssBeta = None
 
     def _setLogger(self):
         """Make a logger."""
@@ -2125,6 +2131,19 @@ class Mcmc(object):
                     p.logBigT[i] = math.log(bigT[i])
                 # print p.logBigT
 
+            # Make a dictionary.  If there is more than one partition,
+            # some proposals may have the same name, so it is a double
+            # index pDict[proposal.pNum][proposal.name].
+            # Some props (eg topology moves) have a pNum of -1, so that is extra.
+            self.props.pDict = {}
+            self.props.pDict[-1] = {}
+            for pNum in range(self.tree.data.nParts):
+                self.props.pDict[pNum] = {}
+            for pr in self.props.proposals:
+                self.props.pDict[pr.pNum][pr.name] = pr
+
+
+
     def _setOutputTreeFile(self):
         """Setup the (output) tree file for the mcmc."""
 
@@ -2205,19 +2224,46 @@ class Mcmc(object):
         expected = self.simTemp_longTNumSampleSize / self.simTemp
         rats = [occs[i]/expected for i in range(self.simTemp)]
 
-        for tNum in range(self.simTemp):
-            ratio = rats[tNum]
-            if ratio > 1.2 or ratio < 0.7:
-                if ratio > 3.:
-                    adjust = 1.6
-                elif ratio > 1.2:
-                    adjust = 1.2
-                elif ratio < 0.7:
-                    adjust = 0.8
-                self.simTemp_longSampleTunings[tNum] *= adjust
-                # Adjusting the tunings to below 1 seems to lead to overshooting.
-                if self.simTemp_longSampleTunings[tNum] < 1.0:
-                    self.simTemp_longSampleTunings[tNum] = 1.0
+        if 0:
+            for tNum in range(self.simTemp):
+                ratio = rats[tNum]
+                if ratio > 1.2 or ratio < 0.7:
+                    if ratio > 3.:
+                        adjust = 1.6
+                    elif ratio > 1.2:
+                        adjust = 1.2
+                    elif ratio < 0.7:
+                        adjust = 0.8
+                    self.simTemp_longSampleTunings[tNum] *= adjust
+                    # Adjusting the tunings to below 1 seems to lead to overshooting.
+                    if self.simTemp_longSampleTunings[tNum] < 1.0:
+                        self.simTemp_longSampleTunings[tNum] = 1.0
+
+        if 1:
+            #print(rats)
+
+            for tNum in range(self.simTemp):
+                ratio = rats[tNum]
+                self.simTemp_longSampleTunings[tNum] *= ratio
+
+            # This seems to work reasonably well.  Remaining problem
+            # is that the highest temp gets too much occupancy.  If
+            # that is the case, do a hack --- multiply it by the ratio obs/expected again.
+            #tNum = self.simTemp -1
+            #if max(occs) == occs[-1]:
+            #    self.simTemp_longSampleTunings[-1] *= rats[-1]
+
+            if 1:
+                # Adjusting the tunings to below 1 seems to lead to
+                # overshooting, so check, and if there are any then raise
+                # all
+                minTuning = min([tn for tn in self.simTemp_longSampleTunings])
+                if minTuning < 1.0:
+                    adjust = 1.0 - minTuning
+
+                    for tNum in range(self.simTemp):
+                        self.simTemp_longSampleTunings[tNum] += adjust
+
             
         print("\nlongSampleTunings (after tuning):", file=flob)
         for tNum in range(self.simTemp):
@@ -2243,11 +2289,11 @@ class Mcmc(object):
             tNum = self.simTemp - 1
             cTuning = self.simTemp_longSampleTunings[tNum]
             if cTuning > 1.0:
-                self.simTemp_temps[tNum].logPiDiff += cTuning
+                self.simTemp_temps[tNum - 1].logPiDiff += cTuning
                 # Is this needed? It does not make an obvious difference.  Is it in the right direction?
                 #totalAdjusts -= cTuning   
 
-            for tNum in range(1, self.simTemp):
+            for tNum in range(1, self.simTemp - 1):
                 cTuning = self.simTemp_longSampleTunings[tNum]
                 if cTuning > 1.0:
                     self.simTemp_temps[tNum].logPiDiff -= cTuning
@@ -2311,6 +2357,9 @@ class Mcmc(object):
         print("%4s %10s %12s %10s %10s %10s %10s %10s %10s %10s" % (
             "indx", "temp", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "meanLnR_Up", "nPropsDn", "accptDn", "meanLnR_Dn"), 
               file=flob)
+        totalOcc = 0
+        highestOccupancy = self.simTemp_temps[0].occupancy
+        lowestOccupancy = self.simTemp_temps[0].occupancy
         for i, tmp in enumerate(self.simTemp_temps):
             print("%4s %10.3f %12.4f %10i %10i" % (
                 i,
@@ -2339,6 +2388,17 @@ class Mcmc(object):
             else:
                 print(" %10s %10s" % ("-", "-"), file=flob, end='')
             print(file=flob)
+            totalOcc += tmp.occupancy
+            if tmp.occupancy > highestOccupancy:
+                highestOccupancy = tmp.occupancy
+            if tmp.occupancy < lowestOccupancy:
+                lowestOccupancy = tmp.occupancy
+        targetOcc = totalOcc / self.simTemp
+        if lowestOccupancy:   # it might be zero
+            rat = highestOccupancy/lowestOccupancy
+            print(f"occupancy target:{targetOcc} highest:{highestOccupancy}, lowest:{lowestOccupancy}, highest/lowest {rat}", file=flob)
+        else:
+            print(f"occupancy target:{targetOcc} highest:{highestOccupancy}, lowest:{lowestOccupancy}", file=flob)
 
                 
                 
@@ -2458,7 +2518,6 @@ class Mcmc(object):
             ch = self.chains[0]
             thisLogLike = ch.curTree.logLike
 
-        nTemps = self.simTemp
         for i,tmpI in enumerate(self.simTemp_temps[:-1]):
             j = i + 1
             tmpJ = self.simTemp_temps[j] 

@@ -1048,53 +1048,63 @@ if True:
     def writePhylip(self, fName=None, interleave=True, whitespaceSeparatesNames=True, flat=False, offset=1, uppercase=False):
         """Write the alignment in Phylip format.
 
-        If interleave is turned off, then sequences are
-        written sequentially.
+        Arg fName can be None, the default, in which case the
+        alignment is written to stdout, or the fName can be an open
+        file-like object, or fName can be a string, the name of a file
+        to write to.  If it is a file-like object it will be re-wound
+        to the beginning, but it is is up to the user to open and
+        close it.
 
-        Phylip and phylip-like formats are too varied.  The strict Phylip
-        format has a set number of spaces for the taxon name, and there
-        may not necessarily be a space between the name and the sequence.
-        The name size is commonly 10 spaces, but it need not be -- it is a
-        compile-time option in Phylip.
+        If interleave is turned off (it is on by default), then
+        sequences are written sequentially.
 
-        Other programs, eg phyml and PAML, use a phylip-like format where
-        the tax name is set off from the sequence by whitespace.  There is
-        no set number of spaces that the sequence needs to occupy, and
-        there may not be spaces in the tax name. 'offset' is the number of
-        spaces from the end of the name to the beginning of the sequence.
+        Phylip and phylip-like formats are too varied.  The strict
+        Phylip format has a set number of spaces for the taxon name,
+        and there may not necessarily be a space between the name and
+        the sequence.  The name size is commonly 10 spaces, but it
+        need not be -- it is a compile-time option in Phylip.
 
-        This method used to write strict, real phylip format by default,
-        where there is a set number of spaces for the taxon name, and
-        where there may not necessarily be a space between the name and
-        the sequence.  The name size is commonly 10 spaces, but it need
-        not be-- it is set by var.phylipDataMaxNameLength (default 10).
+        Other programs, eg phyml and PAML, use a phylip-like format
+        where the tax name is set off from the sequence by whitespace.
+        There is no set number of spaces that the sequence needs to
+        occupy, and there may not be spaces in the tax name.  'offset'
+        is the number of spaces from the end of the name to the
+        beginning of the sequence.
+
+        This method used to write strict, real phylip format by
+        default, where there is a set number of spaces for the taxon
+        name, and where there may not necessarily be a space between
+        the name and the sequence.  The name size is commonly 10
+        spaces, but it need not be-- it is set by
+        var.phylipDataMaxNameLength (default 10).
 
         However, it no longer does that by default, as people use the
-        format too loosely.  So now 'whitespaceSeparatesNames' is turned
-        on by default.  It accommodates names longer than 10 chars.
+        format too loosely.  So now 'whitespaceSeparatesNames' is
+        turned on by default.  It accommodates names longer than 10
+        chars.
 
         If you want to write strict Phylip format, turn
         'whitespaceSeparatesNames' off.  Note that in that format,
         described `here
         <http://evolution.genetics.washington.edu/phylip/doc/main.html#inputfiles>`_,
-        it is ok to have blanks in the sequence, and so p4 puts a blank at
-        the beginning of the sequence when writing this way, even though
-        the meaning of 'whitespaceSeparatesNames' would suggest not.  Here
-        the main effect of whitespaceSeparatesNames=False is that it is
-        assumed that whitespace will not be used to trigger the end of the
-        name in the downstream program.  Rather it is assumed that in the
-        downstream program the end of the name will triggered by reading
-        in var.phylipDataMaxNameLength characters.  If I were to set
-        whitespaceSeparatesNames=True when I write (because I expect that
-        the downstream program that will read it expects that) then I
-        check for internal blank spaces in the names (which would be
-        disallowed), and also I then allow more than
-        var.phylipDataMaxNameLength characters.  However, in both cases
-        there is at least one blank after the name.
+        it is ok to have blanks in the sequence, and so p4 puts a
+        blank at the beginning of the sequence when writing this way,
+        even though the meaning of 'whitespaceSeparatesNames' would
+        suggest not.  Here the main effect of
+        whitespaceSeparatesNames=False is that it is assumed that
+        whitespace will not be used to trigger the end of the name in
+        the downstream program.  Rather it is assumed that in the
+        downstream program the end of the name will triggered by
+        reading in var.phylipDataMaxNameLength characters.  If I were
+        to set whitespaceSeparatesNames=True when I write (because I
+        expect that the downstream program that will read it expects
+        that) then I check for internal blank spaces in the names
+        (which would be disallowed), and also I then allow more than
+        var.phylipDataMaxNameLength characters.  However, in both
+        cases there is at least one blank after the name.
 
-        Arg 'flat' puts it all on one line.  This is not compatible with
-        'interleave', of course.
-
+        Arg 'flat' puts it all on one line.  This is not compatible
+        with 'interleave', of course.
         """
 
         gm = ['Alignment.writePhylip(fName=%s, interleave=%s, whitespaceSeparatesNames=%s, flat=%s, uppercase=%s)' % (
@@ -1146,8 +1156,15 @@ if True:
             spacer1 = 11
         # print 'The nameWid is %i' % nameWid
 
+        fileNeedsClosing = True    # for usual files on disk, fName is a string
+        isUserFlob = False
         if fName == None or fName == sys.stdout:
             f = sys.stdout
+            fileNeedsClosing = False
+        elif hasattr(fName, 'read'):          # a file-like object
+            f = fName
+            fileNeedsClosing = False
+            isUserFlob = True
         else:
             try:
                 f = open(fName, 'w')
@@ -1242,7 +1259,10 @@ if True:
                             f.write('%s\n' % s.sequence[pos:])
                     f.write('\n')
 
-        if f != sys.stdout:
+        if isUserFlob:
+            f.seek(0)
+
+        if fileNeedsClosing:
             f.close()
 
     def writeMolphy(self, fName=None):

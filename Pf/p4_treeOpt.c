@@ -1412,9 +1412,10 @@ void p4_newtAnd1DBrent(p4_tree *aTree)
                                    p4_minusLogLikeForBrent, &pram);
         diff = aTree->logLike - logLikeBefore;
         //printf("a p4_newtAnd1DBrent().  diff=%.8f\n", diff);
-        if(diff < -1.0e-6) {
-            printf("a p4_newtAnd1DBrent().  Likelihood got worse.  Bad!\n");
-            exit(1);
+        if((1)) {
+            if(diff < -1.0e-6) {
+                printf("a p4_newtAnd1DBrent().  Likelihood got worse.  Diff %.8f\n", diff);
+            }
         }
         else if(fabs(diff) < 1.0e-6) {
             break;
