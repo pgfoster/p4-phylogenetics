@@ -878,6 +878,7 @@ class Mcmc(object):
         self.pramsFileName = "mcmc_prams_%i" % runNum
         self.hypersFileName = "mcmc_hypers_%i" % runNum
         self.simTempFileName = "mcmc_simTemp_%i" % runNum
+        self.ssLikesFileName = "mcmc_ssLikes_%i" % runNum
         self.writePrams = writePrams
         self.writeHypers = True
 
@@ -1154,6 +1155,7 @@ class Mcmc(object):
         self.init_GAMMA_SHAPE_MIN = var.GAMMA_SHAPE_MIN
 
         # For stepping stone power posteriors
+        self.doSteppingStone = False
         self.ssBeta = None
 
     def _setLogger(self):
@@ -2623,6 +2625,9 @@ class Mcmc(object):
                     gm.append("Ndch2 does not work with the polytomy move.")
                     raise P4Error(gm)
                 
+        if self.doSteppingStone:
+            # self.logger.info("doSteppingStone is on, so turn writing checkpoints off")
+            self.checkPointInterval = False
 
         if writeSamples and self.checkPointInterval:
             # Check that checkPointInterval makes sense.
@@ -2731,7 +2736,7 @@ class Mcmc(object):
         #         gm.append("Turn it on by eg yourMcmc.prob.brLen = 0.001")
         #         raise P4Error(gm)
 
-        if writeSamples:
+        if writeSamples and not self.doSteppingStone:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
             f2 = open(self.treeFileName, 'r+b')
@@ -2820,6 +2825,8 @@ class Mcmc(object):
             self.logger.info("Mcmc.run() arg 'writeSamples' is off, so samples are not being written")
         if equiProbableProposals:
             self.logger.info("Mcmc.run() arg 'equiProbableProposals' is turned on")
+        if self.doSteppingStone:
+            self.logger.info("Mcmc.run() doSteppingStone is turned on")
 
 
         if verbose:
@@ -2831,6 +2838,8 @@ class Mcmc(object):
                 print("Arg 'equiProbableProposals' is turned on")
             if self.checkPointInterval:
                 print("CheckPoints written every %i." % self.checkPointInterval)
+            else:
+                print("CheckPoints will not be written")
             if nGensToDo <= 20000:
                 print("One dot is 100 generations.")
             else:
@@ -2991,25 +3000,30 @@ class Mcmc(object):
             # =====================================
 
             doWrite = False
-            if not writeSamples:
-                doWrite = False
-            else:
-                if self.simTemp:
-                    if self.simTemp_curTemp == 0:
-                        # Thinning the simTemp chain is awkward.  Here is a hack.
-                        # var.mcmc_simTemp_thinning is a list of digit strings, by default ['0']
-                        if var.mcmc_simTemp_thinning:
-                            genString = f"{self.gen + 1}"
-                            for ending in var.mcmc_simTemp_thinning:
-                                if genString.endswith(ending):
-                                    doWrite = True
-                        else:
-                            doWrite = True
-                else:
-                    if ((self.gen + 1) % self.sampleInterval) == 0:
+            if self.simTemp:
+                if self.simTemp_curTemp == 0:
+                    # Thinning the simTemp chain is awkward.  Here is a hack.
+                    # var.mcmc_simTemp_thinning is a list of digit strings, by default ['0']
+                    if var.mcmc_simTemp_thinning:
+                        genString = f"{self.gen + 1}"
+                        for ending in var.mcmc_simTemp_thinning:
+                            if genString.endswith(ending):
+                                doWrite = True
+                    else:
                         doWrite = True
+            else:
+                if ((self.gen + 1) % self.sampleInterval) == 0:
+                    doWrite = True
             
-            if doWrite:
+            if doWrite and self.doSteppingStone:
+                if writeSamples:
+                    ssLikesFile = open(self.ssLikesFileName, 'a')
+                    ssLikesFile.write('%f\n' % self.chains[coldChainNum].curTree.logLike)
+                    ssLikesFile.close()
+
+
+
+            if doWrite and not self.doSteppingStone:
                 if writeSamples:
                     self._writeSample(coldChainNum=coldChainNum)
 
@@ -3073,10 +3087,14 @@ class Mcmc(object):
                                 "%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
 
+
+
             
             # Do checkpoints
             doCheckPoint = False
             if not writeSamples:
+                doCheckPoint = False
+            elif self.doSteppingStone:
                 doCheckPoint = False
             else:
                 if self.checkPointInterval and (gNum + 1) % self.checkPointInterval == 0:
@@ -3177,7 +3195,7 @@ class Mcmc(object):
         if verbose:
             print("Finished %s generations." % nGensToDo)
 
-        if writeSamples:
+        if writeSamples and not self.doSteppingStone:
             # Write "end;" regardless of writeSamples, or else subsequent attempts to remove it will fail.
             # No, that does not work for simTemp trialAndError.  Why not?
             treeFile = open(self.treeFileName, 'a')
