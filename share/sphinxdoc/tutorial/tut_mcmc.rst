@@ -2,8 +2,8 @@
 Bayesian analysis with MCMC
 ===========================
 
-P4 has a basic MCMC for doing Bayesian analyses.  It uses the
-Metropolis-coupled MCMC, or MCMCMC, that has worked so well in MrBayes.
+P4 has a basic MCMC for doing Bayesian analyses.  It can uses the
+Metropolis-coupled MCMC, or MCMCMC.
 To start an MCMC, you first set up your data, tree, and model as usual.
 Then you instantiate an Mcmc object, and run the chain, like this::
 
@@ -12,8 +12,7 @@ Then you instantiate an Mcmc object, and run the chain, like this::
      m.run(1000000) # one million generations
 
 Here nChains says to make 4 MCMC chains in parallel in an MCMCMC, where
-1 chain is the cold chain, and 3 are heated chains.  See the
-documentation for MrBayes for more explanation.
+1 chain is the cold chain, and 3 are heated chains.  
 
 As the MCMC runs, it saves trees to a tree file, saves likelihoods to
 another file, and saves model parameters to another file.  These samples
@@ -200,22 +199,15 @@ Tunings for the same proposal can be different in different data
 partitions (parts).  Tunings for comp, rMatrix, gdasrv, and pInvar are
 part-specific.
 
-Tunings for the proposals in p4 are like window sizes-- if you increase
+Tunings for the proposals in p4 are often like window sizes-- if you increase
 the number, the window gets bigger, and the acceptance probability goes
 down.  Tunings for gdasrv, pInvar, relRate, comp, rMatrix, and local are
-like that.  There are no tunings for re-rooting.  The tuning for for
-moving model things around the tree is a bit of a hack -- it is the log
-prior ratio, and by default is zero.
+like that.  There are no tunings for re-rooting.  
 
 The exchange between pairs of chains in the MCMCMC is affected by the
 chainTemp tuning.  Bigger numbers means less acceptance of proposed
 exchanges.
 
-You can use the Mcmc.autoTune() method to tune automatically::
-
-     m = Mcmc(t, ...)
-     m.autoTune()
-     m.run(...)
 
 
 Assessing the MCMC run

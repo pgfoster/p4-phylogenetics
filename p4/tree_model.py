@@ -260,8 +260,7 @@ if True:
                 raise P4Error(gm)
             if symbol == '?':
                 gm.append("Got assigned text drawing symbol '?'.")
-                gm.append(
-                    "Don't use it-- it is reserved for missing modelThings")
+                gm.append("Don't use it-- it is reserved for missing model components")
                 raise P4Error(gm)
 
     def newComp(self, partNum=0, free=0, spec='empirical', val=None, symbol=None):
@@ -814,7 +813,7 @@ if True:
                 isinstance(theModelComponent, Gdasrv)):
             pass
         else:
-            gm.append("Expecting a model thing instance of some sort.")
+            gm.append("Expecting a model component instance of some sort.")
             gm.append("Ie a comp, rMatrix, or gdasrv, instance.")
             gm.append("Got theModelComponent = %s" % theModelComponent)
             raise P4Error(gm)
@@ -843,8 +842,7 @@ if True:
             gm.append("I don't recognise theModelComponent.")
             raise P4Error(gm)
         if isBad:
-            gm.append(
-                "The modelThing can only be set on the tree that made it.")
+            gm.append("The model component can only be set on the tree that made it.")
             raise P4Error(gm)
 
         # For the root, we set comps and nothing else.  For other nodes we
@@ -879,7 +877,7 @@ if True:
         raise P4Error(gm)
 
     def setModelComponentsOnNodesRandomly(self, forceRepresentation=2):
-        """Place model things (semi-)randomly on the tree.
+        """Place model components (semi-)randomly on the tree.
 
         For example, if there are 2 compositions in model part partNum,
         this method will decorate each node of the tree with zeros and
@@ -888,13 +886,13 @@ if True:
         it will just put zeros in all the nodes.
 
         We want to have each model component on the tree somewhere, and so it
-        is not really randomly set.  If the model thing numbers were
-        assigned randomly on the tree, it may occur that some model thing
+        is not really randomly set.  If the model component numbers were
+        assigned randomly on the tree, it may occur that some model component
         numbers by chance would not be represented.  This is not allowed,
         and you can set forceRepresentation to some positive integer, 1 or
         more.  That number will be the lower limit allowed on the number
-        of nodes that get assigned the model thing number.  For example,
-        if forceRepresentation is set to 2, then each model thing must get
+        of nodes that get assigned the model component number.  For example,
+        if forceRepresentation is set to 2, then each model component must get
         assigned to at least 2 nodes."""
 
         gm = ['Tree.setModelComponentsOnNodesRandomly()']
@@ -1016,7 +1014,7 @@ if True:
         # self.dump(model=True)
 
     def setModelComponentsNNodes(self):
-        """Set nNodes for all modelThings"""
+        """Set nNodes for all model components"""
 
         gm = ['Tree.setModelComponentsNNodes()']
 
@@ -1069,7 +1067,7 @@ if True:
                     raise P4Error(gm)
 
     def summarizeModelComponentsNNodes(self):
-        """Summarize nNodes for all modelThings if isHet"""
+        """Summarize nNodes for all model components if isHet"""
 
         gm = ['Tree.summarizeModelComponentsNNodes()']
 
@@ -1297,7 +1295,7 @@ if True:
 
             mp.nCat = mp.nGammaCat
             # If the model part isHet, we need to check that all nodes
-            # have something assigned, and that all model things are
+            # have something assigned, and that all model components are
             # used.  If the model part is not het, we can skip that,
             # but we need to check that all the
             # node.parts[pNum].compNum are 0, and all the
@@ -1371,7 +1369,7 @@ if True:
                                     pNum, n.nodeNum))
                                 partIsBad = 1
 
-                # Is every model thing used?
+                # Is every model component used?
                 for mt in mp.comps:
                     if not mt.isUsed:
                         complaints.append('    Part %s, comp %s is not used.' % (pNum, mt.num))

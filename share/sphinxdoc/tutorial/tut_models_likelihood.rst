@@ -152,7 +152,7 @@ node, but because we specify clade=1 that composition is applied over
 the entire tree.  Then we place composition B on node 1, also
 clade-wise, and in that part of the tree B displaces (ie over-rides) A.
 
-An alternative to placing model things on the tree explicitly like the
+An alternative to placing model components on the tree explicitly as
 above, you can also :meth:`Tree.Tree.setModelComponentsOnNodesRandomly`.
 
 The multinomial or unconstrained likelihood is a property of the data

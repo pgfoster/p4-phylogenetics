@@ -1403,7 +1403,7 @@ class Mcmc(object):
 
                 self.props.proposals.append(p)
 
-        # comp, rMatrix, gdasrv, pInvar, modelThingLocations ...
+        # comp, rMatrix, gdasrv, pInvar, modelComponentLocations ...
         for pNum in range(self.tree.model.nParts):
             mp = self.tree.model.parts[pNum]
 
