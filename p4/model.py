@@ -180,15 +180,13 @@ class ModelPart(object):
                     for i in range(self.dim - 1):
                         for j in range(i + 1, self.dim):
                             # print i, j, k
-                            pf.p4_setRMatrixBigR(
-                                theModel.cModel, self.num, mNum, i, j, mt.val[k])
+                            pf.p4_setRMatrixBigR(theModel.cModel, self.num, mNum, i, j, mt.val[k])
                             k += 1
                 else:
                     for i in range(self.dim - 2):
                         for j in range(i + 1, self.dim):
                             # print i, j, k
-                            pf.p4_setRMatrixBigR(
-                                theModel.cModel, self.num, mNum, i, j, mt.val[k])
+                            pf.p4_setRMatrixBigR(theModel.cModel, self.num, mNum, i, j, mt.val[k])
                             k += 1
 
         # Do the gdasrvs

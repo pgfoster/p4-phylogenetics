@@ -1205,23 +1205,34 @@ if True:
                 d.matrix[j][i] = fDiffs
         return d
 
-    def recodeDayhoff(self, firstLetter=False):
+    def recodeDayhoff(self, firstLetter=False, symbols="123456"):
         """Recode protein data into Dayhoff groups, in place.
 
-        1.  c
-        2.  stpag
-        3.  ndeq
-        4.  hrk
-        5.  milv
-        6.  fyw
+            1. c
+
+            2. stpag
+
+            3. ndeq
+
+            4. hrk
+
+            5. milv
+
+            6. fyw
 
         The ambiguity character 'x' is recoded as a gap.
 
-        It does not make a new alignment-- it does the re-coding 'in-place'.
+        It does not make a new alignment-- it does the re-coding
+        'in-place'.
 
-        If arg *firstLetter* is set, then the character is recoded as the
-        first letter of its group rather than as a number.  Eg k would be
-        recoded as h rather than as 4.
+        If arg *firstLetter* is set, then the character is recoded as
+        the first letter of its group rather than as a number.  Eg k
+        would be recoded as h rather than as 4.
+
+        By default, the six symbols are "123456".  Setting
+        *firstLetter* is equivalent to setting the symbols to be
+        "csnhmf".  The symbols can be set to other values; for example
+        for RAxML input you would want to set the symbols to "012345".
         """
 
         gm = ['Alignment.recodeDayhoff()']
@@ -1229,41 +1240,28 @@ if True:
             gm.append("This is only for protein alignments.")
             raise P4Error(gm)
 
+        if firstLetter:
+            symbols = "csnhmf"
+        assert len(symbols) == 6
+            
+
         for s in self.sequences:
             s.dataType = 'standard'
             s.sequence = list(s.sequence)
             for i in range(len(s.sequence)):
                 c = s.sequence[i]
                 if c == 'c':
-                    if firstLetter:
-                        pass
-                    else:
-                        s.sequence[i] = '1'
+                    s.sequence[i] = symbols[0]
                 elif c in 'stpag':
-                    if firstLetter:
-                        s.sequence[i] = 's'
-                    else:
-                        s.sequence[i] = '2'
+                    s.sequence[i] = symbols[1]
                 elif c in 'ndeq':
-                    if firstLetter:
-                        s.sequence[i] = 'n'
-                    else:
-                        s.sequence[i] = '3'
+                    s.sequence[i] = symbols[2]
                 elif c in 'hrk':
-                    if firstLetter:
-                        s.sequence[i] = 'h'
-                    else:
-                        s.sequence[i] = '4'
+                    s.sequence[i] = symbols[3]
                 elif c in 'milv':
-                    if firstLetter:
-                        s.sequence[i] = 'm'
-                    else:
-                        s.sequence[i] = '5'
+                    s.sequence[i] = symbols[4]
                 elif c in 'fyw':
-                    if firstLetter:
-                        s.sequence[i] = 'f'
-                    else:
-                        s.sequence[i] = '6'
+                    s.sequence[i] = symbols[5]
                 elif c in ['-', '?']:
                     pass  # They stay as they are.
                 elif c == 'x':
@@ -1275,10 +1273,7 @@ if True:
         self.dataType = 'standard'
         self.equates = {}
         self.dim = 6
-        if firstLetter:
-            self.symbols = 'csnhmf'
-        else:
-            self.symbols = '123456'
+        self.symbols = symbols
 
     def recodeProteinIntoGroups(self, groups, firstLetter=False):
         """Recode protein data into user-specified groups, in place.
@@ -2654,6 +2649,11 @@ if True:
         * *seed* - An integer giving the starting seed for any random generation done by the program. By default this is 42.
 
         All in memory -- no files written.
+
+        This is a very basic interface.  To be able to do multiple runs 
+        with different random seeds or to specify a desired number of 
+        bins requires re-jigging.  I don't use this method anymore.
+
         """
         gm = ["Alignment.getMinmaxChiSqGroups()"]
 

@@ -7,7 +7,7 @@
 # If you are not sure, it is ok to do it anyway.
 
 # Accommodate different versions of python3, and different machines
-rm -f p4/pf.cpython-3?m-*.so
+rm -f p4/pf.cpython-3*-*.so
 
 python3 setup.py build_ext -i
 
