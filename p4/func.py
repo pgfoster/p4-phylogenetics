@@ -978,8 +978,9 @@ def splash():
     """Print a splash screen for p4."""
     print('')
 
-    from p4.version import versionString, dateString
-    print("p4 v %s, %s" % (versionString, dateString))
+    # from p4.version import versionString, dateString
+    # print("p4 v %s, %s" % (versionString, dateString))
+    
     print("""
 usage:
     p4
@@ -1027,7 +1028,7 @@ def splash2(outFile=None, verbose=True):
 
     # Stolen from Cymon.  Thanks!
     #stuff.append("\nSummary from func.splash2()")
-    stuff.append("%16s: %s" % ("P4 version", p4.version.versionString))
+    #stuff.append("%16s: %s" % ("P4 version", p4.version.versionString))
     lp = os.path.dirname(inspect.getfile(p4))
     stuff.append("%16s: %s" % ("Library path", lp))
 
