@@ -439,67 +439,93 @@ class Trees(object):
             print("\\end{center}")
         return results
 
-    def treeProbabilities(self, writeNexus=False):
+    def treeProbabilities(self, warnRootings=True):
         """Order the trees in self by frequency of occurrence.
 
         This provides a posterior probability for the tree topology if
-        trees are sampled from an MCMC. The tree with the highest number
-        of occurrences is the MAP tree.
+        trees are sampled from an MCMC.  The tree with the highest
+        number of occurrences is the MAP tree.
 
-        If *writeNexus* is True a Nexus tree file called
-        ``treeProbabilities.nex`` is written with tree posterior
-        probabilities as weights.  If that file exists, it will be
-        silently over-written!
+        Args:        
+            warnRootings (Bool): Setting warnRootings, the default, makes 
+                it an error to have a combination of biRooted and non-biRooted trees.
 
-        The tree probs list of lists is returned.
+        Returns:
+            Trees: A new Trees object is returned, where each tree is decorated
+                with count, weight, and name.
 
-        (Thanks to Cymon Cox for this method.)
+        Example::
 
+            read("t1.nex")
+            tt = Trees()
+            ret = tt.treeProbabilities()
+            # ret is a Trees object.  Save it.
+            ret.writeNexus("treeProbabilities.nex")
+            for t in ret.trees:
+                print(f"{t.name:5} {t.count:5} {t.weight:.4f}", end=' ')
+                t.write()
+
+
+        Thanks to Cymon Cox for this method.  Tweaked by PGF June 2021
         """
 
         gm = ["Trees.treeProbabilities()"]
 
+        isBiRootedCount = 0
+        isNotBiRootedCount = 0
+
         # Make the splitKey dictionary
         skd = {}
         for t in self.trees:
+            ret = t.isBiRoot()
+            if ret:
+                isBiRootedCount += 1
+            else:
+                isNotBiRootedCount += 1
+
             t.makeSplitKeys()
             skk = [n.br.splitKey for n in t.iterNodesNoRoot()]
             skk.sort()
             skk = tuple(skk)
             it = skd.get(skk)
             if it:
-                it[0] += 1
+                it.count += 1
             else:
                 dTree = t.dupe()     # Don't mess with the trees in self
                 dTree.stripBrLens()
-                skd[skk] = [1, dTree]
+                dTree.count = 1
+                skd[skk] = dTree
 
-        # for v in skd.values():
-        #    print v
+        if warnRootings:
+            if isBiRootedCount and isNotBiRootedCount:
+                gm.append(f"There is a mixture of biRooted ({isBiRootedCount}) and non-biRooted ({isNotBiRootedCount}) input trees.")
+                raise P4Error(gm)
+                
+                    
 
-        # Flatten to a list, order by counts
+        #for v in skd.values():
+        #   print(v.count)
+
+        # order by counts
         skl = skd.values()
-        skl = p4.func.sortListOfListsOnListElementNumber(skl, 0)
+        # print("skl =", skl)
+        skl = p4.func.sortListOfObjectsOnAttribute(skl, "count")
         skl.reverse()
+        # print("skl =", skl)
 
         # Check that we have all the trees
-        nTrees = sum([i[0] for i in skl])
+        nTrees = sum(t.count for t in skl)
         if nTrees != len(self.trees):
-            gm.append("Programming error: all trees are not accounted for...")
+            gm.append("Programming error: all trees are not accounted for ...")
             raise P4Error(gm)
 
         # Calculate frequency from counts
-        trprobs = [(float(count) / float(nTrees), tree) for count, tree in skl]
-        if writeNexus:
-            count = 1
-            for prob, tree in trprobs:
-                tree.weight = prob
-                tree.name = "t_%i" % count
-                count += 1
-            tt = Trees([i[1] for i in trprobs])
-            tt.writeNexus(fName="treeProbabilities.nex", withTranslation=True)
+        for tNum,t in enumerate(skl):
+            t.weight = t.count/nTrees
+            t.name = "t_%i" % tNum
+        tt = Trees(skl)
+        return tt
 
-        return trprobs
 
     def consel(self, rankByInputOrder=False, clobber=False, quiet=1, tidy=1, returnResults=False, seed=0):
         """Use Shimo's consel programs to compare trees.

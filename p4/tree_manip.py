@@ -96,6 +96,7 @@ if True:
     def reRoot(self, specifier, moveInternalName=True, stompRootName=True, checkBiRoot=True, fixRawSplitKeys=False):
         """Re-root the tree to the node described by the specifier.
 
+        It does it in-place, and returns None.
         The *specifier* can be a node.nodeNum, node.name, or node object.
 
         Here is a potential problem.  Lets say you start with this tree,
