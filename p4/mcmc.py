@@ -881,6 +881,7 @@ class Mcmc(object):
         self.ssLikesFileName = "mcmc_ssLikes_%i" % runNum
         self.writePrams = writePrams
         self.writeHypers = True
+        self.coldChainNum = -1
 
         self.lastTimeCheck = None
 
@@ -1119,11 +1120,16 @@ class Mcmc(object):
         else:
             self.blankSeqNums = None
 
-        self.swapVector = True
-        if self.nChains > 1:
-            print("%-16s: %s" % ('swapVector', "on"))
-            self.swapTuner = SwapTunerV(self)
-            print("%-16s: %s" % ('swapTuner', "on"))
+        self.swapVector = var.mcmc_swapVector   # Usually True
+        if self.swapVector:
+            if self.nChains > 1:
+                print("%16s: %s" % ('swapVector', "on"))
+                self.swapTuner = SwapTunerV(self)
+                print("%16s: %s" % ('swapTuner', "on"))
+        else:
+            if self.nChains > 1:
+                print("%16s: %s" % ('swapVector', "off"))
+
 
         # Hidden experimental hacking
         self.doHeatingHack = False
@@ -2716,12 +2722,12 @@ class Mcmc(object):
                     raise P4Error(gm)
                     
         # Find the cold chain, the one where tempNum is 0
-        coldChainNum = -1
+        self.coldChainNum = -1
         for i in range(len(self.chains)):
             if self.chains[i].tempNum == 0:
-                coldChainNum = i
+                self.coldChainNum = i
                 break
-        if coldChainNum == -1:
+        if self.coldChainNum == -1:
             gm.append("Unable to find which chain is the cold chain.  That is Bad.")
             raise P4Error(gm)
 
@@ -3018,24 +3024,24 @@ class Mcmc(object):
             if doWrite and self.doSteppingStone:
                 if writeSamples:
                     ssLikesFile = open(self.ssLikesFileName, 'a')
-                    ssLikesFile.write('%f\n' % self.chains[coldChainNum].curTree.logLike)
+                    ssLikesFile.write('%f\n' % self.chains[self.coldChainNum].curTree.logLike)
                     ssLikesFile.close()
 
 
 
             if doWrite and not self.doSteppingStone:
                 if writeSamples:
-                    self._writeSample(coldChainNum=coldChainNum)
+                    self._writeSample()
 
                 # Do a simulation
                 if self.simulate:
                     # print "about to simulate..."
-                    self._doSimulate(self.chains[coldChainNum].curTree)
+                    self._doSimulate(self.chains[self.coldChainNum].curTree)
                     # print "...finished simulate."
 
                 # Do other stuff.
                 if hasattr(self, 'hook'):
-                    self.hook(self.chains[coldChainNum].curTree)
+                    self.hook(self.chains[self.coldChainNum].curTree)
 
                 if 0 and self.constraints:
                     print("Mcmc x1c")
@@ -3049,10 +3055,10 @@ class Mcmc(object):
                 # Add curTree to treePartitions
                 if self.treePartitions:
                     self.treePartitions.getSplitsFromTree(
-                        self.chains[coldChainNum].curTree)
+                        self.chains[self.coldChainNum].curTree)
                 else:
                     self.treePartitions = TreePartitions(
-                        self.chains[coldChainNum].curTree)
+                        self.chains[self.coldChainNum].curTree)
 
                 # After _getSplitsFromTree, need to follow, at some point,
                 # with _finishSplits().  Do that when it is pickled, or at the
@@ -3061,11 +3067,11 @@ class Mcmc(object):
                 # Checking and debugging constraints
                 if 0 and self.constraints:
                     print("Mcmc x1d")
-                    print(self.chains[coldChainNum].verifyIdentityOfTwoTreesInChain())
+                    print(self.chains[self.coldChainNum].verifyIdentityOfTwoTreesInChain())
                     print("c checking curTree ...")
-                    self.chains[coldChainNum].curTree.checkSplitKeys()
+                    self.chains[self.coldChainNum].curTree.checkSplitKeys()
                     print("c checking propTree ...")
-                    self.chains[coldChainNum].propTree.checkSplitKeys()
+                    self.chains[self.coldChainNum].propTree.checkSplitKeys()
                     # print "c checking that all constraints are present"
                     #theSplits = [n.br.splitKey for n in self.chains[0].curTree.iterNodesNoRoot()]
                     # for sk in self.constraints.constraints:
@@ -3077,7 +3083,7 @@ class Mcmc(object):
                 # Check that the curTree has all the constraints
                 if self.constraints:
                     splitsInCurTree = [
-                        n.br.splitKey for n in self.chains[coldChainNum].curTree.iterInternalsNoRoot()]
+                        n.br.splitKey for n in self.chains[self.coldChainNum].curTree.iterInternalsNoRoot()]
                     for sk in self.constraints.constraints:
                         if sk not in splitsInCurTree:
                             gm.append("Programming error.")
@@ -3202,21 +3208,20 @@ class Mcmc(object):
             treeFile.write('end;\n\n')
             treeFile.close()
 
-    def _writeSample(self, coldChainNum=0):
+    def _writeSample(self):
         likesFile = open(self.likesFileName, 'a')
-        likesFile.write(
-            '%11i %f\n' % (self.gen + 1, self.chains[coldChainNum].curTree.logLike))
+        likesFile.write('%11i %f\n' % (self.gen + 1, self.chains[self.coldChainNum].curTree.logLike))
         likesFile.close()
 
         # Check the likelihood every write interval
         if 0:
-            oldLike = self.chains[coldChainNum].curTree.logLike
+            oldLike = self.chains[self.coldChainNum].curTree.logLike
             print("gen+1 %11i  %f  " % (
                 self.gen+1, 
-                self.chains[coldChainNum].curTree.logLike), end=' ')
-            self.chains[coldChainNum].curTree.calcLogLike(verbose=False)
-            newLike = self.chains[coldChainNum].curTree.logLike
-            print("%f" % self.chains[coldChainNum].curTree.logLike, end=' ')
+                self.chains[self.coldChainNum].curTree.logLike), end=' ')
+            self.chains[self.coldChainNum].curTree.calcLogLike(verbose=False)
+            newLike = self.chains[self.coldChainNum].curTree.logLike
+            print("%f" % self.chains[self.coldChainNum].curTree.logLike, end=' ')
             likeDiff = math.fabs(oldLike - newLike)
             if likeDiff > 1e-14:
                 print("%f" % likeDiff)
@@ -3228,18 +3233,18 @@ class Mcmc(object):
         treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
         if self.tree.model.parts[0].ndch2:     # and therefore all model parts
             if self.tree.model.parts[0].ndch2_writeComps:
-                self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
                                                               withTranslation=1,
                                                               translationHash=self.translationHash,
                                                               doMcmcCommandComments=True)
             else:
-                self.chains[coldChainNum].curTree.writeNewick(treeFile,
+                self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
                                                               withTranslation=1,
                                                               translationHash=self.translationHash,
                                                               doMcmcCommandComments=False)
 
         else:
-            self.chains[coldChainNum].curTree.writeNewick(treeFile,
+            self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
                                                           withTranslation=1,
                                                           translationHash=self.translationHash,
                                                           doMcmcCommandComments=self.tree.model.isHet)
@@ -3249,13 +3254,13 @@ class Mcmc(object):
             pramsFile = open(self.pramsFileName, 'a')
             #pramsFile.write("%12i " % (self.gen + 1))
             pramsFile.write("%12i" % (self.gen + 1))
-            self.chains[coldChainNum].curTree.model.writePramsLine(pramsFile)
+            self.chains[self.coldChainNum].curTree.model.writePramsLine(pramsFile)
             pramsFile.close()
 
         if self.writeHypers:
             hypersFile = open(self.hypersFileName, 'a')
             hypersFile.write("%12i" % (self.gen + 1))
-            self.chains[coldChainNum].curTree.model.writeHypersLine(hypersFile)
+            self.chains[self.coldChainNum].curTree.model.writeHypersLine(hypersFile)
             hypersFile.close()
 
 
@@ -3375,12 +3380,12 @@ class Mcmc(object):
                 chain1.tempNum, chain2.tempNum = chain2.tempNum, chain1.tempNum
 
         # Find the cold chain, the one where tempNum is 0
-        coldChainNum = -1
+        self.coldChainNum = -1
         for i in range(len(self.chains)):
             if self.chains[i].tempNum == 0:
-                coldChainNum = i
+                self.coldChainNum = i
                 break
-        if coldChainNum == -1:
+        if self.coldChainNum == -1:
             gm.append("Unable to find which chain is the cold chain.  Bad.")
             raise P4Error(gm)
 

@@ -305,7 +305,8 @@ class Var(object):
         self._excepthookEditor = None
         self.allowEmptyCharSetsAndTaxSets = False
 
-        #self.mcmc_swapVector = False  # (old) matrix or (new) vector, both mcmc and stmcmc
+        self.mcmc_swapVector = True  # (old) matrix or (new) vector, both mcmc and stmcmc
+        self.mcmc_fixedTreeChains = False
         self.mcmc_swapTunerDoTuning = True  # whether to do swap tuning
         self.mcmc_swapTunerSampleSize = 250  # mcmc and stmcmc
         self.stmcmc_useFastSpa = False
