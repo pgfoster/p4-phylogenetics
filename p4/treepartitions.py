@@ -734,7 +734,6 @@ class TreePartitions(object):
         - Make split.set
         - Make split.proportion
         - Order the splits based on proportion and the string.
-        - Put biRoot counts on appropriate branches.
         """
 
         gm = ['TreePartitions.finishSplits()']
@@ -2270,3 +2269,27 @@ class TreePartitions(object):
     def getSplitForTaxNames(self, txNames):
         k = p4.func.getSplitKeyFromTaxNames(self.taxNames, txNames)
         return self.splitsHash.get(k)
+
+    def getProportionRange(self, verbose=False):
+        """Return (min,max) of non-leaf split proportions 
+
+        This does not look at biSplits.
+        """
+
+        theMinSupport = 1.0
+        theMaxSupport = 0.0
+
+        for s in self.splits:
+            theString = s.string
+            theStarCount = theString.count('*')
+            if theStarCount == 1 or theStarCount == self.nTax - 1:
+                continue
+            theKey = s.key
+            if s.proportion < theMinSupport:
+                theMinSupport = s.proportion
+            if s.proportion > theMaxSupport:
+                theMaxSupport = s.proportion
+
+        if verbose:
+            print(f"TreePartitions.getProportionRange() min: {theMinSupport:.4f} max: {theMaxSupport:.4f}")
+        return (theMinSupport, theMaxSupport)
