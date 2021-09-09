@@ -859,6 +859,10 @@ class Alignment(SequenceList):
         If removeDupes is set, the duplicate sequences after the first
         are removed.  This option is not set by default.
 
+        If there are duplicate sequences pairs, then the list of
+        sequence dupe pairs is returned, as a list of 2-tuples, of the
+        two sequence objects.
+
         If both removeDupes and makeDict are set, then it will rename
         the first sequence to p4Dupe1 (or p4Dupe2, and so on --- the
         dupeBaseName is 'p4Dupe' by default, but it can be set as an
@@ -867,7 +871,6 @@ class Alignment(SequenceList):
         The option makeDict is set by default, but it won't happen
         unless removeDupes is also set, and there are dupes to be
         removed.
-
         """
 
         #gm = ['Alignment.checkForDuplicateSequences()']
@@ -915,76 +918,84 @@ class Alignment(SequenceList):
                             dupeNumPairs.append([i, j])
                             doneDupeSeqNums.add(i)
                             doneDupeSeqNums.add(j)
-        # print(dupeNumPairs)
 
-        if dupeNumPairs and not removeDupes:
-            print()
-            print("=" * 50)
-            if self.fName:
-                print(" Alignment from file '%s'" % self.fName)
-            print(" This alignment has duplicate sequences!")
-            print(" Sequence numbers below are 1-based.")
-            for dp in dupeNumPairs:
-                i = dp[0]
-                j = dp[1]
-                print("    sequence %i (%s) is the same as sequence %i (%s)." % (
-                    i + 1, self.sequences[i].name, j + 1, self.sequences[j].name))
-            print(longMessage1)
-            print("=" * 50)
-            print()
-
-        if dupeNumPairs and removeDupes:
-            if makeDict:
-                myDict = {}
-                newNameCounter = 1
-                dpNum = 0  # dupe pair index
-                while 1:
-                    dp = None
-                    try:
-                        dp = dupeNumPairs[dpNum]
-                    except IndexError:
-                        break
+        if dupeNumPairs:
+            # print(dupeNumPairs)
+            if not removeDupes:
+                sequencePairs = []
+                print()
+                print("=" * 50)
+                if self.fName:
+                    print(" Alignment from file '%s'" % self.fName)
+                print(" This alignment has duplicate sequences!")
+                print(" Sequence numbers below are 1-based.")
+                for dp in dupeNumPairs:
                     i = dp[0]
                     j = dp[1]
-                    iName = self.sequences[i].name
-                    jName = self.sequences[j].name
-                    newIName = "%s%i" % (dupeBaseName, newNameCounter)
-                    myDict[newIName] = [iName, jName]
-                    self.sequences[i].name = newIName
-                    newNameCounter += 1
+                    print("    sequence %i (%s) is the same as sequence %i (%s)." % (
+                        i + 1, self.sequences[i].name, j + 1, self.sequences[j].name))
+                    sequencePairs.append((self.sequences[i], self.sequences[j]))
+                print(longMessage1)
+                print("=" * 50)
+                print()
+                return sequencePairs
 
-                    # Get the other j's for the same i.
+            else:     # ie do removeDupes 
+                if makeDict:
+                    myDict = {}
+                    newNameCounter = 1
+                    dpNum = 0  # dupe pair index
                     while 1:
-                        dpNum += 1
                         dp = None
                         try:
                             dp = dupeNumPairs[dpNum]
                         except IndexError:
                             break
-                        if dp[0] == i:
-                            myDict[newIName].append(self.sequences[dp[1]].name)
-                        else:
-                            break
-                f = open(dictFileName, 'w')
-                f.write("p4DupeSeqRenameDict = %s\n" % myDict)
-                f.close()
+                        i = dp[0]
+                        j = dp[1]
+                        iName = self.sequences[i].name
+                        jName = self.sequences[j].name
+                        newIName = "%s%i" % (dupeBaseName, newNameCounter)
+                        myDict[newIName] = [iName, jName]
+                        self.sequences[i].name = newIName
+                        newNameCounter += 1
 
-            # Remove the dupe sequences.
-            toRemove = []
-            for dp in dupeNumPairs:
-                j = dp[1]   # remove the second, not the first
-                toRemove.append(self.sequences[j])
-                #self.sequences[dp[0]].name += "_%s" % self.sequences[j].name
-            for s in toRemove:
-                self.sequences.remove(s)
+                        # Get the other j's for the same i.
+                        while 1:
+                            dpNum += 1
+                            dp = None
+                            try:
+                                dp = dupeNumPairs[dpNum]
+                            except IndexError:
+                                break
+                            if dp[0] == i:
+                                myDict[newIName].append(self.sequences[dp[1]].name)
+                            else:
+                                break
+                    f = open(dictFileName, 'w')
+                    f.write("p4DupeSeqRenameDict = %s\n" % myDict)
+                    f.close()
 
-            if self.nexusSets and self.nexusSets.taxSets:
-                print()
-                print("-" * 50)
-                print("There are tax sets, possibly affected by dupe removal.")
-                print("So I am removing them.")
-                print("-" * 50)
-                self.nexusSets.taxSets = []
+                # Remove the dupe sequences.
+                toRemove = []
+                sequencePairs = []
+                for dp in dupeNumPairs:
+                    i = dp[0]
+                    j = dp[1]   # remove the second, not the first
+                    toRemove.append(self.sequences[j])
+                    sequencePairs.append((self.sequences[i], self.sequences[j]))
+                    #self.sequences[dp[0]].name += "_%s" % self.sequences[j].name
+                for s in toRemove:
+                    self.sequences.remove(s)
+
+                if self.nexusSets and self.nexusSets.taxSets:
+                    print()
+                    print("-" * 50)
+                    print("There are tax sets, possibly affected by dupe removal.")
+                    print("So I am removing those taxSets.")
+                    print("-" * 50)
+                    self.nexusSets.taxSets = []
+                return sequencePairs
 
     def checkForBlankSequences(self, removeBlanks=False, includeN=True, listSeqNumsOfBlanks=False):
         """Like it says, with verbose output.
