@@ -2655,12 +2655,13 @@ class Mcmc(object):
                 raise P4Error(gm)
             #  2.  We also want the checkPointInterval to be evenly
             #      divisible by the sampleInterval.
-            if self.checkPointInterval % self.sampleInterval == 0:
-                pass
-            else:
-                gm.append("The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
-                gm.append("by the sampleInterval (%i)." % self.sampleInterval)
-                raise P4Error(gm)
+            if not self.simTemp:
+                if self.checkPointInterval % self.sampleInterval == 0:
+                    pass
+                else:
+                    gm.append("The checkPointInterval (%i) should be evenly divisible" % self.checkPointInterval)
+                    gm.append("by the sampleInterval (%i)." % self.sampleInterval)
+                    raise P4Error(gm)
 
 
         if self.props.proposals:  # It is a re-start
