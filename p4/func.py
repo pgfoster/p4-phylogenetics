@@ -3596,11 +3596,22 @@ def compareSplitsBetweenTreePartitions(treePartitionsList, precision=3, linewidt
     """
 
     nM = len(treePartitionsList)
+    supportMins = numpy.zeros(nM, dtype=numpy.float64)
+    supportMaxs = numpy.zeros(nM, dtype=numpy.float64)
     nItems = int(((nM * nM) - nM) / 2)
     asdosses = numpy.zeros((nM, nM), dtype=numpy.float64)
     vect = numpy.zeros(nItems, dtype=numpy.float64)
     mdvect = numpy.zeros(nItems, dtype=numpy.float64)
     maxDiffs = numpy.zeros((nM, nM), dtype=numpy.float64)
+
+    for mNum1 in range(nM):
+        tp1 = treePartitionsList[mNum1]
+        tp1.finishSplits()
+        ret = tp1.getProportionRange(verbose=False)
+        supportMins[mNum1] = ret[0]
+        supportMaxs[mNum1] = ret[1]
+    sRanges = supportMaxs - supportMins
+
 
     minimumProportion=0.1
     vCounter = 0
@@ -3632,6 +3643,12 @@ def compareSplitsBetweenTreePartitions(treePartitionsList, precision=3, linewidt
     curr = numpy.get_printoptions()
     numpy.set_printoptions(precision=precision, linewidth=linewidth)
 
+    print("Support values within tree partitions. Maxs, mins, and ranges")
+    print(supportMaxs)
+    print(supportMins)
+    print(sRanges)
+    print()
+
     print("Pairwise average standard deviation of split frequency values ---")
     print(asdosses)
     print()
@@ -3653,6 +3670,5 @@ def compareSplitsBetweenTreePartitions(treePartitionsList, precision=3, linewidt
 
 
     # Reset printoptions back to what it was
-    numpy.set_printoptions(
-        precision=curr['precision'], linewidth=curr['linewidth'])
+    numpy.set_printoptions(precision=curr['precision'], linewidth=curr['linewidth'])
 
