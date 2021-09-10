@@ -423,7 +423,7 @@ class SwapTunerV(object):
     """Continuous tuning for swap temperature, vector version"""
 
     def __init__(self, theMcmc):
-        assert var.mcmc_swapTunerSampleSize >= 100
+        assert theMcmc.swapTunerSampleSize >= 100
         self.mcmc = theMcmc
         self.nChains = theMcmc.nChains
 
@@ -445,7 +445,7 @@ class SwapTunerV(object):
 
 
     def tune(self, theTempNum):
-        assert self.nAttempts[theTempNum] >= var.mcmc_swapTunerSampleSize
+        assert self.nAttempts[theTempNum] >= self.mcmc.swapTunerSampleSize
         acc = float(self.nSwaps[theTempNum]) / self.nAttempts[theTempNum]    # float() for Py2
         # print("SwapTunerV.tune() theTempNum %i, nSwaps %i, nAttemps %i, acc %s" % (
         #     theTempNum, self.nSwaps[theTempNum], self.nAttempts[theTempNum], acc))
@@ -736,6 +736,7 @@ class Mcmc(object):
         self.gen = -1
         self.startMinusOne = -1
         self.chainTemp = 1.0
+        self.chainTemps = []
 
         # If we are doing simulated tempering ...
         self.simTemp = None
@@ -907,6 +908,8 @@ class Mcmc(object):
             self.swapMatrix = None
 
         self.swapTuner = None
+        self.swapTunerDoTuning = True
+        self.swapTunerSampleSize = 250
         self.stickyRootComp = False
 
         # check the tree, and tree+model+data
@@ -2068,8 +2071,9 @@ class Mcmc(object):
         print(f"    last chainTemps      {chTmpString}")
         chTmpDiffsString = '  '.join([f"{it:6.3f}" for it in self.chainTempDiffs[:-1]])
         print(f"    last chainTempDiffs  {chTmpDiffsString}")
-        # This may be set differently in the run, but it is not saved, so this could be invalid.  Fix this!
-        #print(f"    var.mcmc_swapTunerSampleSize is {var.mcmc_swapTunerSampleSize}")
+        # This may be set differently in the run, but it is not saved (still true?),
+        # so this could be invalid.  Fix this!
+        #print(f"    self.swapTunerSampleSize is {self.swapTunerSampleSize}")
         print()
 
         print(f"{'chains':10}", end=' ')
@@ -2687,13 +2691,25 @@ class Mcmc(object):
         else:
             # The swap vector is just the diagonal of the swap matrix
             if self.swapVector and self.nChains > 1:
-                print("======= Resetting chainTempDiffs and chainTemps") 
-                # These are differences in temperatures between adjacent chains.  The last one is not used.
-                self.chainTempDiffs = [self.chainTemp] * self.nChains 
-                # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
-                self.chainTemps = [0.0]
-                for dNum in range(self.nChains - 1):
-                    self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
+                if self.swapTunerDoTuning:
+                    print("======= Resetting chainTempDiffs and chainTemps")
+                    # These are differences in temperatures between adjacent chains.  The last one is not used.
+                    self.chainTempDiffs = [self.chainTemp] * self.nChains
+                    # These are cumulative, summed over the diffs.  This needs to be done whenever the diffs change
+                    self.chainTemps = [0.0]
+                    for dNum in range(self.nChains - 1):
+                        self.chainTemps.append(self.chainTempDiffs[dNum] + self.chainTemps[-1])
+                else:
+                    # doTuning has been turned off
+                    assert self.chainTemps, "swapTunerDoTuning is off.  Please specify chainTemps."
+                    assert len(self.chainTemps) == self.nChains
+                    assert self.chainTemps[0] == 0.0
+
+                    # set chainTempDiffs based on chainTemps, ie the reverse of above
+                    self.chainTempDiffs = []
+                    for dNum in range(1, self.nChains):
+                        self.chainTempDiffs.append(self.chainTemps[dNum] - self.chainTemps[dNum - 1])
+                    self.chainTempDiffs.append(0.0) # with reason? -- maybe not.
 
             self._makeChainsAndProposals()
             self._setOutputTreeFile()
@@ -2791,10 +2807,10 @@ class Mcmc(object):
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
-                    if var.mcmc_swapTunerDoTuning:
-                        print("Temperatures are tuned (var.mcmc_swapTunerDoTuning is on)")
+                    if self.swapTunerDoTuning:
+                        print("Temperatures are tuned (self.swapTunerDoTuning is on)")
                     else:
-                        print("var.mcmc_swapTunerDoTuning is turned off, so temperatures will not be tuned.")
+                        print("self.swapTunerDoTuning is turned off, so temperatures will not be tuned.")
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 if self.simTemp:
@@ -3304,8 +3320,8 @@ class Mcmc(object):
                 self.swapTuner.nAttempts[chain1.tempNum] += 1
                 if acceptSwap:
                     self.swapTuner.nSwaps[chain1.tempNum] += 1
-                if var.mcmc_swapTunerDoTuning:   
-                    if self.swapTuner.nAttempts[chain1.tempNum] >= var.mcmc_swapTunerSampleSize:
+                if self.swapTunerDoTuning:
+                    if self.swapTuner.nAttempts[chain1.tempNum] >= self.swapTunerSampleSize:
                         self.swapTuner.tune(chain1.tempNum)
                         # tune() zeros nAttempts and nSwaps counters
 

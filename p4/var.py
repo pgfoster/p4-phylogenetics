@@ -307,8 +307,8 @@ class Var(object):
 
         self.mcmc_swapVector = True  # (old) matrix or (new) vector, both mcmc and stmcmc
         self.mcmc_fixedTreeChains = False
-        self.mcmc_swapTunerDoTuning = True  # whether to do swap tuning
-        self.mcmc_swapTunerSampleSize = 250  # mcmc and stmcmc
+        # self.mcmc_swapTunerDoTuning = True  # whether to do swap tuning; moved to mcmc
+        # self.mcmc_swapTunerSampleSize = 250  # mcmc and stmcmc; moved to mcmc, not yet moved to stmcmc
         self.stmcmc_useFastSpa = False
         self.mcmc_sameBigTToStartOnAllChains = False # mcmc and stmcmc, for debugging, and fixed toplogy runs
         #self.mcmc_doTuneChainTemp = False
