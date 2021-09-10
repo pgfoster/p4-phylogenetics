@@ -442,9 +442,6 @@ class SwapTunerV(object):
         self.tnFactorLo = 0.9
         self.tnFactorVeryLo = 0.6
         self.tnFactorZero = 0.4
-        #self.tnLimitHi = var.mcmc_swapTunerVTnLimitHi
-        #self.tnLimitLo = var.mcmc_swapTunerVTnLimitLo
-
 
 
     def tune(self, theTempNum):
@@ -2796,8 +2793,6 @@ class Mcmc(object):
                     print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
                     if var.mcmc_swapTunerDoTuning:
                         print("Temperatures are tuned (var.mcmc_swapTunerDoTuning is on)")
-                        #print("Temperatures are tuned, but not if the difference in temperature")
-                        #print(f"between adjacent chains is bigger than {var.mcmc_swapTunerVTnLimitHi}")
                     else:
                         print("var.mcmc_swapTunerDoTuning is turned off, so temperatures will not be tuned.")
                 else:

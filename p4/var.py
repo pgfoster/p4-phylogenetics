@@ -322,20 +322,6 @@ class Var(object):
         self.mcmc_logTunings = False  # verbose logging of on-the-fly changes to tunings 
         self.mcmc_doCheck_PIVEC_MIN_etc = True  # check PIVEC_MIN, RATE_MIN, BRLEN_MIN, GAMMA_SHAPE_MIN in Mcmc
 
-        # This mcmc_swapTunerVTnLimitHi refers to the swapTunerV, the
-        # vector (non-matrix) version of the swap tuner that only
-        # allows swaps between adjacent temperatures.  The "TnLimitHi"
-        # part refers to an upper limit that a temperature difference
-        # can have before further increases are not allowed.  So if
-        # the limit is set to 50, and the temperature difference is
-        # 55, then further proposed increases will be ignored.  The
-        # problem it attempts to address is that I have found that
-        # very large temperature differences will sometimes slow the
-        # chain down to a crawl.  So if the MCMCMC slows down during
-        # the run, lowering this limit might fix it.
-        # Update: this was probably not the way to solve the slowing problem, so I am removing this
-        #self.mcmc_swapTunerVTnLimitHi = 100.  # Decrease (to eg 50?, 30?) if the MCMCMC slows. 
-        #self.mcmc_swapTunerVTnLimitLo = 0.0001
 
     def _del_nothing(self):
         gm = ["Don't/Can't delete this property."]
