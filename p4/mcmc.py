@@ -2363,40 +2363,42 @@ class Mcmc(object):
     def simTemp_dumpTemps(self, flob=sys.stdout):
         """Arg flob should be a file-like object."""
 
-        print("%4s %10s %12s %10s %10s %10s %10s %10s %10s %10s" % (
-            "indx", "temp", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "meanLnR_Up", "nPropsDn", "accptDn", "meanLnR_Dn"), 
+        print("%4s %10s %12s %10s %10s %10s %10s %10s" % (
+            "indx", "temp", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "nPropsDn", "accptDn"), 
               file=flob)
         totalOcc = 0
         highestOccupancy = self.simTemp_temps[0].occupancy
         lowestOccupancy = self.simTemp_temps[0].occupancy
-        for i, tmp in enumerate(self.simTemp_temps):
-            print("%4s %10.3f %12.4f %10i %10i" % (
-                i,
-                tmp.temp, 
-                #tmp.logPi, 
-                tmp.logPiDiff,
-                tmp.occupancy,
-                tmp.nProposalsUp), file=flob, end='')
-            if tmp.nProposalsUp:
-                #myNum = Numbers(tmp.rValsUp)
-                #myAMean = myNum.arithmeticMeanOfLogs()
-                myAMean = statistics.mean(tmp.rValsUp)
-                print(" %10.4f %10.4f" % (
-                    (tmp.nAcceptedUp/tmp.nProposalsUp),
-                    myAMean), file=flob, end='')
-            else:
+        for tNum, tmp in enumerate(self.simTemp_temps):
+
+            # If it is the hottest temp, don't print logPiDiff
+            if tNum == self.simTemp - 1:
+                print("%4s %10.3f %12s %10i" % (
+                    tNum,
+                    tmp.temp, 
+                    "-",   #logPiDiff
+                    tmp.occupancy), file=flob, end='')
+                # No proposals up
                 print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            print(" %10i" % tmp.nProposalsDn, file=flob, end='')
-            if tmp.nProposalsDn:
-                #myNum = Numbers(tmp.rValsDn)
-                #myAMean = myNum.arithmeticMeanOfLogs()
-                myAMean = statistics.mean(tmp.rValsDn)
-                print(" %10.4f %10.4f" % (
-                    (tmp.nAcceptedDn/tmp.nProposalsDn),
-                    myAMean), file=flob, end='')
             else:
-                print(" %10s %10s" % ("-", "-"), file=flob, end='')
+                print("%4s %10.3f %12.4f %10i" % (
+                    tNum,
+                    tmp.temp, 
+                    tmp.logPiDiff,
+                    tmp.occupancy), file=flob, end='')
+                if tmp.nProposalsUp:
+                    print(" %10i %10.4f" % (tmp.nProposalsUp, (tmp.nAcceptedUp/tmp.nProposalsUp)), file=flob, end='')
+                else:  # don't divide by zero
+                    print(" %10s %10s" % ("-", "-"), file=flob, end='')
+            if tNum == 0:  # so no props down
+                 print(" %10s %10s" % ("-", "-"), file=flob, end='')
+            else:
+                if tmp.nProposalsDn:
+                    print(" %10i %10.4f" % (tmp.nProposalsDn, (tmp.nAcceptedDn/tmp.nProposalsDn)), file=flob, end='')
+                else:  # don't divide by zero
+                    print(" %10s %10s" % ("-", "-"), file=flob, end='')
             print(file=flob)
+
             totalOcc += tmp.occupancy
             if tmp.occupancy > highestOccupancy:
                 highestOccupancy = tmp.occupancy
@@ -2408,6 +2410,14 @@ class Mcmc(object):
             print(f"occupancy target:{targetOcc} highest:{highestOccupancy}, lowest:{lowestOccupancy}, highest/lowest {rat}", file=flob)
         else:
             print(f"occupancy target:{targetOcc} highest:{highestOccupancy}, lowest:{lowestOccupancy}", file=flob)
+
+        # Zero
+        for tmp in self.simTemp_temps:
+            tmp.occupancy = 0
+            tmp.nProposalsUp = 0
+            tmp.nAcceptedUp = 0
+            tmp.nProposalsDn = 0
+            tmp.nAcceptedDn = 0
 
                 
                 
@@ -2510,12 +2520,12 @@ class Mcmc(object):
             tmpI.nProposalsUp += 1
             if acceptMove:
                 tmpI.nAcceptedUp += 1
-            tmpI.rValsUp.append(log_r)
+            #tmpI.rValsUp.append(log_r)
         else:
             tmpI.nProposalsDn += 1
             if acceptMove:
                 tmpI.nAcceptedDn += 1
-            tmpI.rValsDn.append(log_r)
+            # tmpI.rValsDn.append(log_r)
         
 
     def simTemp_approximatePi(self, logLike=None):
@@ -2610,6 +2620,7 @@ class Mcmc(object):
                     gm.append("Each item in m.simTemp_temps should be a SimTempTemp object.")
                     raise P4Error(gm)
 
+            self.simTemp_longTNumSample = deque([-1] * self.simTemp_longTNumSampleSize)
             self.simTemp_nTempChangeProposals = 0
             self.simTemp_nTempChangeAccepts = 0
             self.simTemp_tNums = []
@@ -3160,10 +3171,10 @@ class Mcmc(object):
                         tmp.occupancy = 0
                         tmp.nProposalsUp = 0
                         tmp.nAcceptedUp = 0
-                        tmp.rValsUp = []
+                        #tmp.rValsUp = []
                         tmp.nProposalsDn = 0
                         tmp.nAcceptedDn = 0
-                        tmp.rValsDn = []
+                        #tmp.rValsDn = []
 
                     
 
