@@ -1767,7 +1767,7 @@ if True:
         if dupeNode == self.root and not up:
             print("The dupeNode is self.root, and you want a subtree below that?!?")
             sys.exit()
-        from tree import Tree
+        from p4.tree import Tree
         st = Tree()
         if up:
             n = Node()

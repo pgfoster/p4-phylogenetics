@@ -571,7 +571,7 @@ class Var(object):
             return self._examplesDir
         else:
             try:
-                from installation import p4ExamplesDir
+                from p4.installation import p4ExamplesDir
                 if os.path.exists(os.path.join(p4ExamplesDir, 'A_quickStart')) and \
                         os.path.exists(os.path.join(p4ExamplesDir, 'W_recipes')):
                     self._examplesDir = p4ExamplesDir

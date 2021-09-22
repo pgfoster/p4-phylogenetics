@@ -2714,7 +2714,7 @@ class CompatibleTreePairs(TreeHandler):
 
     def createCompatibleTreePairs(self, readCSV=True, csvInFile='clades.csv', writeCSV=False, csvOutFile='treeMatrix.csv', writeNexus=True, nexusFilename='compatiblePair', calcDistances=False, distanceMeasure='sd'):
 
-        from trees import Trees
+        from p4.trees import Trees
 
         self.splits, treeNames = self.updateToCommonLeafSet(self.tfl)
 
