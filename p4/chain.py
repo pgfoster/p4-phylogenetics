@@ -1016,7 +1016,7 @@ class Chain(object):
 
         # or simulated tempering, .. 
         elif self.mcmc.simTemp:
-            myTmpO = self.mcmc.simTemp_temps[self.mcmc.simTemp_curTemp]  # SimTempTemp object
+            myTmpO = self.mcmc.simTemp.temps[self.mcmc.simTemp.curTemp]  # SimTempTemp object
             myTmp = myTmpO.temp
             heatFactor = 1.0 / (1.0 + myTmp)
             logLikeRatio *= heatFactor

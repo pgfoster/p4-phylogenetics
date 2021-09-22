@@ -15,6 +15,7 @@ from p4.treepartitions import TreePartitions
 from p4.constraints import Constraints
 from p4.node import Node
 from p4.pnumbers import Numbers
+from p4.simtemp import SimTemp,SimTempTemp
 import datetime
 import numpy
 import logging
@@ -504,20 +505,6 @@ class SwapTunerV(object):
             self.mcmc.logger.info(message)
 
 
-class SimTempTemp(object):
-    def __init__(self, temp):
-        self.temp = temp
-        #self.pi = 1.0
-        #self.logPi = 0.0
-        self.logPiDiff = 0.0
-        self.occupancy = 0
-        self.nProposalsUp = 0
-        self.nAcceptedUp = 0
-        self.rValsUp = []
-        self.nProposalsDn = 0
-        self.nAcceptedDn = 0
-        self.rValsDn = []
-
 
 
 class Mcmc(object):
@@ -664,7 +651,7 @@ class Mcmc(object):
 
     """
 
-    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, simTemp=None, simTempMax=10.0):
+    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, simTempNTemps=None, simTempMax=10.0):
         gm = ['Mcmc.__init__()']
         self.verbose = verbose
 
@@ -737,32 +724,27 @@ class Mcmc(object):
         self.startMinusOne = -1
         self.chainTemp = 1.0
         self.chainTemps = []
+        self.simTemp = None
+        self.simTemp_doTuneTempsAndLogPi = True
+        self.simTemp_doLogTemps = True
+        self.simTemp_tempsLogFName = "mcmc_simTempTempsLog"
+        self.simTemp_tempsFlob = None     # Open file
 
         # If we are doing simulated tempering ...
-        self.simTemp = None
-        if simTemp:
+        if simTempNTemps:
+            
             try:
-                self.simTemp = int(simTemp)
+                simTempNTemps = int(simTempNTemps)
             except (ValueError, TypeError):
-                gm.append("If set, simTemp should be an int, 2 or more.  Got %s" % simTemp)
+                gm.append("If set, simTempNTemps should be an int, 2 or more.  Got %s" % simTempNTemps)
                 raise P4Error(gm)
-            if self.simTemp < 2:
-                gm.append("If set, simTemp should be an int, 2 or more.  Got %s" % simTemp)
+            if simTempNTemps < 2:
+                gm.append("If set, simTempNTemps should be an int, 2 or more.  Got %s" % simTempNTemps)
                 raise P4Error(gm)
             if self.nChains != 1:
-                gm.append("If simTemp is set, nChains should only be 1.  Got %i" % self.nChains)
-
-        self.simTemp_temps = []
-        self.simTemp_curTemp = 0
-        self.simTemp_nTempChangeProposals = 0
-        self.simTemp_nTempChangeAccepts = 0
-        self.simTemp_tNums = []
-        self.simTemp_tempChangeProposeFreq = 1
-        self.simTemp_tunerSamples = []
-        self.simTemp_tunerSampleSize = 100
-        self.simTemp_longTNumSampleSize = 5000
-        if self.simTemp:
-            self.simTemp_longSampleTunings = [1.0] * self.simTemp
+                gm.append("If simTempNTemps is set, nChains should only be 1.  Got %i" % self.nChains)
+            self.simTemp = SimTemp(self)
+            self.simTemp.nTemps = simTempNTemps
 
             try:
                 thisSimTempMax = float(simTempMax)
@@ -773,30 +755,37 @@ class Mcmc(object):
                 gm.append("If doing simTemp, simTempMax should be set to a float more than zero.  Got  %s" % simTempMax)
                 raise P4Error(gm)
 
-            self.simTempMax = thisSimTempMax
+            #self.simTemp_maxTemp = thisSimTempMax
 
             if 0:
-                # This makes the temperatures evenly spaced.
-                stepSize = self.simTempMax / (self.simTemp - 1)
-                self.simTemp_temps = [SimTempTemp(0.0)]
-                for tNum in range(1,self.simTemp):
+                # This makes the simTemp temperatures evenly spaced.
+                stepSize = self.simTemp.maxTemp / (self.simTemp.nTemps - 1)
+                self.simTemp.temps = [SimTempTemp(0.0)]
+                for tNum in range(1,self.simTemp.nTemps):
                     tmp = SimTempTemp(tNum * stepSize)
-                    self.simTemp_temps.append(tmp)
+                    self.simTemp.temps.append(tmp)
             if 1:
                 # This makes more small temperatures and fewer big temperatures
                 # The bigger the logBase, the more curvey the curve.  Smaller is more linear
                 logBase = var.mcmc_simTemp_tempCurveLogBase
-                factor = self.simTempMax / (math.pow(logBase, self.simTemp - 1) - 1.0)
-                self.simTemp_temps = [SimTempTemp(0.0)]
-                for tNum in range(1,self.simTemp):
-                    tmp = SimTempTemp((math.pow(logBase, tNum) - 1.) * factor)
-                    self.simTemp_temps.append(tmp)
-            if 0:
+                factor = thisSimTempMax / (math.pow(logBase, self.simTemp.nTemps - 1) - 1.0)
+                tmp = SimTempTemp()
+                tmp.temp = 0.0
+                self.simTemp.temps = [tmp]
+                for tNum in range(1,self.simTemp.nTemps):
+                    tmp = SimTempTemp()
+                    tmp.temp = (math.pow(logBase, tNum) - 1.) * factor
+                    self.simTemp.temps.append(tmp)
+
+            self.simTemp.tNumSampleSize = 1000 * self.simTemp.nTemps
+            self.simTemp.setTempDiffsFromTemps()
+
+            if 1:
                 print("Initial settings of temperatures in Mcmc.__init__()")
-                for tNum,tmp in enumerate(self.simTemp_temps):
+                for tNum,tmp in enumerate(self.simTemp.temps):
                     print("%2i  %10.3f" % (tNum, tmp.temp))
 
-            self.simTemp_longTNumSample = deque([-1] * self.simTemp_longTNumSampleSize)
+            self.simTemp.tNumSample = deque([-1] * self.simTemp.tNumSampleSize)
         
             
         # Check that branch lengths are neither too short nor too long
@@ -2212,360 +2201,6 @@ class Mcmc(object):
         
 
         
-    def simTemp_trialAndError(self, nGensToDo, showTable=True, verbose=False):
-        gm = ['Mcmc.simTemp_trialAndError()']
-        savedGenNum = self.gen
-        assert self.simTemp
-
-        self.run(nGensToDo, verbose=False, equiProbableProposals=False, writeSamples=False)
-
-        if showTable:
-            print("simTemp_trialAndError().  After %i gens, showing occupancy, before tuning" % nGensToDo)
-            self.simTemp_dumpTemps()
-        
-        self.simTemp_tunePseudoPriors_longSample()
-
-        self.gen = savedGenNum
-
-        
-    def simTemp_tunePseudoPriors_longSample(self, flob=sys.stdout):
-        occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
-        expected = self.simTemp_longTNumSampleSize / self.simTemp
-        rats = [occs[i]/expected for i in range(self.simTemp)]
-
-        if 0:
-            for tNum in range(self.simTemp):
-                ratio = rats[tNum]
-                if ratio > 1.2 or ratio < 0.7:
-                    if ratio > 3.:
-                        adjust = 1.6
-                    elif ratio > 1.2:
-                        adjust = 1.2
-                    elif ratio < 0.7:
-                        adjust = 0.8
-                    self.simTemp_longSampleTunings[tNum] *= adjust
-                    # Adjusting the tunings to below 1 seems to lead to overshooting.
-                    if self.simTemp_longSampleTunings[tNum] < 1.0:
-                        self.simTemp_longSampleTunings[tNum] = 1.0
-
-        if 1:
-            #print(rats)
-
-            for tNum in range(self.simTemp):
-                ratio = rats[tNum]
-                self.simTemp_longSampleTunings[tNum] *= ratio
-
-            # This seems to work reasonably well.  Remaining problem
-            # is that the highest temp gets too much occupancy.  If
-            # that is the case, do a hack --- multiply it by the ratio obs/expected again.
-            #tNum = self.simTemp -1
-            #if max(occs) == occs[-1]:
-            #    self.simTemp_longSampleTunings[-1] *= rats[-1]
-
-            if 1:
-                # Adjusting the tunings to below 1 seems to lead to
-                # overshooting, so check, and if there are any then raise
-                # all
-                minTuning = min([tn for tn in self.simTemp_longSampleTunings])
-                if minTuning < 1.0:
-                    adjust = 1.0 - minTuning
-
-                    for tNum in range(self.simTemp):
-                        self.simTemp_longSampleTunings[tNum] += adjust
-
-            
-        print("\nlongSampleTunings (after tuning):", file=flob)
-        for tNum in range(self.simTemp):
-            print(f"m.simTemp_longSampleTunings[{tNum}] = {self.simTemp_longSampleTunings[tNum]:7.2f}", file=flob)
-
-    def simTemp_tunePseudoPriors(self):
-        occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
-        expected = self.simTemp_longTNumSampleSize / self.simTemp
-
-        if 1:
-            totalAdjusts = 0.0
-
-            # To increase the occupation of the cold temp, boost the cold logPiDiff
-            # To decrease the occupation, decrease it.
-            tNum = 0
-            cTuning = self.simTemp_longSampleTunings[tNum]
-            if cTuning > 1.0:
-                self.simTemp_temps[tNum].logPiDiff -= cTuning
-                totalAdjusts += cTuning
-
-            # To increase the occupation of the hottest temp, decrease the hottest-1 logPiDiff 
-            # To decrease the occupation, increase the hottest-1 logPiDiff
-            tNum = self.simTemp - 1
-            cTuning = self.simTemp_longSampleTunings[tNum]
-            if cTuning > 1.0:
-                self.simTemp_temps[tNum - 1].logPiDiff += cTuning
-                # Is this needed? It does not make an obvious difference.  Is it in the right direction?
-                #totalAdjusts -= cTuning   
-
-            for tNum in range(1, self.simTemp - 1):
-                cTuning = self.simTemp_longSampleTunings[tNum]
-                if cTuning > 1.0:
-                    self.simTemp_temps[tNum].logPiDiff -= cTuning
-                    self.simTemp_temps[tNum - 1].logPiDiff += cTuning
-
-            #for tNum in range(self.simTemp - 1):
-            #    self.simTemp_temps[tNum].logPiDiff + totalAdjusts/self.simTemp
-
-        if 1:
-            myFudge = -10.0
-
-            # Want to divide the logPi by the occupancy.  Total of occs is sampleSize.
-            
-            myMax = math.log(10/expected)
-            logOccs = []
-            for tNum in range(self.simTemp):
-                if occs[tNum] > 10:
-                    rat = occs[tNum]/expected
-                    logRat = math.log(rat)
-                else:
-                    logRat = myMax
-                logOccs.append(logRat)
-            #print(self.gen, "logOccs", logOccs)
-
-            # center at zero
-            meanLogOccs = statistics.mean(logOccs)
-            for tNum in range(self.simTemp):
-                logOccs[tNum] -= meanLogOccs
-
-            for tNum in range(self.simTemp):
-                if tNum == 0:
-                    # To increase the occupation of the cold temp, boost the cold logPiDiff
-                    # To decrease the occupation, decrease it.
-                    self.simTemp_temps[tNum].logPiDiff += (logOccs[tNum] * myFudge)
-                elif tNum == self.simTemp - 1:
-                    # To increase the occupation of the hottest temp, decrease the hottest-1 logPiDiff 
-                    # To decrease the occupation, increase the hottest-1 logPiDiff
-                    self.simTemp_temps[tNum-1].logPiDiff -= (logOccs[tNum] * myFudge)
-                else:
-                    # To increase the occupation of a middle temp, tNum, 
-                    # - increase the tNum logPiDiff
-                    # - decrease the tNum-1  logPiDiff
-                    # To decrease the occupation of the middle temp, tNum
-                    # - decrease tNum logPiDiff 
-                    # - increase tNum-1 logPiDiff
-                    howMuch = logOccs[tNum] * myFudge
-                    self.simTemp_temps[tNum].logPiDiff += howMuch
-                    self.simTemp_temps[tNum-1].logPiDiff -= howMuch
-                
-
-        if 0:
-            for tNum in range(self.simTemp -1):
-                self.simTemp_temps[tNum].logPiDiff += 10.0
-
-                
-            
-
-    def simTemp_dumpTemps(self, flob=sys.stdout):
-        """Arg flob should be a file-like object."""
-
-        print("%4s %10s %12s %10s %10s %10s %10s %10s" % (
-            "indx", "temp", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "nPropsDn", "accptDn"), 
-              file=flob)
-        totalOcc = 0
-        highestOccupancy = self.simTemp_temps[0].occupancy
-        lowestOccupancy = self.simTemp_temps[0].occupancy
-        for tNum, tmp in enumerate(self.simTemp_temps):
-
-            # If it is the hottest temp, don't print logPiDiff
-            if tNum == self.simTemp - 1:
-                print("%4s %10.3f %12s %10i" % (
-                    tNum,
-                    tmp.temp, 
-                    "-",   #logPiDiff
-                    tmp.occupancy), file=flob, end='')
-                # No proposals up
-                print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            else:
-                print("%4s %10.3f %12.4f %10i" % (
-                    tNum,
-                    tmp.temp, 
-                    tmp.logPiDiff,
-                    tmp.occupancy), file=flob, end='')
-                if tmp.nProposalsUp:
-                    print(" %10i %10.4f" % (tmp.nProposalsUp, (tmp.nAcceptedUp/tmp.nProposalsUp)), file=flob, end='')
-                else:  # don't divide by zero
-                    print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            if tNum == 0:  # so no props down
-                 print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            else:
-                if tmp.nProposalsDn:
-                    print(" %10i %10.4f" % (tmp.nProposalsDn, (tmp.nAcceptedDn/tmp.nProposalsDn)), file=flob, end='')
-                else:  # don't divide by zero
-                    print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            print(file=flob)
-
-            totalOcc += tmp.occupancy
-            if tmp.occupancy > highestOccupancy:
-                highestOccupancy = tmp.occupancy
-            if tmp.occupancy < lowestOccupancy:
-                lowestOccupancy = tmp.occupancy
-        targetOcc = totalOcc / self.simTemp
-        if lowestOccupancy:   # it might be zero
-            rat = highestOccupancy/lowestOccupancy
-            print(f"occupancy target:{targetOcc} highest:{highestOccupancy}, lowest:{lowestOccupancy}, highest/lowest {rat}", file=flob)
-        else:
-            print(f"occupancy target:{targetOcc} highest:{highestOccupancy}, lowest:{lowestOccupancy}", file=flob)
-
-        # Zero
-        for tmp in self.simTemp_temps:
-            tmp.occupancy = 0
-            tmp.nProposalsUp = 0
-            tmp.nAcceptedUp = 0
-            tmp.nProposalsDn = 0
-            tmp.nAcceptedDn = 0
-
-                
-                
-
-        
-    def simTemp_proposeTempChange(self):
-
-        # Method and symbols are from:
-
-        # Geyer, C. J., and Thompson, E. A. (1995). Annealing Markov
-        # chain Monte Carlo with applications to ancestral
-        # inference. Journal of the American Statistical Association,
-        # 90, 909–920.
-
-        i = self.simTemp_curTemp   # index
-        nTemps = self.simTemp
-        ch = self.chains[0]
-
-        if i == 0:
-            j = 1
-            qij = 1.
-            if nTemps == 2:
-                qji = 1.0
-            else:
-                qji = 0.5
-        elif i == nTemps - 1:
-            j = nTemps - 2
-            qij = 1.
-            if nTemps == 2:
-                qji = 1.0
-            else:
-                qji = 0.5
-        else:
-            if random.random() < 0.5:
-                j = i - 1
-            else:
-                j = i + 1
-            qij = 0.5
-            if j == 0:
-                qji = 1.0
-            elif j == nTemps - 1:
-                qji = 1.0
-            else:
-                qji = 0.5
-
-        # tmp's are SimTempTemp objects
-        tmpI = self.simTemp_temps[i]
-        tmpJ = self.simTemp_temps[j]
-
-        beta_i = 1.0 / (1.0 + tmpI.temp)
-        beta_j = 1.0 / (1.0 + tmpJ.temp)
-
-        # h_i_Atx is notation from Geyer and Thompson.  I want the log form
-        # print("curr log like %f, beta_i %f, beta_j %f" % (ch.curTree.logLike, beta_i, beta_j))
-        #log_h_i_Atx = ch.curTree.logLike * beta_i 
-        #log_h_j_Atx = ch.curTree.logLike * beta_j
-        #logTempRatio = log_h_j_Atx - log_h_i_Atx
-        logTempRatio = ch.curTree.logLike * (beta_j - beta_i)
-
-        #logPseudoPriorRatio =  math.log(tmpJ.pi / tmpI.pi)
-        if i < j:
-            logPseudoPriorRatio = -tmpI.logPiDiff
-        else:
-            logPseudoPriorRatio = tmpJ.logPiDiff
-
-        #logPseudoPriorRatio =  tmpJ.logPi - tmpI.logPi
-        # print("to calc logPseudoPriorRatio:", tmpJ.logPi, "-", tmpI.logPi, "=", logPseudoPriorRatio)
-        logHastingsRatio = math.log(qji / qij)
-
-        if 0:
-            print("hastingsRatio gen %i: i=%i, j=%i, hastingsRatio %f, logHastingsRatio %f" % (
-                self.gen, i, j, (qji/qij), logHastingsRatio))
-
-
-        # Geyer and Thompson use "r".  I want the log form
-        log_r = logTempRatio + logPseudoPriorRatio + logHastingsRatio
-
-
-        acceptMove = False
-        if log_r < -100.0:
-            acceptMove = False
-        elif log_r >= 0.0:
-            acceptMove = True
-        else:
-            r = math.exp(log_r)
-            if random.random() < r:
-                acceptMove = True
-        #print("log_r %f, acceptMove %s" % (log_r, acceptMove))
-
-        #if 0:
-        if 0 and i==0 and j==1:
-            print("attemptSwap gen %i: i=%i, j=%i, log_r=%f logTempRatio=%f   logPseudoPriorRatio %f  logHastingsRatio %f acceptMove=%s" % (
-                self.gen, i, j, log_r, logTempRatio, logPseudoPriorRatio, logHastingsRatio, acceptMove))
-
-        if acceptMove:
-            self.simTemp_curTemp = j
-            self.simTemp_nTempChangeAccepts += 1
-        self.simTemp_nTempChangeProposals += 1
-        if j > i:
-            tmpI.nProposalsUp += 1
-            if acceptMove:
-                tmpI.nAcceptedUp += 1
-            #tmpI.rValsUp.append(log_r)
-        else:
-            tmpI.nProposalsDn += 1
-            if acceptMove:
-                tmpI.nAcceptedDn += 1
-            # tmpI.rValsDn.append(log_r)
-        
-
-    def simTemp_approximatePi(self, logLike=None):
-        gm = ["Mcmc.simTemp_approximatePi()"]
-
-        if logLike:
-            thisLogLike = logLike
-        else:
-            ch = self.chains[0]
-            thisLogLike = ch.curTree.logLike
-
-        for i,tmpI in enumerate(self.simTemp_temps[:-1]):
-            j = i + 1
-            tmpJ = self.simTemp_temps[j] 
-            #print(i, j)
-            beta_i = 1.0 / (1.0 + tmpI.temp)
-            beta_j = 1.0 / (1.0 + tmpJ.temp)
-            logTempRatio = (thisLogLike * beta_j) - (thisLogLike * beta_i)
-            # Here I tried to take the hastings ratio into account ...
-            # But it did not turn out well, so deleted.  It decreased
-            # the first and last occupancies too much.
-            tmpI.logPiDiff = logTempRatio
-
-    def simTemp_resetSimTempMax(self, newSimTempMax):
-        newVal = float(newSimTempMax)
-        print(f"Mcmc.simTemp_resetSimTempMax(), changing from old value {self.simTempMax} to new value {newVal}") 
-        self.simTempMax = newVal
-        logBase = var.mcmc_simTemp_tempCurveLogBase
-        factor = self.simTempMax / (math.pow(logBase, self.simTemp - 1) - 1.0)
-        for tNum in range(1,self.simTemp):
-            newTemp = (math.pow(logBase, tNum) - 1.) * factor
-            tmp = self.simTemp_temps[tNum]
-            tmp.temp = newTemp
-
-        if 1:
-            print("New settings of simTemp temperatures ---")
-            for tNum,tmp in enumerate(self.simTemp_temps):
-                print(f"{tNum:2}  {tmp.temp:10.3f}")
-        self.logger.info(f"Resetting simulated tempering MCMC, with new highest temperature {self.simTempMax:.2f}")
-
 
     def run(self, nGensToDo, verbose=True, equiProbableProposals=False, writeSamples=True):
         """Start the Mcmc running."""
@@ -2609,23 +2244,21 @@ class Mcmc(object):
                 gm.append("If we are doing simTemp, then doHeatingHack should be off.")
                 raise P4Error(gm)
         
-            if not self.simTemp_temps:
-                gm.append("If we are doing simTemp, we should have SimTempTemp objects in m.simTemp_temps.")
+            if not self.simTemp.temps:
+                gm.append("If we are doing simTemp, we should have SimTempTemp objects in m.simTemp.temps.")
                 raise P4Error(gm)
-            if len(self.simTemp_temps) != self.simTemp:
-                gm.append("If we are doing simTemp, we should have %i SimTempTemp objects in m.simTemp_temps." % self.simTemp)
+            if len(self.simTemp.temps) != self.simTemp.nTemps:
+                gm.append("If we are doing simTemp, we should have %i SimTempTemp objects in m.simTemp.temps." % self.simTemp)
                 raise P4Error(gm)
-            for it in self.simTemp_temps:
+            for it in self.simTemp.temps:
                 if not isinstance(it, SimTempTemp):
                     gm.append("Each item in m.simTemp_temps should be a SimTempTemp object.")
                     raise P4Error(gm)
 
-            self.simTemp_longTNumSample = deque([-1] * self.simTemp_longTNumSampleSize)
-            self.simTemp_nTempChangeProposals = 0
-            self.simTemp_nTempChangeAccepts = 0
-            self.simTemp_tNums = []
-            self.simTemp_tunerSamples = []
-            for tmp in self.simTemp_temps:
+            self.simTemp.nTempChangeProposals = 0
+            self.simTemp.nTempChangeAccepts = 0
+            self.simTemp.tNums = []
+            for tmp in self.simTemp.temps:
                 tmp.occupancy = 0
                 tmp.nProposalsUp = 0
                 tmp.nAcceptedUp = 0
@@ -2633,6 +2266,33 @@ class Mcmc(object):
                 tmp.nProposalsDn = 0
                 tmp.nAcceptedDn = 0
                 tmp.rValsDn = []
+
+            if self.simTemp_doLogTemps:
+                if self.simTemp_tempsFlob:
+                    if self.simTemp_tempsFlob != sys.stdout:
+                        assert self.simTemp_tempsFlob.closed
+                        self.simTemp_tempsFlob = open(self.simTemp_tempsLogFName, "a")
+                else:
+                    self.simTemp_tempsFlob = open(self.simTemp_tempsLogFName, "a")
+
+                # Write a header line.
+                genStr = "#     gen"
+                print(f"{genStr:>9s}", file=self.simTemp_tempsFlob, end='')
+                for tNum in range(self.simTemp.nTemps - 1):
+                    tNumStr = f"tempDiff[{tNum}]"
+                    print(f"{tNumStr:>13s}", file=self.simTemp_tempsFlob, end='')
+
+                tNumStr = f"maxTemp"
+                print(f"{tNumStr:>13s}", file=self.simTemp_tempsFlob, end='')
+
+                for tNum in range(self.simTemp.nTemps - 1):
+                    tNumStr = f"logPiDiff[{tNum}]"
+                    print(f"{tNumStr:>13s}", file=self.simTemp_tempsFlob, end='')
+                for tNum in range(self.simTemp.nTemps):
+                    tNumStr = f"occ[{tNum}]"
+                    print(f"{tNumStr:>10s}", file=self.simTemp_tempsFlob, end='')
+                print("", file=self.simTemp_tempsFlob)
+
 
 
         if self.prob.polytomy:
@@ -2813,8 +2473,8 @@ class Mcmc(object):
         else:
             self.logger.info("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
             if self.simTemp:
-                self.logger.info("Using simulated tempering MCMC, with %i temperatures, with highest temperature %.2f" % (
-                    self.simTemp, self.simTempMax))
+                self.logger.info("Using simulated tempering MCMC, with %i temperatures" % (
+                    self.simTemp.nTemps))
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
@@ -2825,8 +2485,8 @@ class Mcmc(object):
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 if self.simTemp:
-                    print("Using simulated tempering MCMC, with %i temperatures, with highest temperature %.2f" % (
-                        self.simTemp, self.simTempMax))
+                    print("Using simulated tempering MCMC, with %i temperatures" % (
+                        self.simTemp.nTemps))
                 print("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
                 print("Set to do %i generations." % nGensToDo)
 
@@ -2999,25 +2659,21 @@ class Mcmc(object):
             
             if self.nChains == 1:
                 if self.simTemp:
-                    self.simTemp_temps[self.simTemp_curTemp].occupancy += 1
-                    if (self.gen + 1) % self.simTemp_tempChangeProposeFreq == 0:
-                        self.simTemp_proposeTempChange()
-                    self.simTemp_tNums.append(self.simTemp_curTemp)
+                    self.simTemp.temps[self.simTemp.curTemp].occupancy += 1
+                    # if (self.gen + 1) % self.simTemp.tempChangeProposeFreq == 0:
+                    self.simTemp.proposeTempChange()
+                    self.simTemp.tNums.append(self.simTemp.curTemp)
 
                     # this is a deque.  Append on the left and pop on the right
-                    self.simTemp_longTNumSample.appendleft(self.simTemp_curTemp)
-                    self.simTemp_longTNumSample.pop() # from the right, of course
+                    self.simTemp.tNumSample.appendleft(self.simTemp.curTemp)
+                    self.simTemp.tNumSample.pop() # from the right, of course
 
-                    # tunerSamplSize is small, so this adjustment is high frequency (eg every 100 gens)
-                    self.simTemp_tunerSamples.append(self.chains[0].curTree.logLike)
-                    if len(self.simTemp_tunerSamples) >= self.simTemp_tunerSampleSize:
-                        meanLogLike = statistics.mean(self.simTemp_tunerSamples)
-                        self.simTemp_approximatePi(meanLogLike)
-                        self.simTemp_tunerSamples = []
+                    if self.simTemp_doTuneTempsAndLogPi:
+                        if self.gen >= self.simTemp.tNumSampleSize:
+                            if self.gen % self.simTemp.tNumSampleSize == 0:                    
+                                self.simTemp.tuneTempsAndLogPi()
 
-                        # tunePseudoPriors() uses longTNumSample, so it should be full
-                        if self.simTemp_longTNumSample[-1] != -1:  # ie it is full
-                            self.simTemp_tunePseudoPriors()
+
 
 
             else:
@@ -3030,7 +2686,7 @@ class Mcmc(object):
 
             doWrite = False
             if self.simTemp:
-                if self.simTemp_curTemp == 0:
+                if self.simTemp.curTemp == 0:
                     # Thinning the simTemp chain is awkward.  Here is a hack.
                     # var.mcmc_simTemp_thinning is a list of digit strings, by default ['0']
                     if var.mcmc_simTemp_thinning:
@@ -3156,25 +2812,19 @@ class Mcmc(object):
                     fout = open(self.simTempFileName, 'a')
                     print("-" * 50, file=fout)
                     print("gen+1 %11i" % (self.gen + 1), file=fout)
-                    self.simTemp_dumpTemps(flob=fout)
-
-                    # tuning results are written to self.simTempFileName
-                    self.simTemp_tunePseudoPriors_longSample(flob=fout)
+                    self.simTemp.dumpTemps(flob=fout)
 
                     fout.close()
 
-                    self.simTemp_nTempChangeProposals = 0
-                    self.simTemp_nTempChangeAccepts = 0
-                    self.simTemp_tNums = []
-                    #self.simTemp_tunerSamples = []
-                    for tmp in self.simTemp_temps:
+                    # self.simTemp.nTempChangeProposals = 0
+                    # self.simTemp.nTempChangeAccepts = 0
+                    # self.simTemp.tNums = []
+                    for tmp in self.simTemp.temps:
                         tmp.occupancy = 0
                         tmp.nProposalsUp = 0
                         tmp.nAcceptedUp = 0
-                        #tmp.rValsUp = []
                         tmp.nProposalsDn = 0
                         tmp.nAcceptedDn = 0
-                        #tmp.rValsDn = []
 
                     
 
@@ -3230,6 +2880,10 @@ class Mcmc(object):
             treeFile = open(self.treeFileName, 'a')
             treeFile.write('end;\n\n')
             treeFile.close()
+
+        if self.simTemp:
+            if self.simTemp_tempsFlob and self.simTemp_tempsFlob != sys.stdout:
+                self.simTemp_tempsFlob.close()
 
     def _writeSample(self):
         likesFile = open(self.likesFileName, 'a')
