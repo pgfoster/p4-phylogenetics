@@ -925,7 +925,7 @@ class Trees(object):
                 t.splitKeys = [n.br.splitKey for n in t.iterNodesNoRoot()]
                 # print '\nsplitKeys = %s' % t.splitKeys
 
-        from treepartitions import TreePartitions
+        from p4.treepartitions import TreePartitions
 
         # The root buisiness is not implemented yet.  The way I do it
         # should be guided by theTree, the reference tree.  It is rooted

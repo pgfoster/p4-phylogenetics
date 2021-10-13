@@ -363,7 +363,7 @@ if True:
         """
 
         if refTree:
-            from tree import Tree
+            from p4.tree import Tree
             assert isinstance(refTree, Tree)
             assert refTree.model
             assert refTree.data

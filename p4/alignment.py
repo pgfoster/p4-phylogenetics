@@ -838,7 +838,7 @@ class Alignment(SequenceList):
 
         a.checkLengthsAndTypes()
         if 0:
-            from nexussets import NexusSets
+            from p4.nexussets import NexusSets
             a.nexusSets = NexusSets()
             a.nexusSets.aligNChar = a.length
             a.nexusSets.setPredefinedCharSets(a)

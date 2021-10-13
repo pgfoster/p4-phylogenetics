@@ -288,7 +288,7 @@ class Nexus:
                         tok = safeNextTok(flob)
                         if tok[0] == '[':
                             # print "xxyyx got comment: %s" % tok
-                            from treepartitions import _getModelInfo
+                            from p4.treepartitions import _getModelInfo
                             theModelInfo = _getModelInfo(tok)
                             if theModelInfo:
                                 # theModelInfo.check() returns

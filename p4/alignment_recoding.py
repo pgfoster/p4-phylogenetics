@@ -9,11 +9,11 @@ import re
 import copy
 import warnings
 from Bio.Data import CodonTable
-from p4 import Alignment
-from p4 import func
-from p4 import var
-from p4 import P4Error
-from p4 import read
+from p4.alignment import Alignment
+import p4.func
+from p4.var import var
+from p4.p4exceptions import P4Error
+from p4.func import read
 from p4.code_utils import \
         codon_position, \
         codon_position_is_degenerate, \
@@ -870,7 +870,7 @@ def treeFinderMAPAnalysis(alignment, groups,
         raise P4Error(gm)
 
     if run_analysis:
-        if not func.which2("tf"):
+        if not p4.func.which2("tf"):
             msg = "tf (treefinder) is not in your $PATH" + \
                   "Cannot run analysis"
             gm.append(msg)
