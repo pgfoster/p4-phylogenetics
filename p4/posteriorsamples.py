@@ -77,7 +77,6 @@ class PosteriorSamples(object):
 
         # Check to make sure its all good to go.
         # (This step is needed for empirical comps, at least)
-        t.data = d
         t.calcLogLike()
 
         # Instantiate

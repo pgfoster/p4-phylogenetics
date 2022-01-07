@@ -10,9 +10,9 @@ for t in var.trees:
     t.setNGammaCat(nGammaCat=4)
     t.newGdasrv(free=1, val=0.5)
     t.setPInvar(free=0, val=0.0)
-    t.setModelThing(c1, node=t.root, clade=1)
-    t.setModelThing(c2, node=t.node('Deinococcus'))
-    t.setModelThing(c2, node=t.node('Bacillus'))
+    t.setModelComponentOnNode(c1, node=t.root, clade=1)
+    t.setModelComponentOnNode(c2, node=t.node('Deinococcus'))
+    t.setModelComponentOnNode(c2, node=t.node('Bacillus'))
     t.optLogLike()
 
 tt = Trees()

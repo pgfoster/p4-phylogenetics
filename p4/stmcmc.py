@@ -3376,7 +3376,7 @@ class STMcmc(object):
             for chNum in range(self.nChains):
                 ch = self.chains[chNum]
                 print("chain %i ==================" % chNum)
-                ch.curTree.summarizeModelThingsNNodes()
+                ch.curTree.summarizeModelComponentsNNodes()
 
         # the Frrf object does not pickle
         savedFrrfs = []

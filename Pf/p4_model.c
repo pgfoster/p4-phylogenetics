@@ -452,7 +452,8 @@ void p4_newRMatrix(p4_model *aModel, int pNum, int mNum, int free, int spec)
 	
     // install
     aModel->parts[pNum]->rMatrices[mNum] = aRMatrix;
-    //printf("allocated rMatrix=%li, rMatrix->bigR=%li\n", (long int)aRMatrix, (long int)(aRMatrix->bigR));
+    // printf("allocated rMatrix=%li, rMatrix->bigR=%li\n", (long int)aRMatrix, (long int)(aRMatrix->bigR));
+    // dump_psdmatrix(aRMatrix->bigR, dim);
 }
 
 

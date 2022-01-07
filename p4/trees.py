@@ -439,81 +439,107 @@ class Trees(object):
             print("\\end{center}")
         return results
 
-    def treeProbabilities(self, writeNexus=False):
+    def treeProbabilities(self, warnRootings=True):
         """Order the trees in self by frequency of occurrence.
 
         This provides a posterior probability for the tree topology if
-        trees are sampled from an MCMC. The tree with the highest number
-        of occurrences is the MAP tree.
+        trees are sampled from an MCMC.  The tree with the highest
+        number of occurrences is the MAP tree.
 
-        If *writeNexus* is True a Nexus tree file called
-        ``treeProbabilities.nex`` is written with tree posterior
-        probabilities as weights.  If that file exists, it will be
-        silently over-written!
+        Args:        
+            warnRootings (Bool): Setting warnRootings, the default, makes 
+                it an error to have a combination of biRooted and non-biRooted trees.
 
-        The tree probs list of lists is returned.
+        Returns:
+            Trees: A new Trees object is returned, where each tree is decorated
+                with count, weight, and name.
 
-        (Thanks to Cymon Cox for this method.)
+        Example::
 
+            read("t1.nex")
+            tt = Trees()
+            ret = tt.treeProbabilities()
+            # ret is a Trees object.  Save it.
+            ret.writeNexus("treeProbabilities.nex")
+            for t in ret.trees:
+                print(f"{t.name:5} {t.count:5} {t.weight:.4f}", end=' ')
+                t.write()
+
+
+        Thanks to Cymon Cox for this method.  Tweaked by PGF June 2021
         """
 
         gm = ["Trees.treeProbabilities()"]
 
+        isBiRootedCount = 0
+        isNotBiRootedCount = 0
+
         # Make the splitKey dictionary
         skd = {}
         for t in self.trees:
+            ret = t.isBiRoot()
+            if ret:
+                isBiRootedCount += 1
+            else:
+                isNotBiRootedCount += 1
+
             t.makeSplitKeys()
             skk = [n.br.splitKey for n in t.iterNodesNoRoot()]
             skk.sort()
             skk = tuple(skk)
             it = skd.get(skk)
             if it:
-                it[0] += 1
+                it.count += 1
             else:
                 dTree = t.dupe()     # Don't mess with the trees in self
                 dTree.stripBrLens()
-                skd[skk] = [1, dTree]
+                dTree.count = 1
+                skd[skk] = dTree
 
-        # for v in skd.values():
-        #    print v
+        if warnRootings:
+            if isBiRootedCount and isNotBiRootedCount:
+                gm.append(f"There is a mixture of biRooted ({isBiRootedCount}) and non-biRooted ({isNotBiRootedCount}) input trees.")
+                raise P4Error(gm)
+                
+                    
 
-        # Flatten to a list, order by counts
+        #for v in skd.values():
+        #   print(v.count)
+
+        # order by counts
         skl = skd.values()
-        skl = p4.func.sortListOfListsOnListElementNumber(skl, 0)
+        # print("skl =", skl)
+        skl = p4.func.sortListOfObjectsOnAttribute(skl, "count")
         skl.reverse()
+        # print("skl =", skl)
 
         # Check that we have all the trees
-        nTrees = sum([i[0] for i in skl])
+        nTrees = sum(t.count for t in skl)
         if nTrees != len(self.trees):
-            gm.append("Programming error: all trees are not accounted for...")
+            gm.append("Programming error: all trees are not accounted for ...")
             raise P4Error(gm)
 
         # Calculate frequency from counts
-        trprobs = [(float(count) / float(nTrees), tree) for count, tree in skl]
-        if writeNexus:
-            count = 1
-            for prob, tree in trprobs:
-                tree.weight = prob
-                tree.name = "t_%i" % count
-                count += 1
-            tt = Trees([i[1] for i in trprobs])
-            tt.writeNexus(fName="treeProbabilities.nex", withTranslation=True)
+        for tNum,t in enumerate(skl):
+            t.weight = t.count/nTrees
+            t.name = "t_%i" % tNum
+        tt = Trees(skl)
+        return tt
 
-        return trprobs
 
-    def consel(self, rankByInputOrder=False, clobber=False, quiet=1, tidy=1, returnResults=False):
+    def consel(self, rankByInputOrder=False, clobber=False, quiet=1, tidy=1, returnResults=False, seed=0):
         """Use Shimo's consel programs to compare trees.
 
         The trees in self should all be optimized, and all should have
         models attached.
 
-        Self, the Trees object, should have a Data object attached,
-        as self.data.
+        Self, the Trees object, should have a Data object attached, as
+        self.data.
 
-        The default is to rank the output by support.  You
-        might rather have the output be in the same order as the
-        input.  Which output format is determined by the
-        'rankByInputOrder' arg.
+        The default is to rank the output by support.  You might
+        rather have the output be in the same order as the input.
+        Which output format is determined by the 'rankByInputOrder'
+        arg.
 
         The analysis produces various files.  Whether they are
         overwritten if they already exist is controlled by the arg
@@ -538,6 +564,9 @@ class Trees(object):
         set returnResults=True, and then this method will return a
         list of tuples of strings of the results table contents.
 
+        Setting arg seed to a number sets the random number generator
+        for makermt.  The default is zero, which then takes the seed
+        from the system clock.
         """
 
         gm = ['Trees.consel()']
@@ -624,12 +653,14 @@ class Trees(object):
             f.write('\n')
         f.close()
 
+        assert seed >= 0
+
         # print "Invoking makermt, consel, and catpv ..."
         if quiet:
-            os.system('makermt --puzzle siteLikes consel_out > /dev/null')
+            os.system(f'makermt -s {seed} --puzzle siteLikes consel_out > /dev/null')
             os.system('consel consel_out > /dev/null')
         else:
-            os.system('makermt --puzzle siteLikes consel_out')
+            os.system(f'makermt -s {seed} --puzzle siteLikes consel_out')
             os.system('consel consel_out')
         if rankByInputOrder:
             if quiet in [0, 1]:
@@ -894,7 +925,7 @@ class Trees(object):
                 t.splitKeys = [n.br.splitKey for n in t.iterNodesNoRoot()]
                 # print '\nsplitKeys = %s' % t.splitKeys
 
-        from treepartitions import TreePartitions
+        from p4.treepartitions import TreePartitions
 
         # The root buisiness is not implemented yet.  The way I do it
         # should be guided by theTree, the reference tree.  It is rooted

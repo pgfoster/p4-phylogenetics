@@ -18,7 +18,7 @@ t.newGdasrv(free=1, val=0.5)
 t.setPInvar(free=0, val=0.0)
 
 for i in range(7):
-    t.setModelThing(t.model.parts[0].comps[i], node=i, clade=0)
+    t.setModelComponentOnNode(t.model.parts[0].comps[i], node=i, clade=0)
 
 d.calcUnconstrainedLogLikelihood1()
 u = d.unconstrainedLogLikelihood

@@ -83,7 +83,7 @@ class Tree(object):
        ~Tree.getPreAndPostOrderAboveRoot
        ~Tree.getSeqNumsAbove
        ~Tree.subTreeIsFullyBifurcating
-       ~Tree.summarizeModelThingsNNodes
+       ~Tree.summarizeModelComponentsNNodes
        ~Tree.verifyIdentityWith
 
 **Write**
@@ -163,10 +163,10 @@ class Tree(object):
         ~Tree.newGdasrv
         ~Tree.setPInvar
         ~Tree.setRelRate
-        ~Tree.setModelThing
-        ~Tree.setModelThingsRandomly
-        ~Tree.setModelThingsNNodes
-        ~Tree.summarizeModelThingsNNodes
+        ~Tree.setModelComponentOnNode
+        ~Tree.setModelComponentsOnNodesRandomly
+        ~Tree.setModelComponentsNNodes
+        ~Tree.summarizeModelComponentsNNodes
         ~Tree.setNGammaCat
         ~Tree.setTextDrawSymbol
 
@@ -229,7 +229,7 @@ class Tree(object):
 
     from p4.tree_manip import node, rotateAround, reRoot, removeRoot, removeNode, removeAboveNode, collapseNode, collapseClade, pruneSubTreeWithoutParent, reconnectSubTreeWithoutParent, pruneSubTreeWithParent, reconnectSubTreeWithParent, addNodeBetweenNodes, allBiRootedTrees, ladderize, randomizeTopology, readBipartitionsFromPaupLogFile, renameForPhylip, restoreNamesFromRenameForPhylip, restoreDupeTaxa, lineUpLeaves, removeEverythingExceptCladeAtNode, dupeSubTree, addSubTree, addLeaf, addSibLeaf, subTreeIsFullyBifurcating, nni, nni2, checkThatAllSelfNodesAreInTheTree, spr, randomSpr, inputTreesToSuperTreeDistances
     from p4.tree_optsim import __del__, deleteCStuff, _allocCStuff, setCStuff, _commonCStuff, calcLogLike, optLogLike, optTest, simulate, ancestralStateDraw, getSiteLikes
-    from p4.tree_model import data, model, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setModelThing, setModelThingsRandomly, setModelThingsNNodes, summarizeModelThingsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
+    from p4.tree_model import data, model, _checkModelThing, newComp, newRMatrix, newGdasrv, setPInvar, setRelRate, setModelComponentOnNode, setModelThingsRandomly, setModelComponentsOnNodesRandomly, setModelComponentsNNodes, summarizeModelComponentsNNodes, setTextDrawSymbol, setNGammaCat, modelSanityCheck, setEmpiricalComps
     from p4.tree_write import patristicDistanceMatrix, tPickle, writeNexus, write, writePhylip, writeNewick, _getMcmcCommandComment, draw, textDrawList, eps
     from p4.tree_fit import simsForModelFitTests, modelFitTests, compoTestUsingSimulations, bigXSquaredSubM, compStatFromCharFreqs, getEuclideanDistanceFromSelfDataToExpectedComposition
 
@@ -1182,7 +1182,7 @@ class Tree(object):
         node
             shows info about all the nodes.
         model
-            shows which modelThing number goes on which node.
+            shows which model component number goes on which node.
             (which you can also get by drawing the tree)
 
         (If you want the info about the model itself, do a

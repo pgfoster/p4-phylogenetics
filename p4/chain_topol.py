@@ -3785,7 +3785,7 @@ if True:
             for n in nodesToRemove:
                 nodesWithInternalEdges.remove(n)
 
-        # We need to check that we will not be deleting modelThings that are
+        # We need to check that we will not be deleting model components (eg comps) that are
         # only on one node.
         if pTree.model.isHet:
             nodesToRemove = []
@@ -3795,7 +3795,7 @@ if True:
                     if mp.nComps > 1:
                         for mtNum in range(mp.nComps):
                             mt = mp.comps[mtNum]
-                            # These modelThings are on only one node
+                            # These model components are on only one node
                             if mt.nNodes <= 1:
                                 for nNum in range(len(nodesWithInternalEdges)):
                                     n = nodesWithInternalEdges[nNum]
@@ -3805,7 +3805,7 @@ if True:
                     if mp.nRMatrices > 1:
                         for mtNum in range(mp.nRMatrices):
                             mt = mp.rMatrices[mtNum]
-                            # These modelThings are on only one node
+                            # These model components are on only one node
                             if mt.nNodes <= 1:
                                 for nNum in range(len(nodesWithInternalEdges)):
                                     n = nodesWithInternalEdges[nNum]
@@ -3815,7 +3815,7 @@ if True:
                     if mp.nGdasrvs > 1:
                         for mtNum in range(mp.nGdasrvs):
                             mt = mp.gdasrvs[mtNum]
-                            # These modelThings are on only one node
+                            # These model components are on only one node
                             if mt.nNodes <= 1:
                                 for nNum in range(len(nodesWithInternalEdges)):
                                     n = nodesWithInternalEdges[nNum]

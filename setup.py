@@ -51,6 +51,7 @@ likelyDirs = [ "/usr",
                "/usr/local",
                "/sw",
                "/opt/local",
+               "/opt/homebrew",
                os.path.expanduser('~'),
                os.path.join(os.path.expanduser('~'), ".linuxbrew"),
 	       "/home/linuxbrew/.linuxbrew"

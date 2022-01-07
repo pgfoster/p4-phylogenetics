@@ -283,8 +283,8 @@ class TreePartitions(object):
 
         tp = TreePartitions(inThing)
 
-    where inThing can be a file name, a Trees object, or a Tree
-    object.
+    where inThing can be a file name, a Tree instance, or a list of
+    Tree objects, or a Trees instance.
 
     If you are reading from a file (generally a bootstrap or mcmc
     output), you can skip some trees at the beginning, and optionally
@@ -300,15 +300,15 @@ class TreePartitions(object):
     All the input trees need to have the same taxa.
 
     If your input trees are in more than one place, you can read in
-    more trees with the method:: 
+    more trees with the method::
 
-        read(whatever, skip, max)  
+        read(whatever, skip, max)
 
     The default setting in p4 is to use any tree weights supplied.
     This will cause consensus trees created by p4 to differ from ones
-    created using Paup as the default in Paup is to not consider 
-    tree weights. P4s behavior can be modified to mimic Paup 
-    using the following statement before creating a TreePartitions object. :: 
+    created using Paup as the default in Paup is to not consider tree
+    weights.  P4s behavior can be modified to mimic Paup using the
+    following statement before creating a TreePartitions object.  ::
 
         var.nexus_getWeightCommandComments = 0
         tp = TreePartitions(inThing)
@@ -317,46 +317,48 @@ class TreePartitions(object):
 
         var.nexus_getWeightCommandComments = 1
 
-**Making consensus trees**
+    **Making consensus trees**
 
-P4 makes majority rule consensus trees with extra compatible splits.  It
-is like PAUP does when you do the ``contree`` command like the following::
+    P4 makes majority rule consensus trees with extra compatible
+    splits.  It is like PAUP does when you do the ``contree`` command
+    like the following::
 
-     contree all/strict=no majrule=yes percent=50 le50=yes useTreeWts=yes;
+        contree all/strict=no majrule=yes percent=50 le50=yes useTreeWts=yes;
 
-or what MrBayes does when you do a ``sumt contype=allcompat``.
+    or what MrBayes does when you do a ``sumt contype=allcompat``.
 
-Making cons trees uses this class, TreePartitions, which takes trees apart
-into their 'splits', aka components or tree bipartitions.  So if you have
-a tree file with trees from an MCMC output or from a bootstrap, you can
-make a cons tree by the following::
+    Making cons trees uses this class, TreePartitions, which takes
+    trees apart into their 'splits', aka components or tree
+    bipartitions.  So if you have a tree file with trees from an MCMC
+    output or from a bootstrap, you can make a cons tree by the
+    following::
 
-     tp = TreePartitions('yourFile')
-     t = tp.consensus()
+        tp = TreePartitions('yourFile')
+        t = tp.consensus()
 
-If you want to skip some trees at the beginning of a file (often the
-burn-in for an MCMC), or if you want to read in a maximum number of
-trees (which might be useful for convergence testing when using an
-MCMC), you do something like::
+    If you want to skip some trees at the beginning of a file (often
+    the burn-in for an MCMC), or if you want to read in a maximum
+    number of trees (which might be useful for convergence testing
+    when using an MCMC), you do something like::
 
-     tp = TreePartitions('yourFile', skip=100, max=200)
+        tp = TreePartitions('yourFile', skip=100, max=200)
 
-When you get a cons tree with the ``consensus()`` method, the support for
-splits is placed in Node.br.support attributes.  This allows some
-flexibility in how the support is displayed.  To see those support
-values when you draw the tree to the screen, you will need to transfer
-the support information to the node names, like this::
+    When you get a cons tree with the ``consensus()`` method, the
+    support for splits is placed in Node.br.support attributes.  This
+    allows some flexibility in how the support is displayed.  To see
+    those support values when you draw the tree to the screen, you
+    will need to transfer the support information to the node names,
+    like this::
 
-     for n in t.iterInternalsNoRoot():
-         n.name = "%.2f" % n.br.support # you can specify the precision
+        for n in t.iterInternalsNoRoot():
+            n.name = "%.2f" % n.br.support # you can specify the precision
 
-For nice eps drawings, you might want to put the support on the tree as
-the branch.name rather than the node.name, and you can do that with
-something like this::
+    For nice eps drawings, you might want to put the support on the
+    tree as the branch.name rather than the node.name, and you can do
+    that with something like this::
 
-     for n in t.iterInternalsNoRoot():
-         n.br.name = "%.0f" % (n.br.support * 100.) # convert to percent
-
+        for n in t.iterInternalsNoRoot():
+            n.br.name = "%.0f" % (n.br.support * 100.) # convert to percent
     """
 
     def __init__(self, inThing=None, skip=0, max=None, taxNames=None):
@@ -732,7 +734,6 @@ something like this::
         - Make split.set
         - Make split.proportion
         - Order the splits based on proportion and the string.
-        - Put biRoot counts on appropriate branches.
         """
 
         gm = ['TreePartitions.finishSplits()']
@@ -2268,3 +2269,27 @@ something like this::
     def getSplitForTaxNames(self, txNames):
         k = p4.func.getSplitKeyFromTaxNames(self.taxNames, txNames)
         return self.splitsHash.get(k)
+
+    def getProportionRange(self, verbose=False):
+        """Return (min,max) of non-leaf split proportions 
+
+        This does not look at biSplits.
+        """
+
+        theMinSupport = 1.0
+        theMaxSupport = 0.0
+
+        for s in self.splits:
+            theString = s.string
+            theStarCount = theString.count('*')
+            if theStarCount == 1 or theStarCount == self.nTax - 1:
+                continue
+            theKey = s.key
+            if s.proportion < theMinSupport:
+                theMinSupport = s.proportion
+            if s.proportion > theMaxSupport:
+                theMaxSupport = s.proportion
+
+        if verbose:
+            print(f"TreePartitions.getProportionRange() min: {theMinSupport:.4f} max: {theMaxSupport:.4f}")
+        return (theMinSupport, theMaxSupport)

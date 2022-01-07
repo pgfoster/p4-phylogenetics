@@ -196,7 +196,6 @@ void p4_simulate(p4_tree *t, p4_tree *refTree, const gsl_rng  *g)
     //                       --------
     //                  sum  2.0
 
-
     // malloc mp->charStatePicker
     for(pNum = 0; pNum < d->nParts; pNum++) {
         mp = t->model->parts[pNum];
