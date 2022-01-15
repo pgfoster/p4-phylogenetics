@@ -1666,9 +1666,23 @@ def studentsTStat(seq1, seq2):
 
 def tailAreaProbability(theStat, theDistribution, verbose=1):
     """Calculate the tail area probability of theStat.
-
+    
     That is the number of items in theDistribution that are greater
-    than or equal to theStat.  theDistribution need not be sorted."""
+    than or equal to theStat.  
+
+    Arg theDistribution need not be sorted.
+
+    This function is used by  :meth:`~p4.pnumbers.Numbers.tailAreaProbability()`.
+
+    Args:
+    theStat (float): the test quantity
+    theDistribution (list of floats): The null distribution
+    verbose (Bool): Whether to print expanded results to stdout
+    
+    Returns:
+    list: [theStat, (theMin, theMax), tailAreaProbability]
+    
+    """
 
     gm = ["tailAreaProbability()"]
     theLen = len(theDistribution)
@@ -1676,8 +1690,7 @@ def tailAreaProbability(theStat, theDistribution, verbose=1):
         try:
             float(i)
         except TypeError:
-            gm.append(
-                "Item '%s' from theDistribution does not seem to be a float." % i)
+            gm.append("Item '%s' from theDistribution does not seem to be a float." % i)
             raise P4Error(gm)
     try:
         float(theStat)
