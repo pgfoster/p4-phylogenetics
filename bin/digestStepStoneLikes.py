@@ -121,7 +121,20 @@ for k in range(K):
 
     # the delta approximation does not work well if vzr/zr^2 > 0.1
     if (vzr[k] / (zr[k] * zr[k])) > 0.1:
-       print("unreliable se: var(r_k)/r_k^2 = ", vzr[k] / (zr[k] * zr[k]), " > 0.1 for b = ", bb[k])
+       print("unreliable se: var(r_k)/r_k^2 = ", vzr[k] / (zr[k] * zr[k]), f" > 0.1 for k={k}, b=", bb[k])
+
+if 0:
+    print("%3s %12s %12s %12s %12s %12s %14s" % ("k", "b", "var(likes)", "ess", "vzr", "zr", "var(r_k)/r_k^2"))
+    for k in range(K):
+        print(f"{k:3}", end=' ')
+        print(f"{bb[k]:12.6}", end=' ')
+        print(f"{numpy.var(likes[k]):12.4f}", end=' ')
+        print(f"{ess[k]:12.4f}", end=' ')
+        print(f"{vzr[k]:12.8f}", end=' ')
+        print(f"{zr[k]:12.6f}", end=' ')
+        print(f"{vzr[k] / (zr[k] * zr[k]):14.6f}", end=' ')
+        print()
+    
 
 vmlnl = sum(vzr / (zr * zr))
 
@@ -151,5 +164,5 @@ if args.gram:
 #print(ess)
 #print(vzr)
 # print(vmlnl)
-print(lnml)
+print("log marginal likelihood:", lnml)
 
