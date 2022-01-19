@@ -105,7 +105,7 @@ void p4_newtAround(p4_tree *aTree, double epsilon, double likeDelta)
                 // post-order.
                 if(aNode->clNeedsUpdating) {
                     //printf("    update cl on node %i\n", aNode->nodeNum);
-                    p4_setConditionalLikelihoodsOfInteriorNode(aNode);
+                    p4_setConditionalLikelihoodsOfInternalNode(aNode);
                 }
 				
                 // Update cl2, if needed.  Need to do any nodes with

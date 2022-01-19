@@ -306,7 +306,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -319,7 +319,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -350,7 +350,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -380,7 +380,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -410,7 +410,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -428,7 +428,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, -1)  # "-1" means do all parts
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(n.cNode, theProposal.pNum)
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
                               theProposal.pNum, 0)
@@ -455,7 +455,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -468,7 +468,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -480,7 +480,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -501,7 +501,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -515,7 +515,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -529,7 +529,7 @@ class Chain(object):
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf:
-                    pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                         n.cNode, theProposal.pNum)
             pf.p4_partLogLike(self.propTree.cTree,
                               self.propTree.data.parts[theProposal.pNum].cPart,
@@ -617,7 +617,7 @@ class Chain(object):
                     if not n.isLeaf:
                         if n.flag:
                             for pNum in range(self.propTree.model.nParts):
-                                pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                                pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                                     n.cNode, pNum)
                         n.flag = 0
                 for pNum in range(self.propTree.model.nParts):
@@ -647,7 +647,7 @@ class Chain(object):
                 for n in self.propTree.iterPostOrder():
                     if not n.isLeaf:
                         if n.flag:
-                            pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                            pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                                 n.cNode, pNum)
                 pf.p4_partLogLike(
                     self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
@@ -677,7 +677,7 @@ class Chain(object):
                     if not n.isLeaf:
                         # Normally we would check whether n.flag is set
                         # but here they all need to recalc cond likes
-                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                        pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                             n.cNode, pNum)
                 pf.p4_partLogLike(
                     self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
@@ -775,7 +775,7 @@ class Chain(object):
                     if not n.isLeaf:
                         if n.flag:
                             for pNum in range(self.propTree.model.nParts):
-                                pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                                pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                                     n.cNode, pNum)
                         n.flag = 0
                 for pNum in range(self.propTree.model.nParts):
@@ -805,7 +805,7 @@ class Chain(object):
                     self.propTree.root.flag = 0
                     for n in self.propTree.iterPostOrder():
                         if not n.isLeaf:
-                            pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                            pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                                 n.cNode, pNum)
                     pf.p4_partLogLike(
                         self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
@@ -829,7 +829,7 @@ class Chain(object):
                         if not n.isLeaf:
                             # print "node %i" % n.nodeNum
                             if n.flag:
-                                pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                                pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                                     n.cNode, pNum)
                     pf.p4_partLogLike(
                         self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
@@ -846,7 +846,7 @@ class Chain(object):
             for pNum in range(self.propTree.model.nParts):
                 for n in self.propTree.iterPostOrder():
                     if not n.isLeaf:
-                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                        pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                             n.cNode, pNum)
                 pf.p4_partLogLike(
                     self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
@@ -860,7 +860,7 @@ class Chain(object):
             for pNum in range(self.propTree.model.nParts):
                 for n in self.propTree.iterPostOrder():
                     if not n.isLeaf:
-                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                        pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                             n.cNode, pNum)
                 pf.p4_partLogLike(
                     self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
@@ -874,7 +874,7 @@ class Chain(object):
             for pNum in range(self.propTree.model.nParts):
                 for n in self.propTree.iterPostOrder():
                     if not n.isLeaf:
-                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(n.cNode, pNum)
+                        pf.p4_setConditionalLikelihoodsOfInternalNodePart(n.cNode, pNum)
                 pf.p4_partLogLike(
                     self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
 
@@ -906,7 +906,7 @@ class Chain(object):
             for pNum in range(self.propTree.model.nParts):
                 for n in self.propTree.iterPostOrder():
                     if not n.isLeaf:
-                        pf.p4_setConditionalLikelihoodsOfInteriorNodePart(
+                        pf.p4_setConditionalLikelihoodsOfInternalNodePart(
                             n.cNode, pNum)
                 pf.p4_partLogLike(
                     self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
@@ -1576,7 +1576,7 @@ class Chain(object):
                     # for pNum in range(self.curTree.model.nParts):
                     #    for n in self.curTree.iterPostOrder():
                     #        if not n.isLeaf:
-                    #            pf.p4_setConditionalLikelihoodsOfInteriorNodePart(n.cNode, pNum)
+                    #            pf.p4_setConditionalLikelihoodsOfInternalNodePart(n.cNode, pNum)
                     #    pf.p4_partLogLike(self.curTree.cTree, self.curTree.data.parts[pNum].cPart, pNum, 0)
                 pass
 

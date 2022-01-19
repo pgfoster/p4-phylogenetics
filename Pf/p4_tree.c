@@ -878,10 +878,10 @@ double p4_treeLogLike(p4_tree *aTree, int getSiteLikes)
             aNode = aTree->nodes[i];
             if(!aNode->isLeaf) {
                 // Internal nodes
-                p4_setConditionalLikelihoodsOfInteriorNode(aNode);
+                p4_setConditionalLikelihoodsOfInternalNode(aNode);
             } else if(aNode == aTree->root && aNode->isLeaf) {
                 // Unusual; root is a leaf
-                p4_setConditionalLikelihoodsOfInteriorNode(aNode);
+                p4_setConditionalLikelihoodsOfInternalNode(aNode);
             }
         }
     }

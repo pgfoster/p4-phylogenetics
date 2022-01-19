@@ -2104,17 +2104,17 @@ pf_p4_calculateAllBigPDecksAllParts(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-pf_p4_setConditionalLikelihoodsOfInteriorNodePart(PyObject *self, PyObject *args)
+pf_p4_setConditionalLikelihoodsOfInternalNodePart(PyObject *self, PyObject *args)
 {
     p4_node  *aNode;
     int       pNum;
 
     if(!PyArg_ParseTuple(args, "li", &aNode, &pNum)) {
-        printf("Error pf_p4_setConditionalLikelihoodsOfInteriorNodePart: couldn't parse tuple\n");
+        printf("Error pf_p4_setConditionalLikelihoodsOfInternalNodePart: couldn't parse tuple\n");
         return NULL;
     }
 
-    p4_setConditionalLikelihoodsOfInteriorNodePart(aNode, pNum);
+    p4_setConditionalLikelihoodsOfInternalNodePart(aNode, pNum);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -2842,7 +2842,7 @@ static PyMethodDef pfMethods[] = {
     {"p4_partLogLike", pf_p4_partLogLike, METH_VARARGS},
     {"p4_calculateBigPDecks", pf_p4_calculateBigPDecks, METH_VARARGS},
     {"p4_calculateAllBigPDecksAllParts", pf_p4_calculateAllBigPDecksAllParts, METH_VARARGS},
-    {"p4_setConditionalLikelihoodsOfInteriorNodePart", pf_p4_setConditionalLikelihoodsOfInteriorNodePart, METH_VARARGS},
+    {"p4_setConditionalLikelihoodsOfInternalNodePart", pf_p4_setConditionalLikelihoodsOfInternalNodePart, METH_VARARGS},
     {"p4_allBOBYQAOptimize", pf_p4_allBOBYQAOptimize, METH_VARARGS},
     {"p4_newtAndBOBYQAOpt", pf_p4_newtAndBOBYQAOpt, METH_VARARGS},
     {"p4_allBrentPowellOptimize", pf_p4_allBrentPowellOptimize, METH_VARARGS},
