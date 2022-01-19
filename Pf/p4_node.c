@@ -601,6 +601,33 @@ void p4_calculatePickerDecks(p4_node *aNode)
 void p4_setConditionalLikelihoodsOfInteriorNode(p4_node *aNode)
 {
     int pNum;
+    int i,j;
+
+    printf("About to p4_setConditionalLikelihoodsOfInteriorNode() nodeNum %i\n", aNode->nodeNum);
+    printf("... node->cl %i\n",(long int)aNode->cl);
+
+    // if it is (unusually) a root that is a leaf ---
+    if(aNode == aNode->tree->root && aNode->isLeaf) {
+        if(aNode->cl == NULL) {
+            printf("node %i node->cl %i, malloc cl\n", aNode->nodeNum, (long int)aNode->cl);
+            aNode->cl = (double ****)malloc(aNode->nParts * sizeof(double ***));
+            if(!aNode->cl) {
+                printf("Failed to allocate memory for cl.\n");
+                exit(1);
+            }
+            for(i = 0; i < aNode->nParts; i++) {
+                aNode->cl[i] = (double ***)malloc(aNode->tree->model->parts[i]->nCat * sizeof(double **));
+                if(!aNode->cl[i]) {
+                    printf("Failed to allocate memory for cl[i].\n");
+                    exit(1);
+                }
+                for(j = 0; j < aNode->tree->model->parts[i]->nCat; j++) {
+                    aNode->cl[i][j] = pdmatrix(aNode->tree->model->parts[i]->dim, aNode->tree->data->parts[i]->nChar);
+                }
+            }
+        }
+    }
+            
 
     for(pNum = 0; pNum < aNode->nParts; pNum++) {	
         p4_setConditionalLikelihoodsOfInteriorNodePart(aNode, pNum);
@@ -657,8 +684,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
                             exit(1);
                         }
 #endif
-                        //printf("  Setting cl[%i] to %f\n", 
-                        //symb, aNode->leftChild->bigPDecks[pNum][rate][symb][charCode]);
+                        //printf("  Setting cl[%i] to %f\n", symb, aNode->leftChild->bigPDecks[pNum][rate][symb][charCode]);
                         aNode->cl[pNum][rate][symb][seqPos] = 
                             aNode->leftChild->bigPDecks[pNum][rate][symb][charCode];
                     }

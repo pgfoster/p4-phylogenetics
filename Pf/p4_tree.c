@@ -877,6 +877,10 @@ double p4_treeLogLike(p4_tree *aTree, int getSiteLikes)
         if(i != NO_ORDER) {
             aNode = aTree->nodes[i];
             if(!aNode->isLeaf) {
+                // Internal nodes
+                p4_setConditionalLikelihoodsOfInteriorNode(aNode);
+            } else if(aNode == aTree->root && aNode->isLeaf) {
+                // Unusual; root is a leaf
                 p4_setConditionalLikelihoodsOfInteriorNode(aNode);
             }
         }
@@ -1053,7 +1057,6 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
 
         else {  // pInvar is not part of the equation
             for(rate = 0; rate < mp->nCat; rate++) {
-                //rateLike = 0.0;
                 for(i = 0; i < mp->dim; i++) {
 
                     if ((0)) {
@@ -1069,7 +1072,6 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
                     }
 
                     like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                    //rateLike += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
 #if 0
                     printf("d comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
                            i,
@@ -1083,7 +1085,6 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
                         );
 #endif
                 }
-                //printf("seqPos %3i rate %i, rateLike=%.12f\n", seqPos, rate, rateLike);
             }
             // If gamma freqs are not the same, it should be something like this:
             //like = like * aTree->model->parts[pNum]->gammaFreqs[0];
@@ -1146,13 +1147,15 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         }
         //printf("finished rate cats: seqPos = %i, lnL = %7.4f, like = %7.4f\n", seqPos, lnL, like);
         //printf("site=%i, like=%f, logLike=%f\n", seqPos, like, log(like));
+
         lnL = lnL + (dp->patternCounts[seqPos] * log(like));
+
         //printf("  seqPos %i   patCount %i  like %f  logLike %f  timesPatCount %f     total lnL %f\n",
         //		seqPos, dp->patternCounts[seqPos], like, log(like), 
         //		dp->patternCounts[seqPos] * log(like), lnL);
 		
         if(getSiteLikes) patternLikes[seqPos] = like;
-    }
+    }  // for seqPos = 0, iterate over nPatterns
 
     if((0)) {
         if(getSiteLikes) {
