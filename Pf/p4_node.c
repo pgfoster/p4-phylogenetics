@@ -603,13 +603,9 @@ void p4_setConditionalLikelihoodsOfInternalNode(p4_node *aNode)
     int pNum;
     int i,j;
 
-    printf("About to p4_setConditionalLikelihoodsOfInternalNode() nodeNum %i\n", aNode->nodeNum);
-    printf("... node->cl %li\n",(long int)aNode->cl);
-
     // if it is (unusually) a root that is a leaf ---
     if(aNode == aNode->tree->root && aNode->isLeaf) {
         if(aNode->cl == NULL) {
-            printf("node %i node->cl %li, malloc cl\n", aNode->nodeNum, (long int)aNode->cl);
             aNode->cl = (double ****)malloc(aNode->nParts * sizeof(double ***));
             if(!aNode->cl) {
                 printf("Failed to allocate memory for cl.\n");
