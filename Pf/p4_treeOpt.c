@@ -1411,11 +1411,9 @@ void p4_newtAnd1DBrent(p4_tree *aTree)
         aTree->logLike = -LocalMin(guess1, guess2, 1.0e-5, 1.0e-10, 
                                    p4_minusLogLikeForBrent, &pram);
         diff = aTree->logLike - logLikeBefore;
-        //printf("a p4_newtAnd1DBrent().  diff=%.8f\n", diff);
-        if((1)) {
-            if(diff < -1.0e-6) {
-                printf("a p4_newtAnd1DBrent().  Likelihood got worse.  Diff %.8f\n", diff);
-            }
+        printf("a p4_newtAnd1DBrent().  diff=%.8f  %g\n", diff, diff);
+        if(diff < -1.0e-6) {
+            printf("a p4_newtAnd1DBrent().  Likelihood got worse.  Diff %.8f  %g\n", diff, diff);
         }
         else if(fabs(diff) < 1.0e-6) {
             break;
