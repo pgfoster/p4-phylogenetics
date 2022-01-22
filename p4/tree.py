@@ -584,7 +584,7 @@ class Tree(object):
             var.nexus_getAllCommandComments = 1
 
         while tok != ';':
-            #print("top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0]))
+            # print("top of loop tok '%s', isQuotedTok=%s, tok[0] is '%s'" % (tok, isQuotedTok, tok[0]))
             if tok == '(':
                 # print "Got '(': new node (%i)." % len(self.nodes)
                 if not (isAfterParen or isAfterComma):
@@ -657,11 +657,14 @@ class Tree(object):
             elif tok[0] in string.ascii_letters or tok[0] in string.digits or tok[0] in var.nexus_safeChars \
                  or isQuotedTok or tok[0] in ['_', '#', '\\', '/', '"', '(', ')']:
                 # A single-node tree, not ()aName, rather just aName.
+                # print(f"parseNewick() here ACE tok={tok}")
                 if len(self.nodes) == 0:
                     isAfterParen = 1
                 if not (isAfterParen or isAfterComma):
                     # Probably a name of an internal node.
+                    # print(f"parseNewick() here ACG tok={tok} isAfterParen={isAfterParen} len(stack)={len(stack)}")
                     if len(stack):
+                        # print(f"parseNewick() here ACI stack[-1].name={stack[-1].name}")
                         # if stack[-1].isLeaf and stack[-1].name != '(':
                         if stack[-1].name:
                             if not var.newick_allowSpacesInNames:
@@ -678,10 +681,12 @@ class Tree(object):
                                 stack[-1].name += tok
                         else:
                             # Usually this...
-                            # print "naming node %i as '%s'" % (stack[-1].nodeNum, tok)
+                            # print("parseNewick() here ACK naming node %i as '%s'" % (stack[-1].nodeNum, tok))
                             # We allow bad names on internal nodes, ie we do
                             # not nexusCheckName(tok)
                             stack[-1].name = tok
+                            # We may have just named the root node, and it may be a leaf, and perhaps should have a translation.
+                            # But we do not know that yet.  Checked at the end.
 
                     else:    # len(stack) == 0
                         if lastPopped and lastPopped.name == None:  # ()A
@@ -1029,6 +1034,12 @@ class Tree(object):
 
         if self.root.leftChild and self.root.leftChild.sibling:  # usually this
             self.root.isLeaf = 0
+        else:
+            # The root is a leaf
+            assert self.root.isLeaf
+            if self.root.name:
+                if translationHash and self.root.name in translationHash:
+                    self.root.name = translationHash[self.root.name]
 
         # Should a root on a stick be a leaf?  If it is just for
         # display purposes, then it should be ok to not be a leaf.
