@@ -1183,7 +1183,8 @@ void p4_newtAndBrentPowellOpt(p4_tree *aTree)
     int totalLikelihoodEvals = 0;
     double	*parameters = NULL;
     brent	*aBrent = NULL;
-    //int  nNewts;
+    //double logLikeBefore = 0.0;
+    //int  nNewts=0;
 
     // You can't pass variables to minusLogLikeForBrent,
     // so I have to set file-wide variables.

@@ -603,6 +603,7 @@ void p4_setConditionalLikelihoodsOfInternalNode(p4_node *aNode)
     int pNum;
     int i,j;
 
+    //printf("node %i, p4_setConditionalLikelihoodsOfInternalNode()\n", aNode->nodeNum);
     // if it is (unusually) a root that is a leaf ---
     if(aNode == aNode->tree->root && aNode->isLeaf) {
         if(aNode->cl == NULL) {

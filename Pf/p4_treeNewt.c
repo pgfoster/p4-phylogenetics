@@ -181,6 +181,8 @@ void p4_newtAround(p4_tree *aTree, double epsilon, double likeDelta)
         printf("%i p4_newtAround() logLike = %f, diff=%f, newtCount=%i\n", i, thisLogLike, diff, newtCount);
         //exit(1);
 #endif
+#if 0
+        // This message is common, so turned off for the moment.
         if(diff < -1.0e-5) {  // changed from -1.0e-6, which seemed to be too sensitive.
             printf("Bad newt.  Likelihood decreased.  Diff=%f (%g) ...continuing anyway\n", diff, diff);
             //for(nNum = 0; nNum < aTree->nNodes; nNum++) {
@@ -192,6 +194,7 @@ void p4_newtAround(p4_tree *aTree, double epsilon, double likeDelta)
 			
             //exit(1);
         }
+#endif
         if(fabs(diff) < likeDelta) {
             //if(1) {
             //printf("finished p4_newtAround() did %i loops, logLike = %f, diff=%f\n", i + 1, thisLogLike, diff);
