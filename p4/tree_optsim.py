@@ -254,10 +254,11 @@ if True:
 
         for n in self.iterNodesNoRoot():
             if n.br.len < var.BRLEN_MIN:
-                gm.append(f"All branch lengths should be greater than or equal to var.BRLEN_MIN,") 
-                gm.append("    which at the moment is {var.BRLEN_MIN}")
+                gm.append("All branch lengths should be greater than or equal to var.BRLEN_MIN,") 
+                gm.append(f"    which at the moment is {var.BRLEN_MIN}")
                 gm.append(f"Got a branch length of {n.br.len:.8f} {n.br.len:g}")
                 gm.append("Either make the branch length bigger, or lower var.BRLEN_MIN.")
+                gm.append("You could, for example, t.stripBrLens() which makes all br lens default 0.1")
                 raise P4Error(gm)
 
         self._commonCStuff()
