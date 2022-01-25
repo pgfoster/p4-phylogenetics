@@ -777,9 +777,11 @@ class Mcmc(object):
                 factor = thisSimTempMax / (math.pow(logBase, self.simTemp.nTemps - 1) - 1.0)
                 tmp = SimTempTemp()
                 tmp.temp = 0.0
+                tmp.tempNum = 0
                 self.simTemp.temps = [tmp]
                 for tNum in range(1,self.simTemp.nTemps):
                     tmp = SimTempTemp()
+                    tmp.tempNum = tNum
                     tmp.temp = (math.pow(logBase, tNum) - 1.) * factor
                     self.simTemp.temps.append(tmp)
 
@@ -2254,7 +2256,8 @@ class Mcmc(object):
                 gm.append("If we are doing simTemp, we should have SimTempTemp objects in m.simTemp.temps.")
                 raise P4Error(gm)
             if len(self.simTemp.temps) != self.simTemp.nTemps:
-                gm.append("If we are doing simTemp, we should have %i SimTempTemp objects in m.simTemp.temps." % self.simTemp)
+                gm.append("If we are doing simTemp, we should have %i SimTempTemp objects in m.simTemp.temps." % \
+                          self.simTemp)
                 raise P4Error(gm)
             for it in self.simTemp.temps:
                 if not isinstance(it, SimTempTemp):
@@ -2268,38 +2271,11 @@ class Mcmc(object):
                 tmp.occupancy = 0
                 tmp.nProposalsUp = 0
                 tmp.nAcceptedUp = 0
-                tmp.rValsUp = []
                 tmp.nProposalsDn = 0
                 tmp.nAcceptedDn = 0
-                tmp.rValsDn = []
 
             if self.simTemp_doLogTemps:
-                if self.simTemp_tempsFlob:
-                    if self.simTemp_tempsFlob != sys.stdout:
-                        assert self.simTemp_tempsFlob.closed
-                        self.simTemp_tempsFlob = open(self.simTemp_tempsLogFName, "a")
-                else:
-                    self.simTemp_tempsFlob = open(self.simTemp_tempsLogFName, "a")
-
-                # Write a header line.
-                genStr = "#     gen"
-                print(f"{genStr:>9s}", file=self.simTemp_tempsFlob, end='')
-                for tNum in range(self.simTemp.nTemps - 1):
-                    tNumStr = f"tempDiff[{tNum}]"
-                    print(f"{tNumStr:>13s}", file=self.simTemp_tempsFlob, end='')
-
-                tNumStr = f"maxTemp"
-                print(f"{tNumStr:>13s}", file=self.simTemp_tempsFlob, end='')
-
-                for tNum in range(self.simTemp.nTemps - 1):
-                    tNumStr = f"logPiDiff[{tNum}]"
-                    print(f"{tNumStr:>13s}", file=self.simTemp_tempsFlob, end='')
-                for tNum in range(self.simTemp.nTemps):
-                    tNumStr = f"occ[{tNum}]"
-                    print(f"{tNumStr:>10s}", file=self.simTemp_tempsFlob, end='')
-                print("", file=self.simTemp_tempsFlob)
-
-
+                self.simTemp.writeTempsOneLineHeader()
 
         if self.prob.polytomy:
             for pNum in range(self.tree.model.nParts):
@@ -2669,12 +2645,13 @@ class Mcmc(object):
                 if self.simTemp:
                     self.simTemp.temps[self.simTemp.curTemp].occupancy += 1
                     # if (self.gen + 1) % self.simTemp.tempChangeProposeFreq == 0:
-                    self.simTemp.proposeTempChange()
                     self.simTemp.tNums.append(self.simTemp.curTemp)
 
                     # this is a deque.  Append on the left and pop on the right
                     self.simTemp.tNumSample.appendleft(self.simTemp.curTemp)
                     self.simTemp.tNumSample.pop() # from the right, of course
+
+                    self.simTemp.proposeTempChange()
 
                     if self.simTemp_doTuneTempsAndLogPi:
                         if self.gen >= self.simTemp.tNumSampleSize:
@@ -2794,6 +2771,14 @@ class Mcmc(object):
                     doCheckPoint = True                
             
             if doCheckPoint:
+
+                if self.simTemp:
+                    fout = open(self.simTempFileName, 'a')
+                    print("-" * 50, file=fout)
+                    print("gen+1 %11i" % (self.gen + 1), file=fout)
+                    self.simTemp.writeTempsTable(flob=fout, zeroCountsAfter=True)
+                    fout.close()
+
                 # print(f"writing checkpoint at self.gen {self.gen}, gNum {gNum}")
                 self.checkPoint()
 
@@ -2816,25 +2801,7 @@ class Mcmc(object):
                     for i in range(self.nChains):
                         self.swapMatrix.append([0] * self.nChains)
 
-                if self.simTemp:
-                    fout = open(self.simTempFileName, 'a')
-                    print("-" * 50, file=fout)
-                    print("gen+1 %11i" % (self.gen + 1), file=fout)
-                    self.simTemp.dumpTemps(flob=fout)
 
-                    fout.close()
-
-                    # self.simTemp.nTempChangeProposals = 0
-                    # self.simTemp.nTempChangeAccepts = 0
-                    # self.simTemp.tNums = []
-                    for tmp in self.simTemp.temps:
-                        tmp.occupancy = 0
-                        tmp.nProposalsUp = 0
-                        tmp.nAcceptedUp = 0
-                        tmp.nProposalsDn = 0
-                        tmp.nAcceptedDn = 0
-
-                    
 
             # Reassuring pips ...
             # We want to skip the first gen of every call to run()
@@ -2889,9 +2856,6 @@ class Mcmc(object):
             treeFile.write('end;\n\n')
             treeFile.close()
 
-        if self.simTemp:
-            if self.simTemp_tempsFlob and self.simTemp_tempsFlob != sys.stdout:
-                self.simTemp_tempsFlob.close()
 
     def _writeSample(self):
         likesFile = open(self.likesFileName, 'a')
@@ -3187,6 +3151,12 @@ class Mcmc(object):
         self.logger = None
         savedLoggerPrinter = self.loggerPrinter
         self.loggerPrinter = None
+
+        #print(f"checkPoint() self.simTemp_tempsFlob is {self.simTemp_tempsFlob}", end=' ')
+        #print(f"type {type(self.simTemp_tempsFlob)}")  # type <class '_io.TextIOWrapper'>
+        # This does not pickle
+        self.simTemp_tempsFlob = None
+
 
         # gsl_rng state
         the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state

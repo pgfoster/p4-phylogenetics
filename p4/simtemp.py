@@ -16,10 +16,19 @@ class SimTempTemp(object):
         self.nProposalsDn = 0
         self.nAcceptedDn = 0
 
-        self.short_nProposalsUp = 0
-        self.short_nAcceptedUp = 0
+        # self.short_nProposalsUp = 0
+        # self.short_nAcceptedUp = 0
         #self.short_nProposalsDn = 0
         #self.short_nAcceptedDn = 0
+
+        self.asf = 0.1           # adjust scale factor
+        self.asf_min = 0.01
+        self.prevLogOcc = None
+
+
+    def dump(self):
+        print(f"SimTempTemp dump()  temp num {self.tempNum}")
+        print(f"    temp: {self.temp}  tempDiff {self.tempDiff} logPiDiff {self.logPiDiff}")
 
 class SimTemp(object):
     def __init__(self, mcmc):
@@ -33,6 +42,7 @@ class SimTemp(object):
         # self.tempChangeProposeFreq = 1
         self.tNumSampleSize = None
         self.tNumSample = None
+
 
     def setTempDiffsFromTemps(self):
         for tNum in range(self.nTemps - 1):
@@ -49,13 +59,14 @@ class SimTemp(object):
             assert tmpA.tempDiff > 0.0
             tmpB.temp = tmpA.temp + tmpA.tempDiff
 
-    def dumpTemps(self, flob=sys.stdout, zeroCountsAfter=True):
+    def writeTempsTable(self, flob=sys.stdout, zeroCountsAfter=True):
         """Make a nice table of SimTempTemp objects
 
         Arg flob should be an open file-like object.
         """
 
-        #print(f"Temperatures at gen {self.mcmc.gen}")
+        totalOccs = sum([tmp.occupancy for tmp in self.temps])
+        print(f"Temperatures at gen {self.mcmc.gen}, {totalOccs} samples", file=flob)
         print("%4s %10s %10s %12s %10s %10s %10s %10s %10s" % (
             "indx", "temp", "tempDiff", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "nPropsDn", "accptDn"), 
               file=flob)
@@ -86,7 +97,8 @@ class SimTemp(object):
                     tmp.logPiDiff,
                     tmp.occupancy), file=flob, end='')
                 if tmp.nProposalsUp:
-                    print(" %10i %10.4f" % (tmp.nProposalsUp, (tmp.nAcceptedUp/tmp.nProposalsUp)), file=flob, end='')
+                    print(" %10i %10.4f" % (tmp.nProposalsUp, (tmp.nAcceptedUp/tmp.nProposalsUp)), 
+                          file=flob, end='')
                 else:  # don't divide by zero
                     print(" %10s %10s" % ("-", "-"), file=flob, end='')
 
@@ -94,7 +106,8 @@ class SimTemp(object):
                 print(" %10s %10s" % ("-", "-"), file=flob, end='')
             else:
                 if tmp.nProposalsDn:
-                    print(" %10i %10.4f" % (tmp.nProposalsDn, (tmp.nAcceptedDn/tmp.nProposalsDn)), file=flob, end='')
+                    print(" %10i %10.4f" % (tmp.nProposalsDn, (tmp.nAcceptedDn/tmp.nProposalsDn)), 
+                          file=flob, end='')
                 else:  # don't divide by zero
                     print(" %10s %10s" % ("-", "-"), file=flob, end='')
             print(file=flob)
@@ -108,101 +121,254 @@ class SimTemp(object):
                 tmp.nProposalsDn = 0
                 tmp.nAcceptedDn = 0
 
-    def dumpTempsOneLine(self, flob=sys.stdout, zeroCountsAfter=True):
+    def writeTempsOneLineHeader(self):
+        self.mcmc.simTemp_tempsFlob = open(self.mcmc.simTemp_tempsLogFName, "a")
+
+        # Write a header line.
+        genStr = "     gen"
+        print(f"{genStr:>9s}", file=self.mcmc.simTemp_tempsFlob, end='')
+
+        for tNum in range(self.nTemps - 1):
+            tNumStr = f"tempDiff[{tNum}]"
+            print(f"{tNumStr:>13s}", file=self.mcmc.simTemp_tempsFlob, end='')
+
+        for tNum in range(self.nTemps):
+            tNumStr = f"temp[{tNum}]"
+            print(f"{tNumStr:>13s}", file=self.mcmc.simTemp_tempsFlob, end='')
+
+        for tNum in range(self.nTemps - 1):
+            tNumStr = f"logPiDiff[{tNum}]"
+            print(f"{tNumStr:>13s}", file=self.mcmc.simTemp_tempsFlob, end='')
+
+        for tNum in range(self.nTemps):
+            tNumStr = f"logocc[{tNum}]"
+            print(f"{tNumStr:>12s}", file=self.mcmc.simTemp_tempsFlob, end='')
+
+        for tNum in range(self.nTemps):
+            tNumStr = f"occ[{tNum}]"
+            print(f"{tNumStr:>12s}", file=self.mcmc.simTemp_tempsFlob, end='')
+
+        print("", file=self.mcmc.simTemp_tempsFlob)
+
+        self.mcmc.simTemp_tempsFlob.close()
+        self.mcmc.simTemp_tempsFlob = None
+
+
+    def writeTempsOneLine(self, flob, log_occs, occs):
         """Single-line output of SimTempTemp objects
 
         Arg flob should be an open file-like object.
         """
 
-        #print(f"Temperatures at gen {self.mcmc.gen}")
-        print("%4s %10s %10s %12s %10s %10s %10s %10s %10s" % (
-            "indx", "temp", "tempDiff", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "nPropsDn", "accptDn"), 
-              file=flob)
- 
-        for tNum, tmp in enumerate(self.temps):
+        print(f"{self.mcmc.gen:9d}", file=flob, end='')
+        for tmp in self.temps[:-1]:
+            print(f"{tmp.tempDiff:13.5f}", file=flob, end='')
+        for tmp in self.temps:
+            print(f"{tmp.temp:13.5f}", file=flob, end='')
+        for tmp in self.temps[:-1]:
+            print(f"{tmp.logPiDiff:13.3f}", file=flob, end='')
+        for locc in log_occs:
+            print(f"{locc:12.3f}", file=flob, end='')
+        for occ in occs:
+            print(f"{occ:12.3f}", file=flob, end='')
 
-            # If it is the hottest temp, don't print tempDiff or logPiDiff
-            if tNum == self.nTemps - 1:
-                print("%4s %10.3f %10s %12s %10i" % (
-                    tNum,
-                    tmp.temp, 
-                    "-",       # tempDiff
-                    "-",       # logPiDiff 
-                    tmp.occupancy), file=flob, end='')
-                # No proposals up
-                print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            else:
-                # print(f"tmp.tempNum, {tmp.tempNum}")
-                # print(f"tmp.temp, {tmp.temp}")
-                # print(f"tmp.tempDiff, {tmp.tempDiff}")
-                # print(f"tmp.logPiDiff, {tmp.logPiDiff}")
-                
+        # Accepted rate -- maybe later.
+        # for tmp in self.temps[:-1]:
+        #     if tmp.nProposalsUp:
+        #         acc = tmp.nAcceptedUp/tmp.nProposalsUp
+        #         print(f"{acc:4.2f}", file=flob, end='')
+        #     else:
+        #         print(f"{"-":4s}", file=flob, end='')                    
 
-                print("%4s %10.3f %10.3f %12.4f %10i" % (
-                    tNum,
-                    tmp.temp,
-                    tmp.tempDiff,
-                    tmp.logPiDiff,
-                    tmp.occupancy), file=flob, end='')
-                if tmp.nProposalsUp:
-                    print(" %10i %10.4f" % (tmp.nProposalsUp, (tmp.nAcceptedUp/tmp.nProposalsUp)), file=flob, end='')
-                else:  # don't divide by zero
-                    print(" %10s %10s" % ("-", "-"), file=flob, end='')
-
-            if tNum == 0:  # no props down
-                print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            else:
-                if tmp.nProposalsDn:
-                    print(" %10i %10.4f" % (tmp.nProposalsDn, (tmp.nAcceptedDn/tmp.nProposalsDn)), file=flob, end='')
-                else:  # don't divide by zero
-                    print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            print(file=flob)
+        print("", file=flob, end='\n')
 
 
     def tuneTempsAndLogPi(self):
+        if self.mcmc.simTemp_doLogTemps:
+            self.mcmc.simTemp_tempsFlob = open(self.mcmc.simTemp_tempsLogFName, "a")
+
+        target = self.tNumSampleSize / self.nTemps
+        occs = [self.tNumSample.count(tNum)/target for tNum in range(self.nTemps)]
+        logOccs = []
+        totalCount = 0
+        for tNum in range(self.nTemps):
+            theCount = self.tNumSample.count(tNum)
+            totalCount += theCount
+            if theCount == 0:
+                logOcc = math.log(1/target)
+            else:
+                logOcc = math.log(theCount/target)
+            logOccs.append(logOcc)
+        #print("logOccs: ", [f"{it:.2f}" for it in logOccs], f"totalCount: {totalCount}",
+        #      [f"{it}" for it in occs])
+
+        if self.mcmc.simTemp_doLogTemps:
+            self.writeTempsOneLine(self.mcmc.simTemp_tempsFlob, logOccs, occs)
+
+        if 1:
+            # Adjust logPiDiff values based on hot occupancy
+            # self.ho_asf is "hot occs adjust scale factor" 
+            logHotOcc = logOccs[-1]
+            hotTemp = self.temps[-1]
+            prev = hotTemp.prevLogOcc
+
+            if prev:
+                sameSign = False        
+                if logHotOcc > 0.0 and prev > 0.0:
+                    sameSign = True
+                elif logHotOcc < 0.0 and prev < 0.0:
+                    sameSign = True
+                else:
+                    sameSign = False
+                if not sameSign:
+                    if hotTemp.asf > hotTemp.asf_min:
+                        hotTemp.asf *= 0.5
+                        print(f"# logHotOccs changed sign, decrease asf to {hotTemp.asf}",
+                              file=self.mcmc.simTemp_tempsFlob)
+
+            hotTemp.prevLogOcc = logOccs[-1]
+
+            myLimit = 0.69
+            fact = logOccs[-1]
+            if fact > myLimit:
+                fact = myLimit
+            elif fact < -myLimit:
+                fact = -myLimit
+            fact *= hotTemp.asf
+            fact = math.exp(fact)
+
+            for tNum in range(self.nTemps - 1):
+                tmp = self.temps[tNum]
+                tmp.logPiDiff *= fact
+
+
+            if 0:
+                if logOccs[-1] < 0.0:
+                    print(f"# &-  hotOccs too low", file=self.mcmc.simTemp_tempsFlob, end=' ')
+                else:
+                    print(f"# &+  hotOccs too high", file=self.mcmc.simTemp_tempsFlob, end=' ')
+                print(f"{logOccs[-1]:4.2f}; multiply all logPiDiffs by factor {fact:4.2f}",
+                      file=self.mcmc.simTemp_tempsFlob)
+
+        if 1 and self.nTemps > 2:
+
+            #   - If the cold occupancy is too high, raise all middle
+            #     temps (including the highest) 
+            #     - so this implies that the max temp is not fixed
+            #   - If the cold occupancy is too low, lower all the middle 
+            #     temps (including the highest)
+
+            if 1:
+                # This adjusts the first tempDiff, so it affects all
+                # the temps (except the coldest of course, which is
+                # zero)
+                thisLogOcc = logOccs[0]
+                coldTemp = self.temps[0]
+                prev = coldTemp.prevLogOcc
+
+                if prev:
+                    sameSign = False        
+                    if thisLogOcc > 0.0 and prev > 0.0:
+                        sameSign = True
+                    elif thisLogOcc < 0.0 and prev < 0.0:
+                        sameSign = True
+                    else:
+                        sameSign = False
+                    # if not sameSign:
+                    #     if coldTemp.asf > coldTemp.asf_min:
+                    #         coldTemp.asf *= 0.5
+                    #         print(f"# coldTempOccs changed sign, decrease asf to {coldTemp.asf}",
+                    #               file=self.mcmc.simTemp_tempsFlob)
+
+                coldTemp.prevLogOcc = logOccs[0]
+
+                myLimit = 0.69
+                fact = logOccs[0]
+                if fact > myLimit:
+                    fact = myLimit
+                elif fact < -myLimit:
+                    fact = -myLimit
+                fact *= coldTemp.asf
+                fact = math.exp(fact)
+
+                coldTemp.tempDiff *= fact
+                self.setTempsFromTempDiffs()
+
+                if 1:
+                    if logOccs[0] < 0.0:
+                        print(f"# &-  coldOccs too low", file=self.mcmc.simTemp_tempsFlob, end=' ')
+                    else:
+                        print(f"# &+  coldOccs too high", file=self.mcmc.simTemp_tempsFlob, end=' ')
+                    print(f"{logOccs[0]:4.2f}; multiply tempDiff[0] by factor {fact:7.5f}",
+                          file=self.mcmc.simTemp_tempsFlob)
+
+
+            # - If middle occupancies are off, adjust the temperature individually
+            #   - If occupancy is too high, lower the temperature (by lowering the nMinusOne tempDiff)
+            #   - if occupancy is too low, raise the temperature  (by raising the nMinusOne tempDiff)
+
+            if 0:
+                # This adjusts the middle temperatures
+                for tNum in range(1, self.nTemps - 1):
+                    thisLogOcc = logOccs[tNum]
+                    thisTemp = self.temps[tNum]
+                    #nMinusOneTemp = self.temps[tNum - 1]
+                    prev = thisTemp.prevLogOcc
+
+                    thisTemp.prevLogOcc = logOccs[tNum]
+
+                    myLimit = 0.69
+                    fact = logOccs[tNum]
+                    if fact > myLimit:
+                        fact = myLimit
+                    elif fact < -myLimit:
+                        fact = -myLimit
+                    fact *= thisTemp.asf
+                    fact = math.exp(fact)
+
+                    thisTemp.temp *= fact
+                    # Do all setTempsFromTempDiffs() below, at the end.
+                    ## self.setTempsFromTempDiffs()
+
+                    if 1:
+                        if thisLogOcc < 0.0:
+                            print(f"# &-  occs[{tNum}] too low", file=self.mcmc.simTemp_tempsFlob, end=' ')
+                        else:
+                            print(f"# &+  occs[{tNum}] too high", file=self.mcmc.simTemp_tempsFlob, end=' ')
+                        
+                        print(f"logOccs[{tNum}]:{thisLogOcc:5.3f}; multiply nMinusOne temp by {fact:7.5f}",
+                              file=self.mcmc.simTemp_tempsFlob)
+                self.setTempDiffsFromTemps()
+
+
+        if self.mcmc.simTemp_doLogTemps:
+            self.mcmc.simTemp_tempsFlob.close()
+
+    def tuneTempsAndLogPiX(self):
 
         # We get the occupancy sample from self.tNumSample
         # We get the acceptance up from tmp.short_nProposalsUp and tmp.short_nAcceptedUp
 
         target = self.tNumSampleSize / self.nTemps
         occs = [self.tNumSample.count(tNum)/target for tNum in range(self.nTemps)]
-        # print("occs ", occs)
-
 
         # print(f"gen:{self.mcmc.gen} props:{self.temps[0].short_nProposalsUp}", end=" ")
         # print("accepts:{self.temps[0].short_nAcceptedUp}", end=" ")
 
-        acceptsUp = []
-        for tmp in self.temps[:-1]:
-            if tmp.short_nProposalsUp > (target * 0.5):
-                aU = tmp.short_nAcceptedUp / tmp.short_nProposalsUp
-                acceptsUp.append(aU)
-            else:
-                acceptsUp.append(None)
-            tmp.short_nAcceptedUp = 0
-            tmp.short_nProposalsUp = 0
-        #print("acceptsUp: ", acceptsUp)
+        # acceptsUp = []
+        # for tmp in self.temps[:-1]:
+        #     if tmp.short_nProposalsUp > (target * 0.5):
+        #         aU = tmp.short_nAcceptedUp / tmp.short_nProposalsUp
+        #         acceptsUp.append(aU)
+        #     else:
+        #         acceptsUp.append(None)
+        #     tmp.short_nAcceptedUp = 0
+        #     tmp.short_nProposalsUp = 0
+        # #print("acceptsUp: ", acceptsUp)
 
 
         if self.mcmc.simTemp_doLogTemps:
-            print(f"{self.mcmc.gen:9d}", file=self.mcmc.simTemp_tempsFlob, end='')
-            for tmp in self.temps[:-1]:
-                print(f"{tmp.tempDiff:13.2f}", file=self.mcmc.simTemp_tempsFlob, end='')
-            print(f"{self.temps[-1].temp:13.2f}", file=self.mcmc.simTemp_tempsFlob, end='')
-            for tmp in self.temps[:-1]:
-                print(f"{tmp.logPiDiff:13.3f}", file=self.mcmc.simTemp_tempsFlob, end='')
-            for occ in occs:
-                print(f"{occ:10.3f}", file=self.mcmc.simTemp_tempsFlob, end='')
-            
-            # for tmp in self.temps[:-1]:
-            #     if tmp.nProposalsUp:
-            #         acc = tmp.nAcceptedUp/tmp.nProposalsUp
-            #         print(f"{acc:4.2f}", file=self.mcmc.simTemp_tempsFlob, end='')
-            #     else:
-            #         print(f"{"-":4s}", file=self.mcmc.simTemp_tempsFlob, end='')                    
-
-            print("", file=self.mcmc.simTemp_tempsFlob, end='\n')
-
+            self.writeTempsOneLine(self.mcmc.simTemp_tempsFlob, occs)
 
         # Rules:
         # - if the hot occupancy is too high, raise the logPiDiff
@@ -223,6 +389,7 @@ class SimTemp(object):
         # Now in detail ---
         # - if the hot occupancy is too high, raise the logPiDiff
         # - if the hot occupancy is  too low, lower the logPiDiff
+        
         fudge = 0.1
         factor = occs[-1]
         if factor > 2.0:
@@ -237,10 +404,12 @@ class SimTemp(object):
             old = tmp.logPiDiff
             tmp.logPiDiff *= factor
         if 1:
-            if occs[-1] < 1.0:
-                print(f"&-  hotOccs too low {occs[-1]:4.2f}; multiply all logPiDiffs by factor {factor:4.2f}")
+            if logOccs[-1] < 0.0:
+                print(f"# &-  hotOccs too low  {occs[-1]:4.2f}; multiply all logPiDiffs by factor {factor:4.2f}",
+                      file=self.mcmc.simTemp_tempsFlob)
             else:
-                print(f"&+  hotOccs too high{occs[-1]:4.2f}; multiply all logPiDiffs by factor {factor:4.2f}")
+                print(f"# &+  hotOccs too high{occs[-1]:4.2f}; multiply all logPiDiffs by factor {factor:4.2f}",
+                      file=self.mcmc.simTemp_tempsFlob)
 
         # TODO
         # If the acceptance is too high, raise the temp
@@ -416,10 +585,10 @@ class SimTemp(object):
         self.nTempChangeProposals += 1
         if j > i:
             tmpI.nProposalsUp += 1
-            tmpI.short_nProposalsUp += 1
+            # tmpI.short_nProposalsUp += 1
             if acceptMove:
                 tmpI.nAcceptedUp += 1
-                tmpI.short_nAcceptedUp += 1
+                # tmpI.short_nAcceptedUp += 1
         else:
             tmpI.nProposalsDn += 1
             if acceptMove:
