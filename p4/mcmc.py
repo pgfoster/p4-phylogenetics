@@ -2477,7 +2477,8 @@ class Mcmc(object):
 
             self.startMinusOne = self.gen
         else:
-            self.logger.info("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+            self.logger.info("Starting the MCMC %s run %i" % (
+                (self.constraints and "(with constraints)" or ""), self.runNum))
             if self.simTemp:
                 self.logger.info("Using simulated tempering MCMC, with %i temperatures" % (
                     self.simTemp.nTemps))
@@ -2493,7 +2494,8 @@ class Mcmc(object):
                 if self.simTemp:
                     print("Using simulated tempering MCMC, with %i temperatures" % (
                         self.simTemp.nTemps))
-                print("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+                print("Starting the MCMC %s run %i" % (
+                    (self.constraints and "(with constraints)" or ""), self.runNum))
                 print("Set to do %i generations." % nGensToDo)
 
             if self.writePrams:
@@ -2534,7 +2536,7 @@ class Mcmc(object):
             if self.checkPointInterval:
                 print("CheckPoints written every %i." % self.checkPointInterval)
             else:
-                print("CheckPoints will not be written")
+                print("CheckPoints are not scheduled to be written")
             if nGensToDo <= 20000:
                 print("One dot is 100 generations.")
             else:
@@ -3166,9 +3168,9 @@ class Mcmc(object):
 
     def checkPoint(self):
 
+
         if 0:
-            for chNum in range(self.nChains):
-                ch = self.chains[chNum]
+            for chNum,ch in enumerate(self.chains):
                 print("chain %i ==================" % chNum)
                 ch.curTree.summarizeModelComponentsNNodes()
 
@@ -3203,8 +3205,7 @@ class Mcmc(object):
         if self.simulate:
             savedSimData = self.simTree.data
             self.simTree.data = None
-        for chNum in range(self.nChains):
-            ch = self.chains[chNum]
+        for ch in self.chains:
             ch.curTree.data = None
             ch.curTree.savedLogLike = ch.curTree.logLike
             ch.propTree.data = None
@@ -3221,8 +3222,7 @@ class Mcmc(object):
         if self.simulate:
             self.simTree.data = savedSimData
             self.simTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
-        for chNum in range(self.nChains):
-            ch = self.chains[chNum]
+        for chNum,ch in enumerate(self.chains):
             ch.curTree.data = savedData
             #print("After restoring data", end=' ')
             ch.curTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
@@ -3253,8 +3253,7 @@ class Mcmc(object):
         #theCopy.treePartitions._finishSplits()
         theCopy.likesFile = None
         theCopy.treeFile = None
-        for chNum in range(theCopy.nChains):
-            ch = theCopy.chains[chNum]
+        for ch in theCopy.chains:
             ch.curTree.deleteCStuff()
             #ch.curTree.data = None
             ch.propTree.deleteCStuff()
