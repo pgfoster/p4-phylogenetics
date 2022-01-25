@@ -783,7 +783,7 @@ class Mcmc(object):
                     tmp.temp = (math.pow(logBase, tNum) - 1.) * factor
                     self.simTemp.temps.append(tmp)
 
-            self.simTemp.tNumSampleSize = 1000 * self.simTemp.nTemps
+            self.simTemp.tNumSampleSize = var.mcmc_simTemp_tNumSampleSizePerTemp * self.simTemp.nTemps
             self.simTemp.setTempDiffsFromTemps()
 
             if 1:

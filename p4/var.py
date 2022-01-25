@@ -319,6 +319,14 @@ class Var(object):
         # chain in a simTemp MCMC.  Samples taken only if f"{mcmc.gen
         # + 1}" ends with one of these.
         self.mcmc_simTemp_thinning = ['0']
+
+        # This next one is for the sample size of the temperature
+        # numbers for simulated tempering, used for on-the-fly tuning.
+        # This number is multiplied by the number of temperature
+        # levels, so that runs with more temperatures have bigger
+        # samples.
+        self.mcmc_simTemp_tNumSampleSizePerTemp = 100
+
         self.mcmc_logTunings = False  # verbose logging of on-the-fly changes to tunings 
         self.mcmc_doCheck_PIVEC_MIN_etc = True  # check PIVEC_MIN, RATE_MIN, BRLEN_MIN, GAMMA_SHAPE_MIN in Mcmc
 
