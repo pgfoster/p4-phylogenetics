@@ -688,6 +688,12 @@ class Mcmc(object):
                     gm.append("The tree has a trifurcating root, but otherwise is not fully bifurcating.")
                     raise P4Error(gm)
                 self.isBiRoot = False
+            elif rootNChildren == 1:
+                ret = aTree.isFullyBifurcating(verbose=True, biRoot=False)
+                if not ret:
+                    gm.append("The tree has a monofurcating root, but otherwise is not fully bifurcating.")
+                    raise P4Error(gm)
+                self.isBiRoot = False
             else:
                 gm.append("Mcmc only allows trifurcating or bifurcating roots.  This tree root has %i children" % rootNChildren)
                 raise P4Error(gm)
