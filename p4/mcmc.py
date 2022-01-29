@@ -874,6 +874,14 @@ class Mcmc(object):
         self.hypersFileName = "mcmc_hypers_%i" % runNum
         self.simTempFileName = "mcmc_simTemp_%i" % runNum
         self.ssLikesFileName = "mcmc_ssLikes_%i" % runNum
+
+        self.likesFile = None
+        self.treeFile = None
+        self.simFile = None
+        self.pramsFile = None
+        self.hypersFile = None
+        self.ssLikesFile = None
+
         self.writePrams = writePrams
         self.writeHypers = True
         self.coldChainNum = -1
@@ -2161,41 +2169,40 @@ class Mcmc(object):
             raise P4Error(gm)
 
         # Write the preamble for the trees outfile.
-        treeFile = open(self.treeFileName, 'w')
-        treeFile.write('#nexus\n\n')
-        treeFile.write('begin taxa;\n')
-        treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
-        treeFile.write('  taxlabels')
+        self.treeFile = open(self.treeFileName, 'w')
+        self.treeFile.write('#nexus\n\n')
+        self.treeFile.write('begin taxa;\n')
+        self.treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
+        self.treeFile.write('  taxlabels')
         for tN in self.tree.taxNames:
-            treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
-        treeFile.write(';\nend;\n\n')
+            self.treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
+        self.treeFile.write(';\nend;\n\n')
 
-        treeFile.write('begin trees;\n')
+        self.treeFile.write('begin trees;\n')
         self.translationHash = {}
         i = 1
         for tName in self.tree.taxNames:
             self.translationHash[tName] = i
             i += 1
 
-        treeFile.write('  translate\n')
+        self.treeFile.write('  translate\n')
         for i in range(self.tree.nTax - 1):
-            treeFile.write('    %3i %s,\n' % (
+            self.treeFile.write('    %3i %s,\n' % (
                 i + 1, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[i])))
-        treeFile.write('    %3i %s\n' % (
+        self.treeFile.write('    %3i %s\n' % (
             self.tree.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
-        treeFile.write('  ;\n')
+        self.treeFile.write('  ;\n')
 
         # write the models comment
         if self.tree.model.isHet:
             if (not self.tree.model.parts[0].ndch2) or (self.tree.model.parts[0].ndch2 and self.tree.model.parts[0].ndch2_writeComps):
-                treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
+                self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
                 for pNum in range(self.tree.model.nParts):
-                    treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
-                    treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
-                    treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
-                treeFile.write(']\n')
-        treeFile.write('  [Tree numbers are gen+1]\nend;\n')
-        treeFile.close()
+                    self.treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
+                    self.treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
+                    self.treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
+                self.treeFile.write(']\n')
+        self.treeFile.write('  [Tree numbers are gen+1]\nend;\n')
 
         if 0:
             self.prob.dump()
@@ -2412,6 +2419,10 @@ class Mcmc(object):
         if writeSamples and not self.doSteppingStone:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
+            if self.treeFile:
+                if not self.treeFile.closed:
+                    self.treeFile.close()
+
             f2 = open(self.treeFileName, 'r+b')
             # print(f2, type(f2), f2.tell())   
             # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
@@ -2480,19 +2491,17 @@ class Mcmc(object):
                         print("There are no free prams in the model, so I am turning writePrams off.")
                     self.writePrams = False
                 else:
-                    pramsFile = open(self.pramsFileName, 'w')
-                    self.chains[0].curTree.model.writePramsProfile(pramsFile, self.runNum)
-                    pramsFile.write("genPlus1")
-                    self.chains[0].curTree.model.writePramsHeaderLine(pramsFile)
-                    pramsFile.close()
+                    self.pramsFile = open(self.pramsFileName, 'w')
+                    self.chains[0].curTree.model.writePramsProfile(self.pramsFile, self.runNum)
+                    self.pramsFile.write("genPlus1")
+                    self.chains[0].curTree.model.writePramsHeaderLine(self.pramsFile)
             if self.writeHypers:
                 if not self.tree.model.parts[0].ndch2:     # and therefore all model parts, this week
                     self.writeHypers = False
                 else:
-                    hypersFile = open(self.hypersFileName, 'w')
-                    hypersFile.write('genPlus1')
-                    self.chains[0].curTree.model.writeHypersHeaderLine(hypersFile)
-                    hypersFile.close()
+                    self.hypersFile = open(self.hypersFileName, 'w')
+                    self.hypersFile.write('genPlus1')
+                    self.chains[0].curTree.model.writeHypersHeaderLine(self.hypersFile)
 
         if not writeSamples:
             self.logger.info("Mcmc.run() arg 'writeSamples' is off, so samples are not being written")
@@ -2500,6 +2509,8 @@ class Mcmc(object):
             self.logger.info("Mcmc.run() arg 'equiProbableProposals' is turned on")
         if self.doSteppingStone:
             self.logger.info("Mcmc.run() doSteppingStone is turned on")
+            self.ssLikesFile = open(self.ssLikesFileName, 'a')
+
 
 
         if verbose:
@@ -2687,9 +2698,7 @@ class Mcmc(object):
             
             if doWrite and self.doSteppingStone:
                 if writeSamples:
-                    ssLikesFile = open(self.ssLikesFileName, 'a')
-                    ssLikesFile.write('%f\n' % self.chains[self.coldChainNum].curTree.logLike)
-                    ssLikesFile.close()
+                    self.ssLikesFile.write('%f\n' % self.chains[self.coldChainNum].curTree.logLike)
 
 
 
@@ -2852,15 +2861,32 @@ class Mcmc(object):
         if writeSamples and not self.doSteppingStone:
             # Write "end;" regardless of writeSamples, or else subsequent attempts to remove it will fail.
             # No, that does not work for simTemp trialAndError.  Why not?
-            treeFile = open(self.treeFileName, 'a')
-            treeFile.write('end;\n\n')
-            treeFile.close()
+            if not self.treeFile or self.treeFile.closed:
+                self.treeFile = open(self.treeFileName, 'a')
+            self.treeFile.write('end;\n\n')
+
+        if self.likesFile:
+            self.likesFile.close()
+        if self.treeFile:
+            self.treeFile.close()
+        if self.simFile:
+            self.simFile.close()
+        if self.pramsFile:
+            self.pramsFile.close()
+        if self.hypersFile:
+            self.hypersFile.close()
+        if self.ssLikesFile:
+            self.ssLikesFile.close()
+
+
 
 
     def _writeSample(self):
-        likesFile = open(self.likesFileName, 'a')
-        likesFile.write('%11i %f\n' % (self.gen + 1, self.chains[self.coldChainNum].curTree.logLike))
-        likesFile.close()
+        try:
+            self.likesFile.write('%11i %f\n' % (self.gen + 1, self.chains[self.coldChainNum].curTree.logLike))
+        except (AttributeError, ValueError):
+            self.likesFile = open(self.likesFileName, 'a')
+            self.likesFile.write('%11i %f\n' % (self.gen + 1, self.chains[self.coldChainNum].curTree.logLike))
 
         # Check the likelihood every write interval
         if 0:
@@ -2877,40 +2903,45 @@ class Mcmc(object):
             else:
                 print()
 
-
-        treeFile = open(self.treeFileName, 'a')
-        treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
+        try:
+            self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
+        except (AttributeError, ValueError):
+            self.treeFile = open(self.treeFileName, 'a')
+            self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
+        self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
         if self.tree.model.parts[0].ndch2:     # and therefore all model parts
             if self.tree.model.parts[0].ndch2_writeComps:
-                self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
+                self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                               withTranslation=1,
                                                               translationHash=self.translationHash,
                                                               doMcmcCommandComments=True)
             else:
-                self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
+                self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                               withTranslation=1,
                                                               translationHash=self.translationHash,
                                                               doMcmcCommandComments=False)
 
         else:
-            self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
+            self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                           withTranslation=1,
                                                           translationHash=self.translationHash,
                                                           doMcmcCommandComments=self.tree.model.isHet)
-        treeFile.close()
 
         if self.writePrams:
-            pramsFile = open(self.pramsFileName, 'a')
-            #pramsFile.write("%12i " % (self.gen + 1))
-            pramsFile.write("%12i" % (self.gen + 1))
-            self.chains[self.coldChainNum].curTree.model.writePramsLine(pramsFile)
-            pramsFile.close()
+            try:
+                self.pramsFile.write("%12i" % (self.gen + 1))
+            except (AttributeError, ValueError):
+                self.pramsFile = open(self.pramsFileName, 'a')
+                self.pramsFile.write("%12i" % (self.gen + 1))
+            self.chains[self.coldChainNum].curTree.model.writePramsLine(self.pramsFile)
 
         if self.writeHypers:
-            hypersFile = open(self.hypersFileName, 'a')
-            hypersFile.write("%12i" % (self.gen + 1))
-            self.chains[self.coldChainNum].curTree.model.writeHypersLine(hypersFile)
-            hypersFile.close()
+            try:
+                self.hypersFile.write("%12i" % (self.gen + 1))
+            except (AttributeError, ValueError):
+                self.hypersFile = open(self.hypersFileName, 'a')
+                self.hypersFile.write("%12i" % (self.gen + 1))
+            self.chains[self.coldChainNum].curTree.model.writeHypersLine(self.hypersFile)
 
 
 
@@ -3053,52 +3084,52 @@ class Mcmc(object):
         return deltaTime
 
     def _writeSimFileHeader(self, curTree):
-        simFile = open(self.simFileName, 'a')
+        self.simFile = open(self.simFileName, 'a')
 
-        simFile.write(" genPlus1")
+        self.simFile.write(" genPlus1")
         # If self.simulate contains a 1, do unconstrained log like
         if 1 & self.simulate:
             for pNum in range(self.simTree.data.nParts):
-                simFile.write(' uncLike%i' % pNum)
+                self.simFile.write(' uncLike%i' % pNum)
         if 2 & self.simulate:  # If self.simulate contains a 2, do bigX^2
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' bigXSq%i' % pNum)
+                self.simFile.write(' bigXSq%i' % pNum)
         # If self.simulate contains a 4, do meanNCharPerSite
         if 4 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' meanNCharsPerSite%i' % pNum)
+                self.simFile.write(' meanNCharsPerSite%i' % pNum)
         # If self.simulate contains an 8, do c_m, the compStatFromCharFreqs
         if 8 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' c_mSim%i  c_mOrig%i' % (pNum, pNum))
+                self.simFile.write(' c_mSim%i  c_mOrig%i' % (pNum, pNum))
         # If self.simulate contains a 16, do constant sites count
         if 16 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' nConstSites%i' % pNum)
-        simFile.write('\n')
-        simFile.close()
+                self.simFile.write(' nConstSites%i' % pNum)
+        self.simFile.write('\n')
 
     def _doSimulate(self, curTree):
         curTree.copyToTree(self.simTree)
         curTree.model.copyValsTo(self.simTree.model)
         self.simTree.simulate()
-        simFile = open(self.simFileName, 'a')
-        simFile.write(" %11i" % (self.gen + 1))
+        if self.simFile and self.simFile.closed:
+            self.simFile = open(self.simFileName, 'a')
+        self.simFile.write(" %11i" % (self.gen + 1))
         # If self.simulate contains a 1, do unconstrained log like
         if 1 & self.simulate:
             for p in self.simTree.data.parts:
-                simFile.write(' %f' % pf.getUnconstrainedLogLike(p.cPart))
+                self.simFile.write(' %f' % pf.getUnconstrainedLogLike(p.cPart))
 
         if 2 & self.simulate:  # If self.simulate contains a 2, do bigX^2
             if self.blankSeqNums == None:
                 ret = self.simTree.data.simpleBigXSquared()
                 for pNum in range(self.simTree.model.nParts):
-                    simFile.write(' %f' % ret[pNum])
+                    self.simFile.write(' %f' % ret[pNum])
             else:
                 # We do not want sims corresponding to blank seqs to contribute to the bigXSq
                 ret2 = self.simTree.data.compoChiSquaredTest(verbose=0, skipTaxNums=self.blankSeqNums, skipColumnZeros=True)
                 for pNum in range(self.simTree.model.nParts):
-                    simFile.write(' %f' % ret2[pNum][0])
+                    self.simFile.write(' %f' % ret2[pNum][0])
 
             # check ...
             # for i in range(len(ret)):
@@ -3111,14 +3142,14 @@ class Mcmc(object):
             ret = self.simTree.data.meanNCharsPerSite()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' %f' % ret[pNum])
+                self.simFile.write(' %f' % ret[pNum])
         # If self.simulate contains an 8, do c_m, the compStatFromCharFreqs
         if 8 & self.simulate:
             ret = self.simTree.compStatFromCharFreqs()
             ret2 = curTree.compStatFromCharFreqs()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' %f  %f' % (ret[pNum], ret2[pNum]))
+                self.simFile.write(' %f  %f' % (ret[pNum], ret2[pNum]))
                 # print ' compStatFromCharFreqs: %f  %f' % (ret[pNum],
                 # ret2[pNum])
         # If self.simulate contains a 16, do constant sites count
@@ -3126,9 +3157,8 @@ class Mcmc(object):
             ret = self.simTree.data.simpleConstantSitesCount()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' %i' % ret[pNum])
-        simFile.write('\n')
-        simFile.close()
+                self.simFile.write(' %i' % ret[pNum])
+        self.simFile.write('\n')
 
     def checkPoint(self):
 
@@ -3180,8 +3210,30 @@ class Mcmc(object):
             ch.curTree.savedLogLike = ch.curTree.logLike
             ch.propTree.data = None
 
-        
-        
+        # Open files don't copy.  Furthermore, merely closing a file
+        # is not enough --- nor is it enough to set the variable to
+        # None (although that should be enough!  --- it works for
+        # small examples elsewhere!  Why not here?!?).  It needs to be
+        # deleted, and then set to None.  Extra: closing a closed file
+        # is not an error.
+        for myf in [
+                self.likesFile,
+                self.treeFile,
+                self.simFile,
+                self.pramsFile,
+                self.hypersFile,
+        ]:
+            if myf:
+                if not myf.closed:
+                    myf.close()
+            del(myf)
+
+        self.likesFile = None
+        self.treeFile = None
+        self.simFile = None
+        self.pramsFile = None
+        self.hypersFile = None
+
         theCopy = copy.deepcopy(self)
 
         # Re-attach data and logger to self.
