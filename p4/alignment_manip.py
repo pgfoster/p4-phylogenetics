@@ -2373,7 +2373,7 @@ if True:
             PR = None
         return (QB, QS, QR, PB, PS, PR)
 
-    def matchedPairsTests(self, mostSignificantOnly=False):
+    def matchedPairsTests(self, mostSignificantOnly=False, verbose=False):
         """Get all Ababneh et al 2006 matched pairs stats and probabilies.
 
         Args:
@@ -2397,11 +2397,6 @@ if True:
         it may fail to do the calculations for a pair.  If so it will
         return None for that test for that pair, and that will end up
         in DistanceMatrix objects that are returned.
-
-        The tests are pair-wize on all pairs of sequences.  Note that
-        it may fail to do the calculations for a pair.  If so it will
-        return None for that test for that pair, and that will end up
-        in ``DistanceMatrix`` objects that are returned.
 
         """
 
@@ -2482,16 +2477,17 @@ if True:
                 PRR.matrix[txNumA][txNumB] = PR
                 PRR.matrix[txNumB][txNumA] = PR
 
-        nPairs = ((self.nTax * self.nTax) - self.nTax) / 2
-        print("Matched Pairs Tests: ")
-        print(f"{int(nPairs)} pairs tested, ")
-        
-        if identicals or badVInverts:
-            if identicals:
-                print(f"{identicals} pairs identical, ")
-            if badVInverts:
-                print(f"{badVInverts} failed matrix inversions ",)
-        print(f"smallest PB (Bowker's) {smallestPB} \nsmallest PS (Stuart's, Marginal) {smallestPS} \nsmallest PR (Ababneh, Internal) {smallestPR}")
+        if verbose:
+            nPairs = ((self.nTax * self.nTax) - self.nTax) / 2
+            print("Matched Pairs Tests: ")
+            print(f"{int(nPairs)} pairs tested, ")
+
+            if identicals or badVInverts:
+                if identicals:
+                    print(f"{identicals} pairs identical, ")
+                if badVInverts:
+                    print(f"{badVInverts} failed matrix inversions ",)
+            print(f"smallest PB (Bowker's) {smallestPB} \nsmallest PS (Stuart's, Marginal) {smallestPS} \nsmallest PR (Ababneh, Internal) {smallestPR}")
         
         if mostSignificantOnly:
             return (smallestPB, smallestPS, smallestPR)
@@ -2511,7 +2507,7 @@ if True:
         This is my attempt to replicate it.  That implementation
         chooses the sequence pair with the biggest divergence, and
         only reports stats for that pair.  This does not necessarily
-        show the smallest stats.
+        show the biggest stats with the smallest P-values.
 
         If it is verbose, it speaks the results to stdout.
 

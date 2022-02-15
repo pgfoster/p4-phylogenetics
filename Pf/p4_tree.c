@@ -877,7 +877,11 @@ double p4_treeLogLike(p4_tree *aTree, int getSiteLikes)
         if(i != NO_ORDER) {
             aNode = aTree->nodes[i];
             if(!aNode->isLeaf) {
-                p4_setConditionalLikelihoodsOfInteriorNode(aNode);
+                // Internal nodes
+                p4_setConditionalLikelihoodsOfInternalNode(aNode);
+            } else if(aNode == aTree->root && aNode->isLeaf) {
+                // Unusual; root is a leaf
+                p4_setConditionalLikelihoodsOfInternalNode(aNode);
             }
         }
     }
@@ -920,7 +924,6 @@ double p4_treeLogLike(p4_tree *aTree, int getSiteLikes)
 double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
 {
     double lnL = 0.0;
-    double like = 0.0;
     int    i, seqPos, rate;
     double *patternLikes = NULL;
     double  oneMinusPInvar = 1.0;
@@ -992,6 +995,43 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         mp->freqsTimesOneMinusPInvar[rate] = oneMinusPInvar / (double)(mp->nCat);
     }
 
+    // p4_partLogLikeLoop(p4_tree *aTree, part *dp, int pNum, int getSiteLikes, double *patternLikes, p4_modelPart *mp)
+
+    if(aTree->root->isLeaf) {
+        lnL = p4_partLogLikeLoopRootLeaf(aTree, dp, pNum, getSiteLikes, patternLikes, mp);
+    } else {
+        lnL = p4_partLogLikeLoop(aTree, dp, pNum, getSiteLikes, patternLikes, mp);
+    }
+
+    if((0)) {
+        if(getSiteLikes) {
+            printf("tree.c: treeLogLike: patternLikes\n");
+            for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
+                printf("%f\n", patternLikes[seqPos]);
+            }
+        }
+    }
+
+    if(getSiteLikes) {
+        // I have the pattern likes, so now figure out the siteLikes, using sequencePositionPatternIndex
+        for(seqPos = 0; seqPos < dp->nChar; seqPos++) {
+            dp->siteLikes[seqPos] = patternLikes[dp->sequencePositionPatternIndex[seqPos]];
+        }
+        free(patternLikes);
+    }
+
+    //printf("p4_tree.p4_partLogLike().  %.6f\n", lnL);
+    aTree->partLikes[pNum] = lnL;
+    return lnL;
+
+}
+
+double p4_partLogLikeLoop(p4_tree *aTree, part *dp, int pNum, int getSiteLikes, double *patternLikes, p4_modelPart *mp)
+{
+    double lnL = 0.0;
+    double like = 0.0;
+    int    symb, seqPos, rate;
+
     for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
         like = 0.0;
 
@@ -1000,17 +1040,17 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
             // first deal with the contribution due to the possibility that it is a variable site
 
             for(rate = 0; rate < mp->nCat; rate++) {
-                for(i = 0; i < mp->dim; i++) {
-                    like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+                for(symb = 0; symb < mp->dim; symb++) {
+                    like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * aTree->root->cl[pNum][rate][symb][seqPos];
 #if 0
                     printf("a comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
-                           i,
-                           mp->comps[aTree->root->compNums[pNum]]->val[i],
-                           i,
-                           aTree->root->cl[pNum][rate][i][seqPos],
-                           mp->comps[aTree->root->compNums[pNum]]->val[i],
-                           aTree->root->cl[pNum][rate][i][seqPos],
-                           mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
+                           symb,
+                           mp->comps[aTree->root->compNums[pNum]]->val[symb],
+                           symb,
+                           aTree->root->cl[pNum][rate][symb][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[symb],
+                           aTree->root->cl[pNum][rate][symb][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[symb] * aTree->root->cl[pNum][rate][symb][seqPos],
                            like
                         );
 #endif
@@ -1026,21 +1066,21 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
             
             // Now deal with the invariant site contribution
             if(dp->globalInvarSitesVec[seqPos] > 0) { // ie its an invar site
-                //printf("treeLogLike: invarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);				
+                //printf("treeLogLike: invarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);
                 //printf("treeLogLike: doing invarSite contribution\n");
                 // See part.c for an explanation of the magic of the globalInvarSitesArray
                 // The globalInvarSitesArray goes to dp->dim
-                for(i = 0; i < dp->dim; i++) {
-                    if(dp->globalInvarSitesArray[i][seqPos]) {
-                        like += mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0];
+                for(symb = 0; symb < dp->dim; symb++) {
+                    if(dp->globalInvarSitesArray[symb][seqPos]) {
+                        like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * mp->pInvar->val[0];
 #if 0
                         printf("b comp[%i]=%f, pInvar=%f;   comp*pInvar=%f * %f = %f; cumLike=%f\n", 
-                               i,
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
+                               symb,
+                               mp->comps[aTree->root->compNums[pNum]]->val[symb],
                                mp->pInvar->val[0],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i],
+                               mp->comps[aTree->root->compNums[pNum]]->val[symb],
                                mp->pInvar->val[0],
-                               mp->comps[aTree->root->compNums[pNum]]->val[i] * mp->pInvar->val[0],
+                               mp->comps[aTree->root->compNums[pNum]]->val[symb] * mp->pInvar->val[0],
                                like
                             );
 #endif
@@ -1053,37 +1093,34 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
 
         else {  // pInvar is not part of the equation
             for(rate = 0; rate < mp->nCat; rate++) {
-                //rateLike = 0.0;
-                for(i = 0; i < mp->dim; i++) {
+                for(symb = 0; symb < mp->dim; symb++) {
 
                     if ((0)) {
                         double addend;
-                        addend = mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+                        addend = mp->comps[aTree->root->compNums[pNum]]->val[symb] * aTree->root->cl[pNum][rate][symb][seqPos];
                         if(addend <= 0.0) {
                             printf("ZLTZ comps %g * cl %g is %g\n", 
-                                   mp->comps[aTree->root->compNums[pNum]]->val[i], 
-                                   aTree->root->cl[pNum][rate][i][seqPos],
+                                   mp->comps[aTree->root->compNums[pNum]]->val[symb], 
+                                   aTree->root->cl[pNum][rate][symb][seqPos],
                                    addend);
-                            printf("    for pNum %i, symb %i, rate %i, seqPos %i\n", pNum, i, rate, seqPos);
+                            printf("    for pNum %i, symb %i, rate %i, seqPos %i\n", pNum, symb, rate, seqPos);
                         }
                     }
 
-                    like += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
-                    //rateLike += mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos];
+                    like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * aTree->root->cl[pNum][rate][symb][seqPos];
 #if 0
                     printf("d comp[%i]=%f, cl[%i]=%f;   comp*cl=%f * %f = %f; cumLike=%f\n", 
-                           i,
-                           mp->comps[aTree->root->compNums[pNum]]->val[i],
-                           i,
-                           aTree->root->cl[pNum][rate][i][seqPos],
-                           mp->comps[aTree->root->compNums[pNum]]->val[i],
-                           aTree->root->cl[pNum][rate][i][seqPos],
-                           mp->comps[aTree->root->compNums[pNum]]->val[i] * aTree->root->cl[pNum][rate][i][seqPos],
+                           symb,
+                           mp->comps[aTree->root->compNums[pNum]]->val[symb],
+                           symb,
+                           aTree->root->cl[pNum][rate][symb][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[symb],
+                           aTree->root->cl[pNum][rate][symb][seqPos],
+                           mp->comps[aTree->root->compNums[pNum]]->val[symb] * aTree->root->cl[pNum][rate][symb][seqPos],
                            like
                         );
 #endif
                 }
-                //printf("seqPos %3i rate %i, rateLike=%.12f\n", seqPos, rate, rateLike);
             }
             // If gamma freqs are not the same, it should be something like this:
             //like = like * aTree->model->parts[pNum]->gammaFreqs[0];
@@ -1146,36 +1183,200 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
         }
         //printf("finished rate cats: seqPos = %i, lnL = %7.4f, like = %7.4f\n", seqPos, lnL, like);
         //printf("site=%i, like=%f, logLike=%f\n", seqPos, like, log(like));
+
         lnL = lnL + (dp->patternCounts[seqPos] * log(like));
+
         //printf("  seqPos %i   patCount %i  like %f  logLike %f  timesPatCount %f     total lnL %f\n",
         //		seqPos, dp->patternCounts[seqPos], like, log(like), 
         //		dp->patternCounts[seqPos] * log(like), lnL);
 		
         if(getSiteLikes) patternLikes[seqPos] = like;
-    }
+    }  // for seqPos = 0, iterate over nPatterns
 
-    if((0)) {
-        if(getSiteLikes) {
-            printf("tree.c: treeLogLike: patternLikes\n");
-            for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
-                printf("%f\n", patternLikes[seqPos]);
+    return lnL;
+}
+
+double p4_partLogLikeLoopRootLeaf(p4_tree *aTree, part *dp, int pNum, int getSiteLikes, double *patternLikes, p4_modelPart *mp)
+{
+    // This function is a stripped-down version of p4_partLogLikeLoop() above.
+    // See there for debugging code (removed here).
+
+    // This function is for a root that is also a leaf.  Conditional
+    // likelihoods are calculated on the tree in the usual way in post
+    // order down to the root as usual.  However, the final site
+    // likelihood is not summed over all the symbols as is done in
+    // p4_partLogLikeLoop() above, but rather it is summed only over
+    // the symbols that are present in the root leaf node.  If there
+    // are ambiguities then more than one character state is included.
+    // If there are gaps or N-like characters then the site likelihood
+    // is summed over the pi[i] * cl[i] for all states, as is done
+    // with p4_partLogLikeLoop().
+
+    // See p4_setConditionalLikelihoodsOfInternalNodePart() for some
+    // commentary on the charCode
+
+    double lnL = 0.0;
+    double like = 0.0;
+    int    symb, seqPos, rate;
+    int    charCode;
+    int    isN = 0;
+
+    for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
+        like = 0.0;
+
+        // Either do pInvar or not
+        if(mp->pInvar->val[0]) { // do pInvar
+            // first deal with the contribution due to the possibility that it is a variable site
+
+            for(rate = 0; rate < mp->nCat; rate++) {
+                //for(symb = 0; symb < mp->dim; symb++) {
+                //like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * aTree->root->cl[pNum][rate][symb][seqPos];
+
+                charCode = dp->patterns[aTree->root->seqNum][seqPos];
+                // printf("  Got charCode = %i\n", charCode);
+                if(charCode >= 0) {
+                    like += mp->comps[aTree->root->compNums[pNum]]->val[charCode] * 
+                        aTree->root->cl[pNum][rate][charCode][seqPos];
+                }
+                else if (charCode == GAP_CODE || charCode == QMARK_CODE) {
+                    for(symb = 0; symb < mp->dim; symb++) {
+                        like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * 
+                            aTree->root->cl[pNum][rate][symb][seqPos];
+                    }
+                } 
+                else if(charCode >= EQUATES_BASE && 
+                        charCode < EQUATES_BASE + dp->nEquates) {
+                    // If we get this to this point, most
+                    // usually, it will be an "n" or n-like
+                    // character (eg x).  Assume it is so unless
+                    // datapart->equates says otherwise.
+                    isN = 1;
+                    for(symb = 0; symb < dp->dim; symb++) {
+                        if(!dp->equates[charCode - EQUATES_BASE][symb]) {
+                            isN = 0;
+                            break;
+                        }
+                    }
+                    // printf("isN = %i\n", isN);
+                    if(isN) {
+                        // like gaps and qmarks, above
+                        for(symb = 0; symb < mp->dim; symb++) {
+                            like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * 
+                                aTree->root->cl[pNum][rate][symb][seqPos];
+                        }
+                    }
+                    else {
+                        for(symb = 0; symb < dp->dim; symb++) {
+                            if(dp->equates[charCode - EQUATES_BASE][symb]) {
+                                like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * 
+                                    aTree->root->cl[pNum][rate][symb][seqPos];
+                            }
+                        }
+                    }
+                }
+                else {
+                    printf("p4_partLogLikeLoopRootLeaf()  do pInvar\n");
+                    printf("   Programming error.  This shouldn't happen\n");
+                    exit(1);
+                }
+            }
+            
+            like *=  mp->freqsTimesOneMinusPInvar[0];
+            
+            // Now deal with the invariant site contribution
+            if(dp->globalInvarSitesVec[seqPos] > 0) { // ie its an invar site
+                //printf("treeLogLike: invarSitesVec[%i] = %i\n", seqPos, dp->globalInvarSitesVec[seqPos]);
+                //printf("treeLogLike: doing invarSite contribution\n");
+                // See part.c for an explanation of the magic of the globalInvarSitesArray
+                // The globalInvarSitesArray goes to dp->dim
+                for(symb = 0; symb < dp->dim; symb++) {
+                    if(dp->globalInvarSitesArray[symb][seqPos]) {
+                        like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * mp->pInvar->val[0];
+                    }
+                }
             }
         }
-    }
+        else {  // pInvar is not part of the equation
+            for(rate = 0; rate < mp->nCat; rate++) {
+                // for(symb = 0; symb < mp->dim; symb++) {
+                //     like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * aTree->root->cl[pNum][rate][symb][seqPos];
+                // }
+                charCode = dp->patterns[aTree->root->seqNum][seqPos];
+                // printf("  Got charCode = %i\n", charCode);
+                if(charCode >= 0) {
+                    like += mp->comps[aTree->root->compNums[pNum]]->val[charCode] * 
+                        aTree->root->cl[pNum][rate][charCode][seqPos];
+                }
+                else if (charCode == GAP_CODE || charCode == QMARK_CODE) {
+                    for(symb = 0; symb < mp->dim; symb++) {
+                        like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * 
+                            aTree->root->cl[pNum][rate][symb][seqPos];
+                    }
+                } 
+                else if(charCode >= EQUATES_BASE && 
+                        charCode < EQUATES_BASE + dp->nEquates) {
+                    // If we get this to this point, most
+                    // usually, it will be an "n" or n-like
+                    // character (eg x).  Assume it is so unless
+                    // datapart->equates says otherwise.
+                    isN = 1;
+                    for(symb = 0; symb < dp->dim; symb++) {
+                        if(!dp->equates[charCode - EQUATES_BASE][symb]) {
+                            isN = 0;
+                            break;
+                        }
+                    }
+                    // printf("isN = %i\n", isN);
+                    if(isN) {
+                        // like gaps and qmarks, above
+                        for(symb = 0; symb < mp->dim; symb++) {
+                            like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * 
+                                aTree->root->cl[pNum][rate][symb][seqPos];
+                        }
+                    }
+                    else {
+                        for(symb = 0; symb < dp->dim; symb++) {
+                            if(dp->equates[charCode - EQUATES_BASE][symb]) {
+                                like += mp->comps[aTree->root->compNums[pNum]]->val[symb] * 
+                                    aTree->root->cl[pNum][rate][symb][seqPos];
+                            }
+                        }
+                    }
+                }
+                else {
+                    printf("p4_partLogLikeLoopRootLeaf()  do pInvar\n");
+                    printf("   Programming error.  This shouldn't happen\n");
+                    exit(1);
+                }
 
-    if(getSiteLikes) {
-        // I have the pattern likes, so now figure out the siteLikes, using sequencePositionPatternIndex
-        for(seqPos = 0; seqPos < dp->nChar; seqPos++) {
-            dp->siteLikes[seqPos] = patternLikes[dp->sequencePositionPatternIndex[seqPos]];
+            }
+            // If gamma freqs are not the same, it should be something like this:
+            //like = like * aTree->model->parts[pNum]->gammaFreqs[0];
+            // But the following will do if we have equal gamma freqs.
+            if(mp->nCat > 1) {
+                like = like / (double)(mp->nCat);
+                //printf("seqPos %3i   like=%.12f\n", seqPos, like);
+            }
         }
-        free(patternLikes);
-    }
 
-    //printf("p4_tree.p4_partLogLike().  %.6f\n", lnL);
-    aTree->partLikes[pNum] = lnL;
+        if(like <= 0.0) {
+            return -1.0e99;
+        }
+        //printf("finished rate cats: seqPos = %i, lnL = %7.4f, like = %7.4f\n", seqPos, lnL, like);
+        //printf("site=%i, like=%f, logLike=%f\n", seqPos, like, log(like));
+
+        lnL = lnL + (dp->patternCounts[seqPos] * log(like));
+
+        //printf("  seqPos %i   patCount %i  like %f  logLike %f  timesPatCount %f     total lnL %f\n",
+        //		seqPos, dp->patternCounts[seqPos], like, log(like), 
+        //		dp->patternCounts[seqPos] * log(like), lnL);
+		
+        if(getSiteLikes) patternLikes[seqPos] = like;
+    }  // for seqPos = 0, iterate over nPatterns
+
     return lnL;
-
 }
+
 
 //double p4_partLogLikeWinningGammaCats(p4_tree *aTree, part *dp, int pNum, int getSiteLikes, int *winningGammaCats, double *work)
 

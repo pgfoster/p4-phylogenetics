@@ -15,6 +15,7 @@ from p4.treepartitions import TreePartitions
 from p4.constraints import Constraints
 from p4.node import Node
 from p4.pnumbers import Numbers
+from p4.simtemp import SimTemp,SimTempTemp
 import datetime
 import numpy
 import logging
@@ -504,20 +505,6 @@ class SwapTunerV(object):
             self.mcmc.logger.info(message)
 
 
-class SimTempTemp(object):
-    def __init__(self, temp):
-        self.temp = temp
-        #self.pi = 1.0
-        #self.logPi = 0.0
-        self.logPiDiff = 0.0
-        self.occupancy = 0
-        self.nProposalsUp = 0
-        self.nAcceptedUp = 0
-        self.rValsUp = []
-        self.nProposalsDn = 0
-        self.nAcceptedDn = 0
-        self.rValsDn = []
-
 
 
 class Mcmc(object):
@@ -664,7 +651,7 @@ class Mcmc(object):
 
     """
 
-    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, simTemp=None, simTempMax=10.0):
+    def __init__(self, aTree, nChains=4, runNum=0, sampleInterval=100, checkPointInterval=10000, simulate=None, writePrams=True, constraints=None, verbose=True, simTempNTemps=None, simTempMax=10.0):
         gm = ['Mcmc.__init__()']
         self.verbose = verbose
 
@@ -699,6 +686,12 @@ class Mcmc(object):
                 ret = aTree.isFullyBifurcating(verbose=True, biRoot=False)
                 if not ret:
                     gm.append("The tree has a trifurcating root, but otherwise is not fully bifurcating.")
+                    raise P4Error(gm)
+                self.isBiRoot = False
+            elif rootNChildren == 1:
+                ret = aTree.isFullyBifurcating(verbose=True, biRoot=False)
+                if not ret:
+                    gm.append("The tree has a monofurcating root, but otherwise is not fully bifurcating.")
                     raise P4Error(gm)
                 self.isBiRoot = False
             else:
@@ -737,32 +730,27 @@ class Mcmc(object):
         self.startMinusOne = -1
         self.chainTemp = 1.0
         self.chainTemps = []
+        self.simTemp = None
+        self.simTemp_doTuneTempsAndLogPi = True
+        self.simTemp_doLogTemps = True
+        self.simTemp_tempsLogFName = "mcmc_simTempTempsLog"
+        self.simTemp_tempsFlob = None     # Open file
 
         # If we are doing simulated tempering ...
-        self.simTemp = None
-        if simTemp:
+        if simTempNTemps:
+            
             try:
-                self.simTemp = int(simTemp)
+                simTempNTemps = int(simTempNTemps)
             except (ValueError, TypeError):
-                gm.append("If set, simTemp should be an int, 2 or more.  Got %s" % simTemp)
+                gm.append("If set, simTempNTemps should be an int, 2 or more.  Got %s" % simTempNTemps)
                 raise P4Error(gm)
-            if self.simTemp < 2:
-                gm.append("If set, simTemp should be an int, 2 or more.  Got %s" % simTemp)
+            if simTempNTemps < 2:
+                gm.append("If set, simTempNTemps should be an int, 2 or more.  Got %s" % simTempNTemps)
                 raise P4Error(gm)
             if self.nChains != 1:
-                gm.append("If simTemp is set, nChains should only be 1.  Got %i" % self.nChains)
-
-        self.simTemp_temps = []
-        self.simTemp_curTemp = 0
-        self.simTemp_nTempChangeProposals = 0
-        self.simTemp_nTempChangeAccepts = 0
-        self.simTemp_tNums = []
-        self.simTemp_tempChangeProposeFreq = 1
-        self.simTemp_tunerSamples = []
-        self.simTemp_tunerSampleSize = 100
-        self.simTemp_longTNumSampleSize = 5000
-        if self.simTemp:
-            self.simTemp_longSampleTunings = [1.0] * self.simTemp
+                gm.append("If simTempNTemps is set, nChains should only be 1.  Got %i" % self.nChains)
+            self.simTemp = SimTemp(self)
+            self.simTemp.nTemps = simTempNTemps
 
             try:
                 thisSimTempMax = float(simTempMax)
@@ -773,30 +761,39 @@ class Mcmc(object):
                 gm.append("If doing simTemp, simTempMax should be set to a float more than zero.  Got  %s" % simTempMax)
                 raise P4Error(gm)
 
-            self.simTempMax = thisSimTempMax
+            #self.simTemp_maxTemp = thisSimTempMax
 
             if 0:
-                # This makes the temperatures evenly spaced.
-                stepSize = self.simTempMax / (self.simTemp - 1)
-                self.simTemp_temps = [SimTempTemp(0.0)]
-                for tNum in range(1,self.simTemp):
+                # This makes the simTemp temperatures evenly spaced.
+                stepSize = self.simTemp.maxTemp / (self.simTemp.nTemps - 1)
+                self.simTemp.temps = [SimTempTemp(0.0)]
+                for tNum in range(1,self.simTemp.nTemps):
                     tmp = SimTempTemp(tNum * stepSize)
-                    self.simTemp_temps.append(tmp)
+                    self.simTemp.temps.append(tmp)
             if 1:
                 # This makes more small temperatures and fewer big temperatures
                 # The bigger the logBase, the more curvey the curve.  Smaller is more linear
                 logBase = var.mcmc_simTemp_tempCurveLogBase
-                factor = self.simTempMax / (math.pow(logBase, self.simTemp - 1) - 1.0)
-                self.simTemp_temps = [SimTempTemp(0.0)]
-                for tNum in range(1,self.simTemp):
-                    tmp = SimTempTemp((math.pow(logBase, tNum) - 1.) * factor)
-                    self.simTemp_temps.append(tmp)
-            if 0:
+                factor = thisSimTempMax / (math.pow(logBase, self.simTemp.nTemps - 1) - 1.0)
+                tmp = SimTempTemp()
+                tmp.temp = 0.0
+                tmp.tempNum = 0
+                self.simTemp.temps = [tmp]
+                for tNum in range(1,self.simTemp.nTemps):
+                    tmp = SimTempTemp()
+                    tmp.tempNum = tNum
+                    tmp.temp = (math.pow(logBase, tNum) - 1.) * factor
+                    self.simTemp.temps.append(tmp)
+
+            self.simTemp.tNumSampleSize = var.mcmc_simTemp_tNumSampleSizePerTemp * self.simTemp.nTemps
+            self.simTemp.setTempDiffsFromTemps()
+
+            if 1:
                 print("Initial settings of temperatures in Mcmc.__init__()")
-                for tNum,tmp in enumerate(self.simTemp_temps):
+                for tNum,tmp in enumerate(self.simTemp.temps):
                     print("%2i  %10.3f" % (tNum, tmp.temp))
 
-            self.simTemp_longTNumSample = deque([-1] * self.simTemp_longTNumSampleSize)
+            self.simTemp.tNumSample = deque([-1] * self.simTemp.tNumSampleSize)
         
             
         # Check that branch lengths are neither too short nor too long
@@ -877,6 +874,14 @@ class Mcmc(object):
         self.hypersFileName = "mcmc_hypers_%i" % runNum
         self.simTempFileName = "mcmc_simTemp_%i" % runNum
         self.ssLikesFileName = "mcmc_ssLikes_%i" % runNum
+
+        self.likesFile = None
+        self.treeFile = None
+        self.simFile = None
+        self.pramsFile = None
+        self.hypersFile = None
+        self.ssLikesFile = None
+
         self.writePrams = writePrams
         self.writeHypers = True
         self.coldChainNum = -1
@@ -2164,41 +2169,40 @@ class Mcmc(object):
             raise P4Error(gm)
 
         # Write the preamble for the trees outfile.
-        treeFile = open(self.treeFileName, 'w')
-        treeFile.write('#nexus\n\n')
-        treeFile.write('begin taxa;\n')
-        treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
-        treeFile.write('  taxlabels')
+        self.treeFile = open(self.treeFileName, 'w')
+        self.treeFile.write('#nexus\n\n')
+        self.treeFile.write('begin taxa;\n')
+        self.treeFile.write('  dimensions ntax=%s;\n' % self.tree.nTax)
+        self.treeFile.write('  taxlabels')
         for tN in self.tree.taxNames:
-            treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
-        treeFile.write(';\nend;\n\n')
+            self.treeFile.write(' %s' % p4.func.nexusFixNameIfQuotesAreNeeded(tN))
+        self.treeFile.write(';\nend;\n\n')
 
-        treeFile.write('begin trees;\n')
+        self.treeFile.write('begin trees;\n')
         self.translationHash = {}
         i = 1
         for tName in self.tree.taxNames:
             self.translationHash[tName] = i
             i += 1
 
-        treeFile.write('  translate\n')
+        self.treeFile.write('  translate\n')
         for i in range(self.tree.nTax - 1):
-            treeFile.write('    %3i %s,\n' % (
+            self.treeFile.write('    %3i %s,\n' % (
                 i + 1, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[i])))
-        treeFile.write('    %3i %s\n' % (
+        self.treeFile.write('    %3i %s\n' % (
             self.tree.nTax, p4.func.nexusFixNameIfQuotesAreNeeded(self.tree.taxNames[-1])))
-        treeFile.write('  ;\n')
+        self.treeFile.write('  ;\n')
 
         # write the models comment
         if self.tree.model.isHet:
             if (not self.tree.model.parts[0].ndch2) or (self.tree.model.parts[0].ndch2 and self.tree.model.parts[0].ndch2_writeComps):
-                treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
+                self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
                 for pNum in range(self.tree.model.nParts):
-                    treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
-                    treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
-                    treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
-                treeFile.write(']\n')
-        treeFile.write('  [Tree numbers are gen+1]\nend;\n')
-        treeFile.close()
+                    self.treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
+                    self.treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
+                    self.treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
+                self.treeFile.write(']\n')
+        self.treeFile.write('  [Tree numbers are gen+1]\nend;\n')
 
         if 0:
             self.prob.dump()
@@ -2212,360 +2216,6 @@ class Mcmc(object):
         
 
         
-    def simTemp_trialAndError(self, nGensToDo, showTable=True, verbose=False):
-        gm = ['Mcmc.simTemp_trialAndError()']
-        savedGenNum = self.gen
-        assert self.simTemp
-
-        self.run(nGensToDo, verbose=False, equiProbableProposals=False, writeSamples=False)
-
-        if showTable:
-            print("simTemp_trialAndError().  After %i gens, showing occupancy, before tuning" % nGensToDo)
-            self.simTemp_dumpTemps()
-        
-        self.simTemp_tunePseudoPriors_longSample()
-
-        self.gen = savedGenNum
-
-        
-    def simTemp_tunePseudoPriors_longSample(self, flob=sys.stdout):
-        occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
-        expected = self.simTemp_longTNumSampleSize / self.simTemp
-        rats = [occs[i]/expected for i in range(self.simTemp)]
-
-        if 0:
-            for tNum in range(self.simTemp):
-                ratio = rats[tNum]
-                if ratio > 1.2 or ratio < 0.7:
-                    if ratio > 3.:
-                        adjust = 1.6
-                    elif ratio > 1.2:
-                        adjust = 1.2
-                    elif ratio < 0.7:
-                        adjust = 0.8
-                    self.simTemp_longSampleTunings[tNum] *= adjust
-                    # Adjusting the tunings to below 1 seems to lead to overshooting.
-                    if self.simTemp_longSampleTunings[tNum] < 1.0:
-                        self.simTemp_longSampleTunings[tNum] = 1.0
-
-        if 1:
-            #print(rats)
-
-            for tNum in range(self.simTemp):
-                ratio = rats[tNum]
-                self.simTemp_longSampleTunings[tNum] *= ratio
-
-            # This seems to work reasonably well.  Remaining problem
-            # is that the highest temp gets too much occupancy.  If
-            # that is the case, do a hack --- multiply it by the ratio obs/expected again.
-            #tNum = self.simTemp -1
-            #if max(occs) == occs[-1]:
-            #    self.simTemp_longSampleTunings[-1] *= rats[-1]
-
-            if 1:
-                # Adjusting the tunings to below 1 seems to lead to
-                # overshooting, so check, and if there are any then raise
-                # all
-                minTuning = min([tn for tn in self.simTemp_longSampleTunings])
-                if minTuning < 1.0:
-                    adjust = 1.0 - minTuning
-
-                    for tNum in range(self.simTemp):
-                        self.simTemp_longSampleTunings[tNum] += adjust
-
-            
-        print("\nlongSampleTunings (after tuning):", file=flob)
-        for tNum in range(self.simTemp):
-            print(f"m.simTemp_longSampleTunings[{tNum}] = {self.simTemp_longSampleTunings[tNum]:7.2f}", file=flob)
-
-    def simTemp_tunePseudoPriors(self):
-        occs = [self.simTemp_longTNumSample.count(i) for i in range(self.simTemp)]
-        expected = self.simTemp_longTNumSampleSize / self.simTemp
-
-        if 1:
-            totalAdjusts = 0.0
-
-            # To increase the occupation of the cold temp, boost the cold logPiDiff
-            # To decrease the occupation, decrease it.
-            tNum = 0
-            cTuning = self.simTemp_longSampleTunings[tNum]
-            if cTuning > 1.0:
-                self.simTemp_temps[tNum].logPiDiff -= cTuning
-                totalAdjusts += cTuning
-
-            # To increase the occupation of the hottest temp, decrease the hottest-1 logPiDiff 
-            # To decrease the occupation, increase the hottest-1 logPiDiff
-            tNum = self.simTemp - 1
-            cTuning = self.simTemp_longSampleTunings[tNum]
-            if cTuning > 1.0:
-                self.simTemp_temps[tNum - 1].logPiDiff += cTuning
-                # Is this needed? It does not make an obvious difference.  Is it in the right direction?
-                #totalAdjusts -= cTuning   
-
-            for tNum in range(1, self.simTemp - 1):
-                cTuning = self.simTemp_longSampleTunings[tNum]
-                if cTuning > 1.0:
-                    self.simTemp_temps[tNum].logPiDiff -= cTuning
-                    self.simTemp_temps[tNum - 1].logPiDiff += cTuning
-
-            #for tNum in range(self.simTemp - 1):
-            #    self.simTemp_temps[tNum].logPiDiff + totalAdjusts/self.simTemp
-
-        if 1:
-            myFudge = -10.0
-
-            # Want to divide the logPi by the occupancy.  Total of occs is sampleSize.
-            
-            myMax = math.log(10/expected)
-            logOccs = []
-            for tNum in range(self.simTemp):
-                if occs[tNum] > 10:
-                    rat = occs[tNum]/expected
-                    logRat = math.log(rat)
-                else:
-                    logRat = myMax
-                logOccs.append(logRat)
-            #print(self.gen, "logOccs", logOccs)
-
-            # center at zero
-            meanLogOccs = statistics.mean(logOccs)
-            for tNum in range(self.simTemp):
-                logOccs[tNum] -= meanLogOccs
-
-            for tNum in range(self.simTemp):
-                if tNum == 0:
-                    # To increase the occupation of the cold temp, boost the cold logPiDiff
-                    # To decrease the occupation, decrease it.
-                    self.simTemp_temps[tNum].logPiDiff += (logOccs[tNum] * myFudge)
-                elif tNum == self.simTemp - 1:
-                    # To increase the occupation of the hottest temp, decrease the hottest-1 logPiDiff 
-                    # To decrease the occupation, increase the hottest-1 logPiDiff
-                    self.simTemp_temps[tNum-1].logPiDiff -= (logOccs[tNum] * myFudge)
-                else:
-                    # To increase the occupation of a middle temp, tNum, 
-                    # - increase the tNum logPiDiff
-                    # - decrease the tNum-1  logPiDiff
-                    # To decrease the occupation of the middle temp, tNum
-                    # - decrease tNum logPiDiff 
-                    # - increase tNum-1 logPiDiff
-                    howMuch = logOccs[tNum] * myFudge
-                    self.simTemp_temps[tNum].logPiDiff += howMuch
-                    self.simTemp_temps[tNum-1].logPiDiff -= howMuch
-                
-
-        if 0:
-            for tNum in range(self.simTemp -1):
-                self.simTemp_temps[tNum].logPiDiff += 10.0
-
-                
-            
-
-    def simTemp_dumpTemps(self, flob=sys.stdout):
-        """Arg flob should be a file-like object."""
-
-        print("%4s %10s %12s %10s %10s %10s %10s %10s" % (
-            "indx", "temp", "logPiDiff", "occupancy", "nPropsUp", "accptUp", "nPropsDn", "accptDn"), 
-              file=flob)
-        totalOcc = 0
-        highestOccupancy = self.simTemp_temps[0].occupancy
-        lowestOccupancy = self.simTemp_temps[0].occupancy
-        for tNum, tmp in enumerate(self.simTemp_temps):
-
-            # If it is the hottest temp, don't print logPiDiff
-            if tNum == self.simTemp - 1:
-                print("%4s %10.3f %12s %10i" % (
-                    tNum,
-                    tmp.temp, 
-                    "-",   #logPiDiff
-                    tmp.occupancy), file=flob, end='')
-                # No proposals up
-                print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            else:
-                print("%4s %10.3f %12.4f %10i" % (
-                    tNum,
-                    tmp.temp, 
-                    tmp.logPiDiff,
-                    tmp.occupancy), file=flob, end='')
-                if tmp.nProposalsUp:
-                    print(" %10i %10.4f" % (tmp.nProposalsUp, (tmp.nAcceptedUp/tmp.nProposalsUp)), file=flob, end='')
-                else:  # don't divide by zero
-                    print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            if tNum == 0:  # so no props down
-                 print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            else:
-                if tmp.nProposalsDn:
-                    print(" %10i %10.4f" % (tmp.nProposalsDn, (tmp.nAcceptedDn/tmp.nProposalsDn)), file=flob, end='')
-                else:  # don't divide by zero
-                    print(" %10s %10s" % ("-", "-"), file=flob, end='')
-            print(file=flob)
-
-            totalOcc += tmp.occupancy
-            if tmp.occupancy > highestOccupancy:
-                highestOccupancy = tmp.occupancy
-            if tmp.occupancy < lowestOccupancy:
-                lowestOccupancy = tmp.occupancy
-        targetOcc = totalOcc / self.simTemp
-        if lowestOccupancy:   # it might be zero
-            rat = highestOccupancy/lowestOccupancy
-            print(f"occupancy target:{targetOcc} highest:{highestOccupancy}, lowest:{lowestOccupancy}, highest/lowest {rat}", file=flob)
-        else:
-            print(f"occupancy target:{targetOcc} highest:{highestOccupancy}, lowest:{lowestOccupancy}", file=flob)
-
-        # Zero
-        for tmp in self.simTemp_temps:
-            tmp.occupancy = 0
-            tmp.nProposalsUp = 0
-            tmp.nAcceptedUp = 0
-            tmp.nProposalsDn = 0
-            tmp.nAcceptedDn = 0
-
-                
-                
-
-        
-    def simTemp_proposeTempChange(self):
-
-        # Method and symbols are from:
-
-        # Geyer, C. J., and Thompson, E. A. (1995). Annealing Markov
-        # chain Monte Carlo with applications to ancestral
-        # inference. Journal of the American Statistical Association,
-        # 90, 909–920.
-
-        i = self.simTemp_curTemp   # index
-        nTemps = self.simTemp
-        ch = self.chains[0]
-
-        if i == 0:
-            j = 1
-            qij = 1.
-            if nTemps == 2:
-                qji = 1.0
-            else:
-                qji = 0.5
-        elif i == nTemps - 1:
-            j = nTemps - 2
-            qij = 1.
-            if nTemps == 2:
-                qji = 1.0
-            else:
-                qji = 0.5
-        else:
-            if random.random() < 0.5:
-                j = i - 1
-            else:
-                j = i + 1
-            qij = 0.5
-            if j == 0:
-                qji = 1.0
-            elif j == nTemps - 1:
-                qji = 1.0
-            else:
-                qji = 0.5
-
-        # tmp's are SimTempTemp objects
-        tmpI = self.simTemp_temps[i]
-        tmpJ = self.simTemp_temps[j]
-
-        beta_i = 1.0 / (1.0 + tmpI.temp)
-        beta_j = 1.0 / (1.0 + tmpJ.temp)
-
-        # h_i_Atx is notation from Geyer and Thompson.  I want the log form
-        # print("curr log like %f, beta_i %f, beta_j %f" % (ch.curTree.logLike, beta_i, beta_j))
-        #log_h_i_Atx = ch.curTree.logLike * beta_i 
-        #log_h_j_Atx = ch.curTree.logLike * beta_j
-        #logTempRatio = log_h_j_Atx - log_h_i_Atx
-        logTempRatio = ch.curTree.logLike * (beta_j - beta_i)
-
-        #logPseudoPriorRatio =  math.log(tmpJ.pi / tmpI.pi)
-        if i < j:
-            logPseudoPriorRatio = -tmpI.logPiDiff
-        else:
-            logPseudoPriorRatio = tmpJ.logPiDiff
-
-        #logPseudoPriorRatio =  tmpJ.logPi - tmpI.logPi
-        # print("to calc logPseudoPriorRatio:", tmpJ.logPi, "-", tmpI.logPi, "=", logPseudoPriorRatio)
-        logHastingsRatio = math.log(qji / qij)
-
-        if 0:
-            print("hastingsRatio gen %i: i=%i, j=%i, hastingsRatio %f, logHastingsRatio %f" % (
-                self.gen, i, j, (qji/qij), logHastingsRatio))
-
-
-        # Geyer and Thompson use "r".  I want the log form
-        log_r = logTempRatio + logPseudoPriorRatio + logHastingsRatio
-
-
-        acceptMove = False
-        if log_r < -100.0:
-            acceptMove = False
-        elif log_r >= 0.0:
-            acceptMove = True
-        else:
-            r = math.exp(log_r)
-            if random.random() < r:
-                acceptMove = True
-        #print("log_r %f, acceptMove %s" % (log_r, acceptMove))
-
-        #if 0:
-        if 0 and i==0 and j==1:
-            print("attemptSwap gen %i: i=%i, j=%i, log_r=%f logTempRatio=%f   logPseudoPriorRatio %f  logHastingsRatio %f acceptMove=%s" % (
-                self.gen, i, j, log_r, logTempRatio, logPseudoPriorRatio, logHastingsRatio, acceptMove))
-
-        if acceptMove:
-            self.simTemp_curTemp = j
-            self.simTemp_nTempChangeAccepts += 1
-        self.simTemp_nTempChangeProposals += 1
-        if j > i:
-            tmpI.nProposalsUp += 1
-            if acceptMove:
-                tmpI.nAcceptedUp += 1
-            #tmpI.rValsUp.append(log_r)
-        else:
-            tmpI.nProposalsDn += 1
-            if acceptMove:
-                tmpI.nAcceptedDn += 1
-            # tmpI.rValsDn.append(log_r)
-        
-
-    def simTemp_approximatePi(self, logLike=None):
-        gm = ["Mcmc.simTemp_approximatePi()"]
-
-        if logLike:
-            thisLogLike = logLike
-        else:
-            ch = self.chains[0]
-            thisLogLike = ch.curTree.logLike
-
-        for i,tmpI in enumerate(self.simTemp_temps[:-1]):
-            j = i + 1
-            tmpJ = self.simTemp_temps[j] 
-            #print(i, j)
-            beta_i = 1.0 / (1.0 + tmpI.temp)
-            beta_j = 1.0 / (1.0 + tmpJ.temp)
-            logTempRatio = (thisLogLike * beta_j) - (thisLogLike * beta_i)
-            # Here I tried to take the hastings ratio into account ...
-            # But it did not turn out well, so deleted.  It decreased
-            # the first and last occupancies too much.
-            tmpI.logPiDiff = logTempRatio
-
-    def simTemp_resetSimTempMax(self, newSimTempMax):
-        newVal = float(newSimTempMax)
-        print(f"Mcmc.simTemp_resetSimTempMax(), changing from old value {self.simTempMax} to new value {newVal}") 
-        self.simTempMax = newVal
-        logBase = var.mcmc_simTemp_tempCurveLogBase
-        factor = self.simTempMax / (math.pow(logBase, self.simTemp - 1) - 1.0)
-        for tNum in range(1,self.simTemp):
-            newTemp = (math.pow(logBase, tNum) - 1.) * factor
-            tmp = self.simTemp_temps[tNum]
-            tmp.temp = newTemp
-
-        if 1:
-            print("New settings of simTemp temperatures ---")
-            for tNum,tmp in enumerate(self.simTemp_temps):
-                print(f"{tNum:2}  {tmp.temp:10.3f}")
-        self.logger.info(f"Resetting simulated tempering MCMC, with new highest temperature {self.simTempMax:.2f}")
-
 
     def run(self, nGensToDo, verbose=True, equiProbableProposals=False, writeSamples=True):
         """Start the Mcmc running."""
@@ -2609,31 +2259,30 @@ class Mcmc(object):
                 gm.append("If we are doing simTemp, then doHeatingHack should be off.")
                 raise P4Error(gm)
         
-            if not self.simTemp_temps:
-                gm.append("If we are doing simTemp, we should have SimTempTemp objects in m.simTemp_temps.")
+            if not self.simTemp.temps:
+                gm.append("If we are doing simTemp, we should have SimTempTemp objects in m.simTemp.temps.")
                 raise P4Error(gm)
-            if len(self.simTemp_temps) != self.simTemp:
-                gm.append("If we are doing simTemp, we should have %i SimTempTemp objects in m.simTemp_temps." % self.simTemp)
+            if len(self.simTemp.temps) != self.simTemp.nTemps:
+                gm.append("If we are doing simTemp, we should have %i SimTempTemp objects in m.simTemp.temps." % \
+                          self.simTemp)
                 raise P4Error(gm)
-            for it in self.simTemp_temps:
+            for it in self.simTemp.temps:
                 if not isinstance(it, SimTempTemp):
                     gm.append("Each item in m.simTemp_temps should be a SimTempTemp object.")
                     raise P4Error(gm)
 
-            self.simTemp_longTNumSample = deque([-1] * self.simTemp_longTNumSampleSize)
-            self.simTemp_nTempChangeProposals = 0
-            self.simTemp_nTempChangeAccepts = 0
-            self.simTemp_tNums = []
-            self.simTemp_tunerSamples = []
-            for tmp in self.simTemp_temps:
+            self.simTemp.nTempChangeProposals = 0
+            self.simTemp.nTempChangeAccepts = 0
+            self.simTemp.tNums = []
+            for tmp in self.simTemp.temps:
                 tmp.occupancy = 0
                 tmp.nProposalsUp = 0
                 tmp.nAcceptedUp = 0
-                tmp.rValsUp = []
                 tmp.nProposalsDn = 0
                 tmp.nAcceptedDn = 0
-                tmp.rValsDn = []
 
+            if self.simTemp_doLogTemps:
+                self.simTemp.writeTempsOneLineHeader()
 
         if self.prob.polytomy:
             for pNum in range(self.tree.model.nParts):
@@ -2770,6 +2419,10 @@ class Mcmc(object):
         if writeSamples and not self.doSteppingStone:
             # it is a re-start, so we need to back over the "end;" in the tree
             # files.
+            if self.treeFile:
+                if not self.treeFile.closed:
+                    self.treeFile.close()
+
             f2 = open(self.treeFileName, 'r+b')
             # print(f2, type(f2), f2.tell())   
             # <_io.BufferedRandom name='mcmc_trees_0.nex'> <class '_io.BufferedRandom'> 0
@@ -2811,10 +2464,11 @@ class Mcmc(object):
 
             self.startMinusOne = self.gen
         else:
-            self.logger.info("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+            self.logger.info("Starting the MCMC %s run %i" % (
+                (self.constraints and "(with constraints)" or ""), self.runNum))
             if self.simTemp:
-                self.logger.info("Using simulated tempering MCMC, with %i temperatures, with highest temperature %.2f" % (
-                    self.simTemp, self.simTempMax))
+                self.logger.info("Using simulated tempering MCMC, with %i temperatures" % (
+                    self.simTemp.nTemps))
             if verbose:
                 if self.nChains > 1:
                     print("Using Metropolis-coupled MCMC, with %i chains." % self.nChains)
@@ -2825,9 +2479,10 @@ class Mcmc(object):
                 else:
                     print("Not using Metropolis-coupled MCMC.")
                 if self.simTemp:
-                    print("Using simulated tempering MCMC, with %i temperatures, with highest temperature %.2f" % (
-                        self.simTemp, self.simTempMax))
-                print("Starting the MCMC %s run %i" % ((self.constraints and "(with constraints)" or ""), self.runNum))
+                    print("Using simulated tempering MCMC, with %i temperatures" % (
+                        self.simTemp.nTemps))
+                print("Starting the MCMC %s run %i" % (
+                    (self.constraints and "(with constraints)" or ""), self.runNum))
                 print("Set to do %i generations." % nGensToDo)
 
             if self.writePrams:
@@ -2836,19 +2491,17 @@ class Mcmc(object):
                         print("There are no free prams in the model, so I am turning writePrams off.")
                     self.writePrams = False
                 else:
-                    pramsFile = open(self.pramsFileName, 'w')
-                    self.chains[0].curTree.model.writePramsProfile(pramsFile, self.runNum)
-                    pramsFile.write("genPlus1")
-                    self.chains[0].curTree.model.writePramsHeaderLine(pramsFile)
-                    pramsFile.close()
+                    self.pramsFile = open(self.pramsFileName, 'w')
+                    self.chains[0].curTree.model.writePramsProfile(self.pramsFile, self.runNum)
+                    self.pramsFile.write("genPlus1")
+                    self.chains[0].curTree.model.writePramsHeaderLine(self.pramsFile)
             if self.writeHypers:
                 if not self.tree.model.parts[0].ndch2:     # and therefore all model parts, this week
                     self.writeHypers = False
                 else:
-                    hypersFile = open(self.hypersFileName, 'w')
-                    hypersFile.write('genPlus1')
-                    self.chains[0].curTree.model.writeHypersHeaderLine(hypersFile)
-                    hypersFile.close()
+                    self.hypersFile = open(self.hypersFileName, 'w')
+                    self.hypersFile.write('genPlus1')
+                    self.chains[0].curTree.model.writeHypersHeaderLine(self.hypersFile)
 
         if not writeSamples:
             self.logger.info("Mcmc.run() arg 'writeSamples' is off, so samples are not being written")
@@ -2856,6 +2509,8 @@ class Mcmc(object):
             self.logger.info("Mcmc.run() arg 'equiProbableProposals' is turned on")
         if self.doSteppingStone:
             self.logger.info("Mcmc.run() doSteppingStone is turned on")
+            self.ssLikesFile = open(self.ssLikesFileName, 'a')
+
 
 
         if verbose:
@@ -2868,7 +2523,7 @@ class Mcmc(object):
             if self.checkPointInterval:
                 print("CheckPoints written every %i." % self.checkPointInterval)
             else:
-                print("CheckPoints will not be written")
+                print("CheckPoints are not scheduled to be written")
             if nGensToDo <= 20000:
                 print("One dot is 100 generations.")
             else:
@@ -2999,25 +2654,22 @@ class Mcmc(object):
             
             if self.nChains == 1:
                 if self.simTemp:
-                    self.simTemp_temps[self.simTemp_curTemp].occupancy += 1
-                    if (self.gen + 1) % self.simTemp_tempChangeProposeFreq == 0:
-                        self.simTemp_proposeTempChange()
-                    self.simTemp_tNums.append(self.simTemp_curTemp)
+                    self.simTemp.temps[self.simTemp.curTemp].occupancy += 1
+                    # if (self.gen + 1) % self.simTemp.tempChangeProposeFreq == 0:
+                    self.simTemp.tNums.append(self.simTemp.curTemp)
 
                     # this is a deque.  Append on the left and pop on the right
-                    self.simTemp_longTNumSample.appendleft(self.simTemp_curTemp)
-                    self.simTemp_longTNumSample.pop() # from the right, of course
+                    self.simTemp.tNumSample.appendleft(self.simTemp.curTemp)
+                    self.simTemp.tNumSample.pop() # from the right, of course
 
-                    # tunerSamplSize is small, so this adjustment is high frequency (eg every 100 gens)
-                    self.simTemp_tunerSamples.append(self.chains[0].curTree.logLike)
-                    if len(self.simTemp_tunerSamples) >= self.simTemp_tunerSampleSize:
-                        meanLogLike = statistics.mean(self.simTemp_tunerSamples)
-                        self.simTemp_approximatePi(meanLogLike)
-                        self.simTemp_tunerSamples = []
+                    self.simTemp.proposeTempChange()
 
-                        # tunePseudoPriors() uses longTNumSample, so it should be full
-                        if self.simTemp_longTNumSample[-1] != -1:  # ie it is full
-                            self.simTemp_tunePseudoPriors()
+                    if self.simTemp_doTuneTempsAndLogPi:
+                        if self.gen >= self.simTemp.tNumSampleSize:
+                            if self.gen % self.simTemp.tNumSampleSize == 0:                    
+                                self.simTemp.tuneTempsAndLogPi()
+
+
 
 
             else:
@@ -3030,7 +2682,7 @@ class Mcmc(object):
 
             doWrite = False
             if self.simTemp:
-                if self.simTemp_curTemp == 0:
+                if self.simTemp.curTemp == 0:
                     # Thinning the simTemp chain is awkward.  Here is a hack.
                     # var.mcmc_simTemp_thinning is a list of digit strings, by default ['0']
                     if var.mcmc_simTemp_thinning:
@@ -3046,9 +2698,7 @@ class Mcmc(object):
             
             if doWrite and self.doSteppingStone:
                 if writeSamples:
-                    ssLikesFile = open(self.ssLikesFileName, 'a')
-                    ssLikesFile.write('%f\n' % self.chains[self.coldChainNum].curTree.logLike)
-                    ssLikesFile.close()
+                    self.ssLikesFile.write('%f\n' % self.chains[self.coldChainNum].curTree.logLike)
 
 
 
@@ -3130,6 +2780,14 @@ class Mcmc(object):
                     doCheckPoint = True                
             
             if doCheckPoint:
+
+                if self.simTemp:
+                    fout = open(self.simTempFileName, 'a')
+                    print("-" * 50, file=fout)
+                    print("gen+1 %11i" % (self.gen + 1), file=fout)
+                    self.simTemp.writeTempsTable(flob=fout, zeroCountsAfter=True)
+                    fout.close()
+
                 # print(f"writing checkpoint at self.gen {self.gen}, gNum {gNum}")
                 self.checkPoint()
 
@@ -3152,31 +2810,7 @@ class Mcmc(object):
                     for i in range(self.nChains):
                         self.swapMatrix.append([0] * self.nChains)
 
-                if self.simTemp:
-                    fout = open(self.simTempFileName, 'a')
-                    print("-" * 50, file=fout)
-                    print("gen+1 %11i" % (self.gen + 1), file=fout)
-                    self.simTemp_dumpTemps(flob=fout)
 
-                    # tuning results are written to self.simTempFileName
-                    self.simTemp_tunePseudoPriors_longSample(flob=fout)
-
-                    fout.close()
-
-                    self.simTemp_nTempChangeProposals = 0
-                    self.simTemp_nTempChangeAccepts = 0
-                    self.simTemp_tNums = []
-                    #self.simTemp_tunerSamples = []
-                    for tmp in self.simTemp_temps:
-                        tmp.occupancy = 0
-                        tmp.nProposalsUp = 0
-                        tmp.nAcceptedUp = 0
-                        #tmp.rValsUp = []
-                        tmp.nProposalsDn = 0
-                        tmp.nAcceptedDn = 0
-                        #tmp.rValsDn = []
-
-                    
 
             # Reassuring pips ...
             # We want to skip the first gen of every call to run()
@@ -3227,14 +2861,32 @@ class Mcmc(object):
         if writeSamples and not self.doSteppingStone:
             # Write "end;" regardless of writeSamples, or else subsequent attempts to remove it will fail.
             # No, that does not work for simTemp trialAndError.  Why not?
-            treeFile = open(self.treeFileName, 'a')
-            treeFile.write('end;\n\n')
-            treeFile.close()
+            if not self.treeFile or self.treeFile.closed:
+                self.treeFile = open(self.treeFileName, 'a')
+            self.treeFile.write('end;\n\n')
+
+        if self.likesFile:
+            self.likesFile.close()
+        if self.treeFile:
+            self.treeFile.close()
+        if self.simFile:
+            self.simFile.close()
+        if self.pramsFile:
+            self.pramsFile.close()
+        if self.hypersFile:
+            self.hypersFile.close()
+        if self.ssLikesFile:
+            self.ssLikesFile.close()
+
+
+
 
     def _writeSample(self):
-        likesFile = open(self.likesFileName, 'a')
-        likesFile.write('%11i %f\n' % (self.gen + 1, self.chains[self.coldChainNum].curTree.logLike))
-        likesFile.close()
+        try:
+            self.likesFile.write('%11i %f\n' % (self.gen + 1, self.chains[self.coldChainNum].curTree.logLike))
+        except (AttributeError, ValueError):
+            self.likesFile = open(self.likesFileName, 'a')
+            self.likesFile.write('%11i %f\n' % (self.gen + 1, self.chains[self.coldChainNum].curTree.logLike))
 
         # Check the likelihood every write interval
         if 0:
@@ -3251,40 +2903,45 @@ class Mcmc(object):
             else:
                 print()
 
-
-        treeFile = open(self.treeFileName, 'a')
-        treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
+        try:
+            self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
+        except (AttributeError, ValueError):
+            self.treeFile = open(self.treeFileName, 'a')
+            self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
+        self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
         if self.tree.model.parts[0].ndch2:     # and therefore all model parts
             if self.tree.model.parts[0].ndch2_writeComps:
-                self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
+                self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                               withTranslation=1,
                                                               translationHash=self.translationHash,
                                                               doMcmcCommandComments=True)
             else:
-                self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
+                self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                               withTranslation=1,
                                                               translationHash=self.translationHash,
                                                               doMcmcCommandComments=False)
 
         else:
-            self.chains[self.coldChainNum].curTree.writeNewick(treeFile,
+            self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                           withTranslation=1,
                                                           translationHash=self.translationHash,
                                                           doMcmcCommandComments=self.tree.model.isHet)
-        treeFile.close()
 
         if self.writePrams:
-            pramsFile = open(self.pramsFileName, 'a')
-            #pramsFile.write("%12i " % (self.gen + 1))
-            pramsFile.write("%12i" % (self.gen + 1))
-            self.chains[self.coldChainNum].curTree.model.writePramsLine(pramsFile)
-            pramsFile.close()
+            try:
+                self.pramsFile.write("%12i" % (self.gen + 1))
+            except (AttributeError, ValueError):
+                self.pramsFile = open(self.pramsFileName, 'a')
+                self.pramsFile.write("%12i" % (self.gen + 1))
+            self.chains[self.coldChainNum].curTree.model.writePramsLine(self.pramsFile)
 
         if self.writeHypers:
-            hypersFile = open(self.hypersFileName, 'a')
-            hypersFile.write("%12i" % (self.gen + 1))
-            self.chains[self.coldChainNum].curTree.model.writeHypersLine(hypersFile)
-            hypersFile.close()
+            try:
+                self.hypersFile.write("%12i" % (self.gen + 1))
+            except (AttributeError, ValueError):
+                self.hypersFile = open(self.hypersFileName, 'a')
+                self.hypersFile.write("%12i" % (self.gen + 1))
+            self.chains[self.coldChainNum].curTree.model.writeHypersLine(self.hypersFile)
 
 
 
@@ -3427,52 +3084,52 @@ class Mcmc(object):
         return deltaTime
 
     def _writeSimFileHeader(self, curTree):
-        simFile = open(self.simFileName, 'a')
+        self.simFile = open(self.simFileName, 'a')
 
-        simFile.write(" genPlus1")
+        self.simFile.write(" genPlus1")
         # If self.simulate contains a 1, do unconstrained log like
         if 1 & self.simulate:
             for pNum in range(self.simTree.data.nParts):
-                simFile.write(' uncLike%i' % pNum)
+                self.simFile.write(' uncLike%i' % pNum)
         if 2 & self.simulate:  # If self.simulate contains a 2, do bigX^2
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' bigXSq%i' % pNum)
+                self.simFile.write(' bigXSq%i' % pNum)
         # If self.simulate contains a 4, do meanNCharPerSite
         if 4 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' meanNCharsPerSite%i' % pNum)
+                self.simFile.write(' meanNCharsPerSite%i' % pNum)
         # If self.simulate contains an 8, do c_m, the compStatFromCharFreqs
         if 8 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' c_mSim%i  c_mOrig%i' % (pNum, pNum))
+                self.simFile.write(' c_mSim%i  c_mOrig%i' % (pNum, pNum))
         # If self.simulate contains a 16, do constant sites count
         if 16 & self.simulate:
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' nConstSites%i' % pNum)
-        simFile.write('\n')
-        simFile.close()
+                self.simFile.write(' nConstSites%i' % pNum)
+        self.simFile.write('\n')
 
     def _doSimulate(self, curTree):
         curTree.copyToTree(self.simTree)
         curTree.model.copyValsTo(self.simTree.model)
         self.simTree.simulate()
-        simFile = open(self.simFileName, 'a')
-        simFile.write(" %11i" % (self.gen + 1))
+        if self.simFile and self.simFile.closed:
+            self.simFile = open(self.simFileName, 'a')
+        self.simFile.write(" %11i" % (self.gen + 1))
         # If self.simulate contains a 1, do unconstrained log like
         if 1 & self.simulate:
             for p in self.simTree.data.parts:
-                simFile.write(' %f' % pf.getUnconstrainedLogLike(p.cPart))
+                self.simFile.write(' %f' % pf.getUnconstrainedLogLike(p.cPart))
 
         if 2 & self.simulate:  # If self.simulate contains a 2, do bigX^2
             if self.blankSeqNums == None:
                 ret = self.simTree.data.simpleBigXSquared()
                 for pNum in range(self.simTree.model.nParts):
-                    simFile.write(' %f' % ret[pNum])
+                    self.simFile.write(' %f' % ret[pNum])
             else:
                 # We do not want sims corresponding to blank seqs to contribute to the bigXSq
                 ret2 = self.simTree.data.compoChiSquaredTest(verbose=0, skipTaxNums=self.blankSeqNums, skipColumnZeros=True)
                 for pNum in range(self.simTree.model.nParts):
-                    simFile.write(' %f' % ret2[pNum][0])
+                    self.simFile.write(' %f' % ret2[pNum][0])
 
             # check ...
             # for i in range(len(ret)):
@@ -3485,14 +3142,14 @@ class Mcmc(object):
             ret = self.simTree.data.meanNCharsPerSite()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' %f' % ret[pNum])
+                self.simFile.write(' %f' % ret[pNum])
         # If self.simulate contains an 8, do c_m, the compStatFromCharFreqs
         if 8 & self.simulate:
             ret = self.simTree.compStatFromCharFreqs()
             ret2 = curTree.compStatFromCharFreqs()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' %f  %f' % (ret[pNum], ret2[pNum]))
+                self.simFile.write(' %f  %f' % (ret[pNum], ret2[pNum]))
                 # print ' compStatFromCharFreqs: %f  %f' % (ret[pNum],
                 # ret2[pNum])
         # If self.simulate contains a 16, do constant sites count
@@ -3500,15 +3157,14 @@ class Mcmc(object):
             ret = self.simTree.data.simpleConstantSitesCount()
             # ret is a list, one number per part
             for pNum in range(self.simTree.model.nParts):
-                simFile.write(' %i' % ret[pNum])
-        simFile.write('\n')
-        simFile.close()
+                self.simFile.write(' %i' % ret[pNum])
+        self.simFile.write('\n')
 
     def checkPoint(self):
 
+
         if 0:
-            for chNum in range(self.nChains):
-                ch = self.chains[chNum]
+            for chNum,ch in enumerate(self.chains):
                 print("chain %i ==================" % chNum)
                 ch.curTree.summarizeModelComponentsNNodes()
 
@@ -3525,6 +3181,12 @@ class Mcmc(object):
         self.logger = None
         savedLoggerPrinter = self.loggerPrinter
         self.loggerPrinter = None
+
+        #print(f"checkPoint() self.simTemp_tempsFlob is {self.simTemp_tempsFlob}", end=' ')
+        #print(f"type {type(self.simTemp_tempsFlob)}")  # type <class '_io.TextIOWrapper'>
+        # This does not pickle
+        self.simTemp_tempsFlob = None
+
 
         # gsl_rng state
         the_gsl_rng_size = pf.gsl_rng_size(var.gsl_rng) # size of the state
@@ -3543,14 +3205,35 @@ class Mcmc(object):
         if self.simulate:
             savedSimData = self.simTree.data
             self.simTree.data = None
-        for chNum in range(self.nChains):
-            ch = self.chains[chNum]
+        for ch in self.chains:
             ch.curTree.data = None
             ch.curTree.savedLogLike = ch.curTree.logLike
             ch.propTree.data = None
 
-        
-        
+        # Open files don't copy.  Furthermore, merely closing a file
+        # is not enough --- nor is it enough to set the variable to
+        # None (although that should be enough!  --- it works for
+        # small examples elsewhere!  Why not here?!?).  It needs to be
+        # deleted, and then set to None.  Extra: closing a closed file
+        # is not an error.
+        for myf in [
+                self.likesFile,
+                self.treeFile,
+                self.simFile,
+                self.pramsFile,
+                self.hypersFile,
+        ]:
+            if myf:
+                if not myf.closed:
+                    myf.close()
+            del(myf)
+
+        self.likesFile = None
+        self.treeFile = None
+        self.simFile = None
+        self.pramsFile = None
+        self.hypersFile = None
+
         theCopy = copy.deepcopy(self)
 
         # Re-attach data and logger to self.
@@ -3561,8 +3244,7 @@ class Mcmc(object):
         if self.simulate:
             self.simTree.data = savedSimData
             self.simTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
-        for chNum in range(self.nChains):
-            ch = self.chains[chNum]
+        for chNum,ch in enumerate(self.chains):
             ch.curTree.data = savedData
             #print("After restoring data", end=' ')
             ch.curTree.calcLogLike(verbose=False, resetEmpiricalComps=False)
@@ -3593,8 +3275,7 @@ class Mcmc(object):
         #theCopy.treePartitions._finishSplits()
         theCopy.likesFile = None
         theCopy.treeFile = None
-        for chNum in range(theCopy.nChains):
-            ch = theCopy.chains[chNum]
+        for ch in theCopy.chains:
             ch.curTree.deleteCStuff()
             #ch.curTree.data = None
             ch.propTree.deleteCStuff()

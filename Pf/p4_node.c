@@ -598,18 +598,42 @@ void p4_calculatePickerDecks(p4_node *aNode)
 #endif
 }
 
-void p4_setConditionalLikelihoodsOfInteriorNode(p4_node *aNode)
+void p4_setConditionalLikelihoodsOfInternalNode(p4_node *aNode)
 {
     int pNum;
+    int i,j;
+
+    //printf("node %i, p4_setConditionalLikelihoodsOfInternalNode()\n", aNode->nodeNum);
+    // if it is (unusually) a root that is a leaf ---
+    if(aNode == aNode->tree->root && aNode->isLeaf) {
+        if(aNode->cl == NULL) {
+            aNode->cl = (double ****)malloc(aNode->nParts * sizeof(double ***));
+            if(!aNode->cl) {
+                printf("Failed to allocate memory for cl.\n");
+                exit(1);
+            }
+            for(i = 0; i < aNode->nParts; i++) {
+                aNode->cl[i] = (double ***)malloc(aNode->tree->model->parts[i]->nCat * sizeof(double **));
+                if(!aNode->cl[i]) {
+                    printf("Failed to allocate memory for cl[i].\n");
+                    exit(1);
+                }
+                for(j = 0; j < aNode->tree->model->parts[i]->nCat; j++) {
+                    aNode->cl[i][j] = pdmatrix(aNode->tree->model->parts[i]->dim, aNode->tree->data->parts[i]->nChar);
+                }
+            }
+        }
+    }
+            
 
     for(pNum = 0; pNum < aNode->nParts; pNum++) {	
-        p4_setConditionalLikelihoodsOfInteriorNodePart(aNode, pNum);
+        p4_setConditionalLikelihoodsOfInternalNodePart(aNode, pNum);
     }
     aNode->clNeedsUpdating = 0;  // for treeNewt, if nothing else.
 
 }
 
-void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
+void p4_setConditionalLikelihoodsOfInternalNodePart(p4_node *aNode, int pNum)
 {
     int	seqPos, symb, chSymb;
     p4_node *child;
@@ -657,8 +681,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
                             exit(1);
                         }
 #endif
-                        //printf("  Setting cl[%i] to %f\n", 
-                        //symb, aNode->leftChild->bigPDecks[pNum][rate][symb][charCode]);
+                        //printf("  Setting cl[%i] to %f\n", symb, aNode->leftChild->bigPDecks[pNum][rate][symb][charCode]);
                         aNode->cl[pNum][rate][symb][seqPos] = 
                             aNode->leftChild->bigPDecks[pNum][rate][symb][charCode];
                     }
@@ -694,7 +717,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
                     }
 
                     else {
-                        printf("node %i: setConditionalLikelihoodsOfInteriorNodes:\n", aNode->nodeNum);
+                        printf("node %i: setConditionalLikelihoodsOfInternalNodes:\n", aNode->nodeNum);
                         printf("   Programming error.  This shouldn't happen\n");
                         exit(1);
                     }
@@ -775,7 +798,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
                         }
 
                         else {
-                            printf("node %i: setConditionalLikelihoodsOfInteriorNodes:\n", aNode->nodeNum);
+                            printf("node %i: setConditionalLikelihoodsOfInternalNodes:\n", aNode->nodeNum);
                             printf("x   Programming error.  This shouldn't happen\n");
                             exit(1);
                         }
@@ -821,7 +844,7 @@ void p4_setConditionalLikelihoodsOfInteriorNodePart(p4_node *aNode, int pNum)
             //printf("seqPos %i, rate %i: ", seqPos, rate);
             for(symb = 0; symb < dim; symb++) {
                 if(aNode->cl[pNum][rate][symb][seqPos] < 0.0) {
-                    printf("p4_setConditionalLikelihoodsOfInteriorNodePart() ");
+                    printf("p4_setConditionalLikelihoodsOfInternalNodePart() ");
                     printf("node %i, rate %i, symb %i, seqPos %i ", aNode->nodeNum, rate, symb, seqPos);
                     printf("condLike %g\n", aNode->cl[pNum][rate][symb][seqPos]);
                 }

@@ -801,10 +801,10 @@ class TreePartitions(object):
                 self.nTax = len(self.taxNames)
 
             rootNChildren = theTree.root.getNChildren()
-            if rootNChildren == 1:
-                gm.append("Cannot handle trees rooted on a single taxon yet.  Fix me.")
-                raise P4Error(gm)
-            elif rootNChildren == 2:
+            #if rootNChildren == 1:
+            #    gm.append("Cannot handle trees rooted on a single taxon yet.  Fix me.")
+            #    raise P4Error(gm)
+            if rootNChildren == 2:
                 self.isBiRoot = True
             else:
                 self.isBiRoot = False
@@ -816,14 +816,14 @@ class TreePartitions(object):
                     theTree.write()
                     gm.append("First tree had a bifurcating root, and so all trees must as well.")
                     raise P4Error(gm)
-            else:
-                assert self.isBiRoot == False
-                rootNChildren = theTree.root.getNChildren()
-                if rootNChildren < 3:
-                    t.write()
-                    gm.append("First tree did not have a bifurcating root.")
-                    gm.append("All subsequent trees may not either.")
-                    raise P4Error(gm)
+            # else:
+            #     assert self.isBiRoot == False
+            #     rootNChildren = theTree.root.getNChildren()
+            #     if rootNChildren < 3:
+            #         theTree.write()
+            #         gm.append("First tree did not have a bifurcating root.")
+            #         gm.append("All subsequent trees may not either.")
+            #         raise P4Error(gm)
 
         theTree.taxNames = self.taxNames  # Tree.taxNames is a property, triggers checking.
 

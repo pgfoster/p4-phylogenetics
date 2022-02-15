@@ -13,6 +13,8 @@ void p4_setPramsTest(p4_tree *aTree);
 void p4_setPramsPartTest(p4_tree *aTree, int pNum);
 double p4_treeLogLike(p4_tree *aTree, int getSiteLikes);
 double p4_partLogLike(p4_tree *aTree, part *p, int partNum, int getSiteLikes);
+double p4_partLogLikeLoop(p4_tree *aTree, part *dp, int pNum, int getSiteLikes, double *patternLikes, p4_modelPart *mp);
+double p4_partLogLikeLoopRootLeaf(p4_tree *aTree, part *dp, int pNum, int getSiteLikes, double *patternLikes, p4_modelPart *mp);
 double p4_partLogLikeSiteRates(p4_tree *aTree, part *p, int pNum, int getSiteLikes, double *siteRates, int *gammaCats, double *work);
 void p4_getPreOrderNodeNumsAbove(p4_tree *aTree, p4_node *aNode);
 

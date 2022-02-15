@@ -199,8 +199,7 @@ class Nexus:
                         # taxNames ever change.
                         #t.taxNames = self.nexusData.taxNames[:]
 
-                        # print 'self.nexusData.taxNames = %s' %
-                        # self.nexusData.taxNames
+                        # print('readBlock() self.nexusData.taxNames = %s' % self.nexusData.taxNames)
                         t.taxNames = self.nexusData.taxNames
                         # if var.doRepairDupedTaxonNames:
                         #    t.checkDupedTaxonNames()

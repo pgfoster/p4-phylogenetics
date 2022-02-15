@@ -130,10 +130,11 @@ class McmcCheckPointReader(object):
                 " ", "-----", "---", "-----", "------"))
             for i in range(len(self.mm)):
                 m = self.mm[i]
-                assert m.checkPointInterval % m.sampleInterval == 0
+                
                 if hasattr(m, "simTemp") and m.simTemp:
                     thisNSamps = m.treePartitions.nTrees
                 else:
+                    # assert m.checkPointInterval % m.sampleInterval == 0          # needed?
                     thisNSamps = int(m.checkPointInterval /  m.sampleInterval)
                     assert thisNSamps == m.treePartitions.nTrees
                     # print(f"got thisNSamps {thisNSamps}, nTrees {m.treePartitions.nTrees}")
