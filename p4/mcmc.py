@@ -2908,7 +2908,6 @@ class Mcmc(object):
         except (AttributeError, ValueError):
             self.treeFile = open(self.treeFileName, 'a')
             self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
-        self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
         if self.tree.model.parts[0].ndch2:     # and therefore all model parts
             if self.tree.model.parts[0].ndch2_writeComps:
                 self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
@@ -3112,9 +3111,12 @@ class Mcmc(object):
         curTree.copyToTree(self.simTree)
         curTree.model.copyValsTo(self.simTree.model)
         self.simTree.simulate()
-        if self.simFile and self.simFile.closed:
+        try:
+            self.simFile.write(" %11i" % (self.gen + 1))
+        except (AttributeError, ValueError):
             self.simFile = open(self.simFileName, 'a')
-        self.simFile.write(" %11i" % (self.gen + 1))
+            self.simFile.write(" %11i" % (self.gen + 1))
+
         # If self.simulate contains a 1, do unconstrained log like
         if 1 & self.simulate:
             for p in self.simTree.data.parts:
