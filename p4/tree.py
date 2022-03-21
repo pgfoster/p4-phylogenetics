@@ -2725,7 +2725,7 @@ class Tree(object):
                 "Need to have either spoke.parent == hub or hub == spoke.")
             raise P4Error(gm)
 
-    def topologyDistance(self, tree2, metric='sd', resetSplitKeySet=False):
+    def topologyDistance(self, tree2, metric='sd', resetSplitKeySet=True):
         """Compares the topology of self with tree2.
 
         The complete list of metrics is given in
