@@ -2532,8 +2532,7 @@ if True:
             print("pNode is %i, above=%s" % (pNode.nodeNum, myAbove))
             self.draw()
             raise P4Error
-        # print "spr()  pruneNum %i, above=%s, graftNum %i" % (pNode.nodeNum,
-        # myAbove, gNNum)
+        # print("randomSpr()  pruneNum %i, above=%s, graftNum %i" % (pNode.nodeNum,myAbove, gNNum))
 
         self.spr(pruneNode=pNode, above=myAbove, graftNode=gNNum)
 
