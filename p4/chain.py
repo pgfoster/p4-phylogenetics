@@ -2243,7 +2243,8 @@ class Chain(object):
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
-            dirPrams = mpCur.ndch2_leafAlpha * mtCur.empiricalComp
+            # dirPrams = mpCur.ndch2_leafAlpha * mtCur.empiricalComp
+            dirPrams = mpCur.ndch2_leafAlpha * mpCur.ndch2_globalComp
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs 
@@ -2411,7 +2412,8 @@ class Chain(object):
             mtNum = nCur.parts[theProposal.pNum].compNum
             mtCur = mpCur.comps[mtNum]
 
-            thisComp = mtCur.empiricalComp
+            # thisComp = mtCur.empiricalComp
+            thisComp = mpCur.ndch2_globalComp
             lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, newVal * thisComp, mtCur.val)
             lnPdfCur = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, oldVal * thisComp, mtCur.val)
             self.logPriorRatio += lnPdfProp - lnPdfCur
