@@ -990,17 +990,17 @@ class Mcmc(object):
                 for n in self.tree.iterNodes():
                     assert n.nodeNum == n.parts[pNum].compNum
 
-                # Set leaf node mt.empiricalComp
-                for n in self.tree.iterLeavesNoRoot():
-                    mt = mp.comps[n.parts[pNum].compNum]
-                    # print(n.name, mt.val, "seqNum", n.seqNum)
-                    # print("part[seq] composition:", dp.composition([n.seqNum]))
-                    mt.empiricalComp = numpy.array(dp.composition([n.seqNum]))
-                    while mt.empiricalComp.min()  < var.PIVEC_MIN:
-                        for i in range(mp.dim):
-                            if mt.empiricalComp[i] < var.PIVEC_MIN:
-                                mt.empiricalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
-                        mt.empiricalComp /= mt.empiricalComp.sum()
+                # Set leaf node mt.empiricalComp. edit march 2022, not used, so turned off
+                # for n in self.tree.iterLeavesNoRoot():
+                #     mt = mp.comps[n.parts[pNum].compNum]
+                #     # print(n.name, mt.val, "seqNum", n.seqNum)
+                #     # print("part[seq] composition:", dp.composition([n.seqNum]))
+                #     mt.empiricalComp = numpy.array(dp.composition([n.seqNum]))
+                #     while mt.empiricalComp.min()  < var.PIVEC_MIN:
+                #         for i in range(mp.dim):
+                #             if mt.empiricalComp[i] < var.PIVEC_MIN:
+                #                 mt.empiricalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                #         mt.empiricalComp /= mt.empiricalComp.sum()
 
                 mp.ndch2_globalComp = numpy.array(dp.composition())
                 while mp.ndch2_globalComp.min()  < var.PIVEC_MIN:
