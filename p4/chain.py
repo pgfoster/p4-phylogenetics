@@ -105,15 +105,6 @@ class Chain(object):
             self.propTree.model.setCStuff(partNum=theProposal.pNum)
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)
 
-        elif theProposal.name == 'ndch2_root3n_internalCompsDir':
-            # print("aab Doing proposal ndch2_root3n_internalCompsDir")
-            self.proposeNdch2_root3n_internalCompsDir(theProposal)
-            if not self.propTree.preAndPostOrderAreValid:
-                self.propTree.setPreAndPostOrder()
-            self.propTree.setCStuff()
-            self.propTree.model.setCStuff(partNum=theProposal.pNum)
-            pf.p4_setPrams(self.propTree.cTree, -1)
-
         elif theProposal.name == 'ndch2_leafCompsDirAlpha':
             # print "theProposal.name = ndch2_leafCompsDirAlpha, pNum=%i" % theProposal.pNum
             self.proposeNdch2_leafCompsDirAlpha(theProposal)
@@ -408,24 +399,6 @@ class Chain(object):
                            print('++++++ gen %i comp %2i %2i' % (self.mcmc.gen, mtPropNum,chNum), "%17.15f %17.15f %g" % (thisNp, thatNp, (thisNp - thatNp))) 
             
             pf.p4_setPrams(self.propTree.cTree, theProposal.pNum)  # "-1" means do all parts
-            for n in self.propTree.iterPostOrder():
-                if not n.isLeaf or (n == self.propTree.root and n.isLeaf):  # possibly leaf root
-                    pf.p4_setConditionalLikelihoodsOfInternalNodePart(n.cNode, theProposal.pNum)
-
-            pf.p4_partLogLike(self.propTree.cTree,
-                              self.propTree.data.parts[theProposal.pNum].cPart,
-                              theProposal.pNum, 0)
-
-        elif theProposal.name == 'ndch2_root3n_internalCompsDir':
-            # This should only be for single-partition data, so we do not need to "do all parts"
-            #print("theProposal.name = ndch2_root3n_internalCompsDir, pNum=%i" % theProposal.pNum)
-            self.proposeNdch2_root3n_internalCompsDir(theProposal)
-            # This next line is not needed because comps are numpy arrays
-            # self.propTree.model.setCStuff(partNum=theProposal.pNum)
-
-            self.propTree.setPreAndPostOrder()
-            self.propTree.setCStuff()
-            pf.p4_setPrams(self.propTree.cTree, -1)  # "-1" means do all parts
             for n in self.propTree.iterPostOrder():
                 if not n.isLeaf or (n == self.propTree.root and n.isLeaf):  # possibly leaf root
                     pf.p4_setConditionalLikelihoodsOfInternalNodePart(n.cNode, theProposal.pNum)
@@ -1408,7 +1381,7 @@ class Chain(object):
             # Tree topology, so all parts
             elif aProposal.name in ['local', 'eTBR', 'root3', 'root3n', 'root2',
                                     'brLen', 'polytomy', 'treeScale', 
-                                    'allBrLens', 'ndch2_root3n_internalCompsDir']:
+                                    'allBrLens']:
                 b.logLike = a.logLike
                 for pNum in range(self.propTree.model.nParts):
                     b.partLikes[pNum] = a.partLikes[pNum]
@@ -2299,8 +2272,8 @@ class Chain(object):
 
 
 
-    def proposeNdch2_root3n_internalCompsDir(self, theProposal):
-        gm = ['Chain.proposeNdch2_root3n_internalCompsDir()']
+    def proposeNdch2_internalCompsDir(self, theProposal):
+        gm = ['Chain.proposeNdch2_internalCompsDir()']
 
         mpCur = self.curTree.model.parts[theProposal.pNum]
         mpProp = self.propTree.model.parts[theProposal.pNum]

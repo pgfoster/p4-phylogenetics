@@ -39,7 +39,6 @@ fudgeFactor['allCompsDir'] = 1.0
 fudgeFactor['allRMatricesDir'] = 1.0
 fudgeFactor['ndch2comp'] = 0.2
 fudgeFactor['ndch2alpha'] = 0.04
-fudgeFactor['ndch2root3nInternalCompsDir'] = 0.05
 
 
 class McmcTuningsPart(object):
@@ -57,7 +56,6 @@ class McmcTuningsPart(object):
         self.default['ndch2_internalCompsDir'] = 100.
         self.default['ndch2_leafCompsDirAlpha'] = 2.0 * math.log(1.2)
         self.default['ndch2_internalCompsDirAlpha'] = 2.0 * math.log(3.0)
-        self.default['ndch2_root3n_internalCompsDir'] = 100.
         # rMatrix with sliders no longer changed depending on the dim (ie size of rMatrix)
         self.default['rMatrix'] = 0.3
         # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
@@ -126,7 +124,6 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'ndch2_internalCompsDir', 0.0)
         object.__setattr__(self, 'ndch2_leafCompsDirAlpha', 0.0)
         object.__setattr__(self, 'ndch2_internalCompsDirAlpha', 0.0)
-        #object.__setattr__(self, 'ndch2_root3n_internalCompsDir', 0.0)
         #object.__setattr__(self, 'rMatrix', 1.0)
         object.__setattr__(self, 'rMatrixDir', 0.0)
         object.__setattr__(self, 'allRMatricesDir', 1.0)
@@ -861,7 +858,7 @@ class Mcmc(object):
 
         self.props = Proposals()
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
-                    gdasrv local ndch2_internalCompsDir ndch2_root3n_internalCompsDir 
+                    gdasrv local ndch2_internalCompsDir 
                     ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
                     ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
         # maybeTunableButNotNow  compLocation eTBR polytomy root3 root3n rMatrixLocation root2
@@ -944,7 +941,6 @@ class Mcmc(object):
             self._tunings.parts[pNum].default['allCompsDir'] = 100. * theDim
             self._tunings.parts[pNum].default['ndch2_leafCompsDir'] = 2000. * theDim
             self._tunings.parts[pNum].default['ndch2_internalCompsDir'] = 500. * theDim
-            self._tunings.parts[pNum].default['ndch2_root3n_internalCompsDir'] = 500. * theDim
             self._tunings.parts[pNum].default['rMatrixDir'] = 50. * nRates
             self._tunings.parts[pNum].default['allRMatricesDir'] = 100. * nRates
             
@@ -1062,12 +1058,6 @@ class Mcmc(object):
                     if thisMString not in props_on:
                         props_on.append(thisMString)
 
-                    if 0:
-                        # experimental.  doesn't work well
-                        self.prob.ndch2_root3n_internalCompsDir = 1.0
-                        thisMString = "ndch2_root3n_internalCompsDir"
-                        if thisMString not in props_on:
-                            props_on.append(thisMString)
 
             if self.isBiRoot:
                 self.prob.root2 = 1.0
@@ -1531,25 +1521,6 @@ class Mcmc(object):
 
                 self.props.proposals.append(p)
 
-            # # ndch2_root3n_internalCompsDir, only for single data-partition runs
-            # if self.prob.ndch2_root3n_internalCompsDir:
-            #     p = Proposal(self)
-            #     p.name = 'ndch2_root3n_internalCompsDir'
-            #     p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains  
-            #     p.weight = self.prob.ndch2_root3n_internalCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2root3nInternalCompsDir']
-            #     p.pNum = pNum
-
-            #     p.tnAccVeryHi = 0.4
-            #     p.tnAccHi = 0.15
-            #     p.tnAccLo = 0.05
-            #     p.tnAccVeryLo = 0.03
-
-            #     p.tnFactorVeryHi = 0.7
-            #     p.tnFactorHi = 0.8
-            #     p.tnFactorLo = 1.2
-            #     p.tnFactorVeryLo = 1.4
-
-            #     self.props.proposals.append(p)
 
             # ndch2_leafCompsDirAlpha
             if self.prob.ndch2_leafCompsDirAlpha:
