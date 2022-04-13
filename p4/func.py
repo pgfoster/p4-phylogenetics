@@ -3142,7 +3142,15 @@ def effectiveSampleSize(data, mean):
     if 1:
         pf.effectiveSampleSize(data, mean, nSamples, maxLag, gammaStatAtPreviousLag,
                                gammaStat, varStat, gammaStatAtLagZero)
-        ESS2 = nSamples * (gammaStatAtLagZero / varStat)
+
+        # print(f"nSamples {nSamples} type {type(nSamples)}")
+        # print(f"gammaStatAtLagZero {gammaStatAtLagZero} type {type(gammaStatAtLagZero)}")
+        # print(f"varStat {varStat} type {type(varStat)}")
+        
+        if varStat == 0:
+            return 0.0  # Is this best for this case?
+        else:
+            ESS2 = nSamples * (gammaStatAtLagZero / varStat)
         #fabsDiff = numpy.fabs(ESS1 - ESS2)
         # print "ESS1 is %f, ESS2 is %f, diff is %g" % (ESS1, ESS2, fabsDiff)
     return ESS2[0]
