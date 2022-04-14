@@ -2391,13 +2391,18 @@ class Tree(object):
         for nNum in range(len(self.nodes)):
             if self.nodes[nNum] != self.root:
                 otherTree.nodes[nNum].br.len = self.nodes[nNum].br.len
-                otherTree.nodes[nNum].br.lenChanged = self.nodes[
-                    nNum].br.lenChanged
-                #otherTree.nodes[nNum].br.flag = self.nodes[nNum].flag
-                otherTree.nodes[nNum].br.splitKey = self.nodes[
-                    nNum].br.splitKey
-                otherTree.nodes[nNum].br.rawSplitKey = self.nodes[
-                    nNum].br.rawSplitKey
+                otherTree.nodes[nNum].br.lenChanged = self.nodes[nNum].br.lenChanged
+                otherTree.nodes[nNum].flag = self.nodes[nNum].flag
+                otherTree.nodes[nNum].br.splitKey = self.nodes[nNum].br.splitKey
+                otherTree.nodes[nNum].br.rawSplitKey = self.nodes[nNum].br.rawSplitKey
+
+        if 0:
+            print("Tree.copyToTree()")
+            for nNum in range(len(self.nodes)):
+                if self.nodes[nNum] != self.root:
+                    print(f"{nNum:3} {self.nodes[nNum].br.splitKey} {otherTree.nodes[nNum].br.splitKey}")
+                else:
+                    print(f"{nNum:3} is root")
 
         # model usage numbers
         if self.model:
