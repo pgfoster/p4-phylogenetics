@@ -2114,10 +2114,14 @@ class Tree(object):
         if 0:
             print(gm[0])
             print(self.taxNames)
+            print(f"root is node {self.root.nodeNum}")
             print('nodeNum  rawSplitKey  splitKey')
+            # getSplitsFromKey would usually use self.nTax.  
+            # Changed below to accommodate tempRoot for bi-rooted trees.
             for n in self.iterNodesNoRoot():
                 print('%7s     %4s       %4s        %s' % (
-                    n.nodeNum, n.br.rawSplitKey, n.br.splitKey, p4.func.getSplitStringFromKey(n.br.splitKey, self.nTax)))
+                    n.nodeNum, n.br.rawSplitKey, n.br.splitKey, 
+                    p4.func.getSplitStringFromKey(n.br.splitKey, len(self.taxNames))))
 
     def recalculateSplitKeysOfNodeFromChildren(self, aNode, allOnes):
         children = [n for n in aNode.iterChildren()]
