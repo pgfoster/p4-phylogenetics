@@ -3252,3 +3252,44 @@ class Tree(object):
         if rootNChildren == 3:
             return True
         return False
+
+    def isCompatibleWith(self, otherTree):
+        """Determines whether self is compatible with otherTree
+
+        Returns True or False.
+        """
+
+        assert otherTree.nTax == self.nTax
+        assert otherTree.taxNames == self.taxNames
+
+        # It is easier with sets, so make sets from splitKeys
+        self.makeSplitKeys()
+        for n in self.iterInternalsNoRoot():
+            ss = set()
+            for i in range(self.nTax):
+                tester = 2 ** i
+                if tester & n.br.splitKey:
+                    ss.add(tester)
+            n.br.splSet = ss
+
+        otherTree.makeSplitKeys()
+        for n in otherTree.iterInternalsNoRoot():
+            ss = set()
+            for i in range(self.nTax):
+                tester = 2 ** i
+                if tester & n.br.splitKey:
+                    ss.add(tester)
+            n.br.splSet = ss
+
+        isCompatible = True
+        for nA in self.iterInternalsNoRoot():
+            for nB in otherTree.iterInternalsNoRoot():
+                if len(nA.br.splSet.intersection(nB.br.splSet)) \
+                   and len(nA.br.splSet.difference(nB.br.splSet)) \
+                   and len(nB.br.splSet.difference(nA.br.splSet)):
+                    isCompatible = False
+                    break
+            if not isCompatible:
+                break
+        # print(f"isCompatible is {isCompatible}")
+        return isCompatible
