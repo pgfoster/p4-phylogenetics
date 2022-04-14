@@ -2491,6 +2491,15 @@ class Tree(object):
             return var.DIFFERENT
 
         # brLens, lenChanged, and node.flag. and splitKeys
+        if 0:
+            print("Tree.verifyIdentityWith() flag")
+            for nNum in range(len(self.nodes)):
+                if self.nodes[nNum] != self.root:
+                    print(f"{nNum:3} {self.nodes[nNum].flag} {otherTree.nodes[nNum].flag}")
+                else:
+                    print(f"{nNum:3} is root")
+
+
         for nNum in range(len(self.nodes)):
             if self.nodes[nNum] != self.root:
                 # if self.nodes[nNum].br.len != otherTree.nodes[nNum].br.len:
@@ -2509,11 +2518,11 @@ class Tree(object):
                 if doSplitKeys:
                     if self.nodes[nNum].br.splitKey != otherTree.nodes[nNum].br.splitKey:
                         print(complaintHead)
-                        print('    SplitKeys differ.')
+                        print(f'    SplitKeys differ. nodeNum {nNum}')
                         return var.DIFFERENT
                     if self.nodes[nNum].br.rawSplitKey != otherTree.nodes[nNum].br.rawSplitKey:
                         print(complaintHead)
-                        print('    rawSplitKeys differ.')
+                        print(f'    rawSplitKeys differ. nodeNum {nNum}')
                         return var.DIFFERENT
 
         if self.model:
