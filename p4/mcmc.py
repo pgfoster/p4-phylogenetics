@@ -38,7 +38,7 @@ fudgeFactor['gdasrvLocation'] = 0.01
 fudgeFactor['allCompsDir'] = 1.0
 fudgeFactor['allRMatricesDir'] = 1.0
 fudgeFactor['ndch2comp'] = 0.2
-fudgeFactor['ndch2alpha'] = 0.04
+fudgeFactor['ndch2alpha'] = 0.01
 
 
 class McmcTuningsPart(object):
