@@ -227,7 +227,7 @@ if True:
                 if n.br.len < var.BRLEN_MIN:
                     n.br.len += var.BRLEN_MIN
             self.propTree.reRoot(oldRoot)
-            self.propTree.setPreAndPostOrder()
+            self.propTree.preAndPostOrderAreValid = False
 
             #oldRoot.nodeNum = 0
             #self.propTree.dump(node=True)
@@ -1715,20 +1715,6 @@ if True:
             print("x0Uncon is", x0Uncon)
             print("y0Uncon is", y0Uncon)
 
-        # Are we violating constraints?
-        if 1:
-            if self.mcmc.constraints and theProposal.topologyChanged:
-                pTree.makeSplitKeys()
-                pTreeSKSet = set(
-                    [n.br.splitKey for n in pTree.iterInternalsNoRoot()])
-                isViolating = False
-                for sk in self.mcmc.constraints.constraints:
-                    if sk not in pTreeSKSet:
-                        isViolating = True
-                        break
-                if isViolating:
-                    theProposal.doAbort = True
-                    return
 
         # n.flag is set if the condLikes need recalculating.  Edges eA,
         # eX, and eY will have their bigPDecks recalculated, and all the
