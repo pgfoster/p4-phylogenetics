@@ -2960,17 +2960,22 @@ class Mcmc(object):
                     #        raise P4Error(gm)
                     print("Mcmc zzz")
 
-                # Check that the curTree has all the constraints
+                # Double check that the curTree has all the constraints
+                # The proposals will have done this already, so this is a double check to find errors.
                 if self.constraints:
-                    splitsInCurTree = [
-                        n.br.splitKey for n in self.chains[self.coldChainNum].curTree.iterInternalsNoRoot()]
+                    #print("Mcmc.run() double checking constraints")
                     for sk in self.constraints.constraints:
-                        if sk not in splitsInCurTree:
+                        ret = self.chains[self.coldChainNum].curTree.nodeForSplitKeyDict.get(sk)
+                        if not ret:
                             gm.append("Programming error.")
-                            gm.append(
-                                "The current tree (the last tree sampled) does not contain constraint")
-                            gm.append(
-                                "%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
+                            gm.append(f"The current tree (the last tree sampled) does not contain constraint sk")
+                            gm.append("%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
+                            raise P4Error(gm)
+                    if self.constraints.rootConstraints:
+                        ret = self.constraints.areConsistentWithTreeRoot(self.chains[self.coldChainNum].curTree)
+                        if not ret:
+                            gm.append("Programming error.")
+                            gm.append(f"The current tree (the last tree sampled) is not consistent with root constraint")
                             raise P4Error(gm)
 
 
