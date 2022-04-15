@@ -2612,14 +2612,7 @@ class Chain(object):
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs
-
-        # re-root to a neighbor
-        candidateNodes = [n for n in self.propTree.root.iterChildren() if not n.isLeaf]
-        assert candidateNodes
-        newRoot = random.choice(candidateNodes)
-        self.propTree.reRoot(newRoot, moveInternalName=False,fixRawSplitKeys=self.mcmc.constraints)
-
-
+            # self.logPriorRatio = 0.0   # to turn off prior 
 
 
     def proposeNdch2_leafCompsDirAlpha(self, theProposal):
