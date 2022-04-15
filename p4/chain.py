@@ -286,9 +286,6 @@ class Chain(object):
 
     def proposeSp(self, theProposal):
         gm = ['Chain.proposeSp()']
-        # if self.mcmc.gen > 1300:
-        # print("proposeSp().  gen %5i,  %30s" % (self.mcmc.gen, theProposal.name), end='\n')
-        # sys.stdout.flush()
 
         if theProposal.name == 'comp':
             # print "theProposal.name = comp, pNum=%i" % theProposal.pNum
@@ -349,7 +346,7 @@ class Chain(object):
 
 
         elif theProposal.name == 'ndch2_leafCompsDir':
-            #print("theProposal.name = ndch2_leafCompsDir, pNum=%i" % theProposal.pNum)
+            # print("theProposal.name = ndch2_leafCompsDir, pNum=%i" % theProposal.pNum)
             self.proposeNdch2_leafCompsDir(theProposal)
             # This next line is not needed because comps are numpy arrays
             # self.propTree.model.setCStuff(partNum=theProposal.pNum)
@@ -1067,12 +1064,13 @@ class Chain(object):
             pRet = self.proposeSp(aProposal)
         else:
             pRet = self.propose(aProposal)
+        # print("finished proposal")
 
         # slow check
         if 0:
             print("doing slow check ...")
             # There should be no n.br.lenChanged or n.flag set at this point.
-            if aProposal.name in ['local', 'brLen', 'eTBR', 'polytomy']:
+            if aProposal.name in ['local', 'brLen', 'eTBR', 'polytomy', 'allBrLens']:
                 nnBrLenChanged = []
                 nnFlags = []
                 for n in self.propTree.iterNodes():
@@ -1230,18 +1228,19 @@ class Chain(object):
             aProposal.tnNAccepts[self.tempNum] += 1
             if aProposal.name in ['local', 'eTBR']:
                 if aProposal.topologyChanged:
-                    # print "zzz topologyChanged"
+                    # print(gm[0], "zzz topologyChanged")
                     aProposal.nTopologyChangeAttempts[self.tempNum] += 1
                     aProposal.nTopologyChanges[self.tempNum] += 1
                     # aProposal.topologyChanged is (or should be) reset to zero
                     # by changeLocal() et al.
                 else:
-                    # print "zzz topology not changed"
+                    # print(gm[0], "zzz topology not changed")
                     pass
         else:
             if aProposal.name in ['local', 'eTBR']:
                 if aProposal.topologyChanged:
                     aProposal.nTopologyChangeAttempts[self.tempNum] += 1
+                    # but no nTopologyChanges
             aProposal.accepted = False
 
         if not aProposal.doAbort:
@@ -1569,8 +1568,7 @@ class Chain(object):
         # usage, pre- and post-order."
         ret = self.curTree.verifyIdentityWith(self.propTree, doSplitKeys=doSplitKeys)  # python level only
         if ret == var.DIFFERENT:
-            # print "verifyIdentityOfTwoTreesInChain() tree topology stuff
-            # differs"
+            # print("verifyIdentityOfTwoTreesInChain() tree topology stuff differs")
             return ret
 
         # print "Python-level: Verify model prams."
