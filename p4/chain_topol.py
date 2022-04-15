@@ -2152,20 +2152,6 @@ if True:
                 print("eX is None")
             print("x0Uncon is", x0Uncon)
 
-        # Are we violating constraints?
-        if 1:
-            if self.mcmc.constraints and theProposal.topologyChanged:
-                pTree.makeSplitKeys()
-                pTreeSKSet = set(
-                    [n.br.splitKey for n in pTree.iterInternalsNoRoot()])
-                isViolating = False
-                for sk in self.mcmc.constraints.constraints:
-                    if sk not in pTreeSKSet:
-                        isViolating = True
-                        break
-                if isViolating:
-                    theProposal.doAbort = True
-                    return
 
         # n.flag is set if the condLikes need recalculating.  Edges eA,
         # eX, and eY will have their bigPDecks recalculated, and all the
