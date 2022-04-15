@@ -920,16 +920,24 @@ class Chain(object):
 
         elif theProposal.name == 'root2':
             self.proposeRoot2(theProposal)
+
+            # The root may have changed
             if not self.propTree.preAndPostOrderAreValid:
                 self.propTree.setPreAndPostOrder()
+            self.propTree.makeSplitKeys()
+
+            if self.mcmc.constraints:   # root constraint?
+                # It does not make a lot of sense to check constraints for this move.
+                pass
+
+
             self.propTree.setCStuff()
             pf.p4_setPrams(self.propTree.cTree, -1)
             for pNum in range(self.propTree.model.nParts):
                 for n in self.propTree.iterPostOrder():
                     if not n.isLeaf or (n == self.propTree.root and n.isLeaf):  # possibly leaf root
                         pf.p4_setConditionalLikelihoodsOfInternalNodePart(n.cNode, pNum)
-                pf.p4_partLogLike(
-                    self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
+                pf.p4_partLogLike(self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
 
         elif theProposal.name == 'relRate':
             # print "theProposal.name = relRate, pNum=%i" % theProposal.pNum
