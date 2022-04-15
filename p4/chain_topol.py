@@ -35,6 +35,8 @@ if True:
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
 
+
+
     def proposeRoot3n(self, theProposal):
         """For non-biRooted trees.  Root on a neighbouring internal node."""
 
@@ -67,18 +69,23 @@ if True:
         self.logProposalRatio = math.log(proposalRatio)
         self.logPriorRatio = 0.0
 
+
+
     def proposeRoot2(self, theProposal):
         """For bi-rooted trees; slides the node, perhaps past other nodes.
 
         Branch lengths are not affected.
         """
 
+        gm = ["Chain.proposeRoot2()"]
+
         # Check that we have a bifurcating root.
         assert self.propTree.root.leftChild and self.propTree.root.leftChild.sibling
         assert not self.propTree.root.leftChild.sibling.sibling
 
         mvDist = theProposal.tuning[self.tempNum] * random.random()
-
+        # print(gm[0], "Setting mvDist ")
+        # mvDist = 0.15
         oldRoot = self.propTree.root
         curNode = self.propTree.root
         while True:
@@ -95,9 +102,7 @@ if True:
                     self.propTree.reRoot(curNode, checkBiRoot=False)
             else:
                 break
-        # print("finished loop with curNode %i, dest=%i, and mvDist %4f" % (curNode.nodeNum, dest.nodeNum, mvDist))
-
-        assert dest.parent == curNode
+        # print(gm[0], "finished loop with curNode %i, dest=%i, and mvDist %4f" % (curNode.nodeNum, dest.nodeNum, mvDist))
 
         if dest.parent == curNode:     # curNode ----- dest
             pass
@@ -108,6 +113,7 @@ if True:
             raise P4Error()
 
         if curNode == oldRoot:   # then it is easy
+            # print(gm[0], "curNode is oldRoot")
             # as there may have been some rearrangements in the loop above, reRoot
             self.propTree.reRoot(oldRoot, checkBiRoot=False) 
             if dest == self.propTree.root.leftChild:
@@ -124,6 +130,7 @@ if True:
                 raise P4Error("This should not happen.")
 
         elif dest == oldRoot:   # also easy
+            # print(gm[0], "dest is oldRoot")
             pNode = oldRoot.leftChild
             # curNode---------oldRoot------pNode
             #                  dest
@@ -135,7 +142,7 @@ if True:
             self.propTree.setPreAndPostOrder()
 
         else:
-            # Neither curNode nor dest is the root. Need to rearrange.
+            #print(gm[0], "Neither curNode nor dest is the root. Need to rearrange.")
 
             # Remove the current root.  
             if oldRoot.parent:
@@ -230,6 +237,9 @@ if True:
 
         assert self.propTree.root.leftChild and self.propTree.root.leftChild.sibling
         assert not self.propTree.root.leftChild.sibling.sibling
+
+        # checking for constraint violation is done in Chain.proposeSp() (which calls this method).
+
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
 
@@ -1286,14 +1296,12 @@ if True:
         15th Evolutionary Biology Meeting, September 27-30, 2011
         Marseilles.
 
-        This works with constraints.
         """
 
         # doAbort is set if brLens are too long or too short, or if a
-        # constraint is violated.
+        # constraint is violated.  Constraints are not checked here, in this method.
         gm = ['Chain.proposeETBR_Blaise()']
 
-        # Now works with constraints.
         theProposal.topologyChanged = 0
         theProposal.doAbort = False
         pTree = self.propTree
