@@ -2215,9 +2215,9 @@ class Chain(object):
 
             # prior ratio
             # dirPrams = mpCur.ndch2_leafAlpha * mtCur.empiricalComp
-            dirPrams = mpCur.ndch2_leafAlpha * mpCur.ndch2_globalComp
-            lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
-            lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
+            dirPrams = mpCur.ndrh2_leafAlpha * mpCur.ndrh2_priorRefRMatrix
+            lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(ratesLen, dirPrams, mtCur.val)
+            lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(ratesLen, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs 
             # self.logPriorRatio = 0.0   # to turn off prior 
 
@@ -2262,7 +2262,7 @@ class Chain(object):
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
-            dirPrams = mpCur.ndch2_internalAlpha * mpCur.ndch2_globalComp  # this is set in Mcmc.__init__()
+            dirPrams = mpCur.ndch2_leafAlpha * mpCur.ndch2_priorRefComp
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs            
@@ -2310,7 +2310,7 @@ class Chain(object):
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
-            dirPrams = mpCur.ndch2_internalAlpha * mpCur.ndch2_globalComp  # this is set in Mcmc.__init__()
+            dirPrams = mpCur.ndch2_internalAlpha * mpCur.ndch2_priorRefComp  # this is set in Mcmc.__init__()
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs
@@ -2375,19 +2375,16 @@ class Chain(object):
         
         # Now the prior
         self.logPriorRatio = 0.0
-        if 0:
-            meanNeighbors = mpCur.ndch2_globalComp
-            #print("proposeAllCompsDirAlphaL() meanNeighbors ", meanNeighbors)
-
+        # thisComp = mtCur.empiricalComp
+        thisComp = mpCur.ndch2_priorRefComp
         for nCur in self.curTree.iterLeavesNoRoot():
             mtNum = nCur.parts[theProposal.pNum].compNum
             mtCur = mpCur.comps[mtNum]
 
-            # thisComp = mtCur.empiricalComp
-            thisComp = mpCur.ndch2_globalComp
             lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, newVal * thisComp, mtCur.val)
             lnPdfCur = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, oldVal * thisComp, mtCur.val)
             self.logPriorRatio += lnPdfProp - lnPdfCur
+
 
     def proposeNdch2_internalCompsDirAlpha(self, theProposal):
         # The Dirichlet hyperparameter alpha 
@@ -2439,7 +2436,7 @@ class Chain(object):
         
         # Now the prior
         self.logPriorRatio = 0.0
-        thisComp = mpCur.ndch2_globalComp
+        thisComp = mpCur.ndch2_priorRefComp
         for nCur in self.curTree.iterInternals():
             mtNum = nCur.parts[theProposal.pNum].compNum
             mtCur = mpCur.comps[mtNum]

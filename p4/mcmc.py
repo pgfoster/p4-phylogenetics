@@ -986,24 +986,24 @@ class Mcmc(object):
                 for n in self.tree.iterNodes():
                     assert n.nodeNum == n.parts[pNum].compNum
 
-                # Set leaf node mt.empiricalComp. edit march 2022, not used, so turned off
-                # for n in self.tree.iterLeavesNoRoot():
-                #     mt = mp.comps[n.parts[pNum].compNum]
-                #     # print(n.name, mt.val, "seqNum", n.seqNum)
-                #     # print("part[seq] composition:", dp.composition([n.seqNum]))
-                #     mt.empiricalComp = numpy.array(dp.composition([n.seqNum]))
-                #     while mt.empiricalComp.min()  < var.PIVEC_MIN:
-                #         for i in range(mp.dim):
-                #             if mt.empiricalComp[i] < var.PIVEC_MIN:
-                #                 mt.empiricalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
-                #         mt.empiricalComp /= mt.empiricalComp.sum()
+                if not mp.ndch2_priorRefComp:
+                    mp.ndch2_priorRefComp = numpy.array(dp.composition())
 
-                mp.ndch2_globalComp = numpy.array(dp.composition())
-                while mp.ndch2_globalComp.min()  < var.PIVEC_MIN:
+                mp.ndch2_priorRefComp = numpy.array(mp.ndch2_priorRefComp, dtype=float) # if not already a numpy.array
+                assert len(mp.ndch2_priorRefComp) == mp.dim
+                theMin = numpy.min(mp.ndch2_priorRefComp)
+                if theMin < var.PIVEC_MIN:
+                    gm.append("ndch2_priorRefComp min value is too low (%s)" % theMin)
+                    gm.append("Set it 'by hand'")
+                    raise P4Error(gm)
+                mp.ndch2_priorRefComp /= theMin
+                while mp.ndch2_priorRefComp.min()  < var.PIVEC_MIN:
                     for i in range(mp.dim):
-                        if mp.ndch2_globalComp[i] < var.PIVEC_MIN:
-                            mp.ndch2_globalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
-                    mp.ndch2_globalComp /= mp.ndch2_globalComp.sum()
+                        if mp.ndch2_priorRefComp[i] < var.PIVEC_MIN:
+                            mp.ndch2_priorRefComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                    mp.ndch2_priorRefComp /= mp.ndch2_priorRefComp.sum()
+
+                print(f"Mcmc init() mp.ndch2_priorRefComp is {mp.ndch2_priorRefComp}")
 
                 # ususal comp proposals should not be on if we are doing ndch2
                 self.prob.compDir = 0.0

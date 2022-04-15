@@ -127,9 +127,9 @@ class ModelPart(object):
         self.nCat = 0      # This is set by Tree.modelSanityCheck()
 
         self.ndch2 = False
-        self.ndch2_leafAlpha = 50.0      # Leaf
-        self.ndch2_internalAlpha = 30.0  # Internal
-        self.ndch2_globalComp = None
+        self.ndch2_leafAlpha = 5.0      # Leaf
+        self.ndch2_internalAlpha = 5.0  # Internal
+        self.ndch2_priorRefComp = None
         self.ndch2_writeComps = True
         
     @property
