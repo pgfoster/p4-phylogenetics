@@ -1107,6 +1107,8 @@ if True:
             # Second do rMatrices
             if mp.nRMatrices == 1:
                 pass
+            elif mp.ndrh2:
+                print("%16s" % "ndrh2 is on")
             elif mp.nRMatrices > 1:
                 for mtNum in range(mp.nRMatrices):
                     print("%16s %i %s = %i" % ("rate matrix", mtNum,
