@@ -723,9 +723,14 @@ class Mcmc(object):
             for sk in self.constraints.constraints:
                 if sk not in mySplitKeys:
                     # self.tree.draw()
-                    gm.append('Constraint %s' % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
+                    gm.append('Constraint %i %s' % (sk, p4.func.getSplitStringFromKey(sk, self.tree.nTax)))
                     gm.append('is not in the starting tree.')
                     gm.append('Maybe you want to make a randomTree with constraints?')
+                    raise P4Error(gm)
+            if self.constraints.rTree:   # a root constraint
+                ret = self.constraints.areConsistentWithTreeRoot(self.tree)
+                if not ret:
+                    gm.append("The starting tree is not consistent with the constraints.rTree")
                     raise P4Error(gm)
 
         try:
