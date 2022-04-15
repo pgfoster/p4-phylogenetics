@@ -2533,15 +2533,13 @@ class Chain(object):
         # Does this work for polytomies?  With that in mind, I iterate over
         # nodes rather than comps.
 
-        # At the moment, the prior only looks at the global comp, and so I can
-        # make the proposals, proposal ratios, and prior ratio all in one
-        # iterInternals() loop.  If I were to look at local comps (ie neighbours)
-        # then I would need to separate out the prior calc into its own loop.
-
         self.logProposalRatio = 0.0
         self.logPriorRatio = 0.0
 
-        for nCur in self.curTree.iterInternals():
+        #print(f"proposeNdch2_leafCompsDir() mpCur.ndch2_priorRefComp is {mpCur.ndch2_priorRefComp}")
+        #sys.stdout.flush()
+
+        for nCur in self.curTree.iterLeavesNoRoot():
             mtNum = nCur.parts[theProposal.pNum].compNum
             mtCur = mpCur.comps[mtNum]
             mtProp = mpProp.comps[mtNum]
@@ -2551,9 +2549,8 @@ class Chain(object):
             while  mtProp.val.min() < var.PIVEC_MIN:
                 for i in range(mpCur.dim):
                     if mtProp.val[i] < var.PIVEC_MIN:
-                        mtProp.val[i] += (1.0 + random.random()) * var.PIVEC_MIN
-                thisSum = mtProp.val.sum()
-                mtProp.val /= thisSum
+                        mtProp.val[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                mtProp.val /= mtProp.val.sum()
 
             # log proposal ratios
             forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
@@ -2566,8 +2563,8 @@ class Chain(object):
             dirPrams = mpCur.ndch2_leafAlpha * mpCur.ndch2_priorRefComp
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
-            self.logPriorRatio += lnPdfProps - lnPdfCurrs            
-
+            self.logPriorRatio += lnPdfProps - lnPdfCurrs 
+            # self.logPriorRatio = 0.0   # to turn off prior 
 
 
 
