@@ -2803,10 +2803,14 @@ class Mcmc(object):
                     # likely not be chNum.  So we get the tempNum from this
                     # chNum, and tune it.
                     
-                    # tunables = """allBrLens allCompsDir brLen compDir 
+                    # From init
+                    # self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     # gdasrv local ndch2_internalCompsDir 
                     # ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
+                    # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir 
+                    # ndrh2_internalRatesDir ndrh2_internalRatesDirAlpha ndrh2_leafRatesDir 
+                    # ndrh2_leafRatesDirAlpha relRate """.split()
+
 
                     # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation root2
 
@@ -2903,6 +2907,16 @@ class Mcmc(object):
                     self.chains[0].propTree.checkSplitKeys()
                     print("Mcmc xxx")
 
+                if 0:
+                    print("Mcmc.run() xxx curTree propTree")
+                    a = self.chains[0].curTree
+                    b = self.chains[0].propTree
+                    for nNum in range(len(a.nodes)):
+                        if a.nodes[nNum] != a.root:
+                            print(f"{nNum:3} {a.nodes[nNum].br.rawSplitKey} {b.nodes[nNum].br.rawSplitKey}")
+                        else:
+                            print(f"{nNum:3} is root")
+
                 # Add curTree to treePartitions
                 if self.treePartitions:
                     self.treePartitions.getSplitsFromTree(
@@ -2910,6 +2924,16 @@ class Mcmc(object):
                 else:
                     self.treePartitions = TreePartitions(
                         self.chains[self.coldChainNum].curTree)
+
+                if 0:
+                    print("Mcmc.run() zzz curTree propTree")
+                    a = self.chains[0].curTree
+                    b = self.chains[0].propTree
+                    for nNum in range(len(a.nodes)):
+                        if a.nodes[nNum] != a.root:
+                            print(f"{nNum:3} {a.nodes[nNum].br.rawSplitKey} {b.nodes[nNum].br.rawSplitKey}")
+                        else:
+                            print(f"{nNum:3} is root")
 
                 # After _getSplitsFromTree, need to follow, at some point,
                 # with _finishSplits().  Do that when it is pickled, or at the

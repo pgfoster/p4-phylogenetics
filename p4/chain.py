@@ -1122,6 +1122,7 @@ class Chain(object):
     def gen(self, aProposal):
         gm = ['Chain.gen()']
         #print(gm[0], 'gen %s' % self.mcmc.gen, end=' ')
+        #sys.stdout.flush()
 
 
         # doAborts means that it was not a valid generation,
@@ -1604,8 +1605,38 @@ class Chain(object):
             # sys.exit()
 
         if 0:
-            # no fix 397, 398
-            # fix 399, curTree needed, propTree not needed.
+            # Check ndch2 and ndrh2; make sure all comps or rMatrices
+            # are there, and that there is no more than one node for
+            # each comp or rMatrix.
+
+            # Note that checking the length of the rNums or cNums
+            # against self.curTree.nodes will not work in the case of
+            # bi-rooted trees, which have an extra node (not seen in
+            # tree traversal methods).
+
+            if self.curTree.model.parts[0].ndrh2:
+                rNums = []
+                for n in self.curTree.iterNodesNoRoot():
+                    rNum = n.br.parts[0].rMatrixNum
+                    rNums.append(rNum)
+                for rNum in rNums:
+                    assert rNums.count(rNum) == 1
+
+            if self.curTree.model.parts[0].ndch2:
+                cNums = []
+                for n in self.curTree.iterNodes():
+                    cNum = n.parts[0].compNum
+                    cNums.append(cNum)
+                for cNum in cNums:
+                    assert cNums.count(cNum) == 1
+               
+            
+
+
+
+
+        if 0:
+            # Leftover debugging stuff.
             gNums = [136]  # random seed 3, 135 doesn't fix, 136 does
             if 1 and self.mcmc.gen in gNums:
                 # self.curTree.calcLogLike()
