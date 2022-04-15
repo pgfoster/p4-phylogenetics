@@ -508,98 +508,90 @@ class Chain(object):
 
         elif theProposal.name == 'local':
             if self.propTree.root.getNChildren() == 2:
-                if 0:
-                    if random.random() < 0.5:
-                        stNode = self.propTree.pruneSubTreeWithoutParent(self.propTree.root.leftChild.sibling, allowSingleChildNode=True)
-                    else:
-                        stNode = self.propTree.pruneSubTreeWithoutParent(self.propTree.root.leftChild, allowSingleChildNode=True)
-                    self.propTree.setPreAndPostOrder()
-                    self.propTree.root.name = "OldRoot"
-                    self.propTree.root.isLeaf = 1
-                    self.propTree.reRoot(self.propTree.root.leftChild)
-                    #print("Starting local proposal ...")
-                    self.proposeLocal(theProposal)
-                    #print("  ... finished local proposal")
-                    self.propTree.reRoot(self.propTree.node("OldRoot"))
-                    self.propTree.root.name = None
-                    self.propTree.root.isLeaf = 0
-                    self.propTree.reconnectSubTreeWithoutParent(stNode, self.propTree.root)
-                    self.propTree.setPreAndPostOrder()
+                rooter = self.propTree.attachRooter()
+                self.propTree.makeSplitKeys()
+                #print("rooter br is %s, rooter.nodeNum=%i" % (rooter.br, rooter.nodeNum))
+                #print("Starting local proposal ...")
+                self.proposeLocal(theProposal)
+                #print("  ... finished local proposal")
+
+                if rooter == self.propTree.root:
                     #self.propTree.draw()
-                    
-                if 1:
-                    rooter = self.propTree.attachRooter()
-                    self.propTree.makeSplitKeys()
-                    #print("rooter br is %s, rooter.nodeNum=%i" % (rooter.br, rooter.nodeNum))
-                    #print("Starting local proposal ...")
-                    self.proposeLocal(theProposal)
-                    #print("  ... finished local proposal")
+                    assert rooter.leftChild.leftChild.sibling
+                    assert not rooter.leftChild.leftChild.sibling.sibling
+                    self.propTree.reRoot(rooter.leftChild)
 
-                    if rooter == self.propTree.root:
-                        #self.propTree.draw()
-                        assert rooter.leftChild.leftChild.sibling
-                        assert not rooter.leftChild.leftChild.sibling.sibling
-                        self.propTree.reRoot(rooter.leftChild)
+                if rooter.br and rooter.br.parts:
+                    for n in self.propTree.root.iterChildren():
+                        if not n.br.parts:
+                            n.br.parts = rooter.br.parts
+                            rooter.br.parts = []
+                            break
 
-                    if rooter.br and rooter.br.parts:
-                        for n in self.propTree.root.iterChildren():
-                            if not n.br.parts:
-                                n.br.parts = rooter.br.parts
-                                rooter.br.parts = []
-                                break
+                if rooter.br.parts:
+                    print("xx rooter is node %i, br=%s, parts=%s" % (rooter.nodeNum, rooter.br, rooter.br.parts))
+                    for n in self.propTree.iterNodesNoRoot():
+                        if n.br.parts:
+                            pass
+                        else:
+                            print("xx Node %i br (%s) has no parts." % (n.nodeNum, n.br))
+                    raise P4Error(gm)
 
-                    if rooter.br.parts:
-                        print("xx rooter is node %i, br=%s, parts=%s" % (rooter.nodeNum, rooter.br, rooter.br.parts))
-                        for n in self.propTree.iterNodesNoRoot():
-                            if n.br.parts:
-                                pass
-                            else:
-                                print("xx Node %i br (%s) has no parts." % (n.nodeNum, n.br))
-                        raise P4Error(gm)
-                    
 
-                    self.propTree.reRoot(rooter.parent)
-                    self.propTree.detachRooter()
-                    
+                self.propTree.reRoot(rooter.parent)
+                self.propTree.detachRooter()
 
-                    
-                #print("After local, RF is %s" % self.propTree.topologyDistance(self.mcmc.tree))
             else:
                 self.proposeLocal(theProposal)
             if theProposal.doAbort:
                 return 0.0
-            else:
-                if not self.propTree.preAndPostOrderAreValid:
-                    self.propTree.setPreAndPostOrder()
-                self.propTree.setCStuff()
+            
+            if not self.propTree.preAndPostOrderAreValid:
+                self.propTree.setPreAndPostOrder()
 
-                for n in self.propTree.iterNodesNoRoot():
-                    if n.br.lenChanged:
-                        pf.p4_calculateBigPDecks(n.cNode)
-                        p = n
-                        while p != self.propTree.root:
-                            p = p.parent
-                            p.flag = 1
-                        n.br.lenChanged = False
-                # for n in self.propTree.iterNodesNoRoot():
-                #    if n.flag:
-                #        print "    node %2i flag" % n.nodeNum
-                for n in self.propTree.iterPostOrder():
-                    if not n.isLeaf or (n == self.propTree.root and n.isLeaf):  # possibly leaf root
-                        if n.flag:
-                            for pNum in range(self.propTree.model.nParts):
-                                pf.p4_setConditionalLikelihoodsOfInternalNodePart(
-                                    n.cNode, pNum)
-                        n.flag = 0
-                for pNum in range(self.propTree.model.nParts):
-                    pf.p4_partLogLike(
-                        self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
+            # Are we violating constraints?
+            if self.mcmc.constraints and theProposal.topologyChanged:
+                self.propTree.makeSplitKeys(makeNodeForSplitKeyDict=True)  # makeNodeForSplitKeyDict=True is default
+                ret = self.mcmc.constraints.areConsistentWithTree(self.propTree)
+                if not ret:
+                    theProposal.doAbort = True
+                    return 0.0
+                if self.mcmc.constraints.rootConstraints:
+                    ret = self.mcmc.constraints.areConsistentWithTreeRoot(self.propTree)
+                    if not ret:
+                        theProposal.doAbort = True
+                        return 0.0
 
-                if 0 and self.mcmc.gen == 0:
-                    self.propTree.calcLogLike()
-                    self.curTree.calcLogLike()
-                    self.curTree.draw()
-                    self.propTree.draw()
+
+            self.propTree.setCStuff()
+
+            for n in self.propTree.iterNodesNoRoot():
+                if n.br.lenChanged:
+                    pf.p4_calculateBigPDecks(n.cNode)
+                    p = n
+                    while p != self.propTree.root:
+                        p = p.parent
+                        p.flag = 1
+                    n.br.lenChanged = False
+            # for n in self.propTree.iterNodesNoRoot():
+            #    if n.flag:
+            #        print "    node %2i flag" % n.nodeNum
+            for n in self.propTree.iterPostOrder():
+                if not n.isLeaf or (n == self.propTree.root and n.isLeaf):  # possibly leaf root
+                    if n.flag:
+                        for pNum in range(self.propTree.model.nParts):
+                            pf.p4_setConditionalLikelihoodsOfInternalNodePart(
+                                n.cNode, pNum)
+                    n.flag = 0
+            for pNum in range(self.propTree.model.nParts):
+                pf.p4_partLogLike(
+                    self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
+
+            if 0 and self.mcmc.gen == 0:
+                self.propTree.calcLogLike()
+                self.curTree.calcLogLike()
+                self.curTree.draw()
+                self.propTree.draw()
 
         elif theProposal.name == 'brLen':
             self.proposeBrLen(theProposal)
