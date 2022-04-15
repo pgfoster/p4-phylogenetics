@@ -1132,10 +1132,10 @@ class Chain(object):
             ret = self.verifyIdentityOfTwoTreesInChain(
                 doSplitKeys=self.mcmc.constraints)
             if ret == var.DIFFERENT:
-                gm.append("Trees differ at start of chain.")
+                gm.append("Trees differ at start of chain.gen(), before making a proposal")
                 raise P4Error(gm)
             else:
-                print("trees are the same -- ok")
+                # print("trees are the same -- ok")
                 pass
 
         acceptMove = False
