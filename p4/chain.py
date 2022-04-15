@@ -1195,123 +1195,117 @@ class Chain(object):
                               (nnBrLenChanged, nnFlags))
                     raise P4Error(gm)
 
-        if aProposal.name in ['local', 'eTBR'] and aProposal.doAbort:
-            # local can abort because brLens were too short or too
-            # long, or a constraint was violated.  There is every
-            # reason to try again, up to a point.
-            aProposal.nAborts[self.tempNum] += 1
-            self.curTree.copyToTree(self.propTree)
-            self.curTree.model.copyBQETneedsResetTo(self.propTree.model)
+        if aProposal.doAbort:
+            if aProposal.name in ['local', 'eTBR']:
+                # local can abort because brLens were too short or too
+                # long, or a constraint was violated.  There is every
+                # reason to try again, up to a point.
+                safety = 0
+                while 1:
+                    safety += 1
+                    if safety > 100:
+                        print("Attempted %i '%s' proposals, and they all failed." % (safety, aProposal.name))
+                        print("Giving up.")
+                        return True  # ie failure
 
-            safety = 0
-            while 1:
-                safety += 1
-                if safety > 100:
-                    print("Attempted %i '%s' proposals, and they all failed." % (safety, aProposal.name))
-                    print("Giving up.")
-                    return True  # ie failure
+                    aProposal.nAborts[self.tempNum] += 1
+                    self.curTree.copyToTree(self.propTree)
+                    self.curTree.model.copyBQETneedsResetTo(self.propTree.model)
 
-                if var.doMcmcSp:  # the speedy version
-                    pRet = self.proposeSp(aProposal)
-                else:
-                    pRet = self.propose(aProposal)
-                if not aProposal.doAbort:
-                    break
-                aProposal.nAborts[self.tempNum] += 1
-                self.curTree.copyToTree(self.propTree)
-                self.curTree.model.copyBQETneedsResetTo(self.propTree.model)
-                # Slow check.
-                if 1:
-                    ret = self.verifyIdentityOfTwoTreesInChain(
-                        doSplitKeys=self.mcmc.constraints)
-                    if ret == var.DIFFERENT:
-                        gm.append("Bad restore of propTree after doAbort.")
-                        raise P4Error(gm)
+                    # Slow check after restore
+                    if 1:
+                        ret = self.verifyIdentityOfTwoTreesInChain(
+                            doSplitKeys=self.mcmc.constraints)
+                        if ret == var.DIFFERENT:
+                            gm.append(f"{aProposal.name} - Bad restore of propTree after doAbort.")
+                            raise P4Error(gm)
+                        else:
+                            # print "ok"
+                            pass
+
+                    # Try again
+                    if var.doMcmcSp:  # the speedy version
+                        # print(gm[0], f"proposing {aProposal.name} again, after doAbort True")
+                        pRet = self.proposeSp(aProposal)
                     else:
-                        # print "ok"
-                        pass
+                        pRet = self.propose(aProposal)
+                    if not aProposal.doAbort:
+                        break
+                    
 
-        if aProposal.doAbort and aProposal.name in ['compLocation', 'polytomy', 'rMatrixLocation',
-                                                    'gdasrvLocation']:
-            # xxxLocation aborts if the move is impossible
-            # because there are no xxx's with nNodes more than 1--
-            # so its impossible, and there is no point in trying
-            # again.  Best to do another move.
 
-            # polytomy proposal aborts if it is fully resolved, and so
-            # the only possible thing to do is to delete an edge, but
-            # there are no suitable edges to delete.  Eg all comps
-            # have nNodes < 1, or a constraint would be violated.
-            # Again, there is no point in trying again, as it will
-            # again be impossible.
-            aProposal.nAborts[self.tempNum] += 1
+            elif aProposal.name in ['compLocation', 'polytomy', 'rMatrixLocation',
+                                                        'gdasrvLocation']:
+                # xxxLocation aborts if the move is impossible
+                # because there are no xxx's with nNodes more than 1--
+                # so its impossible, and there is no point in trying
+                # again.  Best to do another move.
 
-            if aProposal.name in ['compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-                a = self.curTree
-                b = self.propTree
-                a.copyToTree(b)
-                a.model.parts[aProposal.pNum].copyValsTo(
-                    b.model.parts[aProposal.pNum])
-                b.model.setCStuff(partNum=aProposal.pNum)
-                a.model.parts[aProposal.pNum].copyNNodesTo(
-                    b.model.parts[aProposal.pNum])  # only one part
-                a.model.parts[aProposal.pNum].copyBQETneedsResetTo(
-                    b.model.parts[aProposal.pNum])
-                b.setCStuff()
-                # We did not do a likelihood calculation
-                # pf.p4_copyCondLikes(a.cTree, b.cTree, 1) # 1 means do all
-                # pf.p4_copyBigPDecks(a.cTree, b.cTree, 1) # 1 means do all
-                pf.p4_copyModelPrams(a.cTree, b.cTree)
+                # polytomy proposal aborts if it is fully resolved, and so
+                # the only possible thing to do is to delete an edge, but
+                # there are no suitable edges to delete.  Eg all comps
+                # have nNodes < 1, or a constraint would be violated.
+                # Again, there is no point in trying again, as it will
+                # again be impossible.
+                aProposal.nAborts[self.tempNum] += 1
 
-            # Slow check.
-            if 1:
-                ret = self.verifyIdentityOfTwoTreesInChain(
-                    doSplitKeys=self.mcmc.constraints)
-                if ret == var.DIFFERENT:
-                    gm.append("Trees differ after doAbort.")
-                    raise P4Error(gm)
+                if aProposal.name in ['compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+                    a = self.curTree
+                    b = self.propTree
+                    a.copyToTree(b)
+                    a.model.parts[aProposal.pNum].copyValsTo(
+                        b.model.parts[aProposal.pNum])
+                    b.model.setCStuff(partNum=aProposal.pNum)
+                    a.model.parts[aProposal.pNum].copyNNodesTo(
+                        b.model.parts[aProposal.pNum])  # only one part
+                    a.model.parts[aProposal.pNum].copyBQETneedsResetTo(
+                        b.model.parts[aProposal.pNum])
+                    b.setCStuff()
+                    # We did not do a likelihood calculation
+                    # pf.p4_copyCondLikes(a.cTree, b.cTree, 1) # 1 means do all
+                    # pf.p4_copyBigPDecks(a.cTree, b.cTree, 1) # 1 means do all
+                    pf.p4_copyModelPrams(a.cTree, b.cTree)
+
+                    # slow check
+                    if 1:
+                        ret = self.verifyIdentityOfTwoTreesInChain(doSplitKeys=self.mcmc.constraints)
+                        if ret == var.DIFFERENT:
+                            gm.append(f"{aProposal.name} Trees differ after doAbort.")
+                            raise P4Error(gm)
+                        else:
+                            # print "ok"
+                            pass
+
+                    # Giving up on this proposal, returning True to
+                    # the mcmc.run(), the calling method where it is assigned to the variable  "failure".
+                    return True
+
                 else:
-                    # print "ok"
-                    pass
-            #print("proposal %s aborting." % aProposal.name)
-            return True  # ie failure
+                    gm.append(f"doAbort was set for proposal {aProposal.name}")
+                    gm.append("but it was not handled.  This is a programming error.  Fix me.")
+                    raise P4Error(gm)
 
-        #print("pRet = %10.6f" % pRet, end=' ')
-        if not aProposal.doAbort:
-            if pRet < -100.0:  # math.exp(-100.) is 3.7200759760208361e-44
-                r = 0.0
-            elif pRet >= 0.0:
-                r = 1.0
-            else:
-                r = math.exp(pRet)
+        assert not aProposal.doAbort, f"proposal {aProposal.name} doAbort set.  Fix me." 
+        # if aProposal.name == 'ndrh2_leafRatesDir':
+        #     print("pRet = %10.6f" % pRet, end=' ')
 
-            if r == 1.0:
-                acceptMove = True
-            elif random.random() < r:
-                acceptMove = True
 
-        # print()
-        # print(aProposal.name)
-        # if aProposal.name == 'ndch2_internalCompsDirAlpha':
-        #     print(" %f %f " %  (
-        #         self.curTree.model.parts[aProposal.pNum].ndch2_internalAlpha,
-        #         self.propTree.model.parts[aProposal.pNum].ndch2_internalAlpha),
-        #         end=' ')
-        #     print(" acceptMove = %s" % acceptMove)
-        # if aProposal.name == 'ndch2_leafCompsDir':
-        #     print(" acceptMove = %s" % acceptMove)
+        if pRet < -100.0:  # math.exp(-100.) is 3.7200759760208361e-44
+            r = 0.0
+        elif pRet >= 0.0:
+            r = 1.0
+        else:
+            r = math.exp(pRet)
 
-        # if aProposal.name in ['rMatrix', 'comp', 'gdasrv']:
-        #    acceptMove = False
+        if r == 1.0:
+            acceptMove = True
+        elif random.random() < r:
+            acceptMove = True
 
-        if 0 and aProposal.name == 'root2': #and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
-            print("-------------- (gen %5i, %30s) acceptMove = %6s" % (self.mcmc.gen, aProposal.name, acceptMove), end=' ')
-            if acceptMove:
-                logLikeDiff = self.propTree.logLike - self.curTree.logLike
-            else:
-                logLikeDiff = 0.0
-            print("logLikeChange = %8.4f" % logLikeDiff, end=' ')
-            print()
+
+        if 0: 
+            # if aProposal.name == 'root2': #and self.mcmc.gen >= 0 and self.mcmc.gen < 1000:
+            print("-------------- (gen %5i, %30s) acceptMove = %6s" % (self.mcmc.gen, aProposal.name, acceptMove), end='\n')
 
         aProposal.nProposals[self.tempNum] += 1
         aProposal.tnNSamples[self.tempNum] += 1
@@ -1336,183 +1330,189 @@ class Chain(object):
                     # but no nTopologyChanges
             aProposal.accepted = False
 
-        if not aProposal.doAbort:
+
+        if acceptMove:
+            a = self.propTree
+            b = self.curTree
+        else:
+            a = self.curTree
+            b = self.propTree
+
+        # Model values for one partition only.
+        if aProposal.name in ['comp', 'compDir', 'allCompsDir',
+                              'ndch2_leafCompsDir', 'ndch2_internalCompsDir',
+                              'ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha', 'rMatrix', 
+                              'rMatrixDir', 'allRMatricesDir', 
+                              'ndrh2_leafRatesDir', 'ndrh2_internalRatesDir',
+                              'ndrh2_leafRatesDirAlpha', 'ndrh2_internalRatesDirAlpha', 
+                              'gdasrv', 'pInvar']:
+            b.logLike = a.logLike
+            pNum = aProposal.pNum
+            b.partLikes[pNum] = a.partLikes[pNum]
+            a.model.parts[pNum].copyValsTo(b.model.parts[pNum])
+            if aProposal.name not in ['ndch2_leafCompsDir', 
+                                      'ndch2_internalCompsDir', 
+                                      'ndch2_leafCompsDirAlpha', 
+                                      'ndch2_internalCompsDirAlpha', 
+                                      'ndrh2_leafRatesDirAlpha', 
+                                      'ndrh2_internalRatesDirAlpha', 
+                                      'allCompsDir', 
+                                      'gdasrv']:  # numpy arrays and hyperparameters
+                b.model.setCStuff(partNum=pNum)
+
+            # Occasionally, pf.p4_setPrams() will change the bQETneedsReset
+            if not (a.model.parts[pNum].bQETneedsReset == b.model.parts[pNum].bQETneedsReset).all():
+                a.model.parts[pNum].copyBQETneedsResetTo(
+                    b.model.parts[pNum])  # only one part
+
+            # These three could be faster, but they need to be re-written
+            # to be part-specific.
+            pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
+            pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)
+            pf.p4_copyModelPrams(a.cTree, b.cTree)
+
+            if 0 and self.mcmc.gen == 35:  # slow check
+                previousA = a.logLike
+                a.calcLogLike(verbose=0)
+                diff = math.fabs(previousA - a.logLike)
+                if diff > 1.e-15:
+                    gm.append("Chain.gen(%i).  LogLikes (a) do not match.  diff=%f (%g)" % (
+                        self.mcmc.gen, diff, diff))
+                    raise P4Error(gm)
+                previousB = b.logLike
+                b.calcLogLike(verbose=0)
+                diff = math.fabs(previousB - b.logLike)
+                if diff > 1.e-15:
+                    gm.append("Chain.gen(%i).  LogLikes (b) do not match. diff=%f (%g)" % (
+                        self.mcmc.gen, diff, diff))
+                    raise P4Error(gm)
+            if 0 and self.mcmc.gen == 34:
+                a.calcLogLike()
+                b.calcLogLike()
+
+        elif aProposal.name in ['relRate']:
+            b.logLike = a.logLike
+            for pNum in range(self.propTree.model.nParts):  # do all parts
+                b.partLikes[pNum] = a.partLikes[pNum]
+            a.model.copyValsTo(b.model)
+            pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
+            pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)  # 1 means do all
+            pf.p4_copyModelPrams(a.cTree, b.cTree)
+
+            # The propTree has, in the like calc, had
+            # pf.p4_setPrams(self.propTree.cTree, -1) done to it.
+            # That can put BQETneedsReset out of sync.  Easy, and
+            # fast enough to simply do it to the other tree.  In
+            # which case we do not need pf.p4_copyBigPDecks()
+            # above, as they will all be recalculated.
+
+            if 0 and self.mcmc.gen == 251:  # slow check
+                previousA = a.logLike
+                a.calcLogLike(verbose=0)
+                diff = math.fabs(previousA - a.logLike)
+                if diff > 1.e-15:
+                    gm.append(
+                        "Chain.gen().  LogLikes (a) do not match.  diff=%f (%g)" % (diff, diff))
+                    raise P4Error(gm)
+                previousB = b.logLike
+                b.calcLogLike(verbose=0)
+                diff = math.fabs(previousB - b.logLike)
+                if diff > 1.e-15:
+                    gm.append(
+                        "Chain.gen().  LogLikes (b) do not match. diff=%f (%g)" % (diff, diff))
+                    raise P4Error(gm)
+
+        # This group is one part only.
+        elif aProposal.name in ['compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+            b.logLike = a.logLike
+            pNum = aProposal.pNum
+
+            if 0 and self.mcmc.gen == 136:
+                print("k curTree:")
+                print(self.curTree.model.parts[pNum].bQETneedsReset)
+                print("propTree:")
+                print(self.propTree.model.parts[pNum].bQETneedsReset)
+
+            b.partLikes[pNum] = a.partLikes[pNum]
+            a.copyToTree(b)
+
+            # Check for out-of-sync bigQET
             if acceptMove:
-                a = self.propTree
-                b = self.curTree
-            else:
-                a = self.curTree
-                b = self.propTree
+                # a = self.propTree
+                # b = self.curTree
+                if b.model.parts[pNum].isHet:
+                    # We are looking for combos of comp and rMatrix that
+                    # were reset by the proposal and accepted
+                    needsReset = b.model.parts[
+                        pNum].bQETneedsReset - a.model.parts[pNum].bQETneedsReset
+                    # print needsReset
+                    if needsReset.any():
+                        # print "Chain.gen()  fixing out-of-sync bQET after
+                        # %s" % aProposal.name
+                        for cNum in range(a.model.parts[pNum].nComps):
+                            for rMatrixNum in range(a.model.parts[pNum].nRMatrices):
+                                if needsReset[cNum][rMatrixNum]:
+                                    # print "reset cNum=%i, rMatrixNum=%i)"
+                                    # % (cNum, rMatrixNum)
+                                    pf.p4_resetBQET(
+                                        b.model.cModel, pNum, cNum, rMatrixNum)
 
-            # Model values for one partition only.
-            if aProposal.name in ['comp', 'compDir', 'allCompsDir',
-                                  'ndch2_leafCompsDir', 'ndch2_internalCompsDir',
-                                  'ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha', 'rMatrix', 
-                                  'rMatrixDir', 'allRMatricesDir', 'gdasrv', 'pInvar']:
-                b.logLike = a.logLike
-                pNum = aProposal.pNum
+            if aProposal.name in ['compLocation', 'rMatrixLocation', 'gdasrvLocation']:
+                a.model.parts[pNum].copyNNodesTo(
+                    b.model.parts[pNum])  # only one part
+                a.model.parts[pNum].copyBQETneedsResetTo(
+                    b.model.parts[pNum])  # only one part
+            b.setCStuff()
+
+            # These next 3 could be made part-specific
+            pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
+            pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)  # 1 means do all
+            pf.p4_copyModelPrams(a.cTree, b.cTree)
+
+        # Tree topology, so all parts
+        elif aProposal.name in ['local', 'eTBR', 'root3', 'root3n', 'root2',
+                                'brLen', 'polytomy', 'treeScale', 
+                                'allBrLens']:
+            b.logLike = a.logLike
+            for pNum in range(self.propTree.model.nParts):
                 b.partLikes[pNum] = a.partLikes[pNum]
-                a.model.parts[pNum].copyValsTo(b.model.parts[pNum])
-                if aProposal.name not in ['ndch2_leafCompsDir', 
-                                          'ndch2_internalCompsDir', 
-                                          'ndch2_leafCompsDirAlpha', 
-                                          'ndch2_internalCompsDirAlpha', 
-                                          'allCompsDir', 
-                                          'gdasrv']:  # numpy arrays and hyperparameters
-                    b.model.setCStuff(partNum=pNum)
+            a.copyToTree(b)
+            a.model.copyNNodesTo(b.model)  # all parts
 
-                # Occasionally, pf.p4_setPrams() will change the bQETneedsReset
-                if not (a.model.parts[pNum].bQETneedsReset == b.model.parts[pNum].bQETneedsReset).all():
-                    a.model.parts[pNum].copyBQETneedsResetTo(
-                        b.model.parts[pNum])  # only one part
 
-                # These three could be faster, but they need to be re-written
-                # to be part-specific.
-                pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
-                pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)
-                pf.p4_copyModelPrams(a.cTree, b.cTree)
-
-                if 0 and self.mcmc.gen == 35:  # slow check
-                    previousA = a.logLike
-                    a.calcLogLike(verbose=0)
-                    diff = math.fabs(previousA - a.logLike)
-                    if diff > 1.e-15:
-                        gm.append("Chain.gen(%i).  LogLikes (a) do not match.  diff=%f (%g)" % (
-                            self.mcmc.gen, diff, diff))
-                        raise P4Error(gm)
-                    previousB = b.logLike
-                    b.calcLogLike(verbose=0)
-                    diff = math.fabs(previousB - b.logLike)
-                    if diff > 1.e-15:
-                        gm.append("Chain.gen(%i).  LogLikes (b) do not match. diff=%f (%g)" % (
-                            self.mcmc.gen, diff, diff))
-                        raise P4Error(gm)
-                if 0 and self.mcmc.gen == 34:
-                    a.calcLogLike()
-                    b.calcLogLike()
-
-            elif aProposal.name in ['relRate']:
-                b.logLike = a.logLike
-                for pNum in range(self.propTree.model.nParts):  # do all parts
-                    b.partLikes[pNum] = a.partLikes[pNum]
-                a.model.copyValsTo(b.model)
-                pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
-                pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)  # 1 means do all
-                pf.p4_copyModelPrams(a.cTree, b.cTree)
-
-                # The propTree has, in the like calc, had
-                # pf.p4_setPrams(self.propTree.cTree, -1) done to it.
-                # That can put BQETneedsReset out of sync.  Easy, and
-                # fast enough to simply do it to the other tree.  In
-                # which case we do not need pf.p4_copyBigPDecks()
-                # above, as they will all be recalculated.
-
-                if 0 and self.mcmc.gen == 251:  # slow check
-                    previousA = a.logLike
-                    a.calcLogLike(verbose=0)
-                    diff = math.fabs(previousA - a.logLike)
-                    if diff > 1.e-15:
-                        gm.append(
-                            "Chain.gen().  LogLikes (a) do not match.  diff=%f (%g)" % (diff, diff))
-                        raise P4Error(gm)
-                    previousB = b.logLike
-                    b.calcLogLike(verbose=0)
-                    diff = math.fabs(previousB - b.logLike)
-                    if diff > 1.e-15:
-                        gm.append(
-                            "Chain.gen().  LogLikes (b) do not match. diff=%f (%g)" % (diff, diff))
-                        raise P4Error(gm)
-
-            # This group is one part only.
-            elif aProposal.name in ['compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-                b.logLike = a.logLike
-                pNum = aProposal.pNum
-
-                if 0 and self.mcmc.gen == 136:
-                    print("k curTree:")
-                    print(self.curTree.model.parts[pNum].bQETneedsReset)
-                    print("propTree:")
-                    print(self.propTree.model.parts[pNum].bQETneedsReset)
-
-                b.partLikes[pNum] = a.partLikes[pNum]
-                a.copyToTree(b)
-
-                # Check for out-of-sync bigQET
-                if acceptMove:
-                    # a = self.propTree
-                    # b = self.curTree
+            # Check for out-of-sync bigQET
+            if acceptMove:
+                # a = self.propTree
+                # b = self.curTree
+                for pNum in range(a.model.nParts):
                     if b.model.parts[pNum].isHet:
-                        # We are looking for combos of comp and rMatrix that
-                        # were reset by the proposal and accepted
+                        # We are looking for combos of comp and rMatrix
+                        # that were reset by the proposal and accepted
                         needsReset = b.model.parts[
                             pNum].bQETneedsReset - a.model.parts[pNum].bQETneedsReset
                         # print needsReset
                         if needsReset.any():
-                            # print "Chain.gen()  fixing out-of-sync bQET after
-                            # %s" % aProposal.name
+                            # print "Chain.gen()  fixing out-of-sync bQET
+                            # after %s" % aProposal.name
                             for cNum in range(a.model.parts[pNum].nComps):
                                 for rMatrixNum in range(a.model.parts[pNum].nRMatrices):
                                     if needsReset[cNum][rMatrixNum]:
-                                        # print "reset cNum=%i, rMatrixNum=%i)"
-                                        # % (cNum, rMatrixNum)
+                                        # print "reset cNum=%i,
+                                        # rMatrixNum=%i)" % (cNum,
+                                        # rMatrixNum)
                                         pf.p4_resetBQET(
                                             b.model.cModel, pNum, cNum, rMatrixNum)
 
-                if aProposal.name in ['compLocation', 'rMatrixLocation', 'gdasrvLocation']:
-                    a.model.parts[pNum].copyNNodesTo(
-                        b.model.parts[pNum])  # only one part
-                    a.model.parts[pNum].copyBQETneedsResetTo(
-                        b.model.parts[pNum])  # only one part
-                b.setCStuff()
+            a.model.copyBQETneedsResetTo(b.model)
+            b.setCStuff()
+            pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
+            pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)  # 1 means do all
+            pf.p4_copyModelPrams(a.cTree, b.cTree)
 
-                # These next 3 could be made part-specific
-                pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
-                pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)  # 1 means do all
-                pf.p4_copyModelPrams(a.cTree, b.cTree)
-
-            # Tree topology, so all parts
-            elif aProposal.name in ['local', 'eTBR', 'root3', 'root3n', 'root2',
-                                    'brLen', 'polytomy', 'treeScale', 
-                                    'allBrLens']:
-                b.logLike = a.logLike
-                for pNum in range(self.propTree.model.nParts):
-                    b.partLikes[pNum] = a.partLikes[pNum]
-                a.copyToTree(b)
-                a.model.copyNNodesTo(b.model)  # all parts
-
-                # Check for out-of-sync bigQET
-                if acceptMove:
-                    # a = self.propTree
-                    # b = self.curTree
-                    for pNum in range(a.model.nParts):
-                        if b.model.parts[pNum].isHet:
-                            # We are looking for combos of comp and rMatrix
-                            # that were reset by the proposal and accepted
-                            needsReset = b.model.parts[
-                                pNum].bQETneedsReset - a.model.parts[pNum].bQETneedsReset
-                            # print needsReset
-                            if needsReset.any():
-                                # print "Chain.gen()  fixing out-of-sync bQET
-                                # after %s" % aProposal.name
-                                for cNum in range(a.model.parts[pNum].nComps):
-                                    for rMatrixNum in range(a.model.parts[pNum].nRMatrices):
-                                        if needsReset[cNum][rMatrixNum]:
-                                            # print "reset cNum=%i,
-                                            # rMatrixNum=%i)" % (cNum,
-                                            # rMatrixNum)
-                                            pf.p4_resetBQET(
-                                                b.model.cModel, pNum, cNum, rMatrixNum)
-
-                a.model.copyBQETneedsResetTo(b.model)
-                b.setCStuff()
-                pf.p4_copyCondLikes(a.cTree, b.cTree, 1)  # 1 means do all
-                pf.p4_copyBigPDecks(a.cTree, b.cTree, 1)  # 1 means do all
-                pf.p4_copyModelPrams(a.cTree, b.cTree)
-
-            else:
-                gm.append('Unlisted proposal.name = %s  Fix me.' %
-                          aProposal.name)
-                raise P4Error(gm)
+        else:
+            gm.append('Unlisted proposal.name = %s  Fix me.' %
+                      aProposal.name)
+            raise P4Error(gm)
 
         if 0:
             # This needs testTree.  copyToTree() is in Tree.py, and
