@@ -1823,26 +1823,26 @@ if True:
 
         # Check if we have a new combo of comp and rMatrix.  This might be
         # more efficient if I cleverly only look at the affected nodes.
-        if 0:
-            if theProposal.topologyChanged:
-                for n in pTree.iterNodesNoRoot():
-                    for pNum in range(pTree.model.nParts):
-                        theCompNum = n.parts[pNum].compNum
-                        theRMatrixNum = n.br.parts[pNum].rMatrixNum
-                        if pTree.model.parts[pNum].bQETneedsReset[theCompNum][theRMatrixNum]:
-                            pf.p4_resetBQET(pTree.model.cModel, pNum, theCompNum, theRMatrixNum)
+        # if 0:
+        #     if theProposal.topologyChanged:
+        #         for n in pTree.iterNodesNoRoot():
+        #             for pNum in range(pTree.model.nParts):
+        #                 theCompNum = n.parts[pNum].compNum
+        #                 theRMatrixNum = n.br.parts[pNum].rMatrixNum
+        #                 if pTree.model.parts[pNum].bQETneedsReset[theCompNum][theRMatrixNum]:
+        #                     pf.p4_resetBQET(pTree.model.cModel, pNum, theCompNum, theRMatrixNum)
 
-        if 1:
-            if theProposal.topologyChanged:
-                for pNum in range(pTree.model.nParts):
-                    # print("\n")
-                    # print(pTree.model.parts[pNum].bQETneedsReset)
-                    for cNum in range(pTree.model.parts[pNum].nComps):
-                        for rNum in range(pTree.model.parts[pNum].nRMatrices):
-                            if pTree.model.parts[pNum].bQETneedsReset[cNum][rNum]:
-                                pf.p4_resetBQET(pTree.model.cModel, pNum, cNum, rNum)
-                    # print("after p4_resetBQET, ...")
-                    # print(pTree.model.parts[pNum].bQETneedsReset)
+        # if 1:
+        #     if theProposal.topologyChanged:
+        #         for pNum in range(pTree.model.nParts):
+        #             # print("\n")
+        #             # print(pTree.model.parts[pNum].bQETneedsReset)
+        #             for cNum in range(pTree.model.parts[pNum].nComps):
+        #                 for rNum in range(pTree.model.parts[pNum].nRMatrices):
+        #                     if pTree.model.parts[pNum].bQETneedsReset[cNum][rNum]:
+        #                         pf.p4_resetBQET(pTree.model.cModel, pNum, cNum, rNum)
+        #             # print("after p4_resetBQET, ...")
+        #             # print(pTree.model.parts[pNum].bQETneedsReset)
 
 
         # This stuff below could probably be done more cleverly, but this
