@@ -139,7 +139,7 @@ if True:
             if oldRoot.br.len <= var.BRLEN_MIN:
                 oldRoot.br.len += var.BRLEN_MIN
             self.propTree.reRoot(oldRoot, checkBiRoot=False)
-            self.propTree.setPreAndPostOrder()
+            self.propTree.preAndPostOrderAreValid = False   # check if this is necessary?
 
         else:
             #print(gm[0], "Neither curNode nor dest is the root. Need to rearrange.")
