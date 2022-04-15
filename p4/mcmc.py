@@ -3120,8 +3120,9 @@ class Mcmc(object):
         except (AttributeError, ValueError):
             self.treeFile = open(self.treeFileName, 'a')
             self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
-        if self.tree.model.parts[0].ndch2:     # and therefore all model parts
-            if self.tree.model.parts[0].ndch2_writeComps:
+
+        if self.tree.model.parts[0].ndch2 or self.tree.model.parts[0].ndrh2: # lazy programming -- and therefore all model parts
+            if self.tree.model.parts[0].ndch2_writeComps  or self.tree.model.parts[0].ndrh2_writeRMatrices:
                 self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                               withTranslation=1,
                                                               translationHash=self.translationHash,
