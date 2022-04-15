@@ -649,9 +649,11 @@ class Chain(object):
             #self.propTree.root.flag = 0
 
         elif theProposal.name == 'eTBR':
+            # doAbort is set, below, if constraints are violated
+
             if self.propTree.root.getNChildren() == 2:
                     rooter = self.propTree.attachRooter()
-                    self.propTree.makeSplitKeys()
+                    # self.propTree.makeSplitKeys()
                     #print("rooter br is %s, rooter.nodeNum=%i" % (rooter.br, rooter.nodeNum))
                     #print("Starting eTBR proposal ...")
                     self.proposeETBR_Blaise(theProposal)
@@ -686,64 +688,67 @@ class Chain(object):
             
             else:
                 self.proposeETBR_Blaise(theProposal)
-            #self.proposeETBR(theProposal)
-            #self.proposeESPR_Blaise(theProposal)
-            if theProposal.doAbort:
-                return 0.0
-            else:
-                if not self.propTree.preAndPostOrderAreValid:
-                    self.propTree.setPreAndPostOrder()
 
-                self.propTree.setCStuff()
+            
+            if not self.propTree.preAndPostOrderAreValid:
+                self.propTree.setPreAndPostOrder()
 
-                # Debugging litter ...
-                if 0 and self.mcmc.gen == 270:
-                    print()
-                    self.propTree.draw()
-                    #self.propTree.node(16).br.lenChanged = 1
-                    #self.propTree.node(17).br.lenChanged = 1
-                    for n in self.propTree.iterNodesNoRoot():
-                        if n.br.lenChanged:
-                            print("    node %2i br.lenChanged" % n.nodeNum)
-                            #n.br.textDrawSymbol = 'C'
-                    # self.propTree.draw()
+            # Are we violating constraints?
+            if self.mcmc.constraints and theProposal.topologyChanged:
+                self.propTree.makeSplitKeys(makeNodeForSplitKeyDict=True)  # makeNodeForSplitKeyDict=True is default
+                ret = self.mcmc.constraints.areConsistentWithTree(self.propTree)
+                if not ret:
+                    #print("proposeSp() after eTBR, doAbort set due to violated constraints")
+                    theProposal.doAbort = True
+                    return 0.0
+                if self.mcmc.constraints.rootConstraints:
+                    ret = self.mcmc.constraints.areConsistentWithTreeRoot(self.propTree)
+                    if not ret:
+                        #print("proposeSp() after eTBR, doAbort set due to violated constraint for root")
+                        theProposal.doAbort = True
+                        return 0.0
 
-                for n in self.propTree.iterNodesNoRoot():
-                    if n.br.lenChanged:
-                        # if 1:
-                        # This next line can generate
-                        # p4_calculateBigPDecksPart() pNum=0, compNum=1,
-                        # rMatrixNum=0, needsReset. Fix me.
-                        pf.p4_calculateBigPDecks(n.cNode)
-                        p = n
-                        while p != self.propTree.root:
-                            p = p.parent
-                            p.flag = 1
-                        n.br.lenChanged = False
-
-                # More debugging litter ...
-                if 0 and self.mcmc.gen == 270:
-                    for n in self.propTree.iterNodes():
-                        if n.flag:
-                            print("    node %2i flag" % n.nodeNum)
-                            # if n.br:
-                            #    n.br.textDrawSymbol = 'f'
-                    # self.propTree.draw()
-                    # for  n in self.propTree.iterNodesNoRoot():
-                    #    n.br.textDrawSymbol = '-'
-
-                # Recalculate condLikes for only the flagged nodes, in post
-                # order down to the root.
-                for n in self.propTree.iterPostOrder():
-                    if not n.isLeaf or (n == self.propTree.root and n.isLeaf):  # possibly leaf root
-                        if n.flag:
-                            for pNum in range(self.propTree.model.nParts):
-                                pf.p4_setConditionalLikelihoodsOfInternalNodePart(
-                                    n.cNode, pNum)
-                        n.flag = 0
+            # Bugfix, moved from proposeETBR_Blaise() to here, *after* checking for violated constraints.
+            if theProposal.topologyChanged:
                 for pNum in range(self.propTree.model.nParts):
-                    pf.p4_partLogLike(
-                        self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
+                    # print("\n")
+                    # print(self.propTree.model.parts[pNum].bQETneedsReset)
+                    for cNum in range(self.propTree.model.parts[pNum].nComps):
+                        for rNum in range(self.propTree.model.parts[pNum].nRMatrices):
+                            if self.propTree.model.parts[pNum].bQETneedsReset[cNum][rNum]:
+                                pf.p4_resetBQET(self.propTree.model.cModel, pNum, cNum, rNum)
+                    # print("after p4_resetBQET, ...")
+                    # print(self.propTree.model.parts[pNum].bQETneedsReset)
+
+
+            self.propTree.setCStuff()
+
+            for n in self.propTree.iterNodesNoRoot():
+                if n.br.lenChanged:
+                    # if 1:
+                    # This next line can generate
+                    # p4_calculateBigPDecksPart() pNum=0, compNum=1,
+                    # rMatrixNum=0, needsReset. Fix me.
+                    pf.p4_calculateBigPDecks(n.cNode)
+                    p = n
+                    while p != self.propTree.root:
+                        p = p.parent
+                        p.flag = 1
+                    n.br.lenChanged = False
+
+
+            # Recalculate condLikes for only the flagged nodes, in post
+            # order down to the root.
+            for n in self.propTree.iterPostOrder():
+                if not n.isLeaf or (n == self.propTree.root and n.isLeaf):  # possibly leaf root
+                    if n.flag:
+                        for pNum in range(self.propTree.model.nParts):
+                            pf.p4_setConditionalLikelihoodsOfInternalNodePart(
+                                n.cNode, pNum)
+                    n.flag = 0
+            for pNum in range(self.propTree.model.nParts):
+                pf.p4_partLogLike(
+                    self.propTree.cTree, self.propTree.data.parts[pNum].cPart, pNum, 0)
 
         elif theProposal.name == 'polytomy':
             self.proposePolytomy(theProposal)
