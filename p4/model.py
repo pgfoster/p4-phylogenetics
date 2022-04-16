@@ -127,14 +127,14 @@ class ModelPart(object):
         self.nCat = 0      # This is set by Tree.modelSanityCheck()
 
         self.ndch2 = False
-        self.ndch2_leafAlpha = 5.0      # Leaf
-        self.ndch2_internalAlpha = 5.0  # Internal
+        self.ndch2_leafAlpha = 2.0      # Leaf
+        self.ndch2_internalAlpha = 2.0  # Internal
         self.ndch2_priorRefComp = None
         self.ndch2_writeComps = True
 
         self.ndrh2 = False
-        self.ndrh2_leafAlpha = 5.0      # Leaf
-        self.ndrh2_internalAlpha = 5.0  # Internal
+        self.ndrh2_leafAlpha = 2.0      # Leaf
+        self.ndrh2_internalAlpha = 2.0  # Internal
         self.ndrh2_priorRefRMatrix = None
         self.ndrh2_writeRMatrices = True
         
