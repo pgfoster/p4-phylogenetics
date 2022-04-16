@@ -1372,7 +1372,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
         t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
         if len(t.nodes) > 1:
             t.setPreAndPostOrder()
-        if constraints.rootConstraints:
+        if constraints and constraints.rootConstraints:
             # We have checked that we have a valid rootConstraints, above
             theKey = constraints.rootConstraints[0]
             t.makeSplitKeys()
@@ -1386,7 +1386,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
             newNode = t.addNodeBetweenNodes(n, n.parent)
             t.reRoot(newNode, moveInternalName=False)
     else:
-        if constraints.rootConstraints:
+        if constraints and constraints.rootConstraints:
             print(f"constraints.rootConstraints are {constraints.rootConstraints}")
             print("Below is the rootConstraints tree")
             constraints.rTree.draw()
