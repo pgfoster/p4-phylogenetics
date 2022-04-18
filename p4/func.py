@@ -3892,3 +3892,22 @@ def getProteinEmpiricalModelComp(spec):
         val[i] /= theSum
     return val
 
+def getProteinEmpiricalModelRMatrix(spec, upperTriangle=True):
+    """Return RMatrix as a numpy array, or upper triangle as a list"""
+
+    dim = 20
+    assert spec in var.rMatrixProteinSpecs, "spec should be one of var.rMatrixProteinSpecs"
+    specNum = var.rMatrixProteinSpecNumberForNameDict[spec]
+    a = numpy.zeros((dim, dim), numpy.float)
+    pf.getBigR(specNum, a)
+
+    if upperTriangle:
+        uT = []
+        for rNum in range(dim - 1):
+            for cNum in range(rNum + 1, dim):
+                uT.append(a[rNum][cNum])
+        return uT
+    else:
+        return a
+
+
