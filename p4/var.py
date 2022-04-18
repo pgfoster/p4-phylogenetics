@@ -265,7 +265,7 @@ class Var(object):
         
 
         self.rMatrixSpecs = [
-            'ones', '2p', 'specified', 'optimized'] + self.rMatrixProteinSpecs
+            'ones', '2p', 'specified'] + self.rMatrixProteinSpecs
         self.compSpecs = [
             'equal', 'empirical', 'specified'] + self.rMatrixProteinSpecs
 

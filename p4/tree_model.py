@@ -527,6 +527,10 @@ if True:
             if free:
                 gm.append('The rMatrix should not be free if it is an empirical protein matrix.')
                 raise P4Error(gm)
+        else:
+            gm.append(f"I don't know spec '{spec}'")
+            gm.append(f"Programming error")
+            raise P4Error(gm)
 
         mt.val = v  # type numpy.ndarray, or None for specified protein
         return mt
