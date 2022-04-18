@@ -323,9 +323,7 @@ if True:
             try:
                 mt.symbol = var.modelSymbols[mt.num]
             except IndexError:
-                gm.append("You have asked for modelSymbol number %i" % mt.num)
-                gm.append("There are only %i in var.modelSymbols." % len(var.modelSymbols))
-                raise P4Error(gm)
+                mt.symbol = '-'
 
         self.model.parts[partNum].comps.append(mt)
 
@@ -470,7 +468,10 @@ if True:
         if symbol:
             mt.symbol = symbol
         else:
-            mt.symbol = var.modelSymbols[mt.num]
+            try:
+                mt.symbol = var.modelSymbols[mt.num]
+            except IndexError:
+                mt.symbol = '-'
 
         self.model.parts[partNum].rMatrices.append(mt)
 
