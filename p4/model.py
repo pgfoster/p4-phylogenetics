@@ -127,10 +127,16 @@ class ModelPart(object):
         self.nCat = 0      # This is set by Tree.modelSanityCheck()
 
         self.ndch2 = False
-        self.ndch2_leafAlpha = 50.0      # Leaf
-        self.ndch2_internalAlpha = 30.0  # Internal
-        self.ndch2_globalComp = None
+        self.ndch2_leafAlpha = 2.0      # Leaf
+        self.ndch2_internalAlpha = 2.0  # Internal
+        self.ndch2_priorRefComp = None
         self.ndch2_writeComps = True
+
+        self.ndrh2 = False
+        self.ndrh2_leafAlpha = 2.0      # Leaf
+        self.ndrh2_internalAlpha = 2.0  # Internal
+        self.ndrh2_priorRefRMatrix = None
+        self.ndrh2_writeRMatrices = True
         
     @property
     def nComps(self):
@@ -248,6 +254,8 @@ class ModelPart(object):
 
         op.ndch2_leafAlpha = sp.ndch2_leafAlpha
         op.ndch2_internalAlpha = sp.ndch2_internalAlpha
+        op.ndrh2_leafAlpha = sp.ndrh2_leafAlpha
+        op.ndrh2_internalAlpha = sp.ndrh2_internalAlpha
 
     def copyBQETneedsResetTo(self, otherModelPart):
         sp = self
@@ -509,33 +517,36 @@ class Model(object):
                             oneBasedColNum += mp.dim
 
             if mp.nRMatrices:
-                for i in range(mp.nRMatrices):
-                    mt = mp.rMatrices[i]
-                    if mt.free:
-                        if mt.spec == '2p':
-                            flob.write("#   %7i %7i " %
-                                       (zeroBasedColNum, oneBasedColNum))
-                            flob.write("%srMatrix[1]\n" % spacer2)
-                            pramsList[pNum].append(['rMatrix', 1])
-                            nPrams += 1
-                            zeroBasedColNum += 1
-                            oneBasedColNum += 1
-                        else:
-                            lenMtVal = len(mt.val)
-                            flob.write("#   ")
-                            begin = zeroBasedColNum
-                            end = zeroBasedColNum + (lenMtVal - 1)
-                            theRangeString = "%s-%s" % (begin, end)
-                            flob.write("%7s " % theRangeString)
-                            begin = oneBasedColNum
-                            end = oneBasedColNum + (lenMtVal - 1)
-                            theRangeString = "%s-%s" % (begin, end)
-                            flob.write("%7s " % theRangeString)
-                            flob.write("%srMatrix[%i]\n" % (spacer2, lenMtVal))
-                            pramsList[pNum].append(['rMatrix', lenMtVal])
-                            nPrams += lenMtVal
-                            zeroBasedColNum += lenMtVal
-                            oneBasedColNum += lenMtVal
+                if mp.ndrh2 and not mp.ndrh2_writeRMatrices:
+                    pass
+                else:
+                    for i in range(mp.nRMatrices):
+                        mt = mp.rMatrices[i]
+                        if mt.free:
+                            if mt.spec == '2p':
+                                flob.write("#   %7i %7i " %
+                                           (zeroBasedColNum, oneBasedColNum))
+                                flob.write("%srMatrix[1]\n" % spacer2)
+                                pramsList[pNum].append(['rMatrix', 1])
+                                nPrams += 1
+                                zeroBasedColNum += 1
+                                oneBasedColNum += 1
+                            else:
+                                lenMtVal = len(mt.val)
+                                flob.write("#   ")
+                                begin = zeroBasedColNum
+                                end = zeroBasedColNum + (lenMtVal - 1)
+                                theRangeString = "%s-%s" % (begin, end)
+                                flob.write("%7s " % theRangeString)
+                                begin = oneBasedColNum
+                                end = oneBasedColNum + (lenMtVal - 1)
+                                theRangeString = "%s-%s" % (begin, end)
+                                flob.write("%7s " % theRangeString)
+                                flob.write("%srMatrix[%i]\n" % (spacer2, lenMtVal))
+                                pramsList[pNum].append(['rMatrix', lenMtVal])
+                                nPrams += lenMtVal
+                                zeroBasedColNum += lenMtVal
+                                oneBasedColNum += lenMtVal
             if mp.nGdasrvs:
                 for i in range(mp.nGdasrvs):
                     mt = mp.gdasrvs[i]
@@ -585,11 +596,14 @@ class Model(object):
                             for j in mt.val:
                                 flob.write(profile2 % j)
             if mp.nRMatrices:
-                for i in range(mp.nRMatrices):
-                    mt = mp.rMatrices[i]
-                    if mt.free:
-                        for j in mt.val:
-                            flob.write(profile2 % j)
+                if mp.ndrh2 and not mp.ndrh2_writeRMatrices:
+                    pass
+                else:
+                    for i in range(mp.nRMatrices):
+                        mt = mp.rMatrices[i]
+                        if mt.free:
+                            for j in mt.val:
+                                flob.write(profile2 % j)
             if mp.nGdasrvs:
                 for i in range(mp.nGdasrvs):
                     mt = mp.gdasrvs[i]
@@ -609,6 +623,9 @@ class Model(object):
             if mp.ndch2:
                 flob.write(profile1 % mp.ndch2_leafAlpha)
                 flob.write(profile1 % mp.ndch2_internalAlpha)
+            if mp.ndrh2:
+                flob.write(profile1 % mp.ndrh2_leafAlpha)
+                flob.write(profile1 % mp.ndrh2_internalAlpha)
         flob.write("\n")
 
     def writePramsHeaderLine(self, flob):
@@ -628,11 +645,14 @@ class Model(object):
                             for j in range(len(mt.val)):
                                 flob.write('\tcomp.%i.%i.%i' % (pNum, i, j))
             if mp.nRMatrices:
-                for i in range(mp.nRMatrices):
-                    mt = mp.rMatrices[i]
-                    if mt.free:
-                        for j in range(len(mt.val)):
-                            flob.write('\trMatrix.%i.%i.%i' % (pNum, i, j))
+                if mp.ndrh2 and not mp.ndrh2_writeRMatrices:
+                    pass
+                else:
+                    for i in range(mp.nRMatrices):
+                        mt = mp.rMatrices[i]
+                        if mt.free:
+                            for j in range(len(mt.val)):
+                                flob.write('\trMatrix.%i.%i.%i' % (pNum, i, j))
             if mp.nGdasrvs:
                 for i in range(mp.nGdasrvs):
                     mt = mp.gdasrvs[i]
@@ -650,6 +670,9 @@ class Model(object):
             if mp.ndch2:
                 flob.write('\tndch2_leafAlpha.%i' % pNum)
                 flob.write('\tndch2_internalAlpha.%i' % pNum)
+            if mp.ndrh2:
+                flob.write('\tndrh2_leafAlpha.%i' % pNum)
+                flob.write('\tndrh2_internalAlpha.%i' % pNum)
         flob.write("\n")
 
     def allocCStuff(self):

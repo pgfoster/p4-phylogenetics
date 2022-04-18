@@ -1069,7 +1069,7 @@ def splash2(outFile=None, verbose=True):
     return stuff
 
 
-def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None, randomlyReRoot=True):
+def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None):
     """Make a simple random Tree.
 
     You can supply a list of taxNames, or simply specify nTax.  In the
@@ -1078,22 +1078,23 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
 
     The default is to have 'randomBrLens', where internal nodes get
     brLens of 0.02 - 0.05, and terminal nodes get brLens of 0.02 -
-    0.5.  Branch lengths are all 0.1 if randomBrLens is turned
-    off.
+    0.5. Branch lengths are all 0.1 if randomBrLens is turned off.
 
-    This method starts with a star tree and keeps adding nodes
-    until it is fully resolved.  If 'biRoot' is set, it adds one
-    more node, and roots on that node, to make a bifurcating root.
+    This method starts with a star tree and keeps adding nodes until
+    it is fully resolved.  If 'biRoot' is set, it adds one more node,
+    and roots on that node, to make a bifurcating root.
 
-    Repeated calls will give different random trees, without
-    having to do any seed setting.  If for some reason you want to
-    make identical random trees, set the seed to some positive
-    integer, or zero.
+    Repeated calls will give different random trees, without having to
+    do any seed setting.  If for some reason you want to make
+    identical random trees, set the seed to some positive integer, or
+    zero.
 
     If you want the tree to have some topological constraints, say so
-    with a Constraints object.
+    with a Constraints object.  That can include a constrained root
+    position.
 
-    Returns a tree."""
+    Returns a tree.
+    """
 
     complaintHead = '\nrandomTree()'
     gm = [complaintHead]
@@ -1116,15 +1117,27 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
 
     if constraints:
         assert isinstance(constraints, Constraints)
+        if constraints.rootConstraints:
+            nCon = len(constraints.rootConstraints)
+            if constraints.rTree.isBiRoot():
+                if nCon != 1:
+                    gm.append("biRoot trees with rootConstraints should")
+                    gm.append("have exactly 1 rootConstraint split.")
+                    gm.append(f"Got {nCon} rootConstraints {constraints.rootConstraints}")
+                    raise P4Error(gm)
+                if not biRoot:
+                    gm.append("Arg biRoot is not turned on.")
+                    gm.append("However, the constraint rTree is biRooted.")
+                    raise P4Error(gm)
+            elif constraints.rTree.isTriRoot: 
+                if biRoot:
+                    gm.append("Arg biRoot is turned on")
+                    gm.append("However, the contraint rTree is tri-rooted.")
+                    raise P4Error(gm)
+            else:
+                gm.append("The constraint rTree should be either biRoot or triRoot.")
+                raise P4Error(gm)
 
-    # if we are asking for a biRoot tree, that does not have a random root, then we need a bi-rooted constraint
-    if biRoot and not randomlyReRoot:
-        if not constraints or constraints.tree.root.getNChildren() != 2:
-            gm.append("For a biRoot'ed tree, that has a specified root (ie randomlyReRoot=False),")
-            gm.append("a constraints object is needed, specified with a constraint tree as")
-            gm.append("((all, the, taxon), (names, in, two, forks));")
-            gm.append("although you can have additional internal constraints.")
-            raise P4Error(gm)
 
     # Make a random list of indices for the taxNames
     if seed != None:  # it might be 0
@@ -1171,7 +1184,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
     nNodesAddedForConstraints = 0
     if constraints:
         for aConstraint in constraints.constraints:
-            # print "doing aConstraint %s  %i" % (getSplitStringFromKey(aConstraint, nTax), aConstraint)
+            # print("doing aConstraint %s  %i" % (getSplitStringFromKey(aConstraint, nTax), aConstraint))
             #t.dump(tree=0, node=1)
             t.setPreAndPostOrder()
             eTaxNames = []
@@ -1344,9 +1357,13 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
         t.nodes.append(n)
 
     if 0:
+        print("before rooting", "=" * 50)
         t.preOrder = None
         t.postOrder = None
         t.preAndPostOrderAreValid = False
+        t.makeSplitKeys()
+        for n in t.iterInternalsNoRoot():
+            n.name = f"{n.br.splitKey}"
         t.draw()
 
     if biRoot:
@@ -1355,23 +1372,57 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
         t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
         if len(t.nodes) > 1:
             t.setPreAndPostOrder()
-        if randomlyReRoot:
+        if constraints and constraints.rootConstraints:
+            # We have checked that we have a valid rootConstraints, above
+            theKey = constraints.rootConstraints[0]
+            t.makeSplitKeys()
+            rNode = t.nodeForSplitKeyDict.get(theKey)
+            assert rNode, "biRoot root constraint node not found"
+            newNode = t.addNodeBetweenNodes(rNode, rNode.parent)
+            t.reRoot(newNode, moveInternalName=False)
+        else:
             # pick a random node, with a parent
             n = t.nodes[random.randrange(1, len(t.nodes))]
             newNode = t.addNodeBetweenNodes(n, n.parent)
             t.reRoot(newNode, moveInternalName=False)
-        else:
-            # We have checked that we have a valid constraints and constraints tree, above
-            theKey = constraints.tree.root.leftChild.br.splitKey
-            t.makeSplitKeys()
-            for kNode in t.nodes:
-                if kNode.br and kNode.br.splitKey == theKey:
-                    break
-            assert kNode.br.splitKey == theKey
-            newNode = t.addNodeBetweenNodes(kNode, kNode.parent)
-            t.reRoot(newNode, moveInternalName=False)
     else:
-        if randomlyReRoot:
+        if constraints and constraints.rootConstraints:
+            print(f"constraints.rootConstraints are {constraints.rootConstraints}")
+            print("Below is the rootConstraints tree")
+            constraints.rTree.draw()
+
+            # Re-root to the first leaf, so we can post-order traverse
+            # without bothering with the root
+            t.reRoot(t.node(t.taxNames[0]))
+            t.makeSplitKeys()
+            # print("Below is the re-rooted tree I")
+            # for n in t.iterInternalsNoRoot():
+            #     n.name = f"{n.br.splitKey}"
+            # t.draw()
+
+            for n in t.iterPostOrder():
+                # print(f"checking node {n.nodeNum}, with splitKey {n.br.splitKey}")
+                if n.br.splitKey in constraints.rootConstraints:
+                    t.reRoot(n.parent, moveInternalName=False)
+                    break
+
+            # print("Below is the re-rooted tree II")
+            # t.draw()
+
+            # Check
+            rootSplits = [n.br.splitKey for n in t.root.iterChildren()]
+            # print(f"rootSplits are {rootSplits}")
+            isBad = False
+            for sk in constraints.rootConstraints:
+                if sk not in rootSplits:
+                    gm.append(f"root constraint split {sk} is not a root split")
+                    isBad = True
+            if isBad:
+                gm.append(f"Something is wrong. root splits are {rootSplits}")
+                gm.append(f"root constraints are {constraints.rootConstraints}")
+                gm.append(f"Maybe incompatible root contraints?")
+                raise P4Error(gm)
+        else:
             # The way it is now, the root rightmost child is always a
             # leaf.  Not really random, then, right?  So choose a random
             # internal node, and re-root it there.
@@ -3142,7 +3193,15 @@ def effectiveSampleSize(data, mean):
     if 1:
         pf.effectiveSampleSize(data, mean, nSamples, maxLag, gammaStatAtPreviousLag,
                                gammaStat, varStat, gammaStatAtLagZero)
-        ESS2 = nSamples * (gammaStatAtLagZero / varStat)
+
+        # print(f"nSamples {nSamples} type {type(nSamples)}")
+        # print(f"gammaStatAtLagZero {gammaStatAtLagZero} type {type(gammaStatAtLagZero)}")
+        # print(f"varStat {varStat} type {type(varStat)}")
+        
+        if varStat == 0:
+            return 0.0  # Is this best for this case?
+        else:
+            ESS2 = nSamples * (gammaStatAtLagZero / varStat)
         #fabsDiff = numpy.fabs(ESS1 - ESS2)
         # print "ESS1 is %f, ESS2 is %f, diff is %g" % (ESS1, ESS2, fabsDiff)
     return ESS2[0]

@@ -38,8 +38,9 @@ fudgeFactor['gdasrvLocation'] = 0.01
 fudgeFactor['allCompsDir'] = 1.0
 fudgeFactor['allRMatricesDir'] = 1.0
 fudgeFactor['ndch2comp'] = 0.2
-fudgeFactor['ndch2alpha'] = 0.04
-fudgeFactor['ndch2root3nInternalCompsDir'] = 0.05
+fudgeFactor['ndch2alpha'] = 0.01
+fudgeFactor['ndrh2rates'] = 0.2
+fudgeFactor['ndrh2alpha'] = 0.01
 
 
 class McmcTuningsPart(object):
@@ -57,13 +58,19 @@ class McmcTuningsPart(object):
         self.default['ndch2_internalCompsDir'] = 100.
         self.default['ndch2_leafCompsDirAlpha'] = 2.0 * math.log(1.2)
         self.default['ndch2_internalCompsDirAlpha'] = 2.0 * math.log(3.0)
-        self.default['ndch2_root3n_internalCompsDir'] = 100.
         # rMatrix with sliders no longer changed depending on the dim (ie size of rMatrix)
         self.default['rMatrix'] = 0.3
         # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
         self.default['rMatrixDir'] = 200.
         self.default['allRMatricesDir'] = 500.
         self.default['twoP'] = 50.
+
+        self.default['ndrh2_leafRatesDir'] = 200.
+        self.default['ndrh2_internalRatesDir'] = 100.
+        self.default['ndrh2_leafRatesDirAlpha'] = 2.0 * math.log(1.2)
+        self.default['ndrh2_internalRatesDirAlpha'] = 2.0 * math.log(3.0)
+
+
         self.default['gdasrv'] = 2.0 * math.log(1.5)  # 0.811
         self.default['pInvar'] = 0.5
         #self.default['rMatrixLocation'] = 0.0
@@ -126,10 +133,15 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'ndch2_internalCompsDir', 0.0)
         object.__setattr__(self, 'ndch2_leafCompsDirAlpha', 0.0)
         object.__setattr__(self, 'ndch2_internalCompsDirAlpha', 0.0)
-        #object.__setattr__(self, 'ndch2_root3n_internalCompsDir', 0.0)
         #object.__setattr__(self, 'rMatrix', 1.0)
         object.__setattr__(self, 'rMatrixDir', 0.0)
         object.__setattr__(self, 'allRMatricesDir', 1.0)
+
+        object.__setattr__(self, 'ndrh2_leafRatesDir', 0.0)
+        object.__setattr__(self, 'ndrh2_internalRatesDir', 0.0)
+        object.__setattr__(self, 'ndrh2_leafRatesDirAlpha', 0.0)
+        object.__setattr__(self, 'ndrh2_internalRatesDirAlpha', 0.0)
+
         object.__setattr__(self, 'gdasrv', 1.0)
         object.__setattr__(self, 'pInvar', 1.0)
         object.__setattr__(self, 'local', 1.0)
@@ -711,9 +723,14 @@ class Mcmc(object):
             for sk in self.constraints.constraints:
                 if sk not in mySplitKeys:
                     # self.tree.draw()
-                    gm.append('Constraint %s' % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
+                    gm.append('Constraint %i %s' % (sk, p4.func.getSplitStringFromKey(sk, self.tree.nTax)))
                     gm.append('is not in the starting tree.')
                     gm.append('Maybe you want to make a randomTree with constraints?')
+                    raise P4Error(gm)
+            if self.constraints.rTree:   # a root constraint
+                ret = self.constraints.areConsistentWithTreeRoot(self.tree)
+                if not ret:
+                    gm.append("The starting tree is not consistent with the constraints.rTree")
                     raise P4Error(gm)
 
         try:
@@ -861,10 +878,13 @@ class Mcmc(object):
 
         self.props = Proposals()
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
-                    gdasrv local ndch2_internalCompsDir ndch2_root3n_internalCompsDir 
+                    gdasrv local ndch2_internalCompsDir 
                     ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
-        # maybeTunableButNotNow  compLocation eTBR polytomy root3 root3n rMatrixLocation root2
+                    ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir 
+                    ndrh2_internalRatesDir ndrh2_internalRatesDirAlpha ndrh2_leafRatesDir 
+                    ndrh2_leafRatesDirAlpha relRate """.split()
+
+        # Maybetunablebutnotnow  compLocation eTBR polytomy root3 root3n rMatrixLocation root2
 
         self.treePartitions = None
         self.likesFileName = "mcmc_likes_%i" % runNum
@@ -944,9 +964,10 @@ class Mcmc(object):
             self._tunings.parts[pNum].default['allCompsDir'] = 100. * theDim
             self._tunings.parts[pNum].default['ndch2_leafCompsDir'] = 2000. * theDim
             self._tunings.parts[pNum].default['ndch2_internalCompsDir'] = 500. * theDim
-            self._tunings.parts[pNum].default['ndch2_root3n_internalCompsDir'] = 500. * theDim
             self._tunings.parts[pNum].default['rMatrixDir'] = 50. * nRates
             self._tunings.parts[pNum].default['allRMatricesDir'] = 100. * nRates
+            self._tunings.parts[pNum].default['ndrh2_leafRatesDir'] = 50. * nRates
+            self._tunings.parts[pNum].default['ndrh2_internalRatesDir'] = 50. * nRates
             
 
         # Zap internal node names
@@ -976,11 +997,6 @@ class Mcmc(object):
                         pNum, nNodes, mp.nComps))
                     gm.append("For ndch2 there should be one comp for each node.")
                     raise P4Error(gm)
-                if mp.nRMatrices > 1:
-                    gm.append("Model part %i, ndch2 is on, nNodes is %i, nRMatrices is %i" % (
-                        pNum, nNodes, mp.nRMatrices))
-                    gm.append("This week, for ndch2 there should be only one rMatrix.")
-                    raise P4Error(gm)
                 if mp.nGdasrvs > 1:
                     gm.append("Model part %i, ndch2 is on, nNodes is %i, nGdasrvs is %i" % (
                         pNum, nNodes, mp.nGdasrvs))
@@ -990,28 +1006,60 @@ class Mcmc(object):
                 for n in self.tree.iterNodes():
                     assert n.nodeNum == n.parts[pNum].compNum
 
-                # Set leaf node mt.empiricalComp
-                for n in self.tree.iterLeavesNoRoot():
-                    mt = mp.comps[n.parts[pNum].compNum]
-                    # print(n.name, mt.val, "seqNum", n.seqNum)
-                    # print("part[seq] composition:", dp.composition([n.seqNum]))
-                    mt.empiricalComp = numpy.array(dp.composition([n.seqNum]))
-                    while mt.empiricalComp.min()  < var.PIVEC_MIN:
-                        for i in range(mp.dim):
-                            if mt.empiricalComp[i] < var.PIVEC_MIN:
-                                mt.empiricalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
-                        mt.empiricalComp /= mt.empiricalComp.sum()
+                if not mp.ndch2_priorRefComp:
+                    mp.ndch2_priorRefComp = numpy.array(dp.composition())
 
-                mp.ndch2_globalComp = numpy.array(dp.composition())
-                while mp.ndch2_globalComp.min()  < var.PIVEC_MIN:
+                mp.ndch2_priorRefComp = numpy.array(mp.ndch2_priorRefComp, dtype=float) # if not already a numpy.array
+                assert len(mp.ndch2_priorRefComp) == mp.dim
+                theMin = numpy.min(mp.ndch2_priorRefComp)
+                if theMin < var.PIVEC_MIN:
+                    gm.append("ndch2_priorRefComp min value is too low (%s)" % theMin)
+                    gm.append("Set it 'by hand'")
+                    raise P4Error(gm)
+                mp.ndch2_priorRefComp /= theMin
+                while mp.ndch2_priorRefComp.min()  < var.PIVEC_MIN:
                     for i in range(mp.dim):
-                        if mp.ndch2_globalComp[i] < var.PIVEC_MIN:
-                            mp.ndch2_globalComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
-                    mp.ndch2_globalComp /= mp.ndch2_globalComp.sum()
+                        if mp.ndch2_priorRefComp[i] < var.PIVEC_MIN:
+                            mp.ndch2_priorRefComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+                    mp.ndch2_priorRefComp /= mp.ndch2_priorRefComp.sum()
+
+                print(f"Mcmc init() mp.ndch2_priorRefComp is {mp.ndch2_priorRefComp}")
 
                 # ususal comp proposals should not be on if we are doing ndch2
                 self.prob.compDir = 0.0
                 self.prob.allCompsDir = 0.0
+                self.prob.compLocation = 0.0
+
+            if mp.ndrh2:
+                if mp.nRMatrices != nNodes - 1:
+                    gm.append("Model part %i, ndrh2 is on, nNodes is %i, nRMatices is %i" % (
+                        pNum, nNodes, mp.nRMatrices))
+                    gm.append("For ndrh2 there should be one comp for each node except the root.")
+                    raise P4Error(gm)
+
+                for n in self.tree.iterNodesNoRoot():
+                    assert n.nodeNum == n.br.parts[pNum].rMatrixNum + 1
+
+                thisRMatrixLen = int(((mp.dim * mp.dim) - mp.dim) / 2)
+                if not mp.ndrh2_priorRefRMatrix:
+                    mp.ndrh2_priorRefRMatrix = numpy.ones(thisRMatrixLen)
+
+                mp.ndrh2_priorRefRMatrix = numpy.array(mp.ndrh2_priorRefRMatrix, dtype=float) # if not already a numpy.array
+                assert len(mp.ndrh2_priorRefRMatrix) == thisRMatrixLen
+                mp.ndrh2_priorRefRMatrix /= numpy.min(mp.ndrh2_priorRefRMatrix)
+
+                while mp.ndrh2_priorRefRMatrix.min()  < var.RATE_MIN:
+                    for i in range(thisRMatrixLen):
+                        if mp.ndrh2_priorRefRMatrix[i] < var.RATE_MIN:
+                            mp.ndrh2_priorRefRMatrix[i] += (1.0 + (1.1 * random.random())) * var.RATE_MIN
+                    mp.ndrh2_priorRefRMatrix /= mp.ndrh2_priorRefRMatrix.sum()
+                print(f"Mcmc init() mp.ndrh2_priorRefRMatrix is {mp.ndrh2_priorRefRMatrix}")
+                
+
+                # Turn off non-ndrh2 rmatrix moves
+                self.prob.rMatrixDir = 0.0
+                self.prob.allRMatricesDir = 0.0
+                self.prob.rMatrixLocation = 0.0
 
         if self.tree.model.isHet:
             props_on = []
@@ -1031,7 +1079,7 @@ class Mcmc(object):
                     if "composition location" not in props_on:
                         props_on.append("composition location")
 
-                if mp.nRMatrices > 1 and mp.nRMatrices < nNodes:
+                if mp.nRMatrices > 1 and mp.nRMatrices < (nNodes - 1):
                     self.prob.rMatrixLocation = 1.0
                     if "rate matrix location" not in props_on:
                         props_on.append("rate matrix location")
@@ -1062,12 +1110,26 @@ class Mcmc(object):
                     if thisMString not in props_on:
                         props_on.append(thisMString)
 
-                    if 0:
-                        # experimental.  doesn't work well
-                        self.prob.ndch2_root3n_internalCompsDir = 1.0
-                        thisMString = "ndch2_root3n_internalCompsDir"
-                        if thisMString not in props_on:
-                            props_on.append(thisMString)
+                if mp.ndrh2:
+                    self.prob.ndrh2_leafRatesDir = 1.0
+                    thisMString = "ndrh2_leafRatesDir"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
+                    self.prob.ndrh2_internalRatesDir = 1.0
+                    thisMString = "ndrh2_internalRatesDir"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
+                    self.prob.ndrh2_leafRatesDirAlpha = 1.0
+                    thisMString = "ndrh2_leafRatesDirAlpha"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
+                    self.prob.ndrh2_internalRatesDirAlpha = 1.0
+                    thisMString = "ndrh2_internalRatesDirAlpha"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
 
             if self.isBiRoot:
                 self.prob.root2 = 1.0
@@ -1088,8 +1150,8 @@ class Mcmc(object):
                 print("\n%23s" % "Additional proposals:")
                 for prop in props_on:
                     print("%30s = on" % prop)
-                print("\n  %s" % "[You can of course turn them")
-                print("  %s" % "off again before Mcmc.run()]\n")
+                print("\n  %s" % "[All set to a relative proposal probability of 1.0. You can adjust those,")
+                print("  %s" % " or turn them off, eg by setting m.prob.theProposal=0.0, before Mcmc.run()]\n")
         else:
             self.prob.root3 = 0.0
             self.prob.root3n = 0.0
@@ -1531,25 +1593,6 @@ class Mcmc(object):
 
                 self.props.proposals.append(p)
 
-            # # ndch2_root3n_internalCompsDir, only for single data-partition runs
-            # if self.prob.ndch2_root3n_internalCompsDir:
-            #     p = Proposal(self)
-            #     p.name = 'ndch2_root3n_internalCompsDir'
-            #     p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains  
-            #     p.weight = self.prob.ndch2_root3n_internalCompsDir * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2root3nInternalCompsDir']
-            #     p.pNum = pNum
-
-            #     p.tnAccVeryHi = 0.4
-            #     p.tnAccHi = 0.15
-            #     p.tnAccLo = 0.05
-            #     p.tnAccVeryLo = 0.03
-
-            #     p.tnFactorVeryHi = 0.7
-            #     p.tnFactorHi = 0.8
-            #     p.tnFactorLo = 1.2
-            #     p.tnFactorVeryLo = 1.4
-
-            #     self.props.proposals.append(p)
 
             # ndch2_leafCompsDirAlpha
             if self.prob.ndch2_leafCompsDirAlpha:
@@ -1648,6 +1691,100 @@ class Mcmc(object):
                     p.tnFactorVeryLo = 1.4
 
                     self.props.proposals.append(p)
+
+
+            # ndrh2_leafRatesDir
+            if self.prob.ndrh2_leafRatesDir:
+                for mtNum in range(mp.nRMatrices):
+                    assert mp.rMatrices[mtNum].free
+                p = Proposal(self)
+                p.name = 'ndrh2_leafRatesDir'
+                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                p.weight = self.prob.ndrh2_leafRatesDir * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    mp.nRMatrices * fudgeFactor['ndrh2rates']
+                p.pNum = pNum
+
+                p.tnAccVeryHi = 0.4
+                p.tnAccHi = 0.15
+                p.tnAccLo = 0.05
+                p.tnAccVeryLo = 0.03
+
+                p.tnFactorVeryHi = 0.7
+                p.tnFactorHi = 0.8
+                p.tnFactorLo = 1.2
+                p.tnFactorVeryLo = 1.4
+
+                self.props.proposals.append(p)
+
+            # ndrh2_internalRatesDir
+            if self.prob.ndrh2_internalRatesDir:
+                for mtNum in range(mp.nRMatrices):
+                    assert mp.rMatrices[mtNum].free
+                p = Proposal(self)
+                p.name = 'ndrh2_internalRatesDir'
+                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                p.weight = self.prob.ndrh2_internalRatesDir * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    mp.nRMatrices * fudgeFactor['ndrh2rates']
+                p.pNum = pNum
+
+                p.tnAccVeryHi = 0.4
+                p.tnAccHi = 0.15
+                p.tnAccLo = 0.05
+                p.tnAccVeryLo = 0.03
+
+                p.tnFactorVeryHi = 0.7
+                p.tnFactorHi = 0.8
+                p.tnFactorLo = 1.2
+                p.tnFactorVeryLo = 1.4
+
+                self.props.proposals.append(p)
+
+            # ndrh2_leafRatesDirAlpha
+            if self.prob.ndrh2_leafRatesDirAlpha:
+                p = Proposal(self)
+                p.name = 'ndrh2_leafRatesDirAlpha'
+                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                p.weight = self.prob.ndrh2_leafRatesDirAlpha * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    mp.nRMatrices * fudgeFactor['ndrh2alpha']
+                p.pNum = pNum
+
+                p.tnAccVeryHi = 0.7
+                p.tnAccHi = 0.6
+                p.tnAccLo = 0.1
+                p.tnAccVeryLo = 0.06
+
+                p.tnFactorVeryHi = 1.6
+                p.tnFactorHi = 1.2
+                p.tnFactorLo = 0.8
+                p.tnFactorVeryLo = 0.7
+
+                self.props.proposals.append(p)
+
+            # ndrh2_internalRatesDirAlpha
+            if self.prob.ndrh2_internalRatesDirAlpha:
+                p = Proposal(self)
+                p.name = 'ndrh2_internalRatesDirAlpha'
+                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                p.weight = self.prob.ndrh2_internalRatesDirAlpha * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    mp.nRMatrices * fudgeFactor['ndrh2alpha']
+                p.pNum = pNum
+
+                p.tnAccVeryHi = 0.7
+                p.tnAccHi = 0.6
+                p.tnAccLo = 0.1
+                p.tnAccVeryLo = 0.06
+
+                p.tnFactorVeryHi = 1.6
+                p.tnFactorHi = 1.2
+                p.tnFactorLo = 0.8
+                p.tnFactorVeryLo = 0.7
+
+                self.props.proposals.append(p)
+
 
             # gdasrv
             if self.prob.gdasrv:
@@ -1844,6 +1981,37 @@ class Mcmc(object):
                 #else:
                 p.weight = self.prob.allRMatricesDir * mp.nRMatrices * \
                         ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * fudgeFactor['allRMatricesDir']
+
+            # ndrh2_leafRatesDir
+            if p.name == 'ndrh2_leafRatesDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndrh2_leafRatesDir * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    mp.nRMatrices * fudgeFactor['ndrh2rates']
+
+            # ndrh2_internalRatesDir
+            if p.name == 'ndrh2_internalRatesDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndrh2_internalRatesDir * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    mp.nRMatrices * fudgeFactor['ndrh2rates']
+
+            # ndrh2_leafRatesDirAlpha
+            if p.name == 'ndrh2_leafRatesDirAlpha':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndrh2_leafRatesDirAlpha * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    mp.nRMatrices * fudgeFactor['ndrh2alpha']
+
+            # ndrh2_internalRatesDirAlpha
+            if p.name == 'ndrh2_internalRatesDirAlpha':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndrh2_internalRatesDirAlpha * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    mp.nRMatrices * fudgeFactor['ndrh2alpha']
+
+
+
 
             # gdasrv
             if p.name == 'gdasrv':
@@ -2195,7 +2363,17 @@ class Mcmc(object):
 
         # write the models comment
         if self.tree.model.isHet:
-            if (not self.tree.model.parts[0].ndch2) or (self.tree.model.parts[0].ndch2 and self.tree.model.parts[0].ndch2_writeComps):
+            writeModelComment = True
+            if self.tree.model.parts[0].ndch2:
+                writeModelComment = False
+                if self.tree.model.parts[0].ndch2_writeComps:
+                    writeModelComment = True
+            if self.tree.model.parts[0].ndrh2:
+                writeModelComment = False
+                if self.tree.model.parts[0].ndrh2_writeRMatrices:
+                    writeModelComment = True
+                    
+            if writeModelComment:
                 self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
                 for pNum in range(self.tree.model.nParts):
                     self.treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
@@ -2290,6 +2468,10 @@ class Mcmc(object):
                 if mp.ndch2:
                     gm.append("Part %i uses ndch2" % pNum)
                     gm.append("Ndch2 does not work with the polytomy move.")
+                    raise P4Error(gm)
+                if mp.ndrh2:
+                    gm.append("Part %i uses ndrh2" % pNum)
+                    gm.append("Ndrh2 does not work with the polytomy move.")
                     raise P4Error(gm)
                 
         if self.doSteppingStone:
@@ -2496,7 +2678,8 @@ class Mcmc(object):
                     self.pramsFile.write("genPlus1")
                     self.chains[0].curTree.model.writePramsHeaderLine(self.pramsFile)
             if self.writeHypers:
-                if not self.tree.model.parts[0].ndch2:     # and therefore all model parts, this week
+                if not self.tree.model.parts[0].ndch2 and not self.tree.model.parts[0].ndrh2:     
+                    # and therefore all model parts, this week  -- lame!
                     self.writeHypers = False
                 else:
                     self.hypersFile = open(self.hypersFileName, 'w')
@@ -2540,7 +2723,7 @@ class Mcmc(object):
             pf.p4_copyBigPDecks(ch.curTree.cTree, ch.propTree.cTree, 1)
             ch.verifyIdentityOfTwoTreesInChain()
 
-        abortableProposals = ['local', 'polytomy', 'compLocation',
+        abortableProposals = ['local', 'polytomy', 'compLocation', 'eTBR'
                               'rMatrixLocation', 'gdasrvLocation']
 
         ##################################################
@@ -2599,17 +2782,16 @@ class Mcmc(object):
                             raise P4Error(gm)
 
                     if 0:
-                        print("==== gNum=%i, chNum=%i, aProposal=%s (part %i)" % (
-                            gNum, chNum, aProposal.name, aProposal.pNum), end=' ')
-                        sys.stdout.flush()
-                        # print gNum,
+                        print("==== Mcmc.run() gNum=%i, chNum=%i, aProposal=%s (part %i)" % (
+                            gNum, chNum, aProposal.name, aProposal.pNum), end='\n')
+                        #sys.stdout.flush()
 
                     # success returns None
                     failure = self.chains[chNum].gen(aProposal)
                     #failure = None
 
                     if failure:
-                        myWarn = "Mcmc.run() main loop.  Proposal %s generated a 'failure'.  Why?" % aProposal.name
+                        myWarn = "Mcmc.run() main loop.  Proposal %s generated a 'failure'. Should be debugged." % aProposal.name
                         self.logger.warning(myWarn)
 
                     nAttempts += 1
@@ -2626,10 +2808,14 @@ class Mcmc(object):
                     # likely not be chNum.  So we get the tempNum from this
                     # chNum, and tune it.
                     
-                    # tunables = """allBrLens allCompsDir brLen compDir 
+                    # From init
+                    # self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     # gdasrv local ndch2_internalCompsDir 
                     # ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir relRate """.split()
+                    # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir 
+                    # ndrh2_internalRatesDir ndrh2_internalRatesDirAlpha ndrh2_leafRatesDir 
+                    # ndrh2_leafRatesDirAlpha relRate """.split()
+
 
                     # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation root2
 
@@ -2651,7 +2837,7 @@ class Mcmc(object):
                     if p.name in abortableProposals:
                         p.doAbort = False
 
-            
+
             if self.nChains == 1:
                 if self.simTemp:
                     self.simTemp.temps[self.simTemp.curTemp].occupancy += 1
@@ -2675,6 +2861,7 @@ class Mcmc(object):
             else:
                 # Propose swap, if there is more than 1 chain.
                 self._proposeSwapChainsInMcmcmc()
+
 
             # =====================================
             # If it is a writeInterval, write stuff
@@ -2701,10 +2888,10 @@ class Mcmc(object):
                     self.ssLikesFile.write('%f\n' % self.chains[self.coldChainNum].curTree.logLike)
 
 
-
             if doWrite and not self.doSteppingStone:
                 if writeSamples:
                     self._writeSample()
+
 
                 # Do a simulation
                 if self.simulate:
@@ -2725,6 +2912,16 @@ class Mcmc(object):
                     self.chains[0].propTree.checkSplitKeys()
                     print("Mcmc xxx")
 
+                if 0:
+                    print("Mcmc.run() xxx curTree propTree")
+                    a = self.chains[0].curTree
+                    b = self.chains[0].propTree
+                    for nNum in range(len(a.nodes)):
+                        if a.nodes[nNum] != a.root:
+                            print(f"{nNum:3} {a.nodes[nNum].br.rawSplitKey} {b.nodes[nNum].br.rawSplitKey}")
+                        else:
+                            print(f"{nNum:3} is root")
+
                 # Add curTree to treePartitions
                 if self.treePartitions:
                     self.treePartitions.getSplitsFromTree(
@@ -2732,6 +2929,16 @@ class Mcmc(object):
                 else:
                     self.treePartitions = TreePartitions(
                         self.chains[self.coldChainNum].curTree)
+
+                if 0:
+                    print("Mcmc.run() zzz curTree propTree")
+                    a = self.chains[0].curTree
+                    b = self.chains[0].propTree
+                    for nNum in range(len(a.nodes)):
+                        if a.nodes[nNum] != a.root:
+                            print(f"{nNum:3} {a.nodes[nNum].br.rawSplitKey} {b.nodes[nNum].br.rawSplitKey}")
+                        else:
+                            print(f"{nNum:3} is root")
 
                 # After _getSplitsFromTree, need to follow, at some point,
                 # with _finishSplits().  Do that when it is pickled, or at the
@@ -2753,17 +2960,22 @@ class Mcmc(object):
                     #        raise P4Error(gm)
                     print("Mcmc zzz")
 
-                # Check that the curTree has all the constraints
+                # Double check that the curTree has all the constraints
+                # The proposals will have done this already, so this is a double check to find errors.
                 if self.constraints:
-                    splitsInCurTree = [
-                        n.br.splitKey for n in self.chains[self.coldChainNum].curTree.iterInternalsNoRoot()]
+                    #print("Mcmc.run() double checking constraints")
                     for sk in self.constraints.constraints:
-                        if sk not in splitsInCurTree:
+                        ret = self.chains[self.coldChainNum].curTree.nodeForSplitKeyDict.get(sk)
+                        if not ret:
                             gm.append("Programming error.")
-                            gm.append(
-                                "The current tree (the last tree sampled) does not contain constraint")
-                            gm.append(
-                                "%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
+                            gm.append(f"The current tree (the last tree sampled) does not contain constraint sk")
+                            gm.append("%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
+                            raise P4Error(gm)
+                    if self.constraints.rootConstraints:
+                        ret = self.constraints.areConsistentWithTreeRoot(self.chains[self.coldChainNum].curTree)
+                        if not ret:
+                            gm.append("Programming error.")
+                            gm.append(f"The current tree (the last tree sampled) is not consistent with root constraint")
                             raise P4Error(gm)
 
 
@@ -2908,9 +3120,9 @@ class Mcmc(object):
         except (AttributeError, ValueError):
             self.treeFile = open(self.treeFileName, 'a')
             self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
-        self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
-        if self.tree.model.parts[0].ndch2:     # and therefore all model parts
-            if self.tree.model.parts[0].ndch2_writeComps:
+
+        if self.tree.model.parts[0].ndch2 or self.tree.model.parts[0].ndrh2: # lazy programming -- and therefore all model parts
+            if self.tree.model.parts[0].ndch2_writeComps  or self.tree.model.parts[0].ndrh2_writeRMatrices:
                 self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                               withTranslation=1,
                                                               translationHash=self.translationHash,
@@ -3112,9 +3324,12 @@ class Mcmc(object):
         curTree.copyToTree(self.simTree)
         curTree.model.copyValsTo(self.simTree.model)
         self.simTree.simulate()
-        if self.simFile and self.simFile.closed:
+        try:
+            self.simFile.write(" %11i" % (self.gen + 1))
+        except (AttributeError, ValueError):
             self.simFile = open(self.simFileName, 'a')
-        self.simFile.write(" %11i" % (self.gen + 1))
+            self.simFile.write(" %11i" % (self.gen + 1))
+
         # If self.simulate contains a 1, do unconstrained log like
         if 1 & self.simulate:
             for p in self.simTree.data.parts:

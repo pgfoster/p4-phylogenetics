@@ -345,6 +345,8 @@ if True:
                     sList.append(' g%i.%i' %
                                  (pNum, theNode.br.parts[pNum].gdasrvNum))
         sList.append(']')
+        if len(sList) == 2:  # ie [&] only, eg ndrh2 but only 1 comp
+            return ""
         return ''.join(sList)
 
     def draw(self, showInternalNodeNames=1, addToBrLen=0.2, width=None, showNodeNums=1, partNum=0, model=None):

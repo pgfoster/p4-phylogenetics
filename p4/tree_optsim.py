@@ -234,18 +234,30 @@ if True:
             print("Tree.calcLogLike(). %f" % self.logLike)
 
 
-    def optLogLike(self, verbose=1, method="newtAndBrentPowell"):
+    def optLogLike(self, verbose=1, method="BOBYQA"):
         """Calculate the likelihood of the tree, with optimization.
 
-        There are different optimization methods-- choose one.  I've made
-        'newtAndBrentPowell' the default, as it is fast and seems to be
-        working.  The 'allBrentPowell' optimizer used to be the default,
-        as it seems to be the most robust, although it is slow.  It would
-        be good for checking important calculations. 
+        There are different optimization methods-- choose one.  I've
+        made 'BOBYQA' the default, as it is very fast and seems to be
+        working.  It is from the nlopt library.
 
-        There are two new optimization methods from the nlopt library --- 'newtAndBOBYQA' and 'BOBYQA'.  They are fast and seem to work well.
+        Other opt methods include ---
 
-        For difficult optimizations it may help to repeat the call to optLogLike(), perhaps with a different method.
+        newtAndBrentPowell -- fairly fast, and works well.  It was the
+        default.  Perhaps use this in combination with BOBYQA, eg
+
+        t.optLogLike(method="BOBYQA")
+        t.optLogLike(method="newtAndBrentPowell")
+
+        The 'allBrentPowell' optimizer was the default several years
+        ago, as it seems to be the most robust, although it is slow.
+        It might be good for checking important calculations.
+
+        'newtAndBOBYQA' --- fast and seems to work well.
+
+        As suggested above, for difficult optimizations it may help to
+        repeat the call to optLogLike(), perhaps with a different
+        method.
         """
 
         gm = ["Tree.optLogLike()"]

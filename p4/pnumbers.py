@@ -315,7 +315,7 @@ class Numbers(object):
         print("binSize=%s, " % self.binSize, end=' ')
         print("nBins=%s" % self.nBins)
 
-    def plot(self, term='qt', output=None):
+    def plot(self, term='qt', output=None, font="Helvetica,14"):
         """A horrible hack to plot stuff with GnuPlot.
 
         A file, gnuplot_instructs, is written.  Then gnuplot is
@@ -342,7 +342,7 @@ class Numbers(object):
         instructionsFileName = 'gNupLot_inStruCts'
         f1 = open(instructionsFileName, 'w')
         if term == 'qt':
-            f1.write('set term %s font "Helvetica"\n' % term)
+            f1.write('set term %s font "%s"\n' % (term,font))
         else:
             f1.write('set term %s\n' % term)
         if output:

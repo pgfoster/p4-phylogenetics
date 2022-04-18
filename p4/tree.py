@@ -2131,10 +2131,14 @@ class Tree(object):
         if 0:
             print(gm[0])
             print(self.taxNames)
+            print(f"root is node {self.root.nodeNum}")
             print('nodeNum  rawSplitKey  splitKey')
+            # getSplitsFromKey would usually use self.nTax.  
+            # Changed below to accommodate tempRoot for bi-rooted trees.
             for n in self.iterNodesNoRoot():
                 print('%7s     %4s       %4s        %s' % (
-                    n.nodeNum, n.br.rawSplitKey, n.br.splitKey, p4.func.getSplitStringFromKey(n.br.splitKey, self.nTax)))
+                    n.nodeNum, n.br.rawSplitKey, n.br.splitKey, 
+                    p4.func.getSplitStringFromKey(n.br.splitKey, len(self.taxNames))))
 
     def recalculateSplitKeysOfNodeFromChildren(self, aNode, allOnes):
         children = [n for n in aNode.iterChildren()]
@@ -2404,13 +2408,18 @@ class Tree(object):
         for nNum in range(len(self.nodes)):
             if self.nodes[nNum] != self.root:
                 otherTree.nodes[nNum].br.len = self.nodes[nNum].br.len
-                otherTree.nodes[nNum].br.lenChanged = self.nodes[
-                    nNum].br.lenChanged
-                #otherTree.nodes[nNum].br.flag = self.nodes[nNum].flag
-                otherTree.nodes[nNum].br.splitKey = self.nodes[
-                    nNum].br.splitKey
-                otherTree.nodes[nNum].br.rawSplitKey = self.nodes[
-                    nNum].br.rawSplitKey
+                otherTree.nodes[nNum].br.lenChanged = self.nodes[nNum].br.lenChanged
+                otherTree.nodes[nNum].flag = self.nodes[nNum].flag
+                otherTree.nodes[nNum].br.splitKey = self.nodes[nNum].br.splitKey
+                otherTree.nodes[nNum].br.rawSplitKey = self.nodes[nNum].br.rawSplitKey
+
+        if 0:
+            print("Tree.copyToTree()")
+            for nNum in range(len(self.nodes)):
+                if self.nodes[nNum] != self.root:
+                    print(f"{nNum:3} {self.nodes[nNum].br.splitKey} {otherTree.nodes[nNum].br.splitKey}")
+                else:
+                    print(f"{nNum:3} is root")
 
         # model usage numbers
         if self.model:
@@ -2499,6 +2508,15 @@ class Tree(object):
             return var.DIFFERENT
 
         # brLens, lenChanged, and node.flag. and splitKeys
+        if 0:
+            print("Tree.verifyIdentityWith() flag")
+            for nNum in range(len(self.nodes)):
+                if self.nodes[nNum] != self.root:
+                    print(f"{nNum:3} {self.nodes[nNum].flag} {otherTree.nodes[nNum].flag}")
+                else:
+                    print(f"{nNum:3} is root")
+
+
         for nNum in range(len(self.nodes)):
             if self.nodes[nNum] != self.root:
                 # if self.nodes[nNum].br.len != otherTree.nodes[nNum].br.len:
@@ -2517,11 +2535,11 @@ class Tree(object):
                 if doSplitKeys:
                     if self.nodes[nNum].br.splitKey != otherTree.nodes[nNum].br.splitKey:
                         print(complaintHead)
-                        print('    SplitKeys differ.')
+                        print(f'    SplitKeys differ. nodeNum {nNum}')
                         return var.DIFFERENT
                     if self.nodes[nNum].br.rawSplitKey != otherTree.nodes[nNum].br.rawSplitKey:
                         print(complaintHead)
-                        print('    rawSplitKeys differ.')
+                        print(f'    rawSplitKeys differ. nodeNum {nNum}')
                         return var.DIFFERENT
 
         if self.model:
@@ -2742,7 +2760,7 @@ class Tree(object):
                 "Need to have either spoke.parent == hub or hub == spoke.")
             raise P4Error(gm)
 
-    def topologyDistance(self, tree2, metric='sd', resetSplitKeySet=False):
+    def topologyDistance(self, tree2, metric='sd', resetSplitKeySet=True):
         """Compares the topology of self with tree2.
 
         The complete list of metrics is given in
@@ -3251,3 +3269,44 @@ class Tree(object):
         if rootNChildren == 3:
             return True
         return False
+
+    def isCompatibleWith(self, otherTree):
+        """Determines whether self is compatible with otherTree
+
+        Returns True or False.
+        """
+
+        assert otherTree.nTax == self.nTax
+        assert otherTree.taxNames == self.taxNames
+
+        # It is easier with sets, so make sets from splitKeys
+        self.makeSplitKeys()
+        for n in self.iterInternalsNoRoot():
+            ss = set()
+            for i in range(self.nTax):
+                tester = 2 ** i
+                if tester & n.br.splitKey:
+                    ss.add(tester)
+            n.br.splSet = ss
+
+        otherTree.makeSplitKeys()
+        for n in otherTree.iterInternalsNoRoot():
+            ss = set()
+            for i in range(self.nTax):
+                tester = 2 ** i
+                if tester & n.br.splitKey:
+                    ss.add(tester)
+            n.br.splSet = ss
+
+        isCompatible = True
+        for nA in self.iterInternalsNoRoot():
+            for nB in otherTree.iterInternalsNoRoot():
+                if len(nA.br.splSet.intersection(nB.br.splSet)) \
+                   and len(nA.br.splSet.difference(nB.br.splSet)) \
+                   and len(nB.br.splSet.difference(nA.br.splSet)):
+                    isCompatible = False
+                    break
+            if not isCompatible:
+                break
+        # print(f"isCompatible is {isCompatible}")
+        return isCompatible
