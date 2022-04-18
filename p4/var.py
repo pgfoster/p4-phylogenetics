@@ -239,10 +239,30 @@ class Var(object):
         self._nexus_getLineEndingsAsTokens = numpy.array([0], numpy.int32)
 
         self.rMatrixProteinSpecs = ['cpREV', 'd78', 'jtt', 'mtREV24', 'mtmam',
-                                    'wag', 'rtRev', 'tmjtt94', 'tmlg99', 'lg',
-                                    'blosum62', 'hivb', 'mtart', 'mtzoa',
+                                    'wag',  'blosum62', 'rtRev', 'tmjtt94', 'tmlg99', 'lg',
+                                    'hivb', 'mtart', 'mtzoa',
                                     'gcpREV', 'stmtREV', 'vt', 'pmb']
         """A list of the currently available protein models."""
+
+        self.rMatrixProteinSpecNumberForNameDict = {'cpREV': 101, 
+                                                    'd78': 102, 
+                                                    'jtt': 103, 
+                                                    'mtREV24': 104, 
+                                                    'mtmam': 105,
+                                                    'wag': 106, 
+                                                    'blosum62': 107, 
+                                                    'rtRev': 110, 
+                                                    'tmjtt94': 111, 
+                                                    'tmlg99': 112, 
+                                                    'lg': 113,
+                                                    'hivb': 114, 
+                                                    'mtart': 115, 
+                                                    'mtzoa': 116,
+                                                    'gcpREV': 117, 
+                                                    'stmtREV': 118, 
+                                                    'vt': 119, 
+                                                    'pmb': 120}
+        
 
         self.rMatrixSpecs = [
             'ones', '2p', 'specified', 'optimized'] + self.rMatrixProteinSpecs
