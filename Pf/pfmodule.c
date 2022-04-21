@@ -22,6 +22,7 @@
 #include "p4_model.h"
 #include "p4_treeCopyVerify.h"
 #include "logDet.h"
+#include "proteinModels.h"
 
 
 static PyObject *
@@ -1261,6 +1262,93 @@ pf_getBigQ(PyObject *self, PyObject *args)
         }
     } 
 	
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
+pf_getBigR(PyObject *self, PyObject *args)
+{
+    int spec;
+    PyArrayObject *oNumpyBigR;
+    int i, j;
+    double **bigR;
+    double *numpyData;
+    int theDim = 20;
+	
+    if(!PyArg_ParseTuple(args, "iO", &spec, &oNumpyBigR)) {
+        printf("Error pf_getBigR: couldn't parse tuple\n");
+        return NULL;
+    }
+
+    bigR = (double **)psdmatrix(theDim);
+    // fill the bigR
+    if(spec == RMATRIX_CPREV) {
+        cpREVRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_D78) {
+        d78RMatrix(bigR);
+    }
+    else if(spec == RMATRIX_JTT) {
+        jttRMatrix(bigR);
+    }
+    else if (spec == RMATRIX_MTREV24) {
+        mtREV24RMatrix(bigR);
+    }
+    else if(spec == RMATRIX_MTMAM) {
+        mtmamRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_WAG) {
+        wagRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_RTREV) {
+        rtRevRMatrix(bigR);
+    }
+
+    else if(spec == RMATRIX_TMJTT94) {
+        tmjtt94RMatrix(bigR);
+    }
+    else if(spec == RMATRIX_TMLG99) {
+        tmlg99RMatrix(bigR);
+    }
+    else if(spec == RMATRIX_LG) {
+        lgRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_BLOSUM62_A) {
+        blosum62RMatrix(bigR);
+    }
+    else if(spec == RMATRIX_HIVB) {
+        hivbRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_MTART) {
+        mtartRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_MTZOA) {
+        mtzoaRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_GCPREV) {
+        gcpREVRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_STMTREV) {
+        stmtREVRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_VT) {
+        vtRMatrix(bigR);
+    }
+    else if(spec == RMATRIX_PMB) {
+        pmbRMatrix(bigR);
+    }
+
+    numpyData = (double *)(oNumpyBigR->data);
+    //dump_psdmatrix(eigBigQ, theDim);
+    for(i = 0; i < theDim; i++) {
+        for(j = 0; j < theDim; j++) {
+	    numpyData[(i * theDim) + j] = bigR[i][j];
+        }
+    } 
+    free_psdmatrix(bigR);
+    bigR = NULL;
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -2797,6 +2885,7 @@ static PyMethodDef pfMethods[] = {
     {"matrixExp", pf_matrixExp, METH_VARARGS},
     {"matrixLog", pf_matrixLog, METH_VARARGS},
     {"getBigQ", pf_getBigQ, METH_VARARGS},
+    {"getBigR", pf_getBigR, METH_VARARGS},
 
     {"recodeNLike", pf_recodeNLike, METH_VARARGS},
 

@@ -742,6 +742,7 @@ class Model(object):
                     theSpec = 20
                 elif mt.spec == '2p':
                     theSpec = 5
+<<<<<<< HEAD
                 elif mt.spec == 'cpREV':
                     theSpec = 101
                 elif mt.spec == 'd78':
@@ -787,6 +788,8 @@ class Model(object):
                     theSpec = 121
                 elif mt.spec == 'gnetREV':
                     theSpec = 122
+                elif mt.spec in var.rMatrixProteinSpecs:
+                    theSpec = var.rMatrixProteinSpecNumberForNameDict[mt.spec]
                 else:
                     gm = [complaintHead]
                     gm.append("Programming error.")

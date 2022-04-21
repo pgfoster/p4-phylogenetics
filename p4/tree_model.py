@@ -323,9 +323,7 @@ if True:
             try:
                 mt.symbol = var.modelSymbols[mt.num]
             except IndexError:
-                gm.append("You have asked for modelSymbol number %i" % mt.num)
-                gm.append("There are only %i in var.modelSymbols." % len(var.modelSymbols))
-                raise P4Error(gm)
+                mt.symbol = '-'
 
         self.model.parts[partNum].comps.append(mt)
 
@@ -405,6 +403,7 @@ if True:
             # 1.0)
             mt.val = val
 
+<<<<<<< HEAD
         # Empirical protein comps are from the dat files in PAML.  Thanks,
         # Ziheng!
         elif spec == 'cpREV':
@@ -598,6 +597,8 @@ if True:
             for i in range(len(mt.val)):
                 mt.val[i] /= theSum
 
+        elif spec in var.rMatrixProteinSpecs:
+            mt.val = p4.func.getProteinEmpiricalModelComp(spec)
 
         return mt
 
@@ -661,7 +662,10 @@ if True:
         if symbol:
             mt.symbol = symbol
         else:
-            mt.symbol = var.modelSymbols[mt.num]
+            try:
+                mt.symbol = var.modelSymbols[mt.num]
+            except IndexError:
+                mt.symbol = '-'
 
         self.model.parts[partNum].rMatrices.append(mt)
 
@@ -717,6 +721,10 @@ if True:
             if free:
                 gm.append('The rMatrix should not be free if it is an empirical protein matrix.')
                 raise P4Error(gm)
+        else:
+            gm.append(f"I don't know spec '{spec}'")
+            gm.append(f"Programming error")
+            raise P4Error(gm)
 
         mt.val = v  # type numpy.ndarray, or None for specified protein
         return mt
