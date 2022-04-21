@@ -3068,8 +3068,8 @@ def dirichlet2(inSeq, outSeq, alpha, theMin):
             return
         safety += 1
         if safety > safetyLimit:
-            gm.append(
-                "Tried more than %i times to get good dirichlet values, and failed.  Giving up." % safetyLimit)
+            gm.append("Tried more than %i times to get good dirichlet values, and failed." % safetyLimit)
+            gm.append(f"min {thisMin} max {thisMax}")
             raise P4Error(gm)
 
 
