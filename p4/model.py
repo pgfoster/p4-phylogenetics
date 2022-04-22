@@ -252,10 +252,20 @@ class ModelPart(object):
         # relRate
         op.relRate = sp.relRate
 
-        op.ndch2_leafAlpha = sp.ndch2_leafAlpha
-        op.ndch2_internalAlpha = sp.ndch2_internalAlpha
-        op.ndrh2_leafAlpha = sp.ndrh2_leafAlpha
-        op.ndrh2_internalAlpha = sp.ndrh2_internalAlpha
+        # ndch2
+        if sp.ndch2:
+            op.ndch2_leafAlpha = sp.ndch2_leafAlpha
+            op.ndch2_internalAlpha = sp.ndch2_internalAlpha
+            for i in range(sp.dim):
+                op.ndch2_priorRefComp[i] = sp.ndch2_priorRefComp[i]
+
+        # ndrh2
+        if sp.ndrh2:
+            op.ndrh2_leafAlpha = sp.ndrh2_leafAlpha
+            op.ndrh2_internalAlpha = sp.ndrh2_internalAlpha
+            rLen = int(((sp.dim * sp.dim) - sp.dim) / 2)
+            for i in range(rLen):
+                op.ndrh2_priorRefRMatrix[i] = sp.ndrh2_priorRefRMatrix[i]
 
     def copyBQETneedsResetTo(self, otherModelPart):
         sp = self
@@ -971,6 +981,31 @@ class Model(object):
                     isBad = 1
             if isBad:
                 break
+
+            if sp.ndch2:
+                if math.fabs(sp.ndch2_leafAlpha - op.ndch2_leafAlpha) > epsilon1:
+                    isBad = 1
+                    break
+                if math.fabs(sp.ndch2_internalAlpha - op.ndch2_internalAlpha) > epsilon1:
+                    isBad = 1
+                    break
+                for i in range(sp.dim):
+                    if math.fabs(sp.ndch2_priorRefComp[i] - op.ndch2_priorRefComp[i]) > epsilon1:
+                        isBad = 1
+                        break
+            if sp.ndrh2:
+                if math.fabs(sp.ndrh2_leafAlpha - op.ndrh2_leafAlpha) > epsilon1:
+                    isBad = 1
+                    break
+                if math.fabs(sp.ndrh2_internalAlpha - op.ndrh2_internalAlpha) > epsilon1:
+                    isBad = 1
+                    break
+                rLen = int(((sp.dim * sp.dim) - sp.dim) / 2)
+                for i in range(rLen):
+                    if math.fabs(sp.ndrh2_priorRefRMatrix[i] - op.ndrh2_priorRefRMatrix[i]) > epsilon1:
+                        isBad = 1
+                        break
+                
 
             # bQETneedsReset
             # if hasattr(sp.bQETneedsReset, 'size'):  # Can't simply ask 'if

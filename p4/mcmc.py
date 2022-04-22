@@ -38,9 +38,11 @@ fudgeFactor['gdasrvLocation'] = 0.01
 fudgeFactor['allCompsDir'] = 1.0
 fudgeFactor['allRMatricesDir'] = 1.0
 fudgeFactor['ndch2comp'] = 0.2
+fudgeFactor['ndch2priorRefComp'] = 1.0
 fudgeFactor['ndch2alpha'] = 0.01
 fudgeFactor['ndrh2rates'] = 0.2
 fudgeFactor['ndrh2alpha'] = 0.01
+fudgeFactor['ndrh2priorRefRMatrix'] = 1.0
 
 
 class McmcTuningsPart(object):
@@ -58,6 +60,7 @@ class McmcTuningsPart(object):
         self.default['ndch2_internalCompsDir'] = 100.
         self.default['ndch2_leafCompsDirAlpha'] = 2.0 * math.log(1.2)
         self.default['ndch2_internalCompsDirAlpha'] = 2.0 * math.log(3.0)
+        self.default['ndch2_priorRefComp'] = 100.
         # rMatrix with sliders no longer changed depending on the dim (ie size of rMatrix)
         self.default['rMatrix'] = 0.3
         # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
@@ -69,6 +72,7 @@ class McmcTuningsPart(object):
         self.default['ndrh2_internalRatesDir'] = 100.
         self.default['ndrh2_leafRatesDirAlpha'] = 2.0 * math.log(1.2)
         self.default['ndrh2_internalRatesDirAlpha'] = 2.0 * math.log(3.0)
+        self.default['ndrh2_priorRefRMatrix'] = 100.
 
 
         self.default['gdasrv'] = 2.0 * math.log(1.5)  # 0.811
@@ -133,6 +137,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'ndch2_internalCompsDir', 0.0)
         object.__setattr__(self, 'ndch2_leafCompsDirAlpha', 0.0)
         object.__setattr__(self, 'ndch2_internalCompsDirAlpha', 0.0)
+        object.__setattr__(self, 'ndch2_priorRefCompDir', 0.0)
         #object.__setattr__(self, 'rMatrix', 1.0)
         object.__setattr__(self, 'rMatrixDir', 0.0)
         object.__setattr__(self, 'allRMatricesDir', 1.0)
@@ -141,6 +146,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'ndrh2_internalRatesDir', 0.0)
         object.__setattr__(self, 'ndrh2_leafRatesDirAlpha', 0.0)
         object.__setattr__(self, 'ndrh2_internalRatesDirAlpha', 0.0)
+        object.__setattr__(self, 'ndrh2_priorRefRMatrixDir', 0.0)
 
         object.__setattr__(self, 'gdasrv', 1.0)
         object.__setattr__(self, 'pInvar', 1.0)
@@ -880,7 +886,8 @@ class Mcmc(object):
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     gdasrv local ndch2_internalCompsDir 
                     ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir 
+                    ndch2_leafCompsDirAlpha ndch2_priorRefCompDir
+                    pInvar rMatrixDir allRMatricesDir ndrh2_priorRefRMatrixDir
                     ndrh2_internalRatesDir ndrh2_internalRatesDirAlpha ndrh2_leafRatesDir 
                     ndrh2_leafRatesDirAlpha relRate """.split()
 
@@ -964,10 +971,12 @@ class Mcmc(object):
             self._tunings.parts[pNum].default['allCompsDir'] = 100. * theDim
             self._tunings.parts[pNum].default['ndch2_leafCompsDir'] = 2000. * theDim
             self._tunings.parts[pNum].default['ndch2_internalCompsDir'] = 500. * theDim
+            self._tunings.parts[pNum].default['ndch2_priorRefCompDir'] = 500. * theDim
             self._tunings.parts[pNum].default['rMatrixDir'] = 50. * nRates
             self._tunings.parts[pNum].default['allRMatricesDir'] = 100. * nRates
             self._tunings.parts[pNum].default['ndrh2_leafRatesDir'] = 50. * nRates
             self._tunings.parts[pNum].default['ndrh2_internalRatesDir'] = 50. * nRates
+            self._tunings.parts[pNum].default['ndrh2_priorRefRMatrixDir'] = 50. * nRates
             
 
         # Zap internal node names
@@ -1023,7 +1032,7 @@ class Mcmc(object):
                             mp.ndch2_priorRefComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
                     mp.ndch2_priorRefComp /= mp.ndch2_priorRefComp.sum()
 
-                print(f"Mcmc init() mp.ndch2_priorRefComp is {mp.ndch2_priorRefComp}")
+                # print(f"Mcmc init() mp.ndch2_priorRefComp is {mp.ndch2_priorRefComp}")
 
                 # ususal comp proposals should not be on if we are doing ndch2
                 self.prob.compDir = 0.0
@@ -1053,7 +1062,7 @@ class Mcmc(object):
                         if mp.ndrh2_priorRefRMatrix[i] < var.RATE_MIN:
                             mp.ndrh2_priorRefRMatrix[i] += (1.0 + (1.1 * random.random())) * var.RATE_MIN
                     mp.ndrh2_priorRefRMatrix /= mp.ndrh2_priorRefRMatrix.sum()
-                print(f"Mcmc init() mp.ndrh2_priorRefRMatrix is {mp.ndrh2_priorRefRMatrix}")
+                # print(f"Mcmc init() mp.ndrh2_priorRefRMatrix is {mp.ndrh2_priorRefRMatrix}")
                 
 
                 # Turn off non-ndrh2 rmatrix moves
@@ -1107,6 +1116,11 @@ class Mcmc(object):
 
                     self.prob.ndch2_internalCompsDirAlpha = 1.0
                     thisMString = "ndch2_internalCompsDirAlpha"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
+                    self.prob.ndch2_priorRefCompDir = 1.0
+                    thisMString = "ndch2_priorRefCompDir"
                     if thisMString not in props_on:
                         props_on.append(thisMString)
 
@@ -1645,6 +1659,28 @@ class Mcmc(object):
 
                 self.props.proposals.append(p)
 
+            # ndch2_priorRefCompDir
+            if self.prob.ndch2_priorRefCompDir:
+                p = Proposal(self)
+                p.name = 'ndch2_priorRefCompDir'
+                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                p.weight = self.prob.ndch2_priorRefCompDir * (mp.dim - 1)  * fudgeFactor['ndch2priorRefComp']
+                p.pNum = pNum
+
+                p.tnAccVeryHi = 0.4
+                p.tnAccHi = 0.15
+                p.tnAccLo = 0.05
+                p.tnAccVeryLo = 0.03
+
+                p.tnFactorVeryHi = 0.7
+                p.tnFactorHi = 0.8
+                p.tnFactorLo = 1.2
+                p.tnFactorVeryLo = 1.4
+
+                self.props.proposals.append(p)
+
+
+
 
             # rMatrixDir
             if self.prob.rMatrixDir:
@@ -1795,6 +1831,31 @@ class Mcmc(object):
                 p.tnFactorVeryLo = 0.7
 
                 self.props.proposals.append(p)
+
+            # ndrh2_priorRefRMatrixDir
+            if self.prob.ndrh2_priorRefRMatrixDir:
+                for mtNum in range(mp.nRMatrices):
+                    assert mp.rMatrices[mtNum].free
+                p = Proposal(self)
+                p.name = 'ndrh2_priorRefRMatrixDir'
+                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                p.weight = self.prob.ndrh2_priorRefRMatrixDir * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    fudgeFactor['ndrh2priorRefRMatrix']
+                p.pNum = pNum
+
+                p.tnAccVeryHi = 0.4
+                p.tnAccHi = 0.15
+                p.tnAccLo = 0.05
+                p.tnAccVeryLo = 0.03
+
+                p.tnFactorVeryHi = 0.7
+                p.tnFactorHi = 0.8
+                p.tnFactorLo = 1.2
+                p.tnFactorVeryLo = 1.4
+
+                self.props.proposals.append(p)
+
 
 
             # gdasrv
@@ -1966,6 +2027,11 @@ class Mcmc(object):
                 mp = self.tree.model.parts[p.pNum]
                 p.weight = self.prob.ndch2_internalCompsDirAlpha * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
 
+            # ndch2_priorRefCompDir
+            if p.name == 'ndch2_priorRefCompDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndch2_priorRefCompDir * (mp.dim - 1)  * fudgeFactor['ndch2priorRefComp']
+
             # # rMatrix
             # if p.name == 'rMatrix':
             #     mp = self.tree.model.parts[p.pNum]
@@ -2020,6 +2086,13 @@ class Mcmc(object):
                 p.weight = self.prob.ndrh2_internalRatesDirAlpha * \
                     ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
                     mp.nRMatrices * fudgeFactor['ndrh2alpha']
+
+            # ndrh2_priorRefRMatrix
+            if p.name == 'ndrh2_priorRefRMatrixDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndrh2_priorRefRMatrixDir * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    fudgeFactor['ndrh2priorRefRMatrix']
 
 
 
@@ -2670,7 +2743,7 @@ class Mcmc(object):
                     else:
                         print("self.swapTunerDoTuning is turned off, so temperatures will not be tuned.")
                 else:
-                    print("Not using Metropolis-coupled MCMC.")
+                    print("Single chain --- not using Metropolis-coupled MCMC.")
                 if self.simTemp:
                     print("Using simulated tempering MCMC, with %i temperatures" % (
                         self.simTemp.nTemps))
@@ -2823,10 +2896,10 @@ class Mcmc(object):
                     # self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     # gdasrv local ndch2_internalCompsDir 
                     # ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir 
+                    # ndch2_leafCompsDirAlpha ndch2_priorRefCompDir
+                    # pInvar rMatrixDir allRMatricesDir ndrh2_priorRefRMatrix
                     # ndrh2_internalRatesDir ndrh2_internalRatesDirAlpha ndrh2_leafRatesDir 
                     # ndrh2_leafRatesDirAlpha relRate """.split()
-
 
                     # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation root2
 

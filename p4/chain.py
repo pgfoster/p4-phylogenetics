@@ -252,7 +252,11 @@ class Chain(object):
                         n.br.lenChanged = 0
                     n.flag = 0
 
-        proposalsWithNoLikeCalcs = ['ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha']
+        proposalsWithNoLikeCalcs = ['ndch2_leafCompsDirAlpha', 
+                                    'ndch2_internalCompsDirAlpha',
+                                    'ndch2_priorRefCompDir',
+                                    'ndrh2_leafRatesDirAlpha', 
+                                    'ndrh2_internalRatesDirAlpha']
 
         #print("...about to calculate the likelihood of the propTree.")
         self.propTree.logLike = pf.p4_treeLogLike(self.propTree.cTree, 0)    # second arg is getSiteLikes
@@ -355,7 +359,9 @@ class Chain(object):
                         thisNp = mtProp.val[chNum]
                         thatNp = pf.test(self.propTree.cTree, theProposal.pNum, mtPropNum, chNum)
                         if math.fabs(thisNp - thatNp) > 1e-14:
-                           print('++++++ gen %i comp %2i %2i' % (self.mcmc.gen, mtPropNum,chNum), "%17.15f %17.15f %g" % (thisNp, thatNp, (thisNp - thatNp))) 
+                           print('++++++ gen %i comp %2i %2i' % (
+                               self.mcmc.gen, mtPropNum,chNum), 
+                                 "%17.15f %17.15f %g" % (thisNp, thatNp, (thisNp - thatNp))) 
 
             # This next line is needed, and it needs to go here.  At least
             # because of p4_calculateBigPDecksPart()
@@ -438,6 +444,12 @@ class Chain(object):
             self.proposeNdch2_internalCompsDirAlpha(theProposal)
             # No likelihood calcs!
 
+        elif theProposal.name == 'ndch2_priorRefCompDir':
+            self.proposeNdch2_priorRefCompDir(theProposal)
+            # No likelihood calcs!
+
+
+
         elif theProposal.name in ['rMatrix', 'rMatrixDir', 'allRMatricesDir']:
             if theProposal.name == 'rMatrix':
                 self.proposeRMatrixWithSlider(theProposal)
@@ -513,6 +525,11 @@ class Chain(object):
             # print "theProposal.name = ndrh2_internalRatesDirAlpha, pNum=%i" % theProposal.pNum
             self.proposeNdrh2_internalRatesDirAlpha(theProposal)
             # No likelihood calcs!
+
+        elif theProposal.name == 'ndrh2_priorRefRMatrixDir':
+            self.proposeNdrh2_priorRefRMatrixDir(theProposal)
+            # No likelihood calcs!
+
 
         ######################################
         ######################################
@@ -980,7 +997,8 @@ class Chain(object):
             raise P4Error("programming error.  we should not be here.  proposal %s" % theProposal.name)
 
         proposalsWithNoLikeCalcs = ['ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha',
-                                    'ndrh2_leafRatesDirAlpha', 'ndrh2_internalRatesDirAlpha']
+                                    'ndrh2_leafRatesDirAlpha', 'ndrh2_internalRatesDirAlpha', 
+                                    'ndch2_priorRefCompDir', 'ndrh2_priorRefRMatrixDir']
 
 
         if theProposal.name not in proposalsWithNoLikeCalcs:
@@ -1213,7 +1231,7 @@ class Chain(object):
                     self.curTree.model.copyBQETneedsResetTo(self.propTree.model)
 
                     # Slow check after restore
-                    if 1:
+                    if 0:
                         ret = self.verifyIdentityOfTwoTreesInChain(
                             doSplitKeys=self.mcmc.constraints)
                         if ret == var.DIFFERENT:
@@ -1267,7 +1285,7 @@ class Chain(object):
                     pf.p4_copyModelPrams(a.cTree, b.cTree)
 
                     # slow check
-                    if 1:
+                    if 0:
                         ret = self.verifyIdentityOfTwoTreesInChain(doSplitKeys=self.mcmc.constraints)
                         if ret == var.DIFFERENT:
                             gm.append(f"{aProposal.name} Trees differ after doAbort.")
@@ -1341,10 +1359,12 @@ class Chain(object):
         # Model values for one partition only.
         if aProposal.name in ['comp', 'compDir', 'allCompsDir',
                               'ndch2_leafCompsDir', 'ndch2_internalCompsDir',
-                              'ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha', 'rMatrix', 
-                              'rMatrixDir', 'allRMatricesDir', 
+                              'ndch2_leafCompsDirAlpha', 'ndch2_internalCompsDirAlpha', 
+                              'ndch2_priorRefCompDir',
+                              'rMatrix', 'rMatrixDir', 'allRMatricesDir', 
                               'ndrh2_leafRatesDir', 'ndrh2_internalRatesDir',
                               'ndrh2_leafRatesDirAlpha', 'ndrh2_internalRatesDirAlpha', 
+                              'ndrh2_priorRefRMatrixDir',
                               'gdasrv', 'pInvar']:
             b.logLike = a.logLike
             pNum = aProposal.pNum
@@ -1354,8 +1374,10 @@ class Chain(object):
                                       'ndch2_internalCompsDir', 
                                       'ndch2_leafCompsDirAlpha', 
                                       'ndch2_internalCompsDirAlpha', 
+                                      'ndch2_priorRefCompDir',
                                       'ndrh2_leafRatesDirAlpha', 
-                                      'ndrh2_internalRatesDirAlpha', 
+                                      'ndrh2_internalRatesDirAlpha',
+                                      'ndrh2_priorRefRMatrixDir',
                                       'allCompsDir', 
                                       'gdasrv']:  # numpy arrays and hyperparameters
                 b.model.setCStuff(partNum=pNum)
@@ -1578,8 +1600,8 @@ class Chain(object):
                     "br.lenChanged or flag should not be set at this point.")
                 raise P4Error(gm)
 
-        if 1:
-        #if (self.mcmc.gen + 1) % 100 == 0:  # every hundred gens
+        # if 1:
+        if (self.mcmc.gen + 1) % 100 == 0:  # every hundred gens
             ret = self.verifyIdentityOfTwoTreesInChain(
                 doSplitKeys=self.mcmc.constraints)
             if ret == var.DIFFERENT:
@@ -1631,7 +1653,8 @@ class Chain(object):
                     assert cNums.count(cNum) == 1
                
             
-
+        #if self.mcmc.gen % 1000 == 0:
+        #    print(self.curTree.model.parts[0].ndch2_priorRefComp)
 
 
 
@@ -1845,7 +1868,6 @@ class Chain(object):
 
 
     def proposeRMatrixWithSlider(self, theProposal):
-
         # print "rMatrix proposal. the tuning is %s" % theProposal.tuning
         nRMatrices = self.propTree.model.parts[theProposal.pNum].nRMatrices
         mtNum = random.randrange(0, stop=nRMatrices)
@@ -2028,7 +2050,6 @@ class Chain(object):
 
 
     def proposeGdasrv(self, theProposal):
-
         # This is a "multiplier" proposal.
 
         gm = ["Chain.proposeGdasrv()"]
@@ -2346,7 +2367,7 @@ class Chain(object):
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(ratesLen, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(ratesLen, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs 
-            # self.logPriorRatio = 0.0   # to turn off prior 
+        # self.logPriorRatio = 0.0   # to turn off prior 
 
 
     def proposeNdrh2_internalRatesDir(self, theProposal):
@@ -2404,8 +2425,6 @@ class Chain(object):
         NDRH2_ALPHAL_MAX = 10000. 
 
         ratesLen = int(((mpCur.dim * mpCur.dim) - mpCur.dim) / 2)
-        refRates = numpy.ones(ratesLen)
-  
 
         if 0:
             # Slider proposal
@@ -2454,6 +2473,7 @@ class Chain(object):
             lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(ratesLen, newVal * mpCur.ndrh2_priorRefRMatrix, mtCur.val)
             lnPdfCur  = pf.gsl_ran_dirichlet_lnpdf(ratesLen, oldVal * mpCur.ndrh2_priorRefRMatrix, mtCur.val)
             self.logPriorRatio += lnPdfProp - lnPdfCur
+        # self.logPriorRatio = 0.0   # to turn off prior
 
 
     def proposeNdrh2_internalRatesDirAlpha(self, theProposal):
@@ -2468,7 +2488,6 @@ class Chain(object):
         NDRH2_ALPHAI_MAX = 10000.
 
         ratesLen = int(((mpCur.dim * mpCur.dim) - mpCur.dim) / 2)
-        refRates = numpy.ones(ratesLen)
 
         self.logProposalRatio = 0.0
         if 0:
@@ -2518,10 +2537,57 @@ class Chain(object):
             self.logPriorRatio += lnPdfProp - lnPdfCur
 
 
+    def proposeNdrh2_priorRefRMatrixDir(self, theProposal):
+        gm = ['Chain.proposeNdrh2_priorRefRMatrixDir()']
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+        assert mpCur.ndrh2
+
+        ratesLen = int(((mpCur.dim * mpCur.dim) - mpCur.dim) / 2)
+
+        mtCur = mpCur.ndrh2_priorRefRMatrix
+        mtProp = mpProp.ndrh2_priorRefRMatrix
+        assert len(mtProp) == ratesLen
+
+        # Make proposals. Result of the proposal goes into mtProp
+        p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur, mtProp)
+
+        while  mtProp.min() < var.RATE_MIN:
+            for i in range(ratesLen):
+                if mtProp[i] < var.RATE_MIN:
+                    mtProp[i] += (1.0 + (1.1 * random.random())) * var.RATE_MIN
+            mtProp /= mtProp.sum()
+
+        # log proposal ratios
+        self.logProposalRatio = 0.0
+        forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+            ratesLen, theProposal.tuning[self.tempNum] * mtCur, mtProp)
+        reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+            ratesLen, theProposal.tuning[self.tempNum] * mtProp, mtCur)
+        self.logProposalRatio = reverseLnPdf - forwardLnPdf
+
+        # prior ratio. All the RMatrices.  RMatrices and alphas will be the same (cur and prop).
+        self.logPriorRatio = 0.0
+        for nCur in self.curTree.iterNodesNoRoot():
+            mtNum = nCur.br.parts[theProposal.pNum].rMatrixNum
+            mtRMatrix = mpCur.rMatrices[mtNum]
+
+            if nCur.isLeaf:
+                thisAlpha = mpCur.ndrh2_leafAlpha
+            else:
+                thisAlpha = mpCur.ndrh2_internalAlpha
+
+            lnPdfCur = pf.gsl_ran_dirichlet_lnpdf(ratesLen, thisAlpha * mtCur, mtRMatrix.val)
+            lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(ratesLen, thisAlpha * mtProp, mtRMatrix.val)
+            self.logPriorRatio += lnPdfProp - lnPdfCur
+            
+        #self.logPriorRatio = 0.0   # to turn off prior 
 
 
     ####################################
     ####################################
+
 
     def proposeNdch2_leafCompsDir(self, theProposal):
         gm = ['Chain.proposeNdch2_leafCompsDir()']
@@ -2608,7 +2674,7 @@ class Chain(object):
             self.logProposalRatio += reverseLnPdf - forwardLnPdf
 
             # prior ratio
-            dirPrams = mpCur.ndch2_internalAlpha * mpCur.ndch2_priorRefComp  # this is set in Mcmc.__init__()
+            dirPrams = mpCur.ndch2_internalAlpha * mpCur.ndch2_priorRefComp  
             lnPdfCurrs = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtCur.val)
             lnPdfProps = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, dirPrams, mtProp.val)
             self.logPriorRatio += lnPdfProps - lnPdfCurrs
@@ -2739,3 +2805,46 @@ class Chain(object):
 
 
 
+    def proposeNdch2_priorRefCompDir(self, theProposal):
+        gm = ['Chain.proposeNdch2_priorRefCompDir()']
+
+        mpCur = self.curTree.model.parts[theProposal.pNum]
+        mpProp = self.propTree.model.parts[theProposal.pNum]
+        assert mpCur.ndch2
+
+        mtCur = mpCur.ndch2_priorRefComp
+        mtProp = mpProp.ndch2_priorRefComp
+
+        # Make proposals. Result of the proposal goes into mtProp
+        p4.func.gsl_ran_dirichlet(theProposal.tuning[self.tempNum] * mtCur, mtProp)
+
+        while  mtProp.min() < var.PIVEC_MIN:
+            for i in range(mpCur.dim):
+                if mtProp[i] < var.PIVEC_MIN:
+                    mtProp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
+            mtProp /= mtProp.sum()
+
+        # log proposal ratios
+        self.logProposalRatio = 0.0
+        forwardLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+            mpCur.dim, theProposal.tuning[self.tempNum] * mtCur, mtProp)
+        reverseLnPdf = pf.gsl_ran_dirichlet_lnpdf(
+            mpCur.dim, theProposal.tuning[self.tempNum] * mtProp, mtCur)
+        self.logProposalRatio = reverseLnPdf - forwardLnPdf
+
+        # prior ratio. All the comps.  Comps and alphas will be the same (cur and prop).
+        self.logPriorRatio = 0.0
+        for nCur in self.curTree.iterNodes():
+            mtNum = nCur.parts[theProposal.pNum].compNum
+            mtComp = mpCur.comps[mtNum]
+
+            if nCur.isLeaf:
+                thisAlpha = mpCur.ndch2_leafAlpha
+            else:
+                thisAlpha = mpCur.ndch2_internalAlpha
+
+            lnPdfCur = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, thisAlpha * mtCur, mtComp.val)
+            lnPdfProp = pf.gsl_ran_dirichlet_lnpdf(mpCur.dim, thisAlpha * mtProp, mtComp.val)
+            self.logPriorRatio += lnPdfProp - lnPdfCur
+            
+        #self.logPriorRatio = 0.0   # to turn off prior 
