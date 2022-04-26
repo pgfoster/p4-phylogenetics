@@ -1221,14 +1221,15 @@ class Chain(object):
                 safety = 0
                 while 1:
                     safety += 1
-                    if safety > 100:
-                        print("Attempted %i '%s' proposals, and they all failed." % (safety, aProposal.name))
-                        print("Giving up.")
-                        return True  # ie failure
 
                     aProposal.nAborts[self.tempNum] += 1
                     self.curTree.copyToTree(self.propTree)
                     self.curTree.model.copyBQETneedsResetTo(self.propTree.model)
+
+                    if safety >= 100:
+                        print("Attempted %i '%s' proposals, and they all failed." % (safety, aProposal.name))
+                        print("Giving up.")
+                        return True  # ie failure
 
                     # Slow check after restore
                     if 0:
