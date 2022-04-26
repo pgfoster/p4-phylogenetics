@@ -36,8 +36,7 @@ class Constraints(object):
               rootConstraintTree are added to the constraints
               from the constraintTree, so you might be able to
               define all the constraints you need with a
-              rootConstraintTree.  You need to include all the
-              taxNames.
+              rootConstraintTree.  
 
 
     For example::
