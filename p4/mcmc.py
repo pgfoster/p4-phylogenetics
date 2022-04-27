@@ -925,12 +925,7 @@ class Mcmc(object):
                 gm.append("Arg 'simulate' should be an int, 1-31, inclusive.")
                 raise P4Error(gm)
         self.simulate = simulate
-        if self.simulate:
-            self.simTree = self.tree.dupe()
-            self.simTree.data = self.tree.data.dupe()
-            self.simTree.calcLogLike(verbose=False)
-        else:
-            self.simTree = None
+        self.simTree = None
 
         if self.nChains > 1:
             self.swapMatrix = []
@@ -2636,6 +2631,11 @@ class Mcmc(object):
                     for dNum in range(1, self.nChains):
                         self.chainTempDiffs.append(self.chainTemps[dNum] - self.chainTemps[dNum - 1])
                     self.chainTempDiffs.append(0.0) # with reason? -- maybe not.
+
+            if self.simulate:
+                self.simTree = self.tree.dupe()
+                self.simTree.data = self.tree.data.dupe()
+                self.simTree.calcLogLike(verbose=False)
 
             self._makeChainsAndProposals()
             self._setOutputTreeFile()
