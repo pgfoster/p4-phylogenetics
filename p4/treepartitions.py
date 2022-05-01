@@ -1962,8 +1962,10 @@ class TreePartitions(object):
                 if self.modelInfo.parts[pNum].nComps > 1:
                     modelKeyHash = {}
                     for n in conTree.iterNodesNoRoot():
-                        n.br.textDrawSymbol = var.modelSymbols[
-                            n.parts[pNum].compNum]
+                        try:
+                            n.br.textDrawSymbol = var.modelSymbols[n.parts[pNum].compNum]
+                        except IndexError:
+                            n.br.textDrawSymbol = "-"
                         if n.parts[pNum].compNum not in modelKeyHash:
                             modelKeyHash[n.parts[pNum].compNum] = n.br.textDrawSymbol
                     print()
@@ -1977,8 +1979,10 @@ class TreePartitions(object):
                 if self.modelInfo.parts[pNum].nRMatrices > 1:
                     modelKeyHash = {}
                     for n in conTree.iterNodesNoRoot():
-                        n.br.textDrawSymbol = var.modelSymbols[
-                            n.br.parts[pNum].rMatrixNum]
+                        try:
+                            n.br.textDrawSymbol = var.modelSymbols[n.br.parts[pNum].rMatrixNum]
+                        except IndexError:
+                            n.br.textDrawSymbol = "-"
                         if n.br.parts[pNum].rMatrixNum not in modelKeyHash:
                             modelKeyHash[
                                 n.br.parts[pNum].rMatrixNum] = n.br.textDrawSymbol
