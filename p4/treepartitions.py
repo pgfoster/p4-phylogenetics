@@ -1863,8 +1863,8 @@ class TreePartitions(object):
             conTree.preAndPostOrderAreValid = 0
             conTree.draw()
 
-        # Now tabulate model usage.
-        if self.modelInfo:
+        # Now tabulate model usage.  Temporarily turned off
+        if 0 and self.modelInfo:
             for pNum in range(self.modelInfo.nParts):
                 print("\nPartition %i" % pNum)
 
@@ -1921,8 +1921,8 @@ class TreePartitions(object):
                 else:
                     print("rMatrices in this partition are homogeneous.")
 
-        # Find the majority compNum's and rMatrixNum's.
-        if self.modelInfo:
+        # Find the majority compNum's and rMatrixNum's.  Temporarily off
+        if 0 and self.modelInfo:
             # First make a place to put them.  Initialize n.compNum
             # etc with -1's.
             for n in conTree.nodes:
@@ -1998,7 +1998,8 @@ class TreePartitions(object):
         conTree.preAndPostOrderAreValid = 0
         conTree.taxNames = self.taxNames
 
-        if showRootInfo:
+        # Temporarily off
+        if 0 and showRootInfo:
             conTree.setPreAndPostOrder()
             #conTree.draw()
 
@@ -2022,9 +2023,11 @@ class TreePartitions(object):
                     else:
                         if n == biRootChild:
                             # Point out, with the arrow, that it has been rooted on that branch.
-                            print("%4i   %11.1f       %5.3f    %5i  <==" % (n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
+                            print("%4i   %11.1f       %5.3f    %5i  <==" % (
+                                n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
                         else:
-                            print("%4i   %11.1f       %5.3f    %5i" % (n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
+                            print("%4i   %11.1f       %5.3f    %5i" % (
+                                n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
                         if n.br.biRootCount:
                             if n.isLeaf:
                                 n.oldName = n.name
