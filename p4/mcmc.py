@@ -2441,24 +2441,29 @@ class Mcmc(object):
         self.treeFile.write('  ;\n')
 
         # write the models comment
-        if self.tree.model.isHet:
-            writeModelComment = True
-            if self.tree.model.parts[0].ndch2:
-                writeModelComment = False
-                if self.tree.model.parts[0].ndch2_writeComps:
-                    writeModelComment = True
-            if self.tree.model.parts[0].ndrh2:
-                writeModelComment = False
-                if self.tree.model.parts[0].ndrh2_writeRMatrices:
-                    writeModelComment = True
+        # if self.tree.model.isHet:
+        #     writeModelComment = True
+        #     if self.tree.model.parts[0].ndch2:
+        #         writeModelComment = False
+        #         if self.tree.model.parts[0].ndch2_writeComps:
+        #             writeModelComment = True
+        #     if self.tree.model.parts[0].ndrh2:
+        #         writeModelComment = False
+        #         if self.tree.model.parts[0].ndrh2_writeRMatrices:
+        #             writeModelComment = True
+        writeModelComment = False
+        for mp in self.tree.model.parts:
+            if mp.nComps > 1 or mp.nRMatrices > 1 or mp.nGdasrvs > 1:
+                writeModelComment = True
+                break
                     
-            if writeModelComment:
-                self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
-                for pNum in range(self.tree.model.nParts):
-                    self.treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
-                    self.treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
-                    self.treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
-                self.treeFile.write(']\n')
+        if writeModelComment:
+            self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
+            for pNum in range(self.tree.model.nParts):
+                self.treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
+                self.treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
+                self.treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
+            self.treeFile.write(']\n')
         self.treeFile.write('  [Tree numbers are gen+1]\nend;\n')
 
         if 0:
@@ -3205,20 +3210,21 @@ class Mcmc(object):
             self.treeFile = open(self.treeFileName, 'a')
             self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
 
-        if self.tree.model.parts[0].ndch2 or self.tree.model.parts[0].ndrh2: # lazy programming -- and therefore all model parts
-            if self.tree.model.parts[0].ndch2_writeComps  or self.tree.model.parts[0].ndrh2_writeRMatrices:
-                self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
-                                                              withTranslation=1,
-                                                              translationHash=self.translationHash,
-                                                              doMcmcCommandComments=True)
-            else:
-                self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
-                                                              withTranslation=1,
-                                                              translationHash=self.translationHash,
-                                                              doMcmcCommandComments=False)
+        # if self.tree.model.parts[0].ndch2 or self.tree.model.parts[0].ndrh2: # lazy programming -- and therefore all model parts
+        #     if self.tree.model.parts[0].ndch2_writeComps  or self.tree.model.parts[0].ndrh2_writeRMatrices:
+        #         self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
+        #                                                       withTranslation=1,
+        #                                                       translationHash=self.translationHash,
+        #                                                       doMcmcCommandComments=True)
+        #     else:
+        #         self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
+        #                                                       withTranslation=1,
+        #                                                       translationHash=self.translationHash,
+        #                                                       doMcmcCommandComments=False)
 
-        else:
-            self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
+        # else:
+
+        self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                           withTranslation=1,
                                                           translationHash=self.translationHash,
                                                           doMcmcCommandComments=self.tree.model.isHet)
