@@ -28,6 +28,24 @@ class DistanceMatrix:
             l = [0.0] * dim
             self.matrix.append(l)
 
+    def flatTriangle(self, upper=True):
+        """Get (default upper) triangle as a simple list
+
+        If arg upper is off, the lower triangle is returned.
+        """
+
+        fT = []
+        if upper:
+            for row in range(0, self.dim - 1):
+                for col in range(row + 1, self.dim):
+                    fT.append(self.matrix[row][col])
+        else:
+            for row in range(1, self.dim):
+                for col in range(0, row):
+                    fT.append(self.matrix[row][col])
+        return fT
+
+
     def writeNexus(self, fName=None, writeTaxaBlock=1, append=0, digitsAfterDecimal=6):
         """Write out self in Nexus format.
 
