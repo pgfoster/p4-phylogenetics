@@ -153,17 +153,19 @@ class SequenceList(object):
         for mySeq in self.sequences:
             dType = p4.func.isDnaRnaOrProtein(mySeq.sequence)
             if dType == 1:
-                # print "Its dna"
+                # print("Its dna")
                 mySeq.dataType = 'dna'
             elif dType == 2:
-                # print "Its rna"
-                # print "Converting RNA to DNA"
-                mySeq.sequence = list(mySeq.sequence)
-                for i in range(len(mySeq.sequence)):
-                    if mySeq.sequence[i] == 'u':
-                        mySeq.sequence[i] = 't'
-                mySeq.sequence = ''.join(mySeq.sequence)
-                mySeq.dataType = 'dna'
+                # print("Its rna")
+                mySeq.dataType = 'rna'
+                if 0:
+                    print("Converting RNA to DNA")
+                    mySeq.sequence = list(mySeq.sequence)
+                    for i in range(len(mySeq.sequence)):
+                        if mySeq.sequence[i] == 'u':
+                            mySeq.sequence[i] = 't'
+                    mySeq.sequence = ''.join(mySeq.sequence)
+                    mySeq.dataType = 'dna'
             else:
                 # print "Its protein"
                 mySeq.dataType = 'protein'
