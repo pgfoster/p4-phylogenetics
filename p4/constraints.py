@@ -84,8 +84,9 @@ class Constraints(object):
             self.rTree.makeSplitKeys()
             for n in self.rTree.iterInternalsNoRoot():
                 n.name = n.br.splitKey
-                if n.br.splitKey not in self.rootConstraints:
-                    self.rootConstraints.append(n.br.splitKey)
+                if n.parent == self.rTree.root:
+                    if n.br.splitKey not in self.rootConstraints:
+                        self.rootConstraints.append(n.br.splitKey)
                 # Root constraints are also constraints
                 if n.br.splitKey not in self.constraints:
                     self.constraints.append(n.br.splitKey)
