@@ -173,7 +173,17 @@ def isDnaRnaOrProtein(aString):
 
     # If it is 90% or better acgn +t or +u, then assume it is dna or rna
     threshold = 0.9 * strLenNoGaps
-    if acgn + t >= threshold:
+    if acgn + t >= threshold and acgn + u >= threshold:
+        if t and not u:
+            return 1
+        elif u and not t:
+            return 2
+        elif t > u:
+            return 1
+        elif u > t:
+            return 2
+        return 1  # giving up.
+    elif acgn + t >= threshold:
         return 1
     elif acgn + u >= threshold:
         return 2
