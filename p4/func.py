@@ -1194,7 +1194,7 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
     nNodesAddedForConstraints = 0
     if constraints:
         for aConstraint in constraints.constraints:
-            # print("doing aConstraint %s  %i" % (getSplitStringFromKey(aConstraint, nTax), aConstraint))
+            print("doing aConstraint %s  %i" % (getSplitStringFromKey(aConstraint, nTax), aConstraint))
             #t.dump(tree=0, node=1)
             t.setPreAndPostOrder()
             eTaxNames = []
@@ -1203,18 +1203,15 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
                 # Does aConstraint contain the tester bit?
                 if tester & aConstraint:
                     eTaxNames.append(taxNames[i])
-            # print "aConstraint %s" % eTaxNames
+            print("aConstraint %s" % eTaxNames)
 
             # check that they all share the same parent
             firstParent = t.node(eTaxNames[0]).parent
             for tN in eTaxNames[1:]:
                 if t.node(tN).parent != firstParent:
-                    gm.append("constraint %s" % getSplitStringFromKey(
-                        aConstraint, constraints.tree.nTax))
-                    gm.append("'%s' parent is not node %i" %
-                              (tN, firstParent.nodeNum))
-                    gm.append(
-                        'It appears that there are incompatible constraints.')
+                    gm.append(f"constraint {getSplitStringFromKey(aConstraint, nTax)}  {aConstraint}")
+                    gm.append("'%s' parent is not node %i" % (tN, firstParent.nodeNum))
+                    gm.append('It appears that there are incompatible constraints.')
                     raise P4Error(gm)
 
             n = Node()
