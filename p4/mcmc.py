@@ -1151,20 +1151,25 @@ class Mcmc(object):
                 self.prob.root3n = 0.0
                 print("There is a constraint on the root position, so turning root proposals off.")
             else:
-                if self.isBiRoot:
-                    self.prob.root2 = 1.0
-                    thisMString = "root2 (root location)"
-                    if thisMString not in props_on:
-                        props_on.append(thisMString)
-                else:
-                    self.prob.root3 = 1.0
-                    thisMString = "root3 (root location)"
-                    if thisMString not in props_on:
-                        props_on.append(thisMString)
-                    self.prob.root3n = 1.0
-                    thisMString = "root3n (root location, neighbours)"
-                    if thisMString not in props_on:
-                        props_on.append(thisMString)
+                print("root proposals are now turned off by default")
+                self.prob.root2 = 0.0
+                self.prob.root3 = 0.0
+                self.prob.root3n = 0.0
+
+                # if self.isBiRoot:
+                #     self.prob.root2 = 1.0
+                #     thisMString = "root2 (root location)"
+                #     if thisMString not in props_on:
+                #         props_on.append(thisMString)
+                # else:
+                #     self.prob.root3 = 1.0
+                #     thisMString = "root3 (root location)"
+                #     if thisMString not in props_on:
+                #         props_on.append(thisMString)
+                #     self.prob.root3n = 1.0
+                #     thisMString = "root3n (root location, neighbours)"
+                #     if thisMString not in props_on:
+                #         props_on.append(thisMString)
             
             if verbose:
                 print("\n%23s" % "Additional proposals:")
