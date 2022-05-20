@@ -810,20 +810,19 @@ class TreePartitions(object):
                 self.isBiRoot = False
 
         else:
+            # All subsequent trees must agree with the first tree regarding isBiRoot.
+            rootNChildren = theTree.root.getNChildren()
             if self.isBiRoot:
-                rootNChildren = theTree.root.getNChildren()
                 if rootNChildren != 2:
                     theTree.write()
                     gm.append("First tree had a bifurcating root, and so all trees must as well.")
                     raise P4Error(gm)
-            # else:
-            #     assert self.isBiRoot == False
-            #     rootNChildren = theTree.root.getNChildren()
-            #     if rootNChildren < 3:
-            #         theTree.write()
-            #         gm.append("First tree did not have a bifurcating root.")
-            #         gm.append("All subsequent trees may not either.")
-            #         raise P4Error(gm)
+            else:
+                if rootNChildren == 2:
+                    theTree.write()
+                    gm.append("First tree did not have a bifurcating root.")
+                    gm.append("All subsequent trees may not either.")
+                    raise P4Error(gm)
 
         theTree.taxNames = self.taxNames  # Tree.taxNames is a property, triggers checking.
 
@@ -1829,6 +1828,7 @@ class TreePartitions(object):
             theBiRoot.rootModelUsage = theBiSplit.rootModelUsage
 
         else:
+            # Not biRoot
             maxRootCount = 0
             for n in conTree.iterNodesNoRoot():
                 if 0:
@@ -1840,7 +1840,7 @@ class TreePartitions(object):
                 if n.br.split.rootCount == maxRootCount:
                     maxRootNodes.append(n)
 
-            if 0 and showRootInfo:
+            if 1 and showRootInfo:
                 print(gm[0])
                 if len(maxRootNodes) > 1:
                     print("    There are %s maxRootNodes.  Choosing the first to root on." % len(maxRootNodes))
@@ -1863,7 +1863,10 @@ class TreePartitions(object):
             conTree.preAndPostOrderAreValid = 0
             conTree.draw()
 
+        ###################################################
         # Now tabulate model usage.  Temporarily turned off
+        ###################################################
+
         if 0 and self.modelInfo:
             for pNum in range(self.modelInfo.nParts):
                 print("\nPartition %i" % pNum)
@@ -1998,8 +2001,11 @@ class TreePartitions(object):
         conTree.preAndPostOrderAreValid = 0
         conTree.taxNames = self.taxNames
 
-        # Temporarily off
-        if 0 and showRootInfo:
+        #############
+        # Root info
+        #############
+
+        if 1 and showRootInfo:
             conTree.setPreAndPostOrder()
             #conTree.draw()
 
@@ -2062,6 +2068,7 @@ class TreePartitions(object):
                             n.name = None
 
             else:
+                # not biRoot
                 print()
                 print(gm[0])
                 print(longMessage2)  # see top of file.
