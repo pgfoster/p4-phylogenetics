@@ -658,7 +658,7 @@ class Chain(object):
                 if not ret:
                     theProposal.doAbort = True
                     return 0.0
-                if self.mcmc.constraints.rootConstraints:
+                if self.mcmc.constraints.rooting:
                     ret = self.mcmc.constraints.areConsistentWithTreeRoot(self.propTree)
                     if not ret:
                         theProposal.doAbort = True
@@ -803,7 +803,7 @@ class Chain(object):
                     #print("proposeSp() after eTBR, doAbort set due to violated constraints")
                     theProposal.doAbort = True
                     return 0.0
-                if self.mcmc.constraints.rootConstraints:
+                if self.mcmc.constraints.rooting:
                     ret = self.mcmc.constraints.areConsistentWithTreeRoot(self.propTree)
                     if not ret:
                         #print("proposeSp() after eTBR, doAbort set due to violated constraint for root")

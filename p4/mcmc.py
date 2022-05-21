@@ -733,10 +733,10 @@ class Mcmc(object):
                     gm.append('is not in the starting tree.')
                     gm.append('Maybe you want to make a randomTree with constraints?')
                     raise P4Error(gm)
-            if self.constraints.rTree:   # a root constraint
+            if self.constraints.rooting:
                 ret = self.constraints.areConsistentWithTreeRoot(self.tree)
                 if not ret:
-                    gm.append("The starting tree is not consistent with the constraints.rTree")
+                    gm.append("The starting tree is not consistent with the constraints.cTree")
                     raise P4Error(gm)
 
         try:
@@ -1145,7 +1145,7 @@ class Mcmc(object):
                     if thisMString not in props_on:
                         props_on.append(thisMString)
 
-            if self.constraints and self.constraints.rTree: # a root constraint
+            if self.constraints and self.constraints.rooting: # a root constraint
                 self.prob.root2 = 0.0
                 self.prob.root3 = 0.0
                 self.prob.root3n = 0.0
@@ -3065,7 +3065,7 @@ class Mcmc(object):
                             gm.append(f"The current tree (the last tree sampled) does not contain constraint sk")
                             gm.append("%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
-                    if self.constraints.rootConstraints:
+                    if self.constraints.rooting:
                         ret = self.constraints.areConsistentWithTreeRoot(self.chains[self.coldChainNum].curTree)
                         if not ret:
                             gm.append("Programming error.")

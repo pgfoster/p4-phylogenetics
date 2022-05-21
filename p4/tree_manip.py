@@ -2625,7 +2625,7 @@ if True:
         final resolution will leave a biRoot'ed tree.
         """
 
-
+        self.setPreAndPostOrder()
         for n in self.iterInternalsNoRootPostOrder():
             self.resolvePolytomyAtNode(n, resolution=2)
 
