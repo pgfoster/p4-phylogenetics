@@ -7,14 +7,15 @@ class Constraints(object):
     """A container for tree topology constraints.
 
 
-    Constraints are defined with partially-resolved tree.  We can
+    Constraints are defined with a partially-resolved tree.  We can
     then use a constraints object to ask whether a query tree has
     those constraints.  In addition a constrained rooting may be
     defined, and we can then ask whether a query tree is
     consistent with that rooting.  So for example we can use this
     to enforce a bifurcating root in a fixed position, where the
     content of the two clades off the root is fixed, but where the
-    topology within the two clades can vary.
+    topology within the two clades can vary. (Also possible with a 
+    biRoot'ed tree.)
     
     Init args ---
 
@@ -30,29 +31,35 @@ class Constraints(object):
               a particular order.
 
     rooting
-              A constraint tree can define the root (possibly
-              with other constraints as well).  A biRooted
+              (Boolean -- False by default) A constraint tree 
+              can define the root (possibly with other constraints 
+              as well).  If rooting is set, a biRooted
               constraint tree should be biRooted, and a triRooted
               constraint tree should be triRooted.  You need to
               include all the taxNames.  
 
-    For example, this will constrain A+C in a random biRoot'ed tree::
+    For example, this will constrain A+C, without rooting, in a 
+    random biRoot'ed tree::
 
       tNames = list("ABCDE")
       cTree = func.readAndPop("((A, C), B, D, E);")
       constr = Constraints(tNames, constraintTree=cTree, rooting=False)
       t = func.randomTree(taxNames=tNames, constraints=constr, biRoot=True)
 
-    A biRooted cTree might be ((A,B),(C,D)); while a triRooted 
-    cTree might be (A,B,(C,D)); or ((A,B),(C,D),(E,F));  If in addition 
+    A biRooted cTree might be ((A,B,C),(D,E,F)); while a triRooted 
+    cTree might be (A,B,(C,D,E)); or ((A,B,C),(D,E,F),(G,H,I));  If 
     you turn on rooting, then those rootings will be enforced.
 
-    You can pass a Constraints object to p4.func.randomTree() and
+    Constraints can be nested, done with the constraintTree description, 
+    as for example (A,B,(C,D,(E,F),G)). You can have nested constraints 
+    when rooting is set.
+
+    You can pass a Constraints object to p4.func.randomTree() and to
     Mcmc() to enforce constraints.
 
     """
 
-    def __init__(self, taxNames, constraintTree=None, rooting=True):
+    def __init__(self, taxNames, constraintTree=None, rooting=False):
 
         gm = ["Constraints init()"]
         self.taxNames = taxNames
@@ -63,13 +70,12 @@ class Constraints(object):
 
         if self.cTree:
             self.cTree.taxNames = taxNames
-            
-        if self.cTree:
             self.cTree.makeSplitKeys()
             for n in self.cTree.iterInternalsNoRoot():
                 # n.name = n.br.splitKey
                 if n.br.splitKey not in self.constraints:
                     self.constraints.append(n.br.splitKey)
+
         if self.rooting:
             isCTreeBiRoot = self.cTree.isBiRoot()
             if not isCTreeBiRoot:
