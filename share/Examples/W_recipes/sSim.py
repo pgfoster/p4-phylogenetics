@@ -29,7 +29,7 @@ t.setPInvar(free=0, val=0.2)
 t.simulate()
 
 if 1:
-    d.writeNexus('d.nex', writeDataBlock=True)
+    d.writeNexus('d.nex')
 if 0:
     d.alignments[0].writePhylip("d.phy")
 
