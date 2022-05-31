@@ -2212,12 +2212,13 @@ static PyObject *
 pf_p4_allBOBYQAOptimize(PyObject *self, PyObject *args)
 {
     p4_tree  *aTree;
+    int doBrLens;
 
-    if(!PyArg_ParseTuple(args, "l", &aTree)) {
+    if(!PyArg_ParseTuple(args, "li", &aTree, &doBrLens)) {
         printf("Error pf_p4_allBOBYQAOptimize: couldn't parse tuple\n");
         return NULL;
     }
-    p4_allBOBYQAOptimize(aTree);
+    p4_allBOBYQAOptimize(aTree, doBrLens);
     Py_INCREF(Py_None);
     return Py_None;
 }

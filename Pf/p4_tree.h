@@ -24,7 +24,7 @@ PyObject *p4_getBrLens(p4_tree *aTree);
 PyObject *p4_getFreePrams(p4_tree *aTree);
 void p4_unWindParameters(p4_tree *aTree, double *parameters);
 double p4_logLikeForNLOpt(unsigned nPrams, const double *parameters, double *grad, void *my_func_data);
-void p4_allBOBYQAOptimize(p4_tree *aTree);
+void p4_allBOBYQAOptimize(p4_tree *aTree, int doBrLens);
 void p4_newtAndBOBYQAOpt(p4_tree *aTree);
 double p4_minusLogLikeForBrent(double *parameters);
 void p4_allBrentPowellOptimize(p4_tree *aTree);

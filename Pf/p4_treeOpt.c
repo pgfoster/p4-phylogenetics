@@ -614,7 +614,7 @@ double p4_logLikeForNLOpt(unsigned nPrams, const double *parameters, double *gra
     return logLike;
 }
 
-void p4_allBOBYQAOptimize(p4_tree *aTree)
+void p4_allBOBYQAOptimize(p4_tree *aTree, int doBrLens)
 {
 
 
@@ -631,8 +631,14 @@ void p4_allBOBYQAOptimize(p4_tree *aTree)
     // You can't pass variables to minusLogLikeForBrent,
     // so I have to set file-wide variables.
     thisTree = aTree;
-    doBranchLengths = 1;
-    nPrams = aTree->model->nFreePrams + (aTree->nNodes - 1);
+
+    if(doBrLens) {
+        doBranchLengths = 1;
+        nPrams = aTree->model->nFreePrams + (aTree->nNodes - 1);
+    } else {
+        doBranchLengths = 0;
+        nPrams = aTree->model->nFreePrams;
+    }
 
     if((0)) {
         printf("Starting p4_allBOBYQAOptimize: nPrams is %i\n", nPrams);
