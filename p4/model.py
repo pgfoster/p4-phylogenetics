@@ -293,6 +293,53 @@ class ModelPart(object):
         for mtNum in range(sp.nGdasrvs):
             op.gdasrvs[mtNum].nNodes = sp.gdasrvs[mtNum].nNodes
 
+    def writeEmpiricalProteinModelInPAMLFormat(self, compNum, rMatrixNum, outFileName):
+        gm = ["ModelPart.writeEmpiricalProteinModelInPAMLFormat()"]
+
+        if self.dim != 20: 
+            gm.append(f"dim should be 20, got {self.dim}")
+            raise P4Error(gm)
+ 
+        # Get comp
+        cVal = self.comps[compNum].val
+        assert isinstance(cVal, numpy.ndarray)
+        assert cVal.shape == (20,)
+
+        # Get rMatrix
+        r = self.rMatrices[rMatrixNum]
+        if r.spec in var.rMatrixProteinSpecs:
+            rVal = p4.func.getProteinEmpiricalModelRMatrix(r.spec, upperTriangle=False) # full r matrix
+        else:
+            # print(r.val)
+            assert isinstance(r.val, numpy.ndarray)
+            if r.val.shape not in [(190,)]:
+                gm.append(f"r.val.shape is {r.val.shape}, expecting (190,)")
+                raise P4Error(gm)
+            rVal = numpy.zeros((20,20))
+            counter = 0
+            for row in range(0,20):
+                for col in range(row+1,20):
+                    rVal[row][col] = r.val[counter]
+                    rVal[col][row] = r.val[counter]
+                    counter += 1
+            assert counter == 190
+        assert rVal.shape == (20,20)
+
+        # write it
+        fout = open(outFileName, "w")
+        for row in range(1,20):
+            for col in range(0,row):   # lower triangle
+                print(rVal[row][col], end=" ", file=fout)
+            print(file=fout)
+
+        print(file=fout)
+        for it in range(20):
+            print(cVal[it], end=" ", file=fout)
+        print(file=fout)
+        fout.close()
+
+
+
 
 class Model(object):
 
