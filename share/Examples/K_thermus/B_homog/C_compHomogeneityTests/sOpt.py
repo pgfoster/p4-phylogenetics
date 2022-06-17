@@ -7,7 +7,7 @@ t.newRMatrix(free=1, spec='ones')
 t.setNGammaCat(nGammaCat=4)
 t.newGdasrv(free=1, val=0.5)
 t.setPInvar(free=0, val=0.0)
-t.optLogLike(newtAndBrentPowell=1, allBrentPowell=0, verbose=1)
+t.optLogLike(verbose=1)
 t.model.dump()
 t.tPickle('opt')
 
