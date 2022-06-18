@@ -901,6 +901,7 @@ class Mcmc(object):
         self.hypersFileName = "mcmc_hypers_%i" % runNum
         self.simTempFileName = "mcmc_simTemp_%i" % runNum
         self.ssLikesFileName = "mcmc_ssLikes_%i" % runNum
+        self.siteLikesFileName = "mcmc_siteLikes_%i" % runNum
 
         self.likesFile = None
         self.treeFile = None
@@ -908,8 +909,10 @@ class Mcmc(object):
         self.pramsFile = None
         self.hypersFile = None
         self.ssLikesFile = None
+        self.siteLikesFile = None
 
         self.writePrams = writePrams
+        self.writeSiteLikes = False
         self.writeHypers = True
         self.coldChainNum = -1
 
@@ -3183,6 +3186,8 @@ class Mcmc(object):
             self.hypersFile.close()
         if self.ssLikesFile:
             self.ssLikesFile.close()
+        if self.siteLikesFile:
+            self.siteLikesFile.close()
 
 
 
@@ -3250,7 +3255,19 @@ class Mcmc(object):
                 self.hypersFile.write("%12i" % (self.gen + 1))
             self.chains[self.coldChainNum].curTree.model.writeHypersLine(self.hypersFile)
 
-
+        if self.writeSiteLikes:
+            try:
+                pf.p4_treeLogLike(self.chains[self.coldChainNum].curTree.cTree, 1)
+                self.siteLikesFile.write(f"{self.gen + 1:11} ")
+            except (AttributeError, ValueError):
+                self.siteLikesFile = open(self.siteLikesFileName, 'a')
+                self.siteLikesFile.write(f"{self.gen + 1:11} ")
+            siteLikes = []
+            for p in self.tree.data.parts:
+                siteLikes += pf.getSiteLikes(p.cPart)
+            for sL in siteLikes:
+                self.siteLikesFile.write("%.17g " % sL)
+            self.siteLikesFile.write("\n")
 
 
     def _proposeSwapChainsInMcmcmc(self):
@@ -3532,6 +3549,7 @@ class Mcmc(object):
                 self.simFile,
                 self.pramsFile,
                 self.hypersFile,
+                self.siteLikesFile,
         ]:
             if myf:
                 if not myf.closed:
@@ -3543,6 +3561,7 @@ class Mcmc(object):
         self.simFile = None
         self.pramsFile = None
         self.hypersFile = None
+        self.siteLikesFile = None
 
         theCopy = copy.deepcopy(self)
 
