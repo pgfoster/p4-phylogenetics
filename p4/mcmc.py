@@ -901,7 +901,7 @@ class Mcmc(object):
         self.hypersFileName = "mcmc_hypers_%i" % runNum
         self.simTempFileName = "mcmc_simTemp_%i" % runNum
         self.ssLikesFileName = "mcmc_ssLikes_%i" % runNum
-        self.siteLikesFileName = "mcmc_siteLikes_%i" % runNum
+        # self.siteLikesFileName = "mcmc_siteLikes_%i" % runNum
 
         self.likesFile = None
         self.treeFile = None
@@ -909,10 +909,14 @@ class Mcmc(object):
         self.pramsFile = None
         self.hypersFile = None
         self.ssLikesFile = None
-        self.siteLikesFile = None
+        # self.siteLikesFile = None
 
         self.writePrams = writePrams
-        self.writeSiteLikes = False
+        # self.writeSiteLikes = False
+        self.doCpo = True
+        self.cpo_startGen = None
+        self.cpo_sumsOfInverseSiteLikes = None
+        self.cpo_nSamples = None
         self.writeHypers = True
         self.coldChainNum = -1
 
@@ -3186,8 +3190,8 @@ class Mcmc(object):
             self.hypersFile.close()
         if self.ssLikesFile:
             self.ssLikesFile.close()
-        if self.siteLikesFile:
-            self.siteLikesFile.close()
+        #if self.siteLikesFile:
+        #    self.siteLikesFile.close()
 
 
 
@@ -3561,7 +3565,7 @@ class Mcmc(object):
         self.simFile = None
         self.pramsFile = None
         self.hypersFile = None
-        self.siteLikesFile = None
+        # self.siteLikesFile = None
 
         theCopy = copy.deepcopy(self)
 
