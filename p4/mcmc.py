@@ -2665,6 +2665,14 @@ class Mcmc(object):
                 pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
                 # Should I do self.tree and self.simTree as well?
 
+        if self.doCpo:
+            if self.cpo_sumsOfInverseSiteLikes:
+                pass
+            else:
+                nSites = sum([p.nChar for p in self.tree.data.parts])
+                self.cpo_sumsOfInverseSiteLikes = [0.0] * nSites
+                self.cpo_nSamples = 0
+
         if verbose:
             self.props.writeProposalIntendedProbs()
             sys.stdout.flush()
@@ -3259,20 +3267,30 @@ class Mcmc(object):
                 self.hypersFile.write("%12i" % (self.gen + 1))
             self.chains[self.coldChainNum].curTree.model.writeHypersLine(self.hypersFile)
 
-        if self.writeSiteLikes:
-            try:
-                pf.p4_treeLogLike(self.chains[self.coldChainNum].curTree.cTree, 1)
-                self.siteLikesFile.write(f"{self.gen + 1:11} ")
-            except (AttributeError, ValueError):
-                self.siteLikesFile = open(self.siteLikesFileName, 'a')
-                self.siteLikesFile.write(f"{self.gen + 1:11} ")
-            siteLikes = []
-            for p in self.tree.data.parts:
-                siteLikes += pf.getSiteLikes(p.cPart)
-            for sL in siteLikes:
-                self.siteLikesFile.write("%.17g " % sL)
-            self.siteLikesFile.write("\n")
+        # if self.writeSiteLikes:
+        #     try:
+        #         pf.p4_treeLogLike(self.chains[self.coldChainNum].curTree.cTree, 1)
+        #         self.siteLikesFile.write(f"{self.gen + 1:11} ")
+        #     except (AttributeError, ValueError):
+        #         self.siteLikesFile = open(self.siteLikesFileName, 'a')
+        #         self.siteLikesFile.write(f"{self.gen + 1:11} ")
+        #     siteLikes = []
+        #     for p in self.tree.data.parts:
+        #         siteLikes += pf.getSiteLikes(p.cPart)
+        #     for sL in siteLikes:
+        #         self.siteLikesFile.write("%.17g " % sL)
+        #     self.siteLikesFile.write("\n")
 
+        if self.doCpo:
+            if self.gen + 1 > self.cpo_startGen:
+                siteNum = 0
+                pf.p4_treeLogLike(self.chains[self.coldChainNum].curTree.cTree, 1)
+                for dp in self.chains[self.coldChainNum].curTree.data.parts:
+                    siteLikes = pf.getSiteLikes(dp.cPart)
+                    for sL in siteLikes:
+                        self.cpo_sumsOfInverseSiteLikes[siteNum] += 1./sL
+                        siteNum += 1
+                self.cpo_nSamples += 1
 
     def _proposeSwapChainsInMcmcmc(self):
         if self.swapVector:
@@ -3552,7 +3570,7 @@ class Mcmc(object):
                 self.simFile,
                 self.pramsFile,
                 self.hypersFile,
-                self.siteLikesFile,
+                # self.siteLikesFile,
         ]:
             if myf:
                 if not myf.closed:
@@ -3704,3 +3722,16 @@ class Mcmc(object):
             return rd
 
 
+    def lpml(self):
+        """Calculate log pseudo marginal likelihood from CPO"""
+        gm = ["Mcmc.lpml()"]
+        if not self.doCpo:
+            gm.append("CPO was not turned on, via m.doCpo = True")
+            raise P4Error(gm)
+        if not self.cpo_nSamples:
+            gm.append("No cpo samples?")
+            raise P4Error(gm)
+        a = numpy.array(self.cpo_sumsOfInverseSiteLikes)
+        a /= self.cpo_nSamples
+        a = numpy.log(a)
+        return a.sum()
