@@ -3493,7 +3493,6 @@ class Mcmc(object):
 
     def checkPoint(self):
 
-
         if 0:
             for chNum,ch in enumerate(self.chains):
                 print("chain %i ==================" % chNum)
