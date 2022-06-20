@@ -913,7 +913,7 @@ class Mcmc(object):
 
         self.writePrams = writePrams
         # self.writeSiteLikes = False
-        self.doCpo = True
+        self.doCpo = False
         self.cpo_startGen = None
         self.cpo_sumsOfInverseSiteLikes = None
         self.cpo_nSamples = None
