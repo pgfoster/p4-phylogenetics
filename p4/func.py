@@ -3688,40 +3688,40 @@ def getProteinEmpiricalModelRMatrix(spec, upperTriangle=True):
         return a
 
 
-def logPseudoMarginalLikelihood(siteLikesFile, skip=1000, verbose=True):
-    """LPML via MCMC site likes file
+# def logPseudoMarginalLikelihood(siteLikesFile, skip=1000, verbose=True):
+#     """LPML via MCMC site likes file
 
-    Uses site likes, not log site likes.
+#     Uses site likes, not log site likes.
 
-    From Lewis et al 2014, equation 13.
-    Systematic Biology, Volume 63, Issue 3, May 2014, Pages 309–321, https://doi.org/10.1093/sysbio/syt068
+#     From Lewis et al 2014, equation 13.
+#     Systematic Biology, Volume 63, Issue 3, May 2014, Pages 309–321, https://doi.org/10.1093/sysbio/syt068
 
-    """
+#     """
 
-    ll = [l for l in open(siteLikesFile)]
-    ll = ll[skip:]
-    if verbose:
-        print(f"Got {len(ll)} samples (lines) after skipping {skip}")
+#     ll = [l for l in open(siteLikesFile)]
+#     ll = ll[skip:]
+#     if verbose:
+#         print(f"Got {len(ll)} samples (lines) after skipping {skip}")
 
-    siteLikes = []
+#     siteLikes = []
 
-    firstLine = ll[0]
-    nSites = len(firstLine.split()) - 1
-    if verbose:
-        print(f"nSites {nSites}")
+#     firstLine = ll[0]
+#     nSites = len(firstLine.split()) - 1
+#     if verbose:
+#         print(f"nSites {nSites}")
 
-    for aLine in ll:
-        sL = aLine.split()
-        flLine = [float(it) for it in sL[1:]]
-        assert len(flLine) == nSites
-        siteLikes.append(flLine)
+#     for aLine in ll:
+#         sL = aLine.split()
+#         flLine = [float(it) for it in sL[1:]]
+#         assert len(flLine) == nSites
+#         siteLikes.append(flLine)
 
-    sLL = numpy.array(siteLikes)
-    invrt = 1/sLL
-    siteMeans = invrt.mean(axis=0)
-    cpo_i = 1./siteMeans
-    cLogs = numpy.log(cpo_i)
-    lpml = cLogs.sum()
-    if verbose:
-        print(f"LPML {lpml}")
-    return cLogs.sum()
+#     sLL = numpy.array(siteLikes)
+#     invrt = 1/sLL
+#     siteMeans = invrt.mean(axis=0)
+#     cpo_i = 1./siteMeans
+#     cLogs = numpy.log(cpo_i)
+#     lpml = cLogs.sum()
+#     if verbose:
+#         print(f"LPML {lpml}")
+#     return cLogs.sum()
