@@ -3733,5 +3733,7 @@ class Mcmc(object):
             raise P4Error(gm)
         a = numpy.array(self.cpo_sumsOfInverseSiteLikes)
         a /= self.cpo_nSamples
-        a = numpy.log(a)
-        return a.sum()
+        a = -numpy.log(a)
+        theSum = a.sum()
+        print(f"cpo_nSamples: {self.cpo_nSamples}, lpml: {theSum}")
+        return theSum
