@@ -67,7 +67,7 @@ if True:
                 print("    symbols=%s" % self.symbols)
 
             aPart.cPart = pf.newPart(len(self.sequences), self.length,
-                                     eqSymb, self.symbols)
+                                     eqSymb, len(eqSymb), self.symbols, len(self.symbols))
             if not aPart or not aPart.cPart:
                 gm.append("Failed to get memory for part.")
                 raise P4Error(gm)

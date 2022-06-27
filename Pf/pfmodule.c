@@ -118,7 +118,7 @@ pf_newPart(PyObject *self, PyObject *args)
     char *equateSymbols;
     int	dim;
 	
-    if(!PyArg_ParseTuple(args, "iis#s#", &nTax, &nChar, &equateSymbols, 
+    if(!PyArg_ParseTuple(args, "iisisi", &nTax, &nChar, &equateSymbols, 
                          &nEquates, &symbols, &dim)) {
         printf("Error pf_newPart: couldn't parse tuple\n");
         return NULL;
