@@ -26,7 +26,6 @@ from p4.constraints import Constraints
 import p4.pf as pf
 import numpy
 from p4.pnumbers import Numbers
-import p4.version
 from p4.nexustoken import nextTok
 
 
@@ -979,9 +978,6 @@ def _tryToReadPirFile(fName, flob):
 def splash():
     """Print a splash screen for p4."""
     print('')
-
-    # from p4.version import versionString, dateString
-    # print("p4 v %s, %s" % (versionString, dateString))
     
     print("""
 usage:
@@ -995,7 +991,7 @@ p4 is a Python package for phylogenetics.
 p4 is also the name of a Python script that loads the p4 package.""")
 
     print("""
-There is documentation at http://p4.nhm.ac.uk """)
+There is documentation at https://p4.nhm.ac.uk """)
 
     print("""
 Using the p4 script, after reading in the (optional) files on the
@@ -1016,7 +1012,7 @@ p.foster@nhm.ac.uk""")
     print("(Control-d to quit.)\n")
 
 def splash2(outFile=None, verbose=True):
-    """Another splash, showing things like version, git hash, and date
+    """Another splash, showing things like git hash, and date
 
     If verbose is set, it gets printed to sys.stdout.
 
@@ -1029,12 +1025,10 @@ def splash2(outFile=None, verbose=True):
     stuff = []
 
     # Stolen from Cymon.  Thanks!
-    #stuff.append("\nSummary from func.splash2()")
-    #stuff.append("%16s: %s" % ("P4 version", p4.version.versionString))
     lp = os.path.dirname(inspect.getfile(p4))
     stuff.append("%16s: %s" % ("Library path", lp))
 
-    # Get git version.
+    # git hash.
     if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
         try:
             # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script

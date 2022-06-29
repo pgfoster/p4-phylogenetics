@@ -91,7 +91,6 @@ if True:
 
         """
 
-        #suffix = '.p4_%s_tPickle' % var.versionString
         suffix = '.p4_tPickle'
 
         if not self.name and not fName:
