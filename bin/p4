@@ -54,13 +54,22 @@ if len(sys.argv) > 1:  # Is there stuff on the command line?
         elif f == '-dn': # We want to draw trees with numbers, then exit.
             doDrawTreesWithNodeNumbers = 1
             forceExitAtEnd = 1
-        elif f in ['--help', '-h', '-help' '-?']:
+        elif f in ['--help', '-h', '-help']:
             try:
                 from p4.func import splash
             except ImportError:
                 print("Can't do 'help'.  It appears that p4 is not installed correctly.")
                 sys.exit()
             splash()
+            sys.exit()
+        elif f in ["-v", "--v", "-version", "--version"]:
+            try:
+                from p4.func import versionAsGitHash
+            except ImportError:
+                print(f"Can't do '{f}'.  It appears that p4 is not installed correctly.")
+                sys.exit()
+            ret = versionAsGitHash(longForm=True)
+            print(ret)
             sys.exit()
         elif f == '--': # Non-filename args will follow.
             afterDoubleDash = 1

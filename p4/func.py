@@ -977,7 +977,7 @@ def _tryToReadPirFile(fName, flob):
 
 def splash():
     """Print a splash screen for p4."""
-    print('')
+    print(f"p4 version {p4.func.versionAsGitHash(longForm=True)}")
     
     print("""
 usage:
@@ -985,7 +985,9 @@ usage:
  or
     p4 [-i] [-x] [-d] [yourScriptOrDataFile] [anotherScriptOrDataFile ...]
  or
-    p4 --help
+    p4 -h (or --help or -help)
+ or
+    p4 -v (or -version or --v or --version)
 
 p4 is a Python package for phylogenetics.
 p4 is also the name of a Python script that loads the p4 package.""")
@@ -1085,6 +1087,8 @@ def splash2(outFile=None, verbose=True):
             # subprocess.check_output(['git', 'rev-parse', 'HEAD'])
             # ret = subprocess.check_output(['git', '-C', '%s' % lp, 'rev-parse', '--short', 'HEAD'])
             ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
+            # ret is binary, so decode it
+            ret = ret.decode()
             #ret = ret.strip()    # get rid of newline, needed for rev-parse
             ret = ret[1:-1]       # get rid of quotes, needed for log
             stuff.append("%16s: %s" % ("git hash", ret))
