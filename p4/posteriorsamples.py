@@ -253,12 +253,7 @@ class PosteriorSamples(object):
         if self.verbose >= 3:
             print(tLine)
 
-        if 1:
-            if sys.version_info < (3,):
-                f = io.BytesIO(tLine)
-            else:
-                f = io.StringIO(tLine)
-
+        f = io.StringIO(tLine)
 
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
@@ -433,11 +428,7 @@ class PosteriorSamples(object):
         tLine = self.tLines[sampNum]
         if self.verbose >= 3:
             print(tLine)
-        if 1:
-            if sys.version_info < (3,):
-                f = io.BytesIO(tLine)
-            else:
-                f = io.StringIO(tLine)
+        f = io.StringIO(tLine)
         t = Tree()
         t.parseNexus(f, translationHash=self.translationHash,
                      doModelComments=self.tree.model.nParts)  # doModelComments is nParts

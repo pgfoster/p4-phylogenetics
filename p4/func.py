@@ -379,15 +379,7 @@ def read(stuff):
                 print("    Maybe it was a mis-specified file name?")
                 print("    (You can turn off this warning by turning var.warnReadNoFile off.)\n")
 
-            if 0:
-                if sys.version_info < (3,):
-                    stuff = unicode(stuff)
-                    flob = io.StringIO(stuff)
-            if 1:
-                if sys.version_info < (3,):
-                    flob = io.BytesIO(stuff)
-                else:
-                    flob = io.StringIO(stuff)
+            flob = io.StringIO(stuff)
             
             _decideFromContent('<input string>', flob)
 
@@ -2315,10 +2307,7 @@ def recipes(writeToFile=var.recipesWriteToFile):
     # print "Got recNum %i" % recNum
 
     if writeToFile:
-        if sys.version_info < (3,):
-            ret = raw_input('Write it to file name [default %s] :' % recipesList[recNum][1])
-        else:
-            ret = input('Write it to file name [default %s] :' % recipesList[recNum][1])
+        ret = input('Write it to file name [default %s] :' % recipesList[recNum][1])
 
         if ret == '':
             theFName = recipesList[recNum][1]
