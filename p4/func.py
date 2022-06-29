@@ -1011,6 +1011,56 @@ p.foster@nhm.ac.uk""")
     print('')
     print("(Control-d to quit.)\n")
 
+def versionAsDate():
+    """Return the version as a date"""
+
+    # Get lib path
+    lp = os.path.dirname(inspect.getfile(p4))
+    # git log
+    if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
+        try:
+            # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
+            # git -C <path> means run it as if git was started <path> instead of the current working directory
+            ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', '--date=short', '--pretty=format:"%cd"'])
+            # ret is binary, so decode it
+            ret = ret.decode()
+            #ret = ret.strip()    # get rid of newline, needed for rev-parse
+            ret = ret[1:-1]       # get rid of quotes, needed for log
+            return ret
+
+        except subprocess.CalledProcessError:
+            return None 
+    else:
+        return None
+
+def versionAsGitHash(longForm=False):
+    """Return the version as a git hash"""
+
+    # Get lib path
+    lp = os.path.dirname(inspect.getfile(p4))
+    # git log
+    if os.path.isdir(os.path.join(os.path.dirname(lp), '.git')):
+        try:
+            # I got these from https://stackoverflow.com/questions/14989858/get-the-current-git-hash-in-a-python-script
+            # git -C <path> means run it as if git was started <path> instead of the current working directory
+            if longForm:
+                ret = subprocess.check_output(['git', '-C', '%s' % lp, 'log', '-1', 
+                                               '--date=short', '--pretty=format:"%h -- %cd -- %cr"'])
+            else:
+                ret = subprocess.check_output(['git', '-C', '%s' % lp, 
+                                               'log', '-1', '--date=short', '--pretty=format:"%h"'])
+            # ret is binary, so decode it
+            ret = ret.decode()
+            #ret = ret.strip()    # get rid of newline, needed for rev-parse
+            ret = ret[1:-1]       # get rid of quotes, needed for log
+            return ret
+
+        except subprocess.CalledProcessError:
+            return None
+    else:
+        return None
+
+
 def splash2(outFile=None, verbose=True):
     """Another splash, showing things like git hash, and date
 
