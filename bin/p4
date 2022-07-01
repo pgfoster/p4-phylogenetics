@@ -133,6 +133,11 @@ if exitAtEnd:
 # If we made it this far, we are interactive.
 os.environ['PYTHONINSPECT'] = '1'
 
+# speak the version
+myVersion = func.versionAsDate()
+if myVersion:
+    print(f"p4 version {myVersion}")
+
 # Set the prompt (default is '>>> ').  I suspect that doing this might
 # screw up using the python interpreter in python-mode in emacs, but
 # you'll want to confirm that.
@@ -166,8 +171,6 @@ if var.interactiveHelper:
                                    user_ns=locals()))
         else:
             sys.exit(start_ipython(argv=["-i"], user_ns=locals()))
-            
-
 
 # Maybe the user just types 'p4' and wants to see a splash...
 if len(sys.argv) == 1:
@@ -181,3 +184,4 @@ del(doDrawTrees)
 del(doDrawTreesWithNodeNumbers)
 del(forceExitAtEnd)
 del(afterDoubleDash)
+del(myVersion)
