@@ -38,9 +38,11 @@ fudgeFactor['gdasrvLocation'] = 0.01
 fudgeFactor['allCompsDir'] = 1.0
 fudgeFactor['allRMatricesDir'] = 1.0
 fudgeFactor['ndch2comp'] = 0.2
+fudgeFactor['ndch2priorRefComp'] = 1.0
 fudgeFactor['ndch2alpha'] = 0.01
 fudgeFactor['ndrh2rates'] = 0.2
 fudgeFactor['ndrh2alpha'] = 0.01
+fudgeFactor['ndrh2priorRefRMatrix'] = 1.0
 
 
 class McmcTuningsPart(object):
@@ -58,6 +60,7 @@ class McmcTuningsPart(object):
         self.default['ndch2_internalCompsDir'] = 100.
         self.default['ndch2_leafCompsDirAlpha'] = 2.0 * math.log(1.2)
         self.default['ndch2_internalCompsDirAlpha'] = 2.0 * math.log(3.0)
+        self.default['ndch2_priorRefComp'] = 100.
         # rMatrix with sliders no longer changed depending on the dim (ie size of rMatrix)
         self.default['rMatrix'] = 0.3
         # rMatrixDir would depend on the dim; this is done in Mcmc.__init__()
@@ -69,6 +72,7 @@ class McmcTuningsPart(object):
         self.default['ndrh2_internalRatesDir'] = 100.
         self.default['ndrh2_leafRatesDirAlpha'] = 2.0 * math.log(1.2)
         self.default['ndrh2_internalRatesDirAlpha'] = 2.0 * math.log(3.0)
+        self.default['ndrh2_priorRefRMatrix'] = 100.
 
 
         self.default['gdasrv'] = 2.0 * math.log(1.5)  # 0.811
@@ -133,6 +137,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'ndch2_internalCompsDir', 0.0)
         object.__setattr__(self, 'ndch2_leafCompsDirAlpha', 0.0)
         object.__setattr__(self, 'ndch2_internalCompsDirAlpha', 0.0)
+        object.__setattr__(self, 'ndch2_priorRefCompDir', 0.0)
         #object.__setattr__(self, 'rMatrix', 1.0)
         object.__setattr__(self, 'rMatrixDir', 0.0)
         object.__setattr__(self, 'allRMatricesDir', 1.0)
@@ -141,6 +146,7 @@ class McmcProposalProbs(dict):
         object.__setattr__(self, 'ndrh2_internalRatesDir', 0.0)
         object.__setattr__(self, 'ndrh2_leafRatesDirAlpha', 0.0)
         object.__setattr__(self, 'ndrh2_internalRatesDirAlpha', 0.0)
+        object.__setattr__(self, 'ndrh2_priorRefRMatrixDir', 0.0)
 
         object.__setattr__(self, 'gdasrv', 1.0)
         object.__setattr__(self, 'pInvar', 1.0)
@@ -727,10 +733,10 @@ class Mcmc(object):
                     gm.append('is not in the starting tree.')
                     gm.append('Maybe you want to make a randomTree with constraints?')
                     raise P4Error(gm)
-            if self.constraints.rTree:   # a root constraint
+            if self.constraints.rooting:
                 ret = self.constraints.areConsistentWithTreeRoot(self.tree)
                 if not ret:
-                    gm.append("The starting tree is not consistent with the constraints.rTree")
+                    gm.append("The starting tree is not consistent with the constraints.cTree")
                     raise P4Error(gm)
 
         try:
@@ -880,7 +886,8 @@ class Mcmc(object):
         self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     gdasrv local ndch2_internalCompsDir 
                     ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir 
+                    ndch2_leafCompsDirAlpha ndch2_priorRefCompDir
+                    pInvar rMatrixDir allRMatricesDir ndrh2_priorRefRMatrixDir
                     ndrh2_internalRatesDir ndrh2_internalRatesDirAlpha ndrh2_leafRatesDir 
                     ndrh2_leafRatesDirAlpha relRate """.split()
 
@@ -894,6 +901,7 @@ class Mcmc(object):
         self.hypersFileName = "mcmc_hypers_%i" % runNum
         self.simTempFileName = "mcmc_simTemp_%i" % runNum
         self.ssLikesFileName = "mcmc_ssLikes_%i" % runNum
+        # self.siteLikesFileName = "mcmc_siteLikes_%i" % runNum
 
         self.likesFile = None
         self.treeFile = None
@@ -901,8 +909,14 @@ class Mcmc(object):
         self.pramsFile = None
         self.hypersFile = None
         self.ssLikesFile = None
+        # self.siteLikesFile = None
 
         self.writePrams = writePrams
+        # self.writeSiteLikes = False
+        self.doCpo = False
+        self.cpo_startGen = None
+        self.cpo_sumsOfInverseSiteLikes = None
+        self.cpo_nSamples = None
         self.writeHypers = True
         self.coldChainNum = -1
 
@@ -918,12 +932,7 @@ class Mcmc(object):
                 gm.append("Arg 'simulate' should be an int, 1-31, inclusive.")
                 raise P4Error(gm)
         self.simulate = simulate
-        if self.simulate:
-            self.simTree = self.tree.dupe()
-            self.simTree.data = self.tree.data.dupe()
-            self.simTree.calcLogLike(verbose=False)
-        else:
-            self.simTree = None
+        self.simTree = None
 
         if self.nChains > 1:
             self.swapMatrix = []
@@ -964,10 +973,12 @@ class Mcmc(object):
             self._tunings.parts[pNum].default['allCompsDir'] = 100. * theDim
             self._tunings.parts[pNum].default['ndch2_leafCompsDir'] = 2000. * theDim
             self._tunings.parts[pNum].default['ndch2_internalCompsDir'] = 500. * theDim
+            self._tunings.parts[pNum].default['ndch2_priorRefCompDir'] = 500. * theDim
             self._tunings.parts[pNum].default['rMatrixDir'] = 50. * nRates
             self._tunings.parts[pNum].default['allRMatricesDir'] = 100. * nRates
             self._tunings.parts[pNum].default['ndrh2_leafRatesDir'] = 50. * nRates
             self._tunings.parts[pNum].default['ndrh2_internalRatesDir'] = 50. * nRates
+            self._tunings.parts[pNum].default['ndrh2_priorRefRMatrixDir'] = 50. * nRates
             
 
         # Zap internal node names
@@ -1023,7 +1034,7 @@ class Mcmc(object):
                             mp.ndch2_priorRefComp[i] += (1.0 + (1.1 * random.random())) * var.PIVEC_MIN
                     mp.ndch2_priorRefComp /= mp.ndch2_priorRefComp.sum()
 
-                print(f"Mcmc init() mp.ndch2_priorRefComp is {mp.ndch2_priorRefComp}")
+                # print(f"Mcmc init() mp.ndch2_priorRefComp is {mp.ndch2_priorRefComp}")
 
                 # ususal comp proposals should not be on if we are doing ndch2
                 self.prob.compDir = 0.0
@@ -1053,7 +1064,7 @@ class Mcmc(object):
                         if mp.ndrh2_priorRefRMatrix[i] < var.RATE_MIN:
                             mp.ndrh2_priorRefRMatrix[i] += (1.0 + (1.1 * random.random())) * var.RATE_MIN
                     mp.ndrh2_priorRefRMatrix /= mp.ndrh2_priorRefRMatrix.sum()
-                print(f"Mcmc init() mp.ndrh2_priorRefRMatrix is {mp.ndrh2_priorRefRMatrix}")
+                # print(f"Mcmc init() mp.ndrh2_priorRefRMatrix is {mp.ndrh2_priorRefRMatrix}")
                 
 
                 # Turn off non-ndrh2 rmatrix moves
@@ -1110,6 +1121,11 @@ class Mcmc(object):
                     if thisMString not in props_on:
                         props_on.append(thisMString)
 
+                    self.prob.ndch2_priorRefCompDir = 1.0
+                    thisMString = "ndch2_priorRefCompDir"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
                 if mp.ndrh2:
                     self.prob.ndrh2_leafRatesDir = 1.0
                     thisMString = "ndrh2_leafRatesDir"
@@ -1131,20 +1147,36 @@ class Mcmc(object):
                     if thisMString not in props_on:
                         props_on.append(thisMString)
 
-            if self.isBiRoot:
-                self.prob.root2 = 1.0
-                thisMString = "root2 (root location)"
-                if thisMString not in props_on:
-                    props_on.append(thisMString)
+                    self.prob.ndrh2_priorRefRMatrixDir = 1.0
+                    thisMString = "ndrh2_priorRefRMatrixDir"
+                    if thisMString not in props_on:
+                        props_on.append(thisMString)
+
+            if self.constraints and self.constraints.rooting: # a root constraint
+                self.prob.root2 = 0.0
+                self.prob.root3 = 0.0
+                self.prob.root3n = 0.0
+                print("There is a constraint on the root position, so turning root proposals off.")
             else:
-                self.prob.root3 = 1.0
-                thisMString = "root3 (root location)"
-                if thisMString not in props_on:
-                    props_on.append(thisMString)
-                self.prob.root3n = 1.0
-                thisMString = "root3n (root location, neighbours)"
-                if thisMString not in props_on:
-                    props_on.append(thisMString)
+                print("root proposals are now turned off by default")
+                self.prob.root2 = 0.0
+                self.prob.root3 = 0.0
+                self.prob.root3n = 0.0
+
+                # if self.isBiRoot:
+                #     self.prob.root2 = 1.0
+                #     thisMString = "root2 (root location)"
+                #     if thisMString not in props_on:
+                #         props_on.append(thisMString)
+                # else:
+                #     self.prob.root3 = 1.0
+                #     thisMString = "root3 (root location)"
+                #     if thisMString not in props_on:
+                #         props_on.append(thisMString)
+                #     self.prob.root3n = 1.0
+                #     thisMString = "root3n (root location, neighbours)"
+                #     if thisMString not in props_on:
+                #         props_on.append(thisMString)
             
             if verbose:
                 print("\n%23s" % "Additional proposals:")
@@ -1634,6 +1666,28 @@ class Mcmc(object):
 
                 self.props.proposals.append(p)
 
+            # ndch2_priorRefCompDir
+            if self.prob.ndch2_priorRefCompDir:
+                p = Proposal(self)
+                p.name = 'ndch2_priorRefCompDir'
+                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                p.weight = self.prob.ndch2_priorRefCompDir * (mp.dim - 1)  * fudgeFactor['ndch2priorRefComp']
+                p.pNum = pNum
+
+                p.tnAccVeryHi = 0.4
+                p.tnAccHi = 0.15
+                p.tnAccLo = 0.05
+                p.tnAccVeryLo = 0.03
+
+                p.tnFactorVeryHi = 0.7
+                p.tnFactorHi = 0.8
+                p.tnFactorLo = 1.2
+                p.tnFactorVeryLo = 1.4
+
+                self.props.proposals.append(p)
+
+
+
 
             # rMatrixDir
             if self.prob.rMatrixDir:
@@ -1784,6 +1838,31 @@ class Mcmc(object):
                 p.tnFactorVeryLo = 0.7
 
                 self.props.proposals.append(p)
+
+            # ndrh2_priorRefRMatrixDir
+            if self.prob.ndrh2_priorRefRMatrixDir:
+                for mtNum in range(mp.nRMatrices):
+                    assert mp.rMatrices[mtNum].free
+                p = Proposal(self)
+                p.name = 'ndrh2_priorRefRMatrixDir'
+                p.tuning = [self._tunings.parts[pNum].default[p.name]] * self.nChains
+                p.weight = self.prob.ndrh2_priorRefRMatrixDir * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    fudgeFactor['ndrh2priorRefRMatrix']
+                p.pNum = pNum
+
+                p.tnAccVeryHi = 0.4
+                p.tnAccHi = 0.15
+                p.tnAccLo = 0.05
+                p.tnAccVeryLo = 0.03
+
+                p.tnFactorVeryHi = 0.7
+                p.tnFactorHi = 0.8
+                p.tnFactorLo = 1.2
+                p.tnFactorVeryLo = 1.4
+
+                self.props.proposals.append(p)
+
 
 
             # gdasrv
@@ -1955,6 +2034,11 @@ class Mcmc(object):
                 mp = self.tree.model.parts[p.pNum]
                 p.weight = self.prob.ndch2_internalCompsDirAlpha * (mp.dim - 1) * mp.nComps * fudgeFactor['ndch2alpha']
 
+            # ndch2_priorRefCompDir
+            if p.name == 'ndch2_priorRefCompDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndch2_priorRefCompDir * (mp.dim - 1)  * fudgeFactor['ndch2priorRefComp']
+
             # # rMatrix
             # if p.name == 'rMatrix':
             #     mp = self.tree.model.parts[p.pNum]
@@ -2009,6 +2093,13 @@ class Mcmc(object):
                 p.weight = self.prob.ndrh2_internalRatesDirAlpha * \
                     ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
                     mp.nRMatrices * fudgeFactor['ndrh2alpha']
+
+            # ndrh2_priorRefRMatrix
+            if p.name == 'ndrh2_priorRefRMatrixDir':
+                mp = self.tree.model.parts[p.pNum]
+                p.weight = self.prob.ndrh2_priorRefRMatrixDir * \
+                    ((((mp.dim * mp.dim) - mp.dim) / 2.) - 1.) * \
+                    fudgeFactor['ndrh2priorRefRMatrix']
 
 
 
@@ -2362,24 +2453,29 @@ class Mcmc(object):
         self.treeFile.write('  ;\n')
 
         # write the models comment
-        if self.tree.model.isHet:
-            writeModelComment = True
-            if self.tree.model.parts[0].ndch2:
-                writeModelComment = False
-                if self.tree.model.parts[0].ndch2_writeComps:
-                    writeModelComment = True
-            if self.tree.model.parts[0].ndrh2:
-                writeModelComment = False
-                if self.tree.model.parts[0].ndrh2_writeRMatrices:
-                    writeModelComment = True
+        # if self.tree.model.isHet:
+        #     writeModelComment = True
+        #     if self.tree.model.parts[0].ndch2:
+        #         writeModelComment = False
+        #         if self.tree.model.parts[0].ndch2_writeComps:
+        #             writeModelComment = True
+        #     if self.tree.model.parts[0].ndrh2:
+        #         writeModelComment = False
+        #         if self.tree.model.parts[0].ndrh2_writeRMatrices:
+        #             writeModelComment = True
+        writeModelComment = False
+        for mp in self.tree.model.parts:
+            if mp.nComps > 1 or mp.nRMatrices > 1 or mp.nGdasrvs > 1:
+                writeModelComment = True
+                break
                     
-            if writeModelComment:
-                self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
-                for pNum in range(self.tree.model.nParts):
-                    self.treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
-                    self.treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
-                    self.treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
-                self.treeFile.write(']\n')
+        if writeModelComment:
+            self.treeFile.write('  [&&p4 models p%i' % self.tree.model.nParts)
+            for pNum in range(self.tree.model.nParts):
+                self.treeFile.write(' c%i.%i' % (pNum, self.tree.model.parts[pNum].nComps))
+                self.treeFile.write(' r%i.%i' % (pNum, self.tree.model.parts[pNum].nRMatrices))
+                self.treeFile.write(' g%i.%i' % (pNum, self.tree.model.parts[pNum].nGdasrvs))
+            self.treeFile.write(']\n')
         self.treeFile.write('  [Tree numbers are gen+1]\nend;\n')
 
         if 0:
@@ -2553,6 +2649,11 @@ class Mcmc(object):
                         self.chainTempDiffs.append(self.chainTemps[dNum] - self.chainTemps[dNum - 1])
                     self.chainTempDiffs.append(0.0) # with reason? -- maybe not.
 
+            if self.simulate:
+                self.simTree = self.tree.dupe()
+                self.simTree.data = self.tree.data.dupe()
+                self.simTree.calcLogLike(verbose=False)
+
             self._makeChainsAndProposals()
             self._setOutputTreeFile()
             if self.simulate:
@@ -2563,6 +2664,14 @@ class Mcmc(object):
                 pf.setMcmcTreeCallback(ch.curTree.cTree, self._logFromPfModule)
                 pf.setMcmcTreeCallback(ch.propTree.cTree, self._logFromPfModule)
                 # Should I do self.tree and self.simTree as well?
+
+        if self.doCpo:
+            if self.cpo_sumsOfInverseSiteLikes:
+                pass
+            else:
+                nSites = sum([p.nChar for p in self.tree.data.parts])
+                self.cpo_sumsOfInverseSiteLikes = [0.0] * nSites
+                self.cpo_nSamples = 0
 
         if verbose:
             self.props.writeProposalIntendedProbs()
@@ -2659,7 +2768,7 @@ class Mcmc(object):
                     else:
                         print("self.swapTunerDoTuning is turned off, so temperatures will not be tuned.")
                 else:
-                    print("Not using Metropolis-coupled MCMC.")
+                    print("Single chain --- not using Metropolis-coupled MCMC.")
                 if self.simTemp:
                     print("Using simulated tempering MCMC, with %i temperatures" % (
                         self.simTemp.nTemps))
@@ -2812,10 +2921,10 @@ class Mcmc(object):
                     # self.tunableProps = """allBrLens allCompsDir brLen compDir 
                     # gdasrv local ndch2_internalCompsDir 
                     # ndch2_internalCompsDirAlpha ndch2_leafCompsDir 
-                    # ndch2_leafCompsDirAlpha pInvar rMatrixDir allRMatricesDir 
+                    # ndch2_leafCompsDirAlpha ndch2_priorRefCompDir
+                    # pInvar rMatrixDir allRMatricesDir ndrh2_priorRefRMatrix
                     # ndrh2_internalRatesDir ndrh2_internalRatesDirAlpha ndrh2_leafRatesDir 
                     # ndrh2_leafRatesDirAlpha relRate """.split()
-
 
                     # maybeTunablesButNotNow  compLocation eTBR polytomy root3 rMatrixLocation root2
 
@@ -2971,7 +3080,7 @@ class Mcmc(object):
                             gm.append(f"The current tree (the last tree sampled) does not contain constraint sk")
                             gm.append("%s" % p4.func.getSplitStringFromKey(sk, self.tree.nTax))
                             raise P4Error(gm)
-                    if self.constraints.rootConstraints:
+                    if self.constraints.rooting:
                         ret = self.constraints.areConsistentWithTreeRoot(self.chains[self.coldChainNum].curTree)
                         if not ret:
                             gm.append("Programming error.")
@@ -3089,6 +3198,8 @@ class Mcmc(object):
             self.hypersFile.close()
         if self.ssLikesFile:
             self.ssLikesFile.close()
+        #if self.siteLikesFile:
+        #    self.siteLikesFile.close()
 
 
 
@@ -3121,20 +3232,21 @@ class Mcmc(object):
             self.treeFile = open(self.treeFileName, 'a')
             self.treeFile.write("  tree t_%i = [&U] " % (self.gen + 1))
 
-        if self.tree.model.parts[0].ndch2 or self.tree.model.parts[0].ndrh2: # lazy programming -- and therefore all model parts
-            if self.tree.model.parts[0].ndch2_writeComps  or self.tree.model.parts[0].ndrh2_writeRMatrices:
-                self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
-                                                              withTranslation=1,
-                                                              translationHash=self.translationHash,
-                                                              doMcmcCommandComments=True)
-            else:
-                self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
-                                                              withTranslation=1,
-                                                              translationHash=self.translationHash,
-                                                              doMcmcCommandComments=False)
+        # if self.tree.model.parts[0].ndch2 or self.tree.model.parts[0].ndrh2: # lazy programming -- and therefore all model parts
+        #     if self.tree.model.parts[0].ndch2_writeComps  or self.tree.model.parts[0].ndrh2_writeRMatrices:
+        #         self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
+        #                                                       withTranslation=1,
+        #                                                       translationHash=self.translationHash,
+        #                                                       doMcmcCommandComments=True)
+        #     else:
+        #         self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
+        #                                                       withTranslation=1,
+        #                                                       translationHash=self.translationHash,
+        #                                                       doMcmcCommandComments=False)
 
-        else:
-            self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
+        # else:
+
+        self.chains[self.coldChainNum].curTree.writeNewick(self.treeFile,
                                                           withTranslation=1,
                                                           translationHash=self.translationHash,
                                                           doMcmcCommandComments=self.tree.model.isHet)
@@ -3155,8 +3267,30 @@ class Mcmc(object):
                 self.hypersFile.write("%12i" % (self.gen + 1))
             self.chains[self.coldChainNum].curTree.model.writeHypersLine(self.hypersFile)
 
+        # if self.writeSiteLikes:
+        #     try:
+        #         pf.p4_treeLogLike(self.chains[self.coldChainNum].curTree.cTree, 1)
+        #         self.siteLikesFile.write(f"{self.gen + 1:11} ")
+        #     except (AttributeError, ValueError):
+        #         self.siteLikesFile = open(self.siteLikesFileName, 'a')
+        #         self.siteLikesFile.write(f"{self.gen + 1:11} ")
+        #     siteLikes = []
+        #     for p in self.tree.data.parts:
+        #         siteLikes += pf.getSiteLikes(p.cPart)
+        #     for sL in siteLikes:
+        #         self.siteLikesFile.write("%.17g " % sL)
+        #     self.siteLikesFile.write("\n")
 
-
+        if self.doCpo:
+            if self.gen + 1 > self.cpo_startGen:
+                siteNum = 0
+                pf.p4_treeLogLike(self.chains[self.coldChainNum].curTree.cTree, 1)
+                for dp in self.chains[self.coldChainNum].curTree.data.parts:
+                    siteLikes = pf.getSiteLikes(dp.cPart)
+                    for sL in siteLikes:
+                        self.cpo_sumsOfInverseSiteLikes[siteNum] += 1./sL
+                        siteNum += 1
+                self.cpo_nSamples += 1
 
     def _proposeSwapChainsInMcmcmc(self):
         if self.swapVector:
@@ -3377,7 +3511,6 @@ class Mcmc(object):
 
     def checkPoint(self):
 
-
         if 0:
             for chNum,ch in enumerate(self.chains):
                 print("chain %i ==================" % chNum)
@@ -3437,6 +3570,7 @@ class Mcmc(object):
                 self.simFile,
                 self.pramsFile,
                 self.hypersFile,
+                # self.siteLikesFile,
         ]:
             if myf:
                 if not myf.closed:
@@ -3448,6 +3582,7 @@ class Mcmc(object):
         self.simFile = None
         self.pramsFile = None
         self.hypersFile = None
+        # self.siteLikesFile = None
 
         theCopy = copy.deepcopy(self)
 
@@ -3587,3 +3722,18 @@ class Mcmc(object):
             return rd
 
 
+    def lpml(self):
+        """Calculate log pseudo marginal likelihood from CPO"""
+        gm = ["Mcmc.lpml()"]
+        if not self.doCpo:
+            gm.append("CPO was not turned on, via m.doCpo = True")
+            raise P4Error(gm)
+        if not self.cpo_nSamples:
+            gm.append("No cpo samples?")
+            raise P4Error(gm)
+        a = numpy.array(self.cpo_sumsOfInverseSiteLikes)
+        a /= self.cpo_nSamples
+        a = -numpy.log(a)
+        theSum = a.sum()
+        print(f"cpo_nSamples: {self.cpo_nSamples}, lpml: {theSum}")
+        return theSum

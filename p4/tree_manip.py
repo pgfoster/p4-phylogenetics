@@ -2575,3 +2575,63 @@ if True:
         elif doScqdist:
             return totalScqdist
 
+    def resolvePolytomyAtNode(self, theNode, resolution=2):
+        """Resolve the polytomy at theNode
+
+        Resolve randomly, by joining up children with new nodes.
+
+        After resolution, the theNode should have arg resolution children.
+        """
+
+        if not theNode.leftChild:
+            return
+        children = []
+        p = theNode.leftChild
+        while p:
+            children.append(p)
+            p = p.sibling
+
+        while len(children) > resolution:
+            rNode = random.choice(children)
+            children.remove(rNode)
+            # print(f" about to prune subtree at node {rNode.nodeNum}")
+            rSubtree = self.pruneSubTreeWithoutParent(rNode)
+
+            otherNode = random.choice(children)
+            nBetween = self.addNodeBetweenNodes(theNode, otherNode)
+            self.reconnectSubTreeWithoutParent(rSubtree, nBetween)
+
+            self.preAndPostOrderAreValid = 0
+            self.setPreAndPostOrder()
+            # self.draw()
+
+            children = []
+            p = theNode.leftChild
+            while p:
+                children.append(p)
+                p = p.sibling
+
+
+    def resolve(self, biRoot=False):
+        """Randomly resolve all polytomies
+
+        It does it in postOrder, calling Tree.resolvePolytomyAtNode() on
+        internal nodes.
+
+        It will work on a partially resolved tree, or on a comb tree.
+
+        If biRoot is set to False, the default, then the final resolution
+        will leave a triRoot'ed root.  If biRoot is set to True, then the
+        final resolution will leave a biRoot'ed tree.
+        """
+
+        self.setPreAndPostOrder()
+        for n in self.iterInternalsNoRootPostOrder():
+            self.resolvePolytomyAtNode(n, resolution=2)
+
+        if biRoot:
+            myRes = 2
+        else:
+            myRes = 3
+        self.resolvePolytomyAtNode(self.root, resolution=myRes)
+        # resolvePolytomyAtNode() does self.setPreAndPostOrder()

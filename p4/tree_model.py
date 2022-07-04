@@ -944,32 +944,32 @@ if True:
         for pNum in range(self.model.nParts):
             mp = self.model.parts[pNum]
 
-            if mp.ndch2:
-                continue
-
             # First do comps
             if mp.nComps == 1:
                 for n in self.nodes:
                     n.parts[pNum].compNum = 0
             elif mp.nComps > 1:
-                nNodes = len(self.nodes)
-                if (mp.nComps * forceRepresentation) > nNodes:
-                    gm.append("Part %i" % pNum)
-                    gm.append(
-                        "There are not enough nodes (%i) to put %i" % (nNodes, mp.nComps))
-                    gm.append(
-                        "comps on at least forceRepresentation (%i) nodes." % forceRepresentation)
-                    raise P4Error(gm)
-                nList = self.nodes[:]
-                random.shuffle(nList)
-                # get the forceRepresentation out of the way first
-                for mtNum in range(mp.nComps):
-                    for fr in range(forceRepresentation):
-                        n = nList.pop()
-                        n.parts[pNum].compNum = mtNum
-                # Now do the rest
-                for n in nList:
-                    n.parts[pNum].compNum = random.randrange(mp.nComps)
+                if mp.ndch2:
+                    pass
+                else:
+                    nNodes = len(self.nodes)
+                    if (mp.nComps * forceRepresentation) > nNodes:
+                        gm.append("Part %i" % pNum)
+                        gm.append(
+                            "There are not enough nodes (%i) to put %i" % (nNodes, mp.nComps))
+                        gm.append(
+                            "comps on at least forceRepresentation (%i) nodes." % forceRepresentation)
+                        raise P4Error(gm)
+                    nList = self.nodes[:]
+                    random.shuffle(nList)
+                    # get the forceRepresentation out of the way first
+                    for mtNum in range(mp.nComps):
+                        for fr in range(forceRepresentation):
+                            n = nList.pop()
+                            n.parts[pNum].compNum = mtNum
+                    # Now do the rest
+                    for n in nList:
+                        n.parts[pNum].compNum = random.randrange(mp.nComps)
             else:
                 gm.append("No comps in part %i" % pNum)
                 raise P4Error(gm)
@@ -980,26 +980,29 @@ if True:
                     if n != self.root:
                         n.br.parts[pNum].rMatrixNum = 0
             elif mp.nRMatrices > 1:
-                nNodes = len(self.nodes) - 1
-                if (mp.nRMatrices * forceRepresentation) > nNodes:
-                    gm.append("Part %i" % pNum)
-                    gm.append(
-                        "There are not enough nodes (%i) to put %i" % (nNodes, mp.nRMatrices))
-                    gm.append(
-                        "rMatrices on at least forceRepresentation (%i) nodes." % forceRepresentation)
-                    raise P4Error(gm)
-                nList = self.nodes[:]
-                nList.remove(self.root)
-                random.shuffle(nList)
-                # get the forceRepresentation out of the way first
-                for mtNum in range(mp.nRMatrices):
-                    for fr in range(forceRepresentation):
-                        n = nList.pop()
-                        n.br.parts[pNum].rMatrixNum = mtNum
-                # Now do the rest
-                for n in nList:
-                    n.br.parts[pNum].rMatrixNum = random.randrange(
-                        mp.nRMatrices)
+                if mp.ndrh2:
+                    pass
+                else:
+                    nNodes = len(self.nodes) - 1
+                    if (mp.nRMatrices * forceRepresentation) > nNodes:
+                        gm.append("Part %i" % pNum)
+                        gm.append(
+                            "There are not enough nodes (%i) to put %i" % (nNodes, mp.nRMatrices))
+                        gm.append(
+                            "rMatrices on at least forceRepresentation (%i) nodes." % forceRepresentation)
+                        raise P4Error(gm)
+                    nList = self.nodes[:]
+                    nList.remove(self.root)
+                    random.shuffle(nList)
+                    # get the forceRepresentation out of the way first
+                    for mtNum in range(mp.nRMatrices):
+                        for fr in range(forceRepresentation):
+                            n = nList.pop()
+                            n.br.parts[pNum].rMatrixNum = mtNum
+                    # Now do the rest
+                    for n in nList:
+                        n.br.parts[pNum].rMatrixNum = random.randrange(
+                            mp.nRMatrices)
 
             else:
                 gm.append("No rMatrices in part %i" % pNum)

@@ -252,10 +252,20 @@ class ModelPart(object):
         # relRate
         op.relRate = sp.relRate
 
-        op.ndch2_leafAlpha = sp.ndch2_leafAlpha
-        op.ndch2_internalAlpha = sp.ndch2_internalAlpha
-        op.ndrh2_leafAlpha = sp.ndrh2_leafAlpha
-        op.ndrh2_internalAlpha = sp.ndrh2_internalAlpha
+        # ndch2
+        if sp.ndch2:
+            op.ndch2_leafAlpha = sp.ndch2_leafAlpha
+            op.ndch2_internalAlpha = sp.ndch2_internalAlpha
+            for i in range(sp.dim):
+                op.ndch2_priorRefComp[i] = sp.ndch2_priorRefComp[i]
+
+        # ndrh2
+        if sp.ndrh2:
+            op.ndrh2_leafAlpha = sp.ndrh2_leafAlpha
+            op.ndrh2_internalAlpha = sp.ndrh2_internalAlpha
+            rLen = int(((sp.dim * sp.dim) - sp.dim) / 2)
+            for i in range(rLen):
+                op.ndrh2_priorRefRMatrix[i] = sp.ndrh2_priorRefRMatrix[i]
 
     def copyBQETneedsResetTo(self, otherModelPart):
         sp = self
@@ -282,6 +292,53 @@ class ModelPart(object):
         # gdasrvs
         for mtNum in range(sp.nGdasrvs):
             op.gdasrvs[mtNum].nNodes = sp.gdasrvs[mtNum].nNodes
+
+    def writeEmpiricalProteinModelInPAMLFormat(self, compNum, rMatrixNum, outFileName):
+        gm = ["ModelPart.writeEmpiricalProteinModelInPAMLFormat()"]
+
+        if self.dim != 20: 
+            gm.append(f"dim should be 20, got {self.dim}")
+            raise P4Error(gm)
+ 
+        # Get comp
+        cVal = self.comps[compNum].val
+        assert isinstance(cVal, numpy.ndarray)
+        assert cVal.shape == (20,)
+
+        # Get rMatrix
+        r = self.rMatrices[rMatrixNum]
+        if r.spec in var.rMatrixProteinSpecs:
+            rVal = p4.func.getProteinEmpiricalModelRMatrix(r.spec, upperTriangle=False) # full r matrix
+        else:
+            # print(r.val)
+            assert isinstance(r.val, numpy.ndarray)
+            if r.val.shape not in [(190,)]:
+                gm.append(f"r.val.shape is {r.val.shape}, expecting (190,)")
+                raise P4Error(gm)
+            rVal = numpy.zeros((20,20))
+            counter = 0
+            for row in range(0,20):
+                for col in range(row+1,20):
+                    rVal[row][col] = r.val[counter]
+                    rVal[col][row] = r.val[counter]
+                    counter += 1
+            assert counter == 190
+        assert rVal.shape == (20,20)
+
+        # write it
+        fout = open(outFileName, "w")
+        for row in range(1,20):
+            for col in range(0,row):   # lower triangle
+                print(rVal[row][col], end=" ", file=fout)
+            print(file=fout)
+
+        print(file=fout)
+        for it in range(20):
+            print(cVal[it], end=" ", file=fout)
+        print(file=fout)
+        fout.close()
+
+
 
 
 class Model(object):
@@ -1017,6 +1074,31 @@ class Model(object):
                     isBad = 1
             if isBad:
                 break
+
+            if sp.ndch2:
+                if math.fabs(sp.ndch2_leafAlpha - op.ndch2_leafAlpha) > epsilon1:
+                    isBad = 1
+                    break
+                if math.fabs(sp.ndch2_internalAlpha - op.ndch2_internalAlpha) > epsilon1:
+                    isBad = 1
+                    break
+                for i in range(sp.dim):
+                    if math.fabs(sp.ndch2_priorRefComp[i] - op.ndch2_priorRefComp[i]) > epsilon1:
+                        isBad = 1
+                        break
+            if sp.ndrh2:
+                if math.fabs(sp.ndrh2_leafAlpha - op.ndrh2_leafAlpha) > epsilon1:
+                    isBad = 1
+                    break
+                if math.fabs(sp.ndrh2_internalAlpha - op.ndrh2_internalAlpha) > epsilon1:
+                    isBad = 1
+                    break
+                rLen = int(((sp.dim * sp.dim) - sp.dim) / 2)
+                for i in range(rLen):
+                    if math.fabs(sp.ndrh2_priorRefRMatrix[i] - op.ndrh2_priorRefRMatrix[i]) > epsilon1:
+                        isBad = 1
+                        break
+                
 
             # bQETneedsReset
             # if hasattr(sp.bQETneedsReset, 'size'):  # Can't simply ask 'if

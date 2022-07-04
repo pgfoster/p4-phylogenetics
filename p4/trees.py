@@ -945,7 +945,7 @@ class Trees(object):
                     # print "    Split key: %12s, compCounts=%s" % (s.key,
                     # s.modelUsage.parts[pNum].compCounts)
                     for k in theTree.splitKeys:
-                        s = tp.splitsHash.get(k)
+                        s = tp.splitsDict.get(k)
                         if s:
                             print("    Split key: %12s, compCounts=%s" % (k, s.modelUsage.parts[pNum].compCounts))
             startTNum += stride

@@ -1551,11 +1551,11 @@ class TreeHandler(object):
         self.nTax = 0        # Merely len(taxNames)
         self.splits = []
         self.bitkeys = []
-        self.splitsHash = {}
-        # biSplits and biSplitsHash for the "even" side of the biRoot
+        self.splitsDict = {}
+        # biSplits and biSplitsDict for the "even" side of the biRoot
         # bifurcation.
         self.biSplits = []
-        self.biSplitsHash = {}
+        self.biSplitsDict = {}
         self.isBiRoot = None      # Is it a bifurcating root?
         self.doModelComments = 0
         self.modelInfo = None

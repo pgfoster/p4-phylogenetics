@@ -173,7 +173,17 @@ def isDnaRnaOrProtein(aString):
 
     # If it is 90% or better acgn +t or +u, then assume it is dna or rna
     threshold = 0.9 * strLenNoGaps
-    if acgn + t >= threshold:
+    if acgn + t >= threshold and acgn + u >= threshold:
+        if t and not u:
+            return 1
+        elif u and not t:
+            return 2
+        elif t > u:
+            return 1
+        elif u > t:
+            return 2
+        return 1  # giving up.
+    elif acgn + t >= threshold:
         return 1
     elif acgn + u >= threshold:
         return 2
@@ -1069,7 +1079,7 @@ def splash2(outFile=None, verbose=True):
     return stuff
 
 
-def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, randomBrLens=1, constraints=None):
+def randomTree(taxNames=None, nTax=None, name='random', biRoot=False, randomBrLens=True, constraints=None):
     """Make a simple random Tree.
 
     You can supply a list of taxNames, or simply specify nTax.  In the
@@ -1084,10 +1094,9 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
     it is fully resolved.  If 'biRoot' is set, it adds one more node,
     and roots on that node, to make a bifurcating root.
 
-    Repeated calls will give different random trees, without having to
-    do any seed setting.  If for some reason you want to make
+    This uses the Python random module.  If for some reason you want to make
     identical random trees, set the seed to some positive integer, or
-    zero.
+    zero, before you call this method.
 
     If you want the tree to have some topological constraints, say so
     with a Constraints object.  That can include a constrained root
@@ -1117,320 +1126,86 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
 
     if constraints:
         assert isinstance(constraints, Constraints)
-        if constraints.rootConstraints:
-            nCon = len(constraints.rootConstraints)
-            if constraints.rTree.isBiRoot():
-                if nCon != 1:
-                    gm.append("biRoot trees with rootConstraints should")
-                    gm.append("have exactly 1 rootConstraint split.")
-                    gm.append(f"Got {nCon} rootConstraints {constraints.rootConstraints}")
-                    raise P4Error(gm)
-                if not biRoot:
-                    gm.append("Arg biRoot is not turned on.")
-                    gm.append("However, the constraint rTree is biRooted.")
-                    raise P4Error(gm)
-            elif constraints.rTree.isTriRoot: 
-                if biRoot:
-                    gm.append("Arg biRoot is turned on")
-                    gm.append("However, the contraint rTree is tri-rooted.")
-                    raise P4Error(gm)
-            else:
-                gm.append("The constraint rTree should be either biRoot or triRoot.")
+
+        if constraints.constraints:
+            t = constraints.cTree.dupe()
+
+        if constraints.rooting:
+            isRTreeBiRoot = constraints.cTree.isBiRoot()
+            if biRoot != isRTreeBiRoot:
+                gm.append(f"Constraints rTree biRoot is {isRTreeBiRoot}")
+                gm.append(f"But arg biRoot is {biRoot}")
+                gm.append("They should be the same.")
                 raise P4Error(gm)
 
-
-    # Make a random list of indices for the taxNames
-    if seed != None:  # it might be 0
-        random.seed(seed)
-    indcs = list(range(nTax))
-    random.shuffle(indcs)
-
-    # Instantiate the tree, and add a root node
-    t = Tree()
-    t._taxNames = taxNames
-    n = Node()
-    n.br = None
-    t.name = name
-    n.nodeNum = 0
-    t.nodes.append(n)
-    t.root = n
-
-    # Add the left child of the root
-    n = Node()
-    n.isLeaf = 1
-    t.root.leftChild = n
-    t.nodes.append(n)
-    n.nodeNum = 1
-    n.name = taxNames[indcs[0]]
-    n.parent = t.root
-    previousNode = n
-
-    # Add the rest of the terminal nodes
-    nodeNum = 2
-    for i in range(nTax)[1:]:
-        n = Node()
-        n.isLeaf = 1
-        t.nodes.append(n)
-        n.name = taxNames[indcs[nodeNum - 1]]
-        previousNode.sibling = n
-        previousNode = n
-        n.parent = t.root
-        n.nodeNum = nodeNum
-        nodeNum += 1
-    # t.dump(node=1)
-    # t.draw()
-    # constraints.dump()
-
-    nNodesAddedForConstraints = 0
-    if constraints:
-        for aConstraint in constraints.constraints:
-            # print("doing aConstraint %s  %i" % (getSplitStringFromKey(aConstraint, nTax), aConstraint))
-            #t.dump(tree=0, node=1)
-            t.setPreAndPostOrder()
-            eTaxNames = []
-            for i in range(nTax):
-                tester = 1 << i
-                # Does aConstraint contain the tester bit?
-                if tester & aConstraint:
-                    eTaxNames.append(taxNames[i])
-            # print "aConstraint %s" % eTaxNames
-
-            # check that they all share the same parent
-            firstParent = t.node(eTaxNames[0]).parent
-            for tN in eTaxNames[1:]:
-                if t.node(tN).parent != firstParent:
-                    gm.append("constraint %s" % getSplitStringFromKey(
-                        aConstraint, constraints.tree.nTax))
-                    gm.append("'%s' parent is not node %i" %
-                              (tN, firstParent.nodeNum))
-                    gm.append(
-                        'It appears that there are incompatible constraints.')
-                    raise P4Error(gm)
-
-            n = Node()
-            n.nodeNum = nodeNum
-            nodeNum += 1
-            chosenName = random.choice(eTaxNames)
-            eTaxNames.remove(chosenName)
-            # print 'adding a new parent for %s' % chosenName
-            chosenNode = t.node(chosenName)
-            chosenNodeOldSib = chosenNode.sibling
-            chosenNodeOldLeftSib = chosenNode.leftSibling()  # could be None
-
-            n.parent = firstParent
-            n.leftChild = chosenNode
-            n.sibling = chosenNodeOldSib
-            chosenNode.parent = n
-            if chosenNodeOldLeftSib:
-                chosenNodeOldLeftSib.sibling = n
-            else:
-                firstParent.leftChild = n
-            chosenNode.sibling = None
-            t.nodes.append(n)
-            nNodesAddedForConstraints += 1
-            oldChosenNode = chosenNode
-
-            if 0:
-                t.preOrder = None
-                t.postOrder = None
-                t.preAndPostOrderAreValid = False
-                t.draw()
-
-            while eTaxNames:
-                chosenName = random.choice(eTaxNames)
-                # print "adding '%s'" % chosenName
-                eTaxNames.remove(chosenName)
-                chosenNode = t.node(chosenName)
-                chosenNodeOldSib = chosenNode.sibling
-                chosenNodeOldLeftSib = chosenNode.leftSibling()
-                if 0:
-                    if chosenNodeOldLeftSib:
-                        print('chosenNodeOldLeftSib = %s' % chosenNodeOldLeftSib.nodeNum)
-                    else:
-                        print('chosenNodeOldLeftSib = None')
-                    if chosenNodeOldSib:
-                        print('chosenNodeOldSib = %s' % chosenNodeOldSib.nodeNum)
-                    else:
-                        print('chosenNodeOldSib = None')
-
-                chosenNode.parent = n
-                oldChosenNode.sibling = chosenNode
-                if chosenNodeOldLeftSib:
-                    chosenNodeOldLeftSib.sibling = chosenNodeOldSib
-                else:
-                    firstParent.leftChild = chosenNodeOldSib
-                chosenNode.sibling = None
-                oldChosenNode = chosenNode
-
-                if 0:
-                    t.preOrder = None
-                    t.postOrder = None
-                    t.preAndPostOrderAreValid = False
-                    t.draw()
-
-    if 0:
-        t.preOrder = None
-        t.postOrder = None
-        t.preAndPostOrderAreValid = False
-        t.draw()
-    # sys.exit()
-
-    # Now we have a star tree.  Now add internal nodes until it is all
-    # resolved, which needs nTax - 3 nodes
-    # print 'nNodesAddedForConstraints is %i' % nNodesAddedForConstraints
-    for i in range(nTax - 3 - nNodesAddedForConstraints):
-        # Pick a random node, that has a sibling, and a
-        # sibling.sibling.  This week I am first making a list of
-        # suitables and then choosing a random one, rather than first
-        # choosing a random node and then asking whether it is
-        # suitable.  It could be made more efficient by not re-making
-        # the ssNodes list every time, but rather just keeping it up
-        # to date.  But that is not so simple, so re-make the list
-        # each time.
-        ssNodes = []
-        for n in t.nodes:
-            if n.sibling and n.sibling.sibling:
-                # This next thing can happen if there are constraints.
-                # But it turns out that getNChildren() is very, very slow!  To be avoided!
-                # if n.parent == t.root and t.root.getNChildren() == 3:
-                #    pass
-                if n.parent == t.root and t.root.leftChild.sibling and \
-                        t.root.leftChild.sibling.sibling and not \
-                        t.root.leftChild.sibling.sibling.sibling:
-                    pass
-                else:
-                    ssNodes.append(n)
-        lChild = random.choice(ssNodes)
-
-        # print "lChild = node %i" % lChild.nodeNum
-
-        # +----------1:oldLeftSib
-        # |
-        # +----------2:lChild
-        # 0
-        # +----------3:lChildSib
-        # |
-        # +----------4:oldLChildSibSib
-
-        # +----------1:oldLeftSib
-        # |
-        # |          +----------3:lChild
-        # 0----------2(n)
-        # |          +----------4:lChildSib
-        # |
-        # +----------5:oldLChildSibSib
-
-        n = Node()
-        n.nodeNum = nodeNum
-        nodeNum = nodeNum + 1
-        lChildSib = lChild.sibling  # guarranteed to have one
-        oldLChildSibSib = lChildSib.sibling  # ditto
-        # oldLeftSib = lChild.parent.leftChild # first guess ...
-        # if oldLeftSib != lChild:
-        #    while oldLeftSib.sibling != lChild:
-        #        oldLeftSib = oldLeftSib.sibling
-        # else:
-        #    oldLeftSib = None
-        oldLeftSib = lChild.leftSibling()  # could be none
-        if 0:
-            if oldLeftSib:
-                print("oldLeftSib = %i" % oldLeftSib.nodeNum)
-            else:
-                print("oldLeftSib = None")
-            print("lChildSib = %i" % lChildSib.nodeNum)
-            if oldLChildSibSib:
-                print("oldLChildSibSib = %i" % oldLChildSibSib.nodeNum)
-            else:
-                print("oldLChildSibSib = None")
-
-        if oldLeftSib:
-            oldLeftSib.sibling = n
         else:
-            lChild.parent.leftChild = n
+            isRTreeBiRoot = constraints.cTree.isBiRoot()
+            if isRTreeBiRoot:
+                gm.append("A bifurcating constraint tree does not work")
+                gm.append("with rooting turned off.")
+                raise P4Error(gm)
 
-        n.parent = lChild.parent
-        lChild.parent = n
-        n.leftChild = lChild
-        lChildSib.parent = n
-        n.sibling = oldLChildSibSib
-        lChildSib.sibling = None
-        t.nodes.append(n)
-
-    if 0:
-        print("before rooting", "=" * 50)
-        t.preOrder = None
-        t.postOrder = None
-        t.preAndPostOrderAreValid = False
-        t.makeSplitKeys()
-        for n in t.iterInternalsNoRoot():
-            n.name = f"{n.br.splitKey}"
-        t.draw()
-
-    if biRoot:
-        # addNodeBetweenNodes() requires t.preOrder.
-        t.preOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
-        t.postOrder = numpy.array([var.NO_ORDER] * len(t.nodes), numpy.int32)
-        if len(t.nodes) > 1:
-            t.setPreAndPostOrder()
-        if constraints and constraints.rootConstraints:
-            # We have checked that we have a valid rootConstraints, above
-            theKey = constraints.rootConstraints[0]
-            t.makeSplitKeys()
-            rNode = t.nodeForSplitKeyDict.get(theKey)
-            assert rNode, "biRoot root constraint node not found"
-            newNode = t.addNodeBetweenNodes(rNode, rNode.parent)
-            t.reRoot(newNode, moveInternalName=False)
-        else:
-            # pick a random node, with a parent
-            n = t.nodes[random.randrange(1, len(t.nodes))]
-            newNode = t.addNodeBetweenNodes(n, n.parent)
-            t.reRoot(newNode, moveInternalName=False)
     else:
-        if constraints and constraints.rootConstraints:
-            print(f"constraints.rootConstraints are {constraints.rootConstraints}")
-            print("Below is the rootConstraints tree")
-            constraints.rTree.draw()
+        #############################
+        # No constraints
+        # Make a star tree
+        #############################
 
-            # Re-root to the first leaf, so we can post-order traverse
-            # without bothering with the root
-            t.reRoot(t.node(t.taxNames[0]))
-            t.makeSplitKeys()
-            # print("Below is the re-rooted tree I")
-            # for n in t.iterInternalsNoRoot():
-            #     n.name = f"{n.br.splitKey}"
-            # t.draw()
+        t = Tree()
 
-            for n in t.iterPostOrder():
-                # print(f"checking node {n.nodeNum}, with splitKey {n.br.splitKey}")
-                if n.br.splitKey in constraints.rootConstraints:
-                    t.reRoot(n.parent, moveInternalName=False)
-                    break
+        t.root = Node()
+        t.root.nodeNum = 0
+        t.root.isLeaf = 0
+        t.nodes.append(t.root)
 
-            # print("Below is the re-rooted tree II")
-            # t.draw()
+        n = Node()
+        n.nodeNum = 1
+        t.nodes.append(n)
+        t.root.leftChild = n
+        n.parent = t.root
+        n.isLeaf = 1
+        n.name = taxNames[0]
+        previous = n
 
-            # Check
-            rootSplits = [n.br.splitKey for n in t.root.iterChildren()]
-            # print(f"rootSplits are {rootSplits}")
-            isBad = False
-            for sk in constraints.rootConstraints:
-                if sk not in rootSplits:
-                    gm.append(f"root constraint split {sk} is not a root split")
-                    isBad = True
-            if isBad:
-                gm.append(f"Something is wrong. root splits are {rootSplits}")
-                gm.append(f"root constraints are {constraints.rootConstraints}")
-                gm.append(f"Maybe incompatible root contraints?")
-                raise P4Error(gm)
+        for i in range(nTax - 1):
+            n = Node()
+            n.nodeNum = i + 2
+            t.nodes.append(n)
+            previous.sibling = n
+            n.parent = t.root
+            n.isLeaf = 1
+            n.name = taxNames[i + 1]
+            previous = n
+
+    t.name = name
+
+
+    # If rooting is set, the rooting given by the constraint tree is
+    # respected and used when doing Tree.resolve(), and we should
+    # leave it as is.  If there are no constraints, then resolution
+    # and rooting should be random (I think), so we can also leave the
+    # rooting as is given by Tree.resolve().  However, if we have a
+    # constraint but rooing is not turned on, then we do not want to
+    # keep the rooting as given by Tree.resolve(), because the root
+    # will never be in any of the constraints -- those constraint
+    # splits will always be clades.  So we should randomly reRoot()
+    # the resolved tree (as a triRooted tree), so there is some
+    # possibility that it will be rooted anywhere.  Only then would we
+    # add a biRoot, if needed.
+
+    if constraints:
+        if constraints.rooting:
+            t.resolve(biRoot=biRoot)
         else:
-            # The way it is now, the root rightmost child is always a
-            # leaf.  Not really random, then, right?  So choose a random
-            # internal node, and re-root it there.
-            # print "nTax=%i, len(t.nodes)=%i" % (nTax, len(t.nodes))
-            if nTax > 3:
-                n = t.nodes[random.randrange(nTax + 1, len(t.nodes))]
-                t.reRoot(n, moveInternalName=False)
-
+            t.resolve(biRoot=False)  # triRoot now, even if biRoot subsequently
+            internals = [n for n in t.iterInternals()] # include current root
+            newRoot = random.choice(internals)
+            t.reRoot(newRoot)
+            if biRoot:
+                t.resolve(biRoot=biRoot)
+    else:
+        t.resolve(biRoot=biRoot)
+    
     # The default is to have randomBrLens, where internal nodes get
     # brLens of 0.02 - 0.05, and terminal nodes get brLens of 0.2 -
     # 0.5.  Branch lengths are all 0.1 if randomBrLens is turned
@@ -1455,6 +1230,8 @@ def randomTree(taxNames=None, nTax=None, name='random', seed=None, biRoot=0, ran
     t.setPreAndPostOrder()
 
     return t
+    
+
 
 
 def newEmptyAlignment(dataType=None, symbols=None, taxNames=None, length=None):
@@ -3068,8 +2845,8 @@ def dirichlet2(inSeq, outSeq, alpha, theMin):
             return
         safety += 1
         if safety > safetyLimit:
-            gm.append(
-                "Tried more than %i times to get good dirichlet values, and failed.  Giving up." % safetyLimit)
+            gm.append("Tried more than %i times to get good dirichlet values, and failed." % safetyLimit)
+            gm.append(f"min {thisMin} max {thisMax}")
             raise P4Error(gm)
 
 
@@ -3911,3 +3688,40 @@ def getProteinEmpiricalModelRMatrix(spec, upperTriangle=True):
         return a
 
 
+# def logPseudoMarginalLikelihood(siteLikesFile, skip=1000, verbose=True):
+#     """LPML via MCMC site likes file
+
+#     Uses site likes, not log site likes.
+
+#     From Lewis et al 2014, equation 13.
+#     Systematic Biology, Volume 63, Issue 3, May 2014, Pages 309–321, https://doi.org/10.1093/sysbio/syt068
+
+#     """
+
+#     ll = [l for l in open(siteLikesFile)]
+#     ll = ll[skip:]
+#     if verbose:
+#         print(f"Got {len(ll)} samples (lines) after skipping {skip}")
+
+#     siteLikes = []
+
+#     firstLine = ll[0]
+#     nSites = len(firstLine.split()) - 1
+#     if verbose:
+#         print(f"nSites {nSites}")
+
+#     for aLine in ll:
+#         sL = aLine.split()
+#         flLine = [float(it) for it in sL[1:]]
+#         assert len(flLine) == nSites
+#         siteLikes.append(flLine)
+
+#     sLL = numpy.array(siteLikes)
+#     invrt = 1/sLL
+#     siteMeans = invrt.mean(axis=0)
+#     cpo_i = 1./siteMeans
+#     cLogs = numpy.log(cpo_i)
+#     lpml = cLogs.sum()
+#     if verbose:
+#         print(f"LPML {lpml}")
+#     return cLogs.sum()

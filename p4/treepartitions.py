@@ -368,11 +368,11 @@ class TreePartitions(object):
         self.nTax = 0        # Merely len(taxNames)
         self.consTree = None
         self.splits = []
-        self.splitsHash = {}
-        # biSplits and biSplitsHash for the "even" side of the biRoot
+        self.splitsDict = {}
+        # biSplits and biSplitsDict for the "even" side of the biRoot
         # bifurcation.
         self.biSplits = []
-        self.biSplitsHash = {}
+        self.biSplitsDict = {}
         self.isBiRoot = None      # Is it a bifurcating root?
         self.doModelComments = 0
         self.modelInfo = None
@@ -406,9 +406,9 @@ class TreePartitions(object):
 
         if 0:
             self.splits = []
-            self.splitsHash = {}
+            self.splitsDict = {}
             self.biSplits = []
-            self.biSplitsHash = {}
+            self.biSplitsDict = {}
 
         if isinstance(inThing, str):
             if not os.path.isfile(inThing):
@@ -668,9 +668,9 @@ class TreePartitions(object):
         gm = ['TreePartitions.makeSplits()']
 
         self.splits = []
-        self.splitsHash = {}
+        self.splitsDict = {}
         self.biSplits = []
-        self.biSplitsHash = {}
+        self.biSplitsDict = {}
 
         if not self.taxNames:
             gm.append("Need to set taxNames")
@@ -810,20 +810,19 @@ class TreePartitions(object):
                 self.isBiRoot = False
 
         else:
+            # All subsequent trees must agree with the first tree regarding isBiRoot.
+            rootNChildren = theTree.root.getNChildren()
             if self.isBiRoot:
-                rootNChildren = theTree.root.getNChildren()
                 if rootNChildren != 2:
                     theTree.write()
                     gm.append("First tree had a bifurcating root, and so all trees must as well.")
                     raise P4Error(gm)
-            # else:
-            #     assert self.isBiRoot == False
-            #     rootNChildren = theTree.root.getNChildren()
-            #     if rootNChildren < 3:
-            #         theTree.write()
-            #         gm.append("First tree did not have a bifurcating root.")
-            #         gm.append("All subsequent trees may not either.")
-            #         raise P4Error(gm)
+            else:
+                if rootNChildren == 2:
+                    theTree.write()
+                    gm.append("First tree did not have a bifurcating root.")
+                    gm.append("All subsequent trees may not either.")
+                    raise P4Error(gm)
 
         theTree.taxNames = self.taxNames  # Tree.taxNames is a property, triggers checking.
 
@@ -838,14 +837,14 @@ class TreePartitions(object):
             # n.parent.nodeNum)
 
             # Either we have seen this splitKey before, in which case
-            # we get the Split object from self.splitsHash, or we have
+            # we get the Split object from self.splitsDict, or we have
             # to make a new Split object.
-            if theSKey in self.splitsHash:
-                theSplit = self.splitsHash[theSKey]
+            if theSKey in self.splitsDict:
+                theSplit = self.splitsDict[theSKey]
             else:
                 theSplit = Split()
                 self.splits.append(theSplit)
-                self.splitsHash[theSKey] = theSplit
+                self.splitsDict[theSKey] = theSplit
                 theSplit.key = theSKey
 
             if not self.isBiRoot:
@@ -864,12 +863,12 @@ class TreePartitions(object):
                     if 1 & n.br.rawSplitKey:
                         theSplit.count += theWeight
 
-                    if theSKey in self.biSplitsHash:
-                        theBiSplit = self.biSplitsHash[theSKey]
+                    if theSKey in self.biSplitsDict:
+                        theBiSplit = self.biSplitsDict[theSKey]
                     else:
                         theBiSplit = Split()
                         self.biSplits.append(theBiSplit)
-                        self.biSplitsHash[theSKey] = theBiSplit
+                        self.biSplitsDict[theSKey] = theBiSplit
                         theBiSplit.key = theSKey
                     if 1 & n.br.rawSplitKey:
                         theBiSplit.count += theWeight
@@ -962,7 +961,7 @@ class TreePartitions(object):
 
         if not self.isBiRoot:
             for n in theTree.iterNodesNoRoot():
-                theSplit = self.splitsHash[n.br.splitKey]
+                theSplit = self.splitsDict[n.br.splitKey]
                 # If the split is off the root and its rawSplitKey contains a
                 # 1 (ie has the first taxon), then the corresponding split will have
                 # its rootCount incremented.
@@ -1012,7 +1011,7 @@ class TreePartitions(object):
                                 aNode = bNode
                                 break
                         if aNode:
-                            self.splitsHash[
+                            self.splitsDict[
                                 aNode.br.splitKey].rootCount2 += theWeight
                         else:
                             pass
@@ -1288,8 +1287,8 @@ class TreePartitions(object):
             theKey = s.key
             prop1 = s.proportion
 
-            if theKey in otherTP.splitsHash:
-                prop2 = otherTP.splitsHash[theKey].proportion
+            if theKey in otherTP.splitsDict:
+                prop2 = otherTP.splitsDict[theKey].proportion
             else:
                 prop2 = 0.0
 
@@ -1315,7 +1314,7 @@ class TreePartitions(object):
                 if theStarCount == 1 or theStarCount == self.nTax - 1:
                     continue
             theKey = s.key
-            if theKey not in self.splitsHash:
+            if theKey not in self.splitsDict:
                 prop1 = 0.0
                 prop2 = s.proportion
                 if bothMustMeetMinimum:
@@ -1482,7 +1481,7 @@ class TreePartitions(object):
                 isCompatible = 1
                 # No need to check the first trivial nodes.
                 for n in conTree.nodes[self.nTax + 1:]:
-                    nSet = self.splitsHash[n.br.splitKey].set
+                    nSet = self.splitsDict[n.br.splitKey].set
                     # print "      ...checking   %s       %s" % (n.br.splitKey,
                     # nSet)
 
@@ -1523,7 +1522,7 @@ class TreePartitions(object):
             while q and not isDone:
                 relationship = None
                 # print "q.br.splitKey = %s" % q.br.splitKey
-                qSet = self.splitsHash[q.br.splitKey].set
+                qSet = self.splitsDict[q.br.splitKey].set
                 # print "qSet = %s" % qSet
                 # print "spl.set = %s" % spl.set
 
@@ -1612,7 +1611,7 @@ class TreePartitions(object):
                     t = q.parent
 
                     while s:
-                        sSet = self.splitsHash[s.br.splitKey].set
+                        sSet = self.splitsDict[s.br.splitKey].set
                         if s.br.splitKey == spl.key:
                             print("why would this ever happen?")
                             raise P4Error(gm)
@@ -1643,18 +1642,18 @@ class TreePartitions(object):
             conTree.draw()
             print("%12s %12s %12s %12s %12s %12s" % ('nodeNum', '', 'count', 'rootCount', 'rootCount2', 'cumBrLen'))
             for n in conTree.iterNodesNoRoot():
-                s = self.splitsHash[n.br.splitKey]
+                s = self.splitsDict[n.br.splitKey]
                 print("%12s %12s %12s %12s %12s %12s" % (
                     n.nodeNum, s.string, s.count, s.rootCount, s.rootCount2, s.cumBrLen))
             sys.exit()
 
         # For convenience, temporarily attach the split objects to
         # node.br's; then I don't need to keep looking up the split
-        # in the self.splitsHash.  The n.br.split's are deleted at the
+        # in the self.splitsDict.  The n.br.split's are deleted at the
         # end of this method, below.
         conTree.setPreAndPostOrder()
         for n in conTree.iterNodesNoRoot():
-            n.br.split = self.splitsHash[n.br.splitKey]
+            n.br.split = self.splitsDict[n.br.splitKey]
 
         # We need to deal with the rootCount2 counts.  When the tree
         # is rooted on the first taxon, which it is, then the parent
@@ -1679,8 +1678,8 @@ class TreePartitions(object):
                 # get the contribution of the root splits from the
                 # count from the biRootHash.
                 biRootCountContribution = 0.0
-                if n.br.split.key in self.biSplitsHash:
-                    biRootCountContribution = self.biSplitsHash[
+                if n.br.split.key in self.biSplitsDict:
+                    biRootCountContribution = self.biSplitsDict[
                         n.br.split.key].count
                 theCount = n.br.split.count - biRootCountContribution
                 if theCount:
@@ -1703,8 +1702,8 @@ class TreePartitions(object):
         # Get rootCount and biRootCount
         if self.isBiRoot:
             for n in conTree.iterNodesNoRoot():
-                if n.br.split.key in self.biSplitsHash:
-                    n.br.biRootCount = self.biSplitsHash[n.br.split.key].count
+                if n.br.split.key in self.biSplitsDict:
+                    n.br.biRootCount = self.biSplitsDict[n.br.split.key].count
                 else:
                     n.br.biRootCount = 0.0
                 n.rootCount = None
@@ -1789,7 +1788,7 @@ class TreePartitions(object):
                 else:
                     print("There are %s maxRootNodes.  Choosing the first to root on." % len(maxRootNodes))
             biRootChild = maxRootNodes[0]
-            theBiSplit = self.biSplitsHash[biRootChild.br.splitKey]
+            theBiSplit = self.biSplitsDict[biRootChild.br.splitKey]
             #print("Max root node, ie biRootChild, is node %i" % biRootChild.nodeNum)
 
             # Add a root node.
@@ -1829,6 +1828,7 @@ class TreePartitions(object):
             theBiRoot.rootModelUsage = theBiSplit.rootModelUsage
 
         else:
+            # Not biRoot
             maxRootCount = 0
             for n in conTree.iterNodesNoRoot():
                 if 0:
@@ -1840,7 +1840,7 @@ class TreePartitions(object):
                 if n.br.split.rootCount == maxRootCount:
                     maxRootNodes.append(n)
 
-            if 0 and showRootInfo:
+            if 1 and showRootInfo:
                 print(gm[0])
                 if len(maxRootNodes) > 1:
                     print("    There are %s maxRootNodes.  Choosing the first to root on." % len(maxRootNodes))
@@ -1863,8 +1863,11 @@ class TreePartitions(object):
             conTree.preAndPostOrderAreValid = 0
             conTree.draw()
 
-        # Now tabulate model usage.
-        if self.modelInfo:
+        ###################################################
+        # Now tabulate model usage.  Temporarily turned off
+        ###################################################
+
+        if 0 and self.modelInfo:
             for pNum in range(self.modelInfo.nParts):
                 print("\nPartition %i" % pNum)
 
@@ -1921,8 +1924,8 @@ class TreePartitions(object):
                 else:
                     print("rMatrices in this partition are homogeneous.")
 
-        # Find the majority compNum's and rMatrixNum's.
-        if self.modelInfo:
+        # Find the majority compNum's and rMatrixNum's.  Temporarily off
+        if 0 and self.modelInfo:
             # First make a place to put them.  Initialize n.compNum
             # etc with -1's.
             for n in conTree.nodes:
@@ -1962,8 +1965,10 @@ class TreePartitions(object):
                 if self.modelInfo.parts[pNum].nComps > 1:
                     modelKeyHash = {}
                     for n in conTree.iterNodesNoRoot():
-                        n.br.textDrawSymbol = var.modelSymbols[
-                            n.parts[pNum].compNum]
+                        try:
+                            n.br.textDrawSymbol = var.modelSymbols[n.parts[pNum].compNum]
+                        except IndexError:
+                            n.br.textDrawSymbol = "-"
                         if n.parts[pNum].compNum not in modelKeyHash:
                             modelKeyHash[n.parts[pNum].compNum] = n.br.textDrawSymbol
                     print()
@@ -1977,8 +1982,10 @@ class TreePartitions(object):
                 if self.modelInfo.parts[pNum].nRMatrices > 1:
                     modelKeyHash = {}
                     for n in conTree.iterNodesNoRoot():
-                        n.br.textDrawSymbol = var.modelSymbols[
-                            n.br.parts[pNum].rMatrixNum]
+                        try:
+                            n.br.textDrawSymbol = var.modelSymbols[n.br.parts[pNum].rMatrixNum]
+                        except IndexError:
+                            n.br.textDrawSymbol = "-"
                         if n.br.parts[pNum].rMatrixNum not in modelKeyHash:
                             modelKeyHash[
                                 n.br.parts[pNum].rMatrixNum] = n.br.textDrawSymbol
@@ -1994,7 +2001,11 @@ class TreePartitions(object):
         conTree.preAndPostOrderAreValid = 0
         conTree.taxNames = self.taxNames
 
-        if showRootInfo:
+        #############
+        # Root info
+        #############
+
+        if 1 and showRootInfo:
             conTree.setPreAndPostOrder()
             #conTree.draw()
 
@@ -2018,9 +2029,11 @@ class TreePartitions(object):
                     else:
                         if n == biRootChild:
                             # Point out, with the arrow, that it has been rooted on that branch.
-                            print("%4i   %11.1f       %5.3f    %5i  <==" % (n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
+                            print("%4i   %11.1f       %5.3f    %5i  <==" % (
+                                n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
                         else:
-                            print("%4i   %11.1f       %5.3f    %5i" % (n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
+                            print("%4i   %11.1f       %5.3f    %5i" % (
+                                n.nodeNum, n.br.biRootCount, n.br.biRootProportion, n.br.biRootRank))
                         if n.br.biRootCount:
                             if n.isLeaf:
                                 n.oldName = n.name
@@ -2055,6 +2068,7 @@ class TreePartitions(object):
                             n.name = None
 
             else:
+                # not biRoot
                 print()
                 print(gm[0])
                 print(longMessage2)  # see top of file.
@@ -2179,12 +2193,12 @@ class TreePartitions(object):
 
         toRemoveFromSplits = []
         for spl in self.splits:
-            if not self.splitsHash.get(spl.key):
-                self.splitsHash[spl.key] = spl
+            if not self.splitsDict.get(spl.key):
+                self.splitsDict[spl.key] = spl
             else:
                 toRemoveFromSplits.append(spl)
                 self.biSplits.append(spl)
-                self.biSplitsHash[spl.key] = spl
+                self.biSplitsDict[spl.key] = spl
 
         if toRemoveFromSplits:
             self.isBiRoot = True
@@ -2251,24 +2265,24 @@ class TreePartitions(object):
         self.nTrees += otp.nTrees
 
         for ospl in otp.splits:
-            sspl = self.splitsHash.get(ospl.key)
+            sspl = self.splitsDict.get(ospl.key)
             if sspl:
                 sspl.combineWith(ospl)
             else:
                 self.splits.append(ospl)
-                self.splitsHash[ospl.key] = ospl
+                self.splitsDict[ospl.key] = ospl
         for ospl in otp.biSplits:
-            sspl = self.biSplitsHash.get(ospl.key)
+            sspl = self.biSplitsDict.get(ospl.key)
             if sspl:
                 sspl.combineWith(ospl)
             else:
                 self.biSplits.append(ospl)
-                self.biSplitsHash[ospl.key] = ospl
+                self.biSplitsDict[ospl.key] = ospl
         self.finishSplits()
 
     def getSplitForTaxNames(self, txNames):
         k = p4.func.getSplitKeyFromTaxNames(self.taxNames, txNames)
-        return self.splitsHash.get(k)
+        return self.splitsDict.get(k)
 
     def getProportionRange(self, verbose=False):
         """Return (min,max) of non-leaf split proportions 

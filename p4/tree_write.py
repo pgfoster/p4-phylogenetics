@@ -335,15 +335,29 @@ if True:
     def _getMcmcCommandComment(self, theNode):
         sList = [' [&']
         for pNum in range(self.model.nParts):
-            if self.model.parts[pNum].nComps > 1:
-                sList.append(' c%i.%i' % (pNum, theNode.parts[pNum].compNum))
+            mp = self.model.parts[pNum]
+            if mp.nComps > 1:
+                doWrite = True
+                if mp.ndch2:
+                    if mp.ndch2_writeComps:
+                        doWrite = True
+                    else:
+                        doWrite = False
+                if doWrite:
+                    sList.append(' c%i.%i' % (pNum, theNode.parts[pNum].compNum))
+
             if theNode != self.root:
-                if self.model.parts[pNum].nRMatrices > 1:
-                    sList.append(' r%i.%i' %
-                                 (pNum, theNode.br.parts[pNum].rMatrixNum))
-                if self.model.parts[pNum].nGdasrvs > 1:
-                    sList.append(' g%i.%i' %
-                                 (pNum, theNode.br.parts[pNum].gdasrvNum))
+                if mp.nRMatrices > 1:
+                    doWrite = True
+                    if mp.ndrh2:
+                        if mp.ndrh2_writeRMatrices:
+                            doWrite = True
+                        else:
+                            doWrite = False
+                    if doWrite:
+                        sList.append(' r%i.%i' % (pNum, theNode.br.parts[pNum].rMatrixNum))
+                if mp.nGdasrvs > 1:
+                    sList.append(' g%i.%i' % (pNum, theNode.br.parts[pNum].gdasrvNum))
         sList.append(']')
         if len(sList) == 2:  # ie [&] only, eg ndrh2 but only 1 comp
             return ""

@@ -205,15 +205,13 @@ class Var(object):
         # not built with readline.  Thats ok, 'cuz it was easy enough
         # to install a new python that had readline.  The one from
         # pythonmac.org was fine.  Now the python that comes with
-        # MacOS 10.5 is fairly up-to-date, and it is built with
+        # MacOS is fairly up-to-date, and it is built with
         # readline -- sort of.  The problem is that the readline
         # python module does not use GNU libreadline, it uses the
         # editline library (libedit ?), and it has a different syntax
         # for parse_and_bind().  And it is partly broken, in that it
         # does not pass a 'text' arg to the drop-in 'complete'
         # function.
-        #
-        # It hurts.
         #
         # I suspect that the pythonmac.org python is still built with
         # gnu readline, and is ok, but I have not confirmed.  If you
@@ -222,8 +220,8 @@ class Var(object):
         # that getting the argspec inside functions and methods will
         # not work, but the rest of it seems to work.
         #
-        # Update on the above.  I got my python2.5, and now python2.6
-        # from MacPorts, and they were both fine.  And 2.7 from HomeBrew.
+        # Update on the above.  I get my python3* from HomeBrew, and it 
+        # is fine.
         self.readlineUsesEditline = False
 
         # A pointer to a gsl random number generator   SEEMS TO BE A LITTLE

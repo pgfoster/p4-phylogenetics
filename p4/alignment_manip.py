@@ -2553,7 +2553,7 @@ if True:
             print(bigFs)
             print("biggest divergences")
             print(biggestDivergence)
-            print("... between these (zero-based)sequence numbers:")
+            print("... between these (zero-based) sequence numbers:")
             print(txNumPairs)
         assert biggestDivergence > 0.0, "Got zero divergence between the sequences"
 
@@ -2568,11 +2568,29 @@ if True:
             myBigF = bigFs[myIndex]
             myTxNumPair = txNumPairs[myIndex]
         
-        QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(myBigF, self.dim, myTxNumPair[0], myTxNumPair[1])
+        # We want all the pairwise p-vals.  These PB, PS, and PR are DistanceMatrix objects
+        QB, QS, QR, PB, PS, PR = self.matchedPairsTests()
+        for PM in [PB,PS,PR]:
+            PM.ft = PM.flatTriangle()
+            PM.nSig = len([it for it in PM.ft if it is not None  and it <= 0.05])
+            PM.nNonSig = len([it for it in PM.ft if it is not None and it > 0.05])
+            PM.forBiggestDivergence = PM.matrix[myTxNumPair[0]][myTxNumPair[1]]
+
         if verbose:
-            print(f"PB:{PB} PS:{PS} PR:{PR}")
-            print("(Turn off this verbose output by setting arg vebose=False)")
-        return PB, PS, PR
+            print(f"Bowker's test of symmetry")
+            print(f"  Significant:     {PB.nSig}")
+            print(f"  Non-significant: {PB.nNonSig}")
+            print(f"  P-value for most-diverged pair: {PB.forBiggestDivergence}")
+            print(f"Stuart's test of marginal symmetry")
+            print(f"  Significant:     {PS.nSig}")
+            print(f"  Non-significant: {PS.nNonSig}")
+            print(f"  P-value for most-diverged pair: {PS.forBiggestDivergence}")
+            print(f"Ababneh's test of internal symmetry")
+            print(f"  Significant:     {PR.nSig}")
+            print(f"  Non-significant: {PR.nNonSig}")
+            print(f"  P-value for most-diverged pair: {PR.forBiggestDivergence}")
+            
+        return PB.forBiggestDivergence, PS.forBiggestDivergence, PR.forBiggestDivergence
         
         
 

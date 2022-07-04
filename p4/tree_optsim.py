@@ -234,7 +234,7 @@ if True:
             print("Tree.calcLogLike(). %f" % self.logLike)
 
 
-    def optLogLike(self, verbose=1, method="BOBYQA"):
+    def optLogLike(self, verbose=1, method="BOBYQA", optBrLens=True):
         """Calculate the likelihood of the tree, with optimization.
 
         There are different optimization methods-- choose one.  I've
@@ -258,6 +258,9 @@ if True:
         As suggested above, for difficult optimizations it may help to
         repeat the call to optLogLike(), perhaps with a different
         method.
+
+        Arg optBrLens (default True), can be turned off.  This week, 
+        this only works with method="BOBYQA".
         """
 
         gm = ["Tree.optLogLike()"]
@@ -274,6 +277,11 @@ if True:
                     gm.append("You could, for example, t.stripBrLens() which makes all br lens default 0.1")
                     raise P4Error(gm)
 
+        if not optBrLens:
+            if method != "BOBYQA":
+                gm.append("Turning arg optBrLens off only works with BOBYQA")
+                raise P4Error(gm)
+
         self._commonCStuff()
 
         if method == "newtAndBrentPowell":
@@ -285,7 +293,10 @@ if True:
             pf.p4_newtSetup(self.cTree)
             pf.p4_newtAndBOBYQAOpt(self.cTree)
         elif method == "BOBYQA":
-            pf.p4_allBOBYQAOptimize(self.cTree)
+            if optBrLens:
+                pf.p4_allBOBYQAOptimize(self.cTree, 1)
+            else:
+                pf.p4_allBOBYQAOptimize(self.cTree, 0)
         else:
             gm.append('method should be one of "newtAndBrentPowell", "allBrentPowell", "newtAndBOBYQA", or "BOBYQA"')
             raise P4Error(gm)

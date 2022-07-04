@@ -1369,3 +1369,59 @@ class Alignment(SequenceList):
         # Is this needed?  Probably not.
         self.checkLengthsAndTypes()
 
+
+    def entropyOfSites(self):
+        """Simple entropy calc. Gaps and ambigs are ignored.
+
+        Pure python.
+
+        Returns:
+            a list of entropy values, one for each site
+
+        """
+
+        siteEntropies = []
+        counters = {}  # so that I can index it with a symbol rather than an int
+        for c in self.symbols:
+            counters[c] = 0
+        for pos in range(len(self)):
+            nCharsAtSite = 0
+            keysHere = set()
+            for seq in self.sequences:
+                c = seq.sequence[pos]
+                try:
+                    counters[c] += 1  # ie ignore gaps and ambiguities
+                    nCharsAtSite += 1
+                    keysHere.add(c)
+                except KeyError:
+                    pass
+            assert nCharsAtSite, f"a pos {pos} had no symbol chars, only gaps and ambigs."
+
+            siteEntropy = 0.0
+            totalCountsAtThisPos = 0
+            for k in keysHere:
+                v = counters[k]
+                assert v
+                totalCountsAtThisPos += v
+                p = v / nCharsAtSite
+                siteEntropy += p * math.log2(p)
+                counters[k] = 0                # Initialize for next pos
+            assert totalCountsAtThisPos, f"b pos {pos} had no symbol chars, only gaps and ambigs."
+            assert totalCountsAtThisPos == nCharsAtSite
+            if siteEntropy == 0.0:
+                siteEntropies.append(0.0)     # to avoid -0.0
+            else:
+                siteEntropies.append(-siteEntropy)
+
+        assert len(siteEntropies) == self.nChar
+        return siteEntropies
+
+    def entropyMeanAndVariance(self):
+        """Calculate the mean and variance of the site entropy"""
+
+        sll = self.entropyOfSites()
+        m = statistics.mean(sll)
+        v = statistics.variance(sll, m)
+
+        return m,v
+
