@@ -799,52 +799,6 @@ class Model(object):
                     theSpec = 20
                 elif mt.spec == '2p':
                     theSpec = 5
-<<<<<<< HEAD
-                elif mt.spec == 'cpREV':
-                    theSpec = 101
-                elif mt.spec == 'd78':
-                    theSpec = 102
-                elif mt.spec == 'jtt':
-                    theSpec = 103
-                elif mt.spec == 'mtREV24':
-                    theSpec = 104
-                elif mt.spec == 'mtmam':
-                    theSpec = 105
-                elif mt.spec == 'wag':
-                    theSpec = 106
-                # the one I have, from MrBayes.  Same as phyml.
-                elif mt.spec == 'blosum62':
-                    theSpec = 107
-                # elif mt.spec == 'blosum62b':
-                #    theSpec = 108
-                # elif mt.spec == 'phat70':
-                #    theSpec = 109
-                elif mt.spec == 'rtRev':
-                    theSpec = 110
-                elif mt.spec == 'tmjtt94':
-                    theSpec = 111
-                elif mt.spec == 'tmlg99':
-                    theSpec = 112
-                elif mt.spec == 'lg':
-                    theSpec = 113
-                elif mt.spec == 'hivb':
-                    theSpec = 114
-                elif mt.spec == 'mtart':
-                    theSpec = 115
-                elif mt.spec == 'mtzoa':
-                    theSpec = 116
-                elif mt.spec == 'gcpREV':
-                    theSpec = 117
-                elif mt.spec == 'stmtREV':
-                    theSpec = 118
-                elif mt.spec == 'vt':
-                    theSpec = 119
-                elif mt.spec == 'pmb':
-                    theSpec = 120
-                elif mt.spec == 'prasREV':
-                    theSpec = 121
-                elif mt.spec == 'gnetREV':
-                    theSpec = 122
                 elif mt.spec in var.rMatrixProteinSpecs:
                     theSpec = var.rMatrixProteinSpecNumberForNameDict[mt.spec]
                 else:
