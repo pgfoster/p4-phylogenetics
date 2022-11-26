@@ -1957,10 +1957,11 @@ if True:
         del(theSubTree)
 
     def addLeaf(self, attachmentNode, taxName):
-        """Add a leaf to a tree.
+        """Add a leaf to a tree
 
-        The leaf is added to the branch leading from the specified node.
-        A new node is made on that branch, so actually 2 nodes are added
+        The leaf is added to the branch leading to the attachmentNode.
+        The attachmentNode should be a Node, not a node number or name.
+        A new node is made on that branch, so actually two nodes are added
         to the tree.  The new leaf node is returned.
         """
 
