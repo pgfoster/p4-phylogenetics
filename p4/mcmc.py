@@ -3722,7 +3722,7 @@ class Mcmc(object):
             return rd
 
 
-    def lpml(self):
+    def lpml(self, verbose=True):
         """Calculate log pseudo marginal likelihood from CPO"""
         gm = ["Mcmc.lpml()"]
         if not self.doCpo:
@@ -3735,5 +3735,6 @@ class Mcmc(object):
         a /= self.cpo_nSamples
         a = -numpy.log(a)
         theSum = a.sum()
-        print(f"cpo_nSamples: {self.cpo_nSamples}, lpml: {theSum}")
+        if verbose:
+            print(f"cpo_nSamples: {self.cpo_nSamples}, lpml: {theSum}")
         return theSum
