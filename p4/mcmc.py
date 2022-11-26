@@ -685,6 +685,8 @@ class Mcmc(object):
         if var.mcmc_allowUnresolvedStartingTree:
             if rootNChildren == 2:
                 self.isBiRoot = True
+                # Add a rooter node to aTree.nodes, not "in" the tree
+                # I did that, but both local and eTBR caused grief. 
         else:
             if rootNChildren == 2:
                 ret = aTree.isFullyBifurcating(verbose=True, biRoot=True)
