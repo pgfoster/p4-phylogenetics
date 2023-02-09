@@ -2792,7 +2792,7 @@ def gsl_meanVariance(seq, mean=None, variance=None):
     if isinstance(seq, numpy.ndarray):
         mySeq = seq
     else:
-        mySeq = numpy.array(seq, numpy.float)
+        mySeq = numpy.array(seq, dtype=numpy.double)
 
     if mean is None:
         mean = numpy.array([0.0])
@@ -2934,7 +2934,7 @@ def studentsTTest1(seq, mu=0.0, verbose=True):
     Returns the p-value.
     """
 
-    sq = numpy.array(seq, dtype=numpy.float)
+    sq = numpy.array(seq, dtype=numpy.double)
     m, v = gsl_meanVariance(sq)
     s = numpy.sqrt(v)
     n = len(sq)
@@ -3165,7 +3165,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
                     for p in range(pramCounts):
                         if not makeDict:
                             print("%s%3i %22s[%2i]   " % (spacer1, pramCounter, pString, p), end=' ')
-                        d = numpy.array(numsList[pramCounter], numpy.float)
+                        d = numpy.array(numsList[pramCounter], dtype=numpy.double)
                         m, v = gsl_meanVariance(d)
                         ess = effectiveSampleSize(d, m)
                         stats = []
@@ -3227,7 +3227,7 @@ def summarizeMcmcPrams(skip=0, run=-1, theDir='.', makeDict=False):
         print("%9s--------    --------    --------" % ' ')
         for pramNum in range(nPrams):
             print("  %2i  " % pramNum, end=' ')
-            d = numpy.array(numsList[pramNum], numpy.float)
+            d = numpy.array(numsList[pramNum], dtype=numpy.double)
             m, v = gsl_meanVariance(d)
             ess = effectiveSampleSize(d, m)
             if m == 0.0:
@@ -3482,13 +3482,13 @@ def compareSplitsBetweenTreePartitions(treePartitionsList, precision=3, linewidt
     """
 
     nM = len(treePartitionsList)
-    supportMins = numpy.zeros(nM, dtype=numpy.float64)
-    supportMaxs = numpy.zeros(nM, dtype=numpy.float64)
+    supportMins = numpy.zeros(nM, dtype=numpy.double)
+    supportMaxs = numpy.zeros(nM, dtype=numpy.double)
     nItems = int(((nM * nM) - nM) / 2)
-    asdosses = numpy.zeros((nM, nM), dtype=numpy.float64)
-    vect = numpy.zeros(nItems, dtype=numpy.float64)
-    mdvect = numpy.zeros(nItems, dtype=numpy.float64)
-    maxDiffs = numpy.zeros((nM, nM), dtype=numpy.float64)
+    asdosses = numpy.zeros((nM, nM), dtype=numpy.double)
+    vect = numpy.zeros(nItems, dtype=numpy.double)
+    mdvect = numpy.zeros(nItems, dtype=numpy.double)
+    maxDiffs = numpy.zeros((nM, nM), dtype=numpy.double)
 
     for mNum1 in range(nM):
         tp1 = treePartitionsList[mNum1]
@@ -3712,7 +3712,7 @@ def getProteinEmpiricalModelRMatrix(spec, upperTriangle=True):
     dim = 20
     assert spec in var.rMatrixProteinSpecs, "spec should be one of var.rMatrixProteinSpecs"
     specNum = var.rMatrixProteinSpecNumberForNameDict[spec]
-    a = numpy.zeros((dim, dim), numpy.float)
+    a = numpy.zeros((dim, dim), dtype=numpy.double)
     pf.getBigR(specNum, a)
 
     if upperTriangle:

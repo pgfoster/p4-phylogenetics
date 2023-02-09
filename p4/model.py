@@ -14,8 +14,8 @@ class BigQAndEig(object):  # not used
         self.dim = dim
         self.comp = comp
         self.rMatrix = rMatrix
-        self.bigR = numpy.zeros((dim, dim), numpy.float)
-        self.bigQ = numpy.zeros((dim, dim), numpy.float)
+        self.bigR = numpy.zeros((dim, dim), dtype=numpy.double)
+        self.bigQ = numpy.zeros((dim, dim), dtype=numpy.double)
         self.eval = None
         self.evec = None
         self.inv_evec = None
@@ -67,7 +67,7 @@ class BigQAndEig(object):  # not used
         # Making a new array of zeros is faster than passing a
         # pre-allocated result (which needs zeroing), cuz zeroing
         # it takes too long.
-        #result = zeros((self.dim, self.dim), numpy.float)
+        #result = zeros((self.dim, self.dim), dtype=numpy.double)
         for catNum in range(nCat):
             for i in range(self.dim):
                 for j in range(self.dim):
@@ -1099,6 +1099,6 @@ class Model(object):
         mp = self.parts[pNum]
         c = mp.comps[compNum]
         r = mp.rMatrices[rMatrixNum]
-        a = numpy.zeros((mp.dim, mp.dim), numpy.float)
+        a = numpy.zeros((mp.dim, mp.dim), dtype=numpy.double)
         pf.getBigQ(self.cModel, mp.dim, pNum, compNum, rMatrixNum, a)
         return a

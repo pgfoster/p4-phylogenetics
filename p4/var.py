@@ -286,23 +286,23 @@ class Var(object):
         # elements are relative to it.
         self._rMatrixNormalizeTo1 = numpy.array([1], numpy.int32)
 
-        self._PIVEC_MIN = numpy.array([1.0e-13], numpy.float64)      # Changed from 1e-18 March 2019, to avoid getting negative bigP values
-        self._PIVEC_MAX = numpy.array([0.999], numpy.float64)      
+        self._PIVEC_MIN = numpy.array([1.0e-13], dtype=numpy.double)      # Changed from 1e-18 March 2019, to avoid getting negative bigP values
+        self._PIVEC_MAX = numpy.array([0.999], dtype=numpy.double)      
         #self._RATE_MIN = 1.0e-14                                 # ie for rMatrices, changed from 1.0e-8 nov 2016, because self._rMatrixNormalizeTo1 is set
-        self._RATE_MIN = numpy.array([1.0e-13], numpy.float64)    # changed from 1.e-14 March 2019, to avoid getting negative bigP values
-        self._RATE_MAX = numpy.array([0.9999999], numpy.float64)  # changed from 1.0e8 nov 2016, also because self._rMatrixNormalizeTo1 is set
-        self._GAMMA_SHAPE_MIN = numpy.array([0.1], numpy.float64)  # changed from 0.000001 april 2019, with alpha=0.1, slowest cat is 5.e-7
-        self._GAMMA_SHAPE_MAX = numpy.array([300.0], numpy.float64)
-        self._PINVAR_MIN = numpy.array([0.0], numpy.float64)
-        self._PINVAR_MAX = numpy.array([0.99], numpy.float64)
-        self._RELRATE_MIN = numpy.array([1.0e-8], numpy.float64)
-        self._RELRATE_MAX = numpy.array([1.0e8], numpy.float64)
-        self._KAPPA_MIN = numpy.array([0.000001], numpy.float64)
-        self._KAPPA_MAX = numpy.array([100.0], numpy.float64)
-        self._BRLEN_MIN = numpy.array([1.0e-8], numpy.float64)
-        self._BRLEN_MAX = numpy.array([3.0], numpy.float64)
+        self._RATE_MIN = numpy.array([1.0e-13], dtype=numpy.double)    # changed from 1.e-14 March 2019, to avoid getting negative bigP values
+        self._RATE_MAX = numpy.array([0.9999999], dtype=numpy.double)  # changed from 1.0e8 nov 2016, also because self._rMatrixNormalizeTo1 is set
+        self._GAMMA_SHAPE_MIN = numpy.array([0.1], dtype=numpy.double)  # changed from 0.000001 april 2019, with alpha=0.1, slowest cat is 5.e-7
+        self._GAMMA_SHAPE_MAX = numpy.array([300.0], dtype=numpy.double)
+        self._PINVAR_MIN = numpy.array([0.0], dtype=numpy.double)
+        self._PINVAR_MAX = numpy.array([0.99], dtype=numpy.double)
+        self._RELRATE_MIN = numpy.array([1.0e-8], dtype=numpy.double)
+        self._RELRATE_MAX = numpy.array([1.0e8], dtype=numpy.double)
+        self._KAPPA_MIN = numpy.array([0.000001], dtype=numpy.double)
+        self._KAPPA_MAX = numpy.array([100.0], dtype=numpy.double)
+        self._BRLEN_MIN = numpy.array([1.0e-8], dtype=numpy.double)
+        self._BRLEN_MAX = numpy.array([3.0], dtype=numpy.double)
 
-        self._newtAndBrentPowellOptPassLimit = numpy.array([50], numpy.int32)
+        self._newtAndBrentPowellOptPassLimit = numpy.array([50], dtype=numpy.int32)
 
         self.GAP_CODE = -1
         self.QMARK_CODE = -2

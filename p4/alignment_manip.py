@@ -2201,7 +2201,7 @@ if True:
 
         """
 
-        scc = numpy.zeros(self.dim, numpy.float)
+        scc = numpy.zeros(self.dim, dtype=numpy.double)
         # Of course we cannot test "if seqNum:", as the seqNum might be zero.
         if seqNum == None:
             for seq in self.sequences:
@@ -2238,7 +2238,7 @@ if True:
 
         """
 
-        bigF = numpy.zeros([self.dim, self.dim], numpy.float)
+        bigF = numpy.zeros([self.dim, self.dim], dtype=numpy.double)
         sA = self.sequences[iA].sequence
         sB = self.sequences[iB].sequence
         for seqPos in range(self.nChar):
@@ -2304,8 +2304,8 @@ if True:
         sumOfColumns = bigF.sum(axis=0)
         sumOfRows = bigF.sum(axis=1)
 
-        d = numpy.zeros((dim - 1), numpy.float)
-        V = numpy.zeros((dim - 1, dim - 1), numpy.float)
+        d = numpy.zeros((dim - 1), dtype=numpy.double)
+        V = numpy.zeros((dim - 1, dim - 1), dtype=numpy.double)
 
         # Ababneh iterated over all i and j (one-based, i from 1:3, and j
         # from 1:3), but the result is a symmetric matrix, so half those
@@ -2591,7 +2591,7 @@ if True:
 
         # Make the J matrix.
         J = numpy.zeros(
-            (self.dim * (self.nTax - 1), self.dim * (self.nTax - 1)), numpy.float)
+            (self.dim * (self.nTax - 1), self.dim * (self.nTax - 1)), dtype=numpy.double)
         for seqNum in range(self.nTax - 1):
             start = seqNum * self.dim
             for i in range(self.dim):
@@ -2601,7 +2601,7 @@ if True:
 
         # Make the L matrix.
         L = numpy.zeros(
-            (self.dim * (self.nTax - 1), self.dim * self.nTax), numpy.float)
+            (self.dim * (self.nTax - 1), self.dim * self.nTax), dtype=numpy.double)
         for seqNum in range(self.nTax - 1):
             start = self.dim * seqNum
             for i in range(self.dim):
@@ -2614,8 +2614,8 @@ if True:
 
         # Make the v matrix, and the n vector
         v = numpy.zeros(
-            (self.dim * self.nTax, self.dim * self.nTax), numpy.float)
-        n = numpy.zeros(self.dim * self.nTax, numpy.float)
+            (self.dim * self.nTax, self.dim * self.nTax), dtype=numpy.double)
+        n = numpy.zeros(self.dim * self.nTax, dtype=numpy.double)
 
         # This is inefficient!
         for seqNumA in range(self.nTax):
@@ -2639,7 +2639,7 @@ if True:
         # print v
         # print n
         firstBit = numpy.dot(L, n)
-        myIdentity = numpy.identity(self.dim * (self.nTax - 1), numpy.float)
+        myIdentity = numpy.identity(self.dim * (self.nTax - 1), dtype=numpy.double)
         secondBit = numpy.linalg.solve(
             (numpy.dot(numpy.dot(L, v), L.transpose()) + J), myIdentity)
         # print secondBit

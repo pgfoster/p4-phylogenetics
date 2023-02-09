@@ -378,16 +378,16 @@ class Numbers(object):
         """Uses gsl.  Returns a tuple of the mean and the variance."""
 
         if len(self.data):
-            a = numpy.array(self.data, numpy.float)
-            m = numpy.zeros([1], numpy.float)
-            v = numpy.zeros([1], numpy.float)
+            a = numpy.array(self.data, dtype=numpy.double)
+            m = numpy.zeros([1], dtype=numpy.double)
+            v = numpy.zeros([1], dtype=numpy.double)
             p4.func.gsl_meanVariance(a, m, v)
             return (m, v)
         else:
             return None
 
     def arithmeticMeanOfLogs(self):
-        ar = numpy.array(self.data, numpy.float)
+        ar = numpy.array(self.data, dtype=numpy.double)
         # print ar
 
         if 0:
@@ -431,7 +431,7 @@ class Numbers(object):
         # the highest log values are more than 200 log units more than
         # the lowest log value, then they are ignored.
 
-        ar = numpy.array(self.data, numpy.float)
+        ar = numpy.array(self.data, dtype=numpy.double)
         # print ar
 
         # From MrBayes.

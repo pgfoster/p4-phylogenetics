@@ -330,7 +330,7 @@ if True:
         # assign val
         dim = self.model.parts[partNum].dim
         if spec == 'equal':
-            mt.val = numpy.ones(dim, float) / dim
+            mt.val = numpy.ones(dim, dtype=numpy.double) / dim
         elif spec == 'empirical':
             assert mt.val is None
         elif spec == 'specified':
@@ -487,7 +487,7 @@ if True:
             if val:
                 # should check that values are all floats
                 if len(val) == goodLen:
-                    v = numpy.array(val, numpy.float)
+                    v = numpy.array(val, dtype=numpy.double)
                     if var.rMatrixNormalizeTo1:
                         v /= v.sum()
                 elif var.rMatrixNormalizeTo1 and len(val) == goodLen - 1:
@@ -502,7 +502,7 @@ if True:
                 gm.append("Specify rMatrix values by eg val=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]")
                 raise P4Error(gm)
         elif spec == 'ones':
-            v = numpy.array([1.0] * goodLen)
+            v = numpy.array([1.0] * goodLen, dtype=numpy.double)
             if var.rMatrixNormalizeTo1:
                 v /= v.sum()
         elif spec == '2p':
@@ -518,7 +518,7 @@ if True:
             elif v > var.KAPPA_MAX:
                 gm.append("Kappa is too big.  Setting to %f" % var.KAPPA_MAX)
                 v = var.KAPPA_MAX
-            v = numpy.array([v], numpy.float)
+            v = numpy.array([v], dtype=numpy.double)
         elif spec in var.rMatrixProteinSpecs:
             if self.data.parts[partNum].dataType != 'protein':
                 gm.append("A protein matrix has been specified, but the dataType for part %i is %s." % (
@@ -583,8 +583,8 @@ if True:
             mt.symbol = var.modelSymbols[mt.num]
 
         self.model.parts[partNum].gdasrvs.append(mt)
-        mt.freqs = numpy.zeros(mt.nGammaCat, numpy.float)
-        mt.rates = numpy.zeros(mt.nGammaCat, numpy.float)
+        mt.freqs = numpy.zeros(mt.nGammaCat, dtype=numpy.double)
+        mt.rates = numpy.zeros(mt.nGammaCat, dtype=numpy.double)
         mt._val[0] = v
         mt.calcRates()
         return mt
@@ -1427,7 +1427,7 @@ class Gdasrv(object):
         self.free = None
         self.symbol = None
         # self.val=None
-        self._val = numpy.zeros(1, numpy.float)
+        self._val = numpy.zeros(1, dtype=numpy.double)
         self.freqs = None
         self.rates = None
         self.nGammaCat = None

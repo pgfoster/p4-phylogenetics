@@ -113,7 +113,7 @@ if True:
             for n in self.iterNodes():
                 if n.isLeaf:
                     nLeaves += 1
-            self.partLikes = numpy.zeros(self.model.nParts, numpy.float)
+            self.partLikes = numpy.zeros(self.model.nParts, dtype=numpy.double)
             self.cTree = pf.p4_newTree(len(list(self.iterNodes())), nLeaves, self.preOrder,
                                        self.postOrder, var._newtAndBrentPowellOptPassLimit, self.partLikes, 
                                        self.data.cData, self.model.cModel)
@@ -550,13 +550,13 @@ if True:
     #     for partNum in range(len(self.data.parts)):
     #         p = self.data.parts[partNum]
     #         if self.model.parts[partNum].nGammaCat == 1:
-    #             siteRates = numpy.ones(p.nChar, numpy.float)
+    #             siteRates = numpy.ones(p.nChar, dtype=numpy.double)
     #             gammaCats = numpy.zeros(p.nChar, numpy.int32)
     #         elif self.model.parts[partNum].nGammaCat > 1:
-    #             siteRates = numpy.zeros(p.nChar, numpy.float)
+    #             siteRates = numpy.zeros(p.nChar, dtype=numpy.double)
     #             gammaCats = numpy.zeros(p.nChar, numpy.int32)
     #             work = numpy.zeros(
-    #                 self.model.parts[partNum].nGammaCat, numpy.float)
+    #                 self.model.parts[partNum].nGammaCat, dtype=numpy.double)
     #             for charNum in range(p.nChar):
     #                 gammaCats[charNum] = -1
     #             #pf.getWinningGammaCats(self.cTree, p.cPart, i, gammaCats, work)
