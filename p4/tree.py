@@ -958,9 +958,12 @@ class Tree(object):
                         substring = tok[i:j]
                         # print(substring)
                         splSS = substring.split('=')
+
                         theNameString = splSS[0].strip()
-                        if '%' in theNameString:
-                            theNameString = theNameString.replace('%', '')
+                        for badChr in "%()":
+                            if badChr in theNameString:
+                                theNameString = theNameString.replace(badChr, '')
+
                         theValString = splSS[1]
                         if '{' in theValString:
                             theValString = theValString.replace('{', '(')
@@ -971,7 +974,13 @@ class Tree(object):
                             theVal = False
                         else:
                             theVal = eval(theValString)
-                        assert isinstance(theVal, (float, tuple, bool))
+                        if 0:
+                            # Check type
+                            print(f"beast command comment theValString = {theValString}")
+                            if isinstance(theVal, (int, float, tuple, bool)):
+                                n.__setattr__(theNameString, theVal)
+                            else:
+                                print(f"reading beastTreeCommandComment; cannot parse value {theValString} for {theNameString}")
                         n.__setattr__(theNameString, theVal)
                         i = j + 1
                 elif 0:
