@@ -537,15 +537,15 @@ class LeafSupport(object):
             print('%s, %s' % (index, name))
             index = index + 1
 
-    def defineGroup(self, list):   # isn't "list" a reserved word.  It is at least a type.  Does this work?
+    def defineGroup(self, mylist):
         if not self.init:
             self._init()
-        gm = ['defineGroup.(list))']
-        if not isinstance(list, list):
+        gm = ['defineGroup.(mylist))']
+        if not isinstance(mylist, list):
             gm.append('Input must be a list of taxnames and/or taxnumbers')
             raise P4Error(gm)
         group = []
-        for i in list:
+        for i in mylist:
             if i in self.taxa2IndexDict:
                 # print 'Taxname: %s, %s' % (i, self.taxa2IndexDict[i])
                 group.append(self.taxa2IndexDict[i])
@@ -559,20 +559,20 @@ class LeafSupport(object):
         #    print ''
         # print group
         group.sort()
-        tuple = ()
+        mytuple = ()
         for i in group:
-            tuple = tuple + (i, )
-        self.groups.append(tuple)
+            mytuple = mytuple + (i, )
+        self.groups.append(mytuple)
 
-    def defineTaxSet(self, list):
+    def defineTaxSet(self, mylist):
         if not self.init:
             self._init()
-        gm = ['defineTaxSet.(list))']
-        if not isinstance(list, list):
+        gm = ['defineTaxSet.(mylist))']
+        if not isinstance(mylist, list):
             gm.append('Input must be a list of taxnames and/or taxnumbers')
             raise P4Error(gm)
         taxSet = []
-        for i in list:
+        for i in mylist:
             if i in self.taxa2IndexDict:
                 #        print 'Taxname: %s, %s' % (i, self.taxa2IndexDict[i])
                 taxSet.append(self.taxa2IndexDict[i])
@@ -585,20 +585,20 @@ class LeafSupport(object):
         #    print ''
         # print group
         taxSet.sort()
-        tuple = ()
+        mytuple = ()
         for i in taxSet:
-            tuple = tuple + (i, )
-        self.taxSets.append(tuple)
+            mytuple = mytuple + (i, )
+        self.taxSets.append(mytuple)
 
-    def defineClade(self, list):
+    def defineClade(self, mylist):
         if not self.init:
             self._init()
-        gm = ['defineClade.(list))']
-        if not isinstance(list, list):
+        gm = ['defineClade.(mylist))']
+        if not isinstance(mylist, list):
             gm.append('Input must be a list of taxnames and/or taxnumbers')
             raise P4Error(gm)
         clade = []
-        for i in list:
+        for i in mylist:
             if i in self.taxa2IndexDict:
                 #        print 'Taxname: %s, %s' % (i, self.taxa2IndexDict[i])
                 clade.append(i)
@@ -612,10 +612,10 @@ class LeafSupport(object):
         #    print ''
         # print clade
         clade.sort()
-        tuple = ()
+        mytuple = ()
         for i in clade:
-            tuple = tuple + (i, )
-        self.clades.append(tuple)
+            mytuple = mytuple + (i, )
+        self.clades.append(mytuple)
 
     def buildSortedQuartetList(self):
 
