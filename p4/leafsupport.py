@@ -1096,35 +1096,39 @@ class LeafSupport(object):
                 else:
                     print('Zero length')
         if self.writeCsv:
-            writer = csv.writer(open(self.csvFilename, "wb"))
-            list = []
+            fout = open(self.csvFilename, "w")
+            # writer = csv.writer(open(self.csvFilename, "wb"))  # from tobias. why bytes?
+            writer = csv.writer(fout)
+            plist = []
             for result in results:
                 if len(result) == 6:
-                    list.append(['All taxa'])
-                    list.append(['Percentage: ', 100.0])
-                    self.csvListFromResult(result, list)
-                    list.append([])
+                    plist.append(['All taxa'])
+                    plist.append(['Percentage: ', 100.0])
+                    self.csvListFromResult(result, plist)
+                    plist.append([])
                 else:
                     if result[7] > 0.0:
                         clade = ['Clade: ']
                         clade.extend(result[6])
-                        list.append(clade)
-                        list.append(['Percentage: ', result[7]])
+                        plist.append(clade)
+                        plist.append(['Percentage: ', result[7]])
                     else:
-                        list.append(['Taxon set'])
+                        plist.append(['Taxon set'])
 
-                    self.csvListFromResult(result, list)
-                    list.append([])
+                    self.csvListFromResult(result, plist)
+                    plist.append([])
 
             for result in groupResults:
-                list.append(['Groupmembership'])
-                list.append(['Members'])
-                self.csvListFromResult(result[0], list)
-                list.append(['Nonmembers'])
-                self.csvListFromResult(result[1], list)
-                list.append([])
+                plist.append(['Groupmembership'])
+                plist.append(['Members'])
+                self.csvListFromResult(result[0], plist)
+                plist.append(['Nonmembers'])
+                self.csvListFromResult(result[1], plist)
+                plist.append([])
 
-            writer.writerows(list)
+            # print(plist)
+            writer.writerows(plist)
+            fout.close()
 
         for result in results:
             ##            self.printSupportTable(result[0],result[1], result[2], result[3], result[4], result[5])
