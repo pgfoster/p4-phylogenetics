@@ -221,8 +221,8 @@ class Var(object):
         # not work, but the rest of it seems to work.
         #
         # Update on the above.  I get my python3* from HomeBrew, and it 
-        # is fine.
-        self.readlineUsesEditline = False
+        # is fine.  So this is not needed.
+        # self.readlineUsesEditline = False
 
         # A pointer to a gsl random number generator   SEEMS TO BE A LITTLE
         # MEMORY LEAK!
