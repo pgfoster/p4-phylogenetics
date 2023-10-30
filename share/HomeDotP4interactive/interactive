@@ -1,0 +1,31 @@
+# Put this file, named "interactive" in your ~/.p4 directory
+
+var.interactiveHelper = 'ipython'
+
+# Make some blank objects.
+if 1:
+    a0 = Alignment()
+    d0 = Data([])
+    t0 = Tree()
+    n0 = Node()
+    #tt0 = Trees()
+
+# Give single Alignments, Trees, or SequenceLists names.
+if pyFileCount == 0:
+    if len(var.alignments) == 1:
+        print("There is one alignment in var.alignments-- I am naming it 'a'")
+        a = var.alignments[0]
+    if len(var.trees) == 1:
+        print("There is one tree in var.trees-- I am naming it 't'")
+        t = var.trees[0]
+    if len(var.sequenceLists) == 1:
+        print("There is one sequenceList in var.sequenceLists-- I am naming it 'sl'")
+        sl = var.sequenceLists[0]
+        if len(sl.sequences) == 1:
+            print("There is only one sequence in that one sequenceList (sl) -- I am naming it 's'")
+            s = sl.sequences[0]
+
+
+
+        
+    
