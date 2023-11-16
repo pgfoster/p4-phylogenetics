@@ -561,6 +561,38 @@ if True:
         return ''.join(myMask)
 
 
+    def getCharDiversityOverSites(self):
+        """Return a list of character diversity values
+
+        Gaps and ambiguities are ignored.
+
+        Returns:
+            a list of ints, nChar long
+
+        See also :meth:`~Alignment.getMaskForCharDiversity`
+        """
+        counters = {}  # so that I can index it with a symbol rather than an int
+        myCDList = []
+        for c in self.symbols:
+            counters[c] = 0
+        for pos in range(len(self)):
+            for seq in self.sequences:
+                c = seq.sequence[pos]
+                try:
+                    counters[c] += 1  # ie ignore gaps and ambiguities
+                except KeyError:
+                    pass
+            siteCD = 0
+            for k,v in counters.items():
+                if v:
+                    siteCD += 1
+                counters[k] = 0                # Initialize for next pos
+            myCDList.append(siteCD)
+            # assert siteCD, "pos %i had no symbol chars, only gaps and ambigs."
+
+        return myCDList
+
+
     def getCharDiversityDistribution(self):
         """Distribution of different chars per site, as a distribution.
 
@@ -571,7 +603,7 @@ if True:
         +----------+---------------------------------------------------------+
         |    index | \                                                       |
         +==========+=========================================================+
-        |        0 | num of autapomorphies                                   |
+        |        0 | num of all-gap columns                                  |
         +----------+---------------------------------------------------------+
         |        1 | num of simple constant sites                            |
         +----------+---------------------------------------------------------+
@@ -584,12 +616,13 @@ if True:
         | nSymbols | num of sites with some of each char                     |
         +----------+---------------------------------------------------------+
 
-        Autapomorphies are  sites with two kinds of characters, where there is
-        only one of one of the characters.
 
-        So if there are 10 sites with 2 kinds of char, and 4 of those are
-        autapomorphies, 30 constant sites, and 20 sites with 3 kinds of character, we
-        would have a distro like this --- (4, 30, 10, 20, ...)
+        So if there are 
+        - no all-gap sites
+        - 30 simple constant sites 
+        - 10 sites with 2 kinds of char
+        - and 20 sites with 3 kinds of character, 
+        we would have a distro like this --- (0, 30, 10, 20, ...)
 
         This is in pure Python, and can be used for Alignments with one
         part.
@@ -597,37 +630,19 @@ if True:
         Returns:
             a tuple of ints, showing counts of sites with different diversities.
 
-        See also :meth:`~Alignment.getMaskForCharDiversity`
+        See also :meth:`~Alignment.getCharDiversityOverSites`
 
         """
         #assert isinstance(self, Alignment)
         distro = [0] * (len(self.symbols) + 1)
-        counters = {}  # so that I can index it with a symbol rather than an int
-        for c in self.symbols:
-            counters[c] = 0
-        for pos in range(len(self)):
-            for seq in self.sequences:
-                c = seq.sequence[pos]
-                try:
-                    counters[c] += 1  # ie ignore gaps and ambiguities
-                except KeyError:
-                    pass
-            hitsAtThisPos = 0
-            thereIsASingleton = False  
-            for k,v in counters.items():
-                if v:
-                    hitsAtThisPos += 1
-                    if v == 1:
-                        thereIsASingleton = True
-                counters[k] = 0                # Initialize for next pos
-            assert hitsAtThisPos, "pos %i had no symbol chars, only gaps and ambigs."
+        myCDList = self.getCharDiversityOverSites()
 
-            distro[hitsAtThisPos] += 1
-            if hitsAtThisPos == 2:
-                if thereIsASingleton:
-                    distro[0] += 1
+        for div in myCDList:
+            distro[div] += 1
+
         # Check
-        assert self.nChar == sum(distro[1:]), "Something is wrong. The distribution does not add up to nChar"
+        assert self.nChar == sum(distro), \
+            "Something is wrong. The distribution does not add up to nChar"
         return tuple(distro)
 
 
@@ -2069,67 +2084,52 @@ if True:
 
         self.nexusSets.dupeCharSet(theGName, theMyName)
 
+
     def meanNCharsPerSite(self, includeConstantSites=True, showDistribution=True):
         """Mean number of different chars per site.
 
-        Constant sites can optionally be ignored.  Gaps and ambiguities are ignored.
+        Gaps and ambiguities are ignored.
+
+        Constant sites can optionally be ignored.
 
         This is in pure Python, and can be used for Alignments with one
-        part.  It is also implemented in c in the Data class, which allows
+        part.  It is also implemented in C in the Data class, which allows
         more than one part (but no distribution).
 
         """
-        #assert isinstance(self, Alignment)
+
+        myCDList = self.getCharDiversityOverSites()
+        distro = [0] * (len(self.symbols) + 1)
+        for div in myCDList:
+            distro[div] += 1
+
+
         if showDistribution:
-            distro = {}
-        counters = {}
-        for c in self.symbols:
-            counters[c] = 0
-        hits = 0
-        nPos = 0  # the number of sites compared
-        for pos in range(len(self)):
-            for seq in self.sequences:
-                c = seq.sequence[pos]
-                if c in self.symbols:   # ie ignore gaps and ambiguities
-                    counters[c] += 1
-            #hits = 0
-            hitsAtThisPos = 0
-            for k, v in counters.items():
-                if v:
-                    hitsAtThisPos += 1
-                    counters[k] = 0
-            if includeConstantSites:
-                hits += hitsAtThisPos
-                nPos += 1
-            else:
-                if hitsAtThisPos > 1:   # ignore constant sites
-                    hits += hitsAtThisPos
-                    nPos += 1
-            if showDistribution:
-                if hitsAtThisPos in distro:
-                    distro[hitsAtThisPos] += 1
-                else:
-                    distro[hitsAtThisPos] = 1
-            # print pos, hits
-        #print(hits, nPos)
-        if showDistribution:
-            kk = list(distro.keys())
-            kk.sort()
-            theMin = kk[0]
-            theMax = kk[-1]
             print("\nnChars count")
             print("------ -----")
-            # for k in kk:
-            #    print "%2i  %3i" % (k, distro[k])
-            # print
-            for k in range(theMin, theMax + 1):
-                # Tom Williams 7 Feb 2011 bug report and fix (Thanks!). Was 'if
-                # distro[k]:' -- no workee if k is not a key.
-                if k in distro:
-                    print("%4i   %4i" % (k, distro[k]))
-                else:
-                    print("%4i   %4i" % (k, 0))
-        return float(hits) / nPos
+            for dk,dVal in enumerate(distro):
+                print("%2i  %3i" % (dk, dVal))
+            print()
+
+        if includeConstantSites:
+            dSum = 0
+            nSites = 0
+            for dIndx in range(1, len(distro)):   # skip all-gap sites
+                #print(dIndx, distro[dIndx])
+                nSites += distro[dIndx]
+                dSum += dIndx * distro[dIndx]
+            #print(nSites, dSum)
+            return float(dSum) / nSites
+        else:
+            dSum = 0
+            nSites = 0
+            for dIndx in range(2, len(distro)): # skip all-gap sites, and constant sites
+                #print(dIndx, distro[dIndx])
+                nSites += distro[dIndx]
+                dSum += dIndx * distro[dIndx]
+            #print(nSites, dSum)
+            return float(dSum) / nSites
+
 
     def getAllGapsMask(self, andMissing=True):
         """If its all gaps in a site, its 1, else 0.
