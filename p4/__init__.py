@@ -8,8 +8,8 @@ data.
 
 The package comes with-
    - the package itself, which goes where the third-party modules go,
-     eg /usr/local/lib/python3.6/site-packages/p4/
-   - the p4 script, which goes somewhere in your path.
+     eg /usr/local/lib/python3.X/site-packages/p4/
+   - the p4 script, which goes somewhere in your path
    - documentation and examples, which go in an appropriate share
      directory, for example in /usr/local/share/doc
 
@@ -26,7 +26,7 @@ from the command line.  To see if it is installed and works, try
 
     p4 --help
 
-Documentation is at <http://p4.nhm.ac.uk>
+Documentation is at <https://p4.nhm.ac.uk>
 
 """
 
@@ -34,6 +34,7 @@ import sys
 import os
 import glob
 import string
+import random
 
 from .var import var
 from . import func
