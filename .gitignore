@@ -29,4 +29,5 @@ build/
 # Sphinx documentation
 share/sphinxdoc/_build/
 
-
+make_pf.sh
+setup.py

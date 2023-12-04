@@ -41,7 +41,7 @@ class Numbers(object):
 
     """
 
-    def __init__(self, inThing, col=0, skip=0):
+    def __init__(self, inThing, col=0, stop=0, skip=0):
         self.data = []
         self.bins = None
         # self.binSize is a property
@@ -55,7 +55,7 @@ class Numbers(object):
         if isinstance(inThing, numpy.ndarray):
             inThing = list(inThing)
         if inThing:
-            self.read(inThing, col, skip)
+            self.read(inThing, col, stop, skip)
 
     @property
     def binSize(self):
@@ -76,7 +76,7 @@ class Numbers(object):
     def binSize(self):
         self._binSize = None
 
-    def read(self, inThing, col=0, skip=0):
+    def read(self, inThing, col=0, stop=0, skip=0):
         """Slurp in some more numbers.
 
         You can use this repeatedly, eg if your numbers are in more
@@ -88,6 +88,7 @@ class Numbers(object):
             try:
                 self.col = int(col)
                 self.skip = int(skip)
+                self.stop = int(stop)
             except (ValueError, TypeError):
                 gm.append("Args col and skip must be ints")
                 raise P4Error(gm)
@@ -100,7 +101,7 @@ class Numbers(object):
             #        gm.append("File '%s' has %i lines, " % (inThing, len(theLines)))
             #        gm.append("but skip is set to %i." % self.skip)
             #        raise P4Error(gm)
-            skipsDone = 0
+            count = 0
             digitsPlusMinus = '0123456789+-'
             for aLine in theLines:
                 ll = aLine.lstrip()
@@ -116,8 +117,11 @@ class Numbers(object):
                 elif ll[0] not in digitsPlusMinus:
                     pass
                 else:
-                    if skipsDone < self.skip:
-                        skipsDone += 1
+                    if count < self.skip:
+                        count += 1
+                        continue
+                    elif self.stop > 0 and count >= self.stop:
+                        break
                     else:
                         splitLine = aLine.split()
                         try:
@@ -134,6 +138,8 @@ class Numbers(object):
                             gm.append("Line '%s'.  " % aLine.rstrip())
                             gm.append("Can't make sense of '%s'" % theOne)
                             raise P4Error(gm)
+                        count += 1
+
         elif isinstance(inThing, list):
             for thing in inThing:
                 try:

@@ -1,0 +1,10 @@
+[default]
+name=Default
+runtime=host
+config-opts=
+run-opts=
+prefix=/home/cymon/.cache/gnome-builder/install/p4-phylogenetics.git.cymon/host
+app-id=
+postbuild=
+prebuild=
+default=true

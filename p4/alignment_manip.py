@@ -1281,16 +1281,23 @@ if True:
                     pass  # They stay as they are.
                 elif c == 'x':
                     s.sequence[i] = '-'
+                elif c in 'bzj':
+                    if ambigsBecomeGaps:
+                        s.sequence[i] = '-'
+                    else:
+                        gm.append("Ambiguity character '%s' is not handled." % c)
+                        gm.append("Perhaps set 'ambigsBecomeGaps' as True.")
+                        raise P4Error(gm)
                 else:
-                    # Maybe this should raise a P4Error?
-                    print("skipping character '%s'" % c)
-            s.sequence = ''.join(s.sequence)
+                    gm.append("Unknown character state '%s'" % c)
+                    raise P4Error(gm)
+            s.sequence = string.join(s.sequence, '')
         self.dataType = 'standard'
         self.equates = {}
         self.dim = 6
         self.symbols = symbols
 
-    def recodeProteinIntoGroups(self, groups, firstLetter=False):
+    def recodeProteinIntoGroups(self, groups, firstLetter=False, startAtZero=False):
         """Recode protein data into user-specified groups, in place.
 
         A generalization of :meth:`p4.alignment.Alignment.recodeDayhoff`
@@ -1303,7 +1310,10 @@ if True:
         It does not make a new alignment-- it does the re-coding 'in-place'.
 
         If arg *firstLetter* is set, then the character is recoded as the
-        first letter of its group rather than as a number. 
+        first letter of its group rather than as a number.
+
+        If arg *startAtZero* groups will be coded with number beginning with
+        zero, else beginning with 1.
         """
 
         gm = ['Alignment.recodeProteinIntoGroups()']
@@ -1323,7 +1333,10 @@ if True:
         for s in theseSymbols:
             assert s in self.symbols
             assert theseSymbols.count(s) == 1
-        numeralSymbols = ['%i' % (i + 1) for i in range(nGroups)]
+        if startAtZero:
+            numeralSymbols = ['%i' % i for i in range(nGroups)]
+        else:
+            numeralSymbols = ['%i' % (i + 1) for i in range(nGroups)]
         firstLetters = [gr[0] for gr in myGroups]
 
         for s in self.sequences:
@@ -2653,6 +2666,8 @@ if True:
                              n_choices=1000, seed=42, verbose=False):
         """An interface for Susko and Roger's minmax-chisq program.
 
+        This returns the maximum number of bins (groups of amino-acids) that maintains composition homogeneity.
+
         Susko, E. and Roger, A.J. (2007). On reduced amino acid alphabets for
         phylogenetic inference.  Mol. Biol. Evol. 24:2139-2150.
 
@@ -2706,31 +2721,56 @@ if True:
         # Need the binning before pvalue falls below percent_cutoff
         # They could be all <= 0.05 or all >= 0.05 because of the binning range
         pvalues = [float(bin[0].split()[1]) for bin in results]
-        if not pvalues[0] >= percent_cutoff:
-            print("No p-value <= %s" % percent_cutoff)
-            return None
         if not any(pv for pv in pvalues if pv >= percent_cutoff):
             print("No p-value >= %s" % percent_cutoff)
+            print("\nminmax-chisq output:\n%s" % stdout)
             return None
+        if not any(pv for pv in pvalues if pv <= percent_cutoff):
+            print("No p-value <= %s" % percent_cutoff)
+            print("\nminmax-chisq output:\n%s" % stdout)
+            return None
+        opt_bin = False
+        #Find the maximum number of groups that maintains homogeneity
+        #Loop through p-values and find the first value that is less than the
+        #cutoff, then pick the previous bin
+        #Find the first homogeneous bin
+        found_homogeneous = False
         for i, bin_result in enumerate(results):
             nbins, pvalue = bin_result[0].split()
-            if float(pvalue) <= percent_cutoff:
-                opt_bin = results[i - 1]
-                break
-        nbins, pvalue = opt_bin[0].split()
-        scores = opt_bin[1].split()
-        amino_acid_order = "A R N D C Q E G H I L K M F P S T W Y V".lower().split()
-        c = zip(scores, amino_acid_order)
-        groups = {}
-        for bin, amino in c:
-            sbin = str(bin)
-            groups[sbin] = groups.get(sbin, "") + amino
-        if verbose:
+            if verbose:
+                print("Doing bin %s, p-value = %s" % (bin_result, pvalue))
+            if not found_homogeneous:
+                if float(pvalue) >= percent_cutoff:
+                    found_homogeneous = True
+                    if verbose:
+                        print("\tFound Homogen %s, p-value = %s" % (bin_result, pvalue))
+                    continue
+            else:
+                #Find the next result < cuttoff and pick the previous bin
+                if float(pvalue) <= percent_cutoff:
+                    opt_bin = results[i-1]
+                    break
+        if not opt_bin:
+            print("Error: unable to find an optimal bin")
+            print("- try increasing number of bins, or lowering the %% cutoff")
             print("\nminmax-chisq output:\n%s" % stdout)
-            print("\nMaximum number of bins that maintains homogeneity: %s" % nbins)
-            print("\nGroups: %s" % ", ".join(groups.values()))
-
-        return groups.values()
+            return
+        else:
+            nbins, pvalue = opt_bin[0].split()
+            scores = opt_bin[1].split()
+            amino_acid_order = "A R N D C Q E G H I L K M F P S T W Y V".lower().split()
+            c = zip(scores, amino_acid_order)
+            groups = {}
+            for bin, amino in c:
+                sbin = str(bin)
+                groups[sbin] = groups.get(sbin, "") + amino
+            if verbose:
+                print("\nminmax-chisq output:\n%s" % stdout)
+                print("\nMaximum number of bins that maintains homogeneity: %s" % nbins)
+                print("\nGroups: %s" % ", ".join(groups.values()))
+            r = groups.values()
+            r.sort()
+            return r
 
     def getKosiolAISGroups(self, tree, n_bins, remove_files=False, verbose=True):
         """An interface for Kosiol's program AIS, for grouping amino acids.

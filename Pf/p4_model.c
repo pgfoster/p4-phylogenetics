@@ -384,7 +384,6 @@ void p4_newRMatrix(p4_model *aModel, int pNum, int mNum, int free, int spec)
     else if(spec == RMATRIX_RTREV) {
         rtRevRMatrix(aRMatrix->bigR);
     }
-
     else if(spec == RMATRIX_TMJTT94) {
         tmjtt94RMatrix(aRMatrix->bigR);
     }
@@ -411,6 +410,12 @@ void p4_newRMatrix(p4_model *aModel, int pNum, int mNum, int free, int spec)
     }
     else if(spec == RMATRIX_STMTREV) {
         stmtREVRMatrix(aRMatrix->bigR);
+    }
+    else if(spec == RMATRIX_PRASREV) {
+        prasREVRMatrix(aRMatrix->bigR);
+    }
+    else if(spec == RMATRIX_GNETREV) {
+        gnetREVRMatrix(aRMatrix->bigR);
     }
     else if(spec == RMATRIX_VT) {
         vtRMatrix(aRMatrix->bigR);

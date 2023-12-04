@@ -1548,6 +1548,23 @@ class Tree(object):
                 seqNums.append(n.seqNum)
         return seqNums
 
+    def treeHeight(self):
+        """Mean, (min, max) of all leaf to root branch lengths"""
+        theights = self.getLeafToRootHeights()
+        return (p4.func.mean(theights), (min(theights), max(theights)))
+
+    def getLeafToRootHeights(self):
+        """Get all leaf to root branch lengths"""
+        theights = []
+        for nodeNum in self.iterLeavesNoRoot():
+            nodeHeight = 0
+            while self.node(nodeNum).parent:
+                if nodeNum != self.root.nodeNum:
+                    nodeHeight += self.node(nodeNum).br.len
+                nodeNum = self.node(nodeNum).parent.nodeNum
+            theights.append(nodeHeight)
+        return theights
+
     # def getAllChildrenNums(self, specifier):
     #     """Returns a list of the nodeNums of all children of the specified node
     #     Ambiguous, unused.

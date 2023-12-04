@@ -38,9 +38,11 @@ argvAfterDoubleDash = []
 # back to being an empty string, the way it usually is when you run interactive
 # python.
 
-# Cymon seems to think this is needed to pull in the correct libraries:
-# sys.path = [os.path.dirname(sys.path[0])] + sys.path
-sys.path[0] = ''
+# If you have multiple p4 repositories you will need this path modification
+# to pull in the correct p4 libs: ensure that the p4 script is being executed
+# from the <repo>/bin directory 
+sys.path = [os.path.dirname(sys.path[0])] + sys.path
+#sys.path[0] = ''
 
 if len(sys.argv) > 1:  # Is there stuff on the command line?
     for f in sys.argv[1:]:
@@ -118,7 +120,6 @@ if doDrawTreesWithNodeNumbers:
     for t in var.trees:
         t.draw(showInternalNodeNames=1, addToBrLen=0.2, width=None, showNodeNums=1, partNum=None, model=None)
 
-    
 if forceExitAtEnd:
     sys.exit()
 if exitAtEnd:
@@ -141,7 +142,7 @@ if myVersion:
 # Set the prompt (default is '>>> ').  I suspect that doing this might
 # screw up using the python interpreter in python-mode in emacs, but
 # you'll want to confirm that.
-sys.ps1 = 'p4> '
+sys.ps1 = 'p4-gitc> '
 
 # When the "from p4 import *" was done above, it read in any *.py
 # files in ~/.p4.  Now we want to execfile one more file, which of
@@ -167,7 +168,7 @@ if var.interactiveHelper:
     elif var.interactiveHelper == 'ipython':
         from IPython import start_ipython
         if var.excepthookEditor:
-            sys.exit(start_ipython(argv=["-m", "p4.interactive.ipython", "-i"], 
+            sys.exit(start_ipython(argv=["-m", "p4.interactive.ipython", "-i"],
                                    user_ns=locals()))
         else:
             sys.exit(start_ipython(argv=["-i"], user_ns=locals()))

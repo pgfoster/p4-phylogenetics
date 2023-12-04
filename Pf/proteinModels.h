@@ -16,3 +16,5 @@ void gcpREVRMatrix(double **r);
 void stmtREVRMatrix(double **r);
 void vtRMatrix(double **r);
 void pmbRMatrix(double **r);
+void prasREVRMatrix(double **r);
+void gnetREVRMatrix(double **r);
