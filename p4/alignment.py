@@ -16,6 +16,7 @@ from p4.var import var
 from p4.part import Part
 import numpy
 import numpy.linalg
+import statistics
 
 cListPat = re.compile('(\d+)-?(.+)?')
 cList2Pat = re.compile('(.+)\\\\(\d+)')
