@@ -1828,10 +1828,9 @@ def maskFromNexusCharacterList(nexusCharListString, maskLength, invert=0):
     """
 
     gm = ["maskFromNexusCharacterList()"]
-    from p4.alignment import cListPat, cList2Pat, cListAllPat
-    #cListPat = re.compile('(\d+)-?(.+)?')
-    #cList2Pat = re.compile('(.+)\\\\(\d+)')
-    #cListAllPat = re.compile('all\\\\?(\d+)?')
+    cListPat = re.compile(r'(\d+)-?(.+)?')
+    cList2Pat = re.compile(r'(.+)\\(\d+)')
+    cListAllPat = re.compile(r'all\\?(\d+)?')
 
     # print("char list is: %s" % nexusCharListString)
     cList = nexusCharListString.split()
