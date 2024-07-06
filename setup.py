@@ -88,11 +88,19 @@ if not found_libgsl or not found_gsl_headers:
     print("So that is not going to work.")
     sys.exit()
 
-hasNumpyHeaders = True
-# Get numpy header location.  We have already successfully imported numpy, above.
+# Get numpy include location.  We have already successfully imported numpy, above.
+# Includes in numpy before v2.0.0 were in core, but 2.0.0 and after in _core
 ipth = numpy.__file__
 ipth = os.path.dirname(ipth)
-ipth = os.path.join(ipth, "core")
+npVer = numpy.__version__
+spl_npVer = npVer.split(".")
+if spl_npVer[0] == "2":
+    ipth = os.path.join(ipth, "_core")
+elif spl_npVer[0] == "1":
+    ipth = os.path.join(ipth, "core")
+else:
+    print("setup.py: something wrong with finding the numpy version and include directory.  FIXME")
+    sys.exit()
 ipth = os.path.join(ipth, "include")
 if os.path.exists(ipth):
     if ipth not in my_include_dirs:
