@@ -8,7 +8,6 @@ import os
 import math
 import string
 import p4.func
-import re
 import sys
 from p4.nexussets import CharSet
 import subprocess
@@ -18,10 +17,6 @@ from p4.part import Part
 import numpy
 import numpy.linalg
 import p4.pf as pf
-
-cListPat = re.compile('(\d+)-?(.+)?')
-cList2Pat = re.compile('(.+)\\\\(\d+)')
-cListAllPat = re.compile('all\\\\?(\d+)?')
 
 if True:
     def readOpenPhylipFile(self, flob, nTax, nChar):

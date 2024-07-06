@@ -7,7 +7,6 @@ import copy
 import os
 import math
 import string
-import re
 import sys
 from p4.nexussets import CharSet
 import subprocess
@@ -17,10 +16,6 @@ from p4.part import Part
 import numpy
 import numpy.linalg
 import statistics
-
-cListPat = re.compile('(\d+)-?(.+)?')
-cList2Pat = re.compile('(.+)\\\\(\d+)')
-cListAllPat = re.compile('all\\\\?(\d+)?')
 
 longMessage1 = """
  You may want to do the alignment method 
