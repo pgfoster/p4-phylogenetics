@@ -402,11 +402,11 @@ def readFile(fName):
     # See if there is an informative suffix on the file name
     # If there is a suffix, but the file cannot be read,
     # it is a serious error, and death follows.
-    result = re.search('(.+)\.(.+)', fName)
-    if result:
-        #baseName = result.group(1)
-        # print("got result.group(2) = %s" % result.group(2))
-        suffix = result.group(2).lower()
+    spl_fName = fName.split(".")
+    if len(spl_fName) > 1:
+        # baseName = ".".join(spl_fName[:-1])
+        # print(baseName)
+        suffix = spl_fName[-1].lower()
         #print("readFile: got suffix '%s'" % suffix)
         if suffix == 'py':
             flob.close()
@@ -463,7 +463,7 @@ def readFile(fName):
                 gm.append("Failed to read supposed clustalw file '%s'" % fName)
                 raise P4Error(gm)
             return
-        elif result.group(2) in ['p4_tPickle']:  # preserve uppercase
+        elif spl_fName[-1] in ['p4_tPickle']:  # preserve uppercase
             if var.verboseRead:
                 print("Trying to read '%s' as a pickled Tree file..." % fName)
             # It should be a binary open
