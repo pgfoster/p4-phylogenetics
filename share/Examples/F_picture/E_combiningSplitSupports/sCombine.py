@@ -1,4 +1,4 @@
-# Use the mb cons tree as the master, and add supports from the paup boot tree.
+# Use the mb cons tree as the main tree, and add supports from the paup boot tree.
 
 # We need an ordered list of taxNames.
 read('dB.nex')
