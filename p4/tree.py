@@ -18,6 +18,7 @@ import p4.pf as pf
 from p4.model import Model
 from p4.data import Data
 from p4.alignment import Part
+from p4.treepicture import TreePicture
 import random
 import pickle
 

@@ -6,7 +6,6 @@ class Constraints(object):
 
     """A container for tree topology constraints.
 
-
     Constraints are defined with a partially-resolved tree.  We can
     then use a constraints object to ask whether a query tree has
     those constraints.  In addition a constrained rooting may be
