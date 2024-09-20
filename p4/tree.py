@@ -8738,7 +8738,7 @@ class Tree(object):
         The analysis usually tests all sequences in the data partition
         together (like paup), but you can also 'doIndividualSequences'
         (like puzzle).  Beware that the latter is a multiple simultaneous
-        stats test, and so the power may be compromized.
+        stats test, with associated Type I Error.
 
         For purposes of comparison, this test can also do compo tests in
         the style of PAUP and puzzle, using chi-square to assess
