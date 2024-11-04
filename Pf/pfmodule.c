@@ -2572,6 +2572,62 @@ pf_logDetFillFxy(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+pf_getSimpleBigF(PyObject *self, PyObject *args)
+{
+    part *thePart;
+    PyArrayObject *oBigF;
+    int iA, iB;
+    double *mat;
+
+    int pos,ci, cj, pc;
+
+    if(!PyArg_ParseTuple(args, "lOii", &thePart,
+                         &oBigF,
+			 &iA,
+			 &iB)) {
+        printf("Error pf_getSimpleBigF: couldn't parse tuple\n");
+        return NULL;
+    }
+
+    // printf("getSimpleBigF\n");
+    // printf("nPatterns %i\n", thePart->nPatterns);
+    mat = (double *)oBigF->data;
+
+    // zero mat
+    for(pos=0; pos<(thePart->dim * thePart->dim); pos++) {
+	mat[pos] = 0.0;
+    }
+
+    for(pos=0; pos<thePart->nPatterns; pos++) {
+	ci = thePart->patterns[iA][pos];
+	cj = thePart->patterns[iB][pos];
+	pc = thePart->patternCounts[pos];
+
+        //printf("%i %i %i %i\n", pos, ci, cj, pc);
+	if((ci < 0) || (ci >= thePart->dim)) {
+	    //printf("caught ci %i\n", ci);
+	    continue;
+	}
+	if((cj < 0) || (cj >= thePart->dim)) {
+	    //printf("caught cj %i\n", cj);
+	    continue;
+	}
+
+	mat[(thePart->dim * ci) + cj] += (double)pc;
+    }
+    // dumpPart(thePart);
+
+    // for(ci=0;ci<4;ci++) {
+    //     for(cj=0;cj<4;cj++) {
+    // 	    printf("%f\n", mat[(thePart->dim * ci) + cj]);
+    // 	}
+    // }
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject *
 pf_effectiveSampleSize(PyObject *self, PyObject *args)
 {
     PyArrayObject *valsO,
@@ -2953,6 +3009,7 @@ static PyMethodDef pfMethods[] = {
 
     {"zeroNumPyInts", pf_zeroNumPyInts, METH_VARARGS},
     {"logDetFillFxy", pf_logDetFillFxy, METH_VARARGS},
+    {"getSimpleBigF", pf_getSimpleBigF, METH_VARARGS},
     {"effectiveSampleSize", pf_effectiveSampleSize, METH_VARARGS},
     {"newtonRaftery94_eqn16", pf_newtonRaftery94_eqn16, METH_VARARGS},
     {"setMcmcTreeCallback", pf_setMcmcTreeCallback, METH_VARARGS},
