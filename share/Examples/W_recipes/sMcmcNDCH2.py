@@ -19,7 +19,7 @@ t = func.randomTree(taxNames=d.taxNames)
 t.data = d
 
 # Fully parameterize the comps, including a comp for the root
-for n in t.nodes:
+for n in t.iterNodes():
     c = t.newComp(free=1, spec='empirical', symbol='-')
     t.setModelComponentOnNode(c, node=n, clade=0)
 

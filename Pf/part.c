@@ -327,7 +327,7 @@ void makePatterns(part *thePart)
     // the arrays are eg sequences[j][i], slice[j], patternCounts[i]
     // #####################
 
-    //printf("part.c: starting makePatterns:\n");
+    // printf("part.c: starting makePatterns:\n");
 
     // check for sequences and patterns
     if(!thePart->sequences) {
