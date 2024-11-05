@@ -3728,11 +3728,15 @@ class Mcmc(object):
         """Calculate log pseudo marginal likelihood from CPO"""
         gm = ["Mcmc.lpml()"]
         if not self.doCpo:
-            gm.append("CPO was not turned on, via m.doCpo = True")
-            raise P4Error(gm)
+            #gm.append("CPO was not turned on, via m.doCpo = True")
+            #raise P4Error(gm)
+            print("Mcmc.lpml().  doCpo was not on.")
+            return 0.0
         if not self.cpo_nSamples:
-            gm.append("No cpo samples?")
-            raise P4Error(gm)
+            #gm.append("No cpo samples?")
+            #raise P4Error(gm)
+            print("Mcmc.lpml().  no cpo_nSamples?")
+            return 0.0
         a = numpy.array(self.cpo_sumsOfInverseSiteLikes)
         a /= self.cpo_nSamples
         a = -numpy.log(a)
