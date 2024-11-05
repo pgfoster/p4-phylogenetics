@@ -2002,7 +2002,7 @@ class Alignment(SequenceList):
         A tuple is returned, composed of
 
         +----------+---------------------------------------------------------+
-        |    index |                                                        |
+        |    index |                                                         |
         +==========+=========================================================+
         |        0 | num of all-gap columns                                  |
         +----------+---------------------------------------------------------+
@@ -3638,7 +3638,12 @@ class Alignment(SequenceList):
         It returns a 2-D Numpy array of floats.
 
         """
+        # if we have parts, ie self is in a Data object, use fast pf.getSimpleBigF()
+        if self.parts:
+            pf.getSimpleBigF(self.parts[0].cPart, self.simpBigF, iA, iB)
+            return(self.simpBigF)
 
+        # No Data object, so do it the slow way 
         bigF = numpy.zeros([self.dim, self.dim], dtype=numpy.double)
         sA = self.sequences[iA].sequence
         sB = self.sequences[iB].sequence
@@ -3647,10 +3652,13 @@ class Alignment(SequenceList):
             cB = sB[seqPos]
             if cA in self.symbols and cB in self.symbols:
                 bigF[self.symbols.index(cA), self.symbols.index(cB)] += 1.
+        if 0:
+            # Check that the fast way and the slow way are the same
+            assert numpy.array_equal(self.simpBigF,bigF)
         return bigF
 
-    # A function, not an Alignment method.
-    def _ababnehEtAlStatsAndProbs(bigF, dim, txNumA, txNumB):
+
+    def _ababnehEtAlStatsAndProbs(self, bigF, dim, txNumA, txNumB):
         """Re-write of Ababneh et al 2006 Testpairs function for a single pair.
 
         Args txNumA and txNumB are not used in the calculations -- they
@@ -3663,7 +3671,7 @@ class Alignment(SequenceList):
         # "Internal", QR.  And calculate the probs of those stats,
         # PB, PS, PR.
 
-        gm = ["_ababnehEtAlStatsAndProbs()"]
+        gm = ["Alignment._ababnehEtAlStatsAndProbs()"]
 
         # First calculate QB, Bowker's stat.  If there are any double
         # blanks (ie both bigF[i,j] = 0 and bigF[j,i] = 0) in the bigF,
@@ -3762,31 +3770,40 @@ class Alignment(SequenceList):
         return (QB, QS, QR, PB, PS, PR)
 
     def matchedPairsTests(self, mostSignificantOnly=False, verbose=False):
-        """Get all Ababneh et al 2006 matched pairs stats and probabilies.
+        """Get all Ababneh et al 2006 matched pairs stats and
+        probabilies.
 
         Args:
-
-            mostSignificantOnly (bool):  False by default, which gives the
-              full matrices.  Setting this to True returns the three most
-              significant values only, as a tuple.
+            mostSignificantOnly (bool): False by default, which gives the full matrices.  
+                Setting this to True returns the three most significant values only, as a tuple.
 
         Returns:
-
             By default it returns six :class:`~p4.distancematrix.DistanceMatrix` 
-            objects.   QB, QS, and QR (QR=Internal) matrices contain the 
-            statistics, and PB, PS, and PR contain the P-values.
+            objects.  QB, QS, and QR (QR=Internal) matrices contain the statistics, 
+            and PB,PS, and PR contain the P-values.
 
         For example::
 
-          a = var.alignments[0]
-          QB, QS, QR, PB, PS, PR = a.matchedPairsTests()
+            a = var.alignments[0]
+            QB, QS, QR, PB, PS, PR = a.matchedPairsTests()
 
         The tests are pairwise on all pairs of sequences.  Note that
         it may fail to do the calculations for a pair.  If so it will
         return None for that test for that pair, and that will end up
         in DistanceMatrix objects that are returned.
 
+        Only the first partition of the alignment (``self.parts[0]``) is
+        done, so you will want to use an un-partitioned Alignment
+        object.
         """
+
+        gm = ["Alignment.matchedPairsTests()"]
+        if 1:
+            # coded in c, using pf.getSimpleBigF, and is about 20x faster than the python version
+            if not self.parts:
+                self._initParts()
+            if not hasattr(self, "simpBigF"):
+                self.simpBigF = numpy.zeros([self.dim, self.dim], dtype=numpy.double)
 
         QBB = DistanceMatrix()
         QSS = DistanceMatrix()
@@ -3825,7 +3842,8 @@ class Alignment(SequenceList):
                     identicals += 1
                     QB, QS, QR, PB, PS, PR = (None, None, None, None, None, None)
                 else:
-                    QB, QS, QR, PB, PS, PR = _ababnehEtAlStatsAndProbs(bigF, self.dim, txNumA, txNumB)
+                    QB, QS, QR, PB, PS, PR = self._ababnehEtAlStatsAndProbs(
+                        bigF, self.dim, txNumA, txNumB)
                     # print(f"QB:{QB} QS:{QS} QR:{QR} | PB:{PB} PS:{PS} PR:{PR}")
 
                 if PB != None:
