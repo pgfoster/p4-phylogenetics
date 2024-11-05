@@ -538,16 +538,17 @@ class Tree(object):
         Args:
             flob: an open file or file-like object
 
-            translationHash (dict): associates short names or numbers with long
-            proper taxon names
+            translationHash (dict): associates short names or numbers with 
+                long proper taxon names
 
-            doModelComments (bool): whether to parse p4-specific model command
-            comments in the tree description
+            doModelComments (bool): whether to parse p4-specific model 
+                command comments in the tree description
 
         Returns:
             None
 
         """
+
 
         gm = ['Tree.parseNexus()']  # re-defined below
         if 0:
@@ -5529,18 +5530,21 @@ class Tree(object):
     def nni(self, upperNodeSpec=None):
         """Simple nearest-neighbor interchange.
 
-        You specify an 'upper' node, via an upperNodeSpec, which as usual
-        can be a node name, node number, or node object.  If you don't
-        specify something, a random node will be chosen for you.  (This
-        latter option might be a little slow if you are doing many of
-        them, as it uses iterInternalsNoRoot(), but mostly it should be
-        fast enough).
+        You specify an 'upper' node, via an upperNodeSpec, which as
+        usual can be a node name, node number, or node object.  If you
+        don't specify something, a random node will be chosen for you.
+        (This latter option might be a little slow if you are doing
+        many of them, as it uses iterInternalsNoRoot(), but mostly it
+        should be fast enough).
 
-        The upper node has a parent -- the 'lower' node.  One subtree from
-        the upper node and one subtree from the lower node are exchanged.
-        Both subtrees are chosen randomly.
+        The upper node has a parent -- the 'lower' node.  One subtree
+        from the upper node and one subtree from the lower node are
+        exchanged.  Both subtrees are chosen randomly.
 
         This works on biRooted trees also, preserving the biRoot.
+        Neighbours are not allowed to be on both sides the the
+        bifurcating root, and so exchanges are only allowed on one
+        side of the tree or the other.
         """
 
         gm = ["Tree.nni()"]
@@ -5548,13 +5552,31 @@ class Tree(object):
             # This makes sure that upperNode is part of self.
             upperNode = self.node(upperNodeSpec)
         else:
-            candidates = [n for n in self.iterInternalsNoRoot()]
+            # This allows candidates adjacent to the root, including the biRoot
+            #candidates = [n for n in self.iterInternalsNoRoot()]
+
+            # disallow candidates adjacent to the biRoot
+            candidates = []
+            disallowed = []
+            selfIsBiRooted = self.isBiRoot()
+            if selfIsBiRooted:
+                disallowed = [self.root.leftChild, self.root.leftChild.sibling]
+                
+            for n in self.iterInternalsNoRoot():
+                if selfIsBiRooted:
+                    if n in disallowed:
+                        pass
+                    else:
+                        candidates.append(n)
+                else:
+                    candidates.append(n)
             if not candidates:
                 self.dump()
                 self.draw()
                 gm.append("No internal nodes?")
                 raise P4Error(gm)
             upperNode = random.choice(candidates)
+            #print(f"upperNode is {upperNode.nodeNum}")
 
         # Want the upperNode to have at least 2 children
         upperChildren = [n for n in upperNode.iterChildren()]
@@ -6630,7 +6652,7 @@ class Tree(object):
 
     @data.setter
     def data(self, theData):
-        """Sets self.data, and self.nParts"""
+        """Sets self.data"""
 
         # Two cases.  Either
         #   1.  Self already has a data.
@@ -6660,12 +6682,14 @@ class Tree(object):
             self._data = None
             return
 
+        self._data = theData
+
         if self.model:
 
             # We have seen a data object before (otherwise we would not
             # have been able to set the model).  Check for compatibility.
 
-            # print "_setData() here.   self.model exits."
+            # print("{gm[0]}   self.model exits.")
 
             if not self.taxNames:
                 gm.append(
@@ -6726,85 +6750,93 @@ class Tree(object):
                     gm.append("seqNums do not match up with taxNames.")
                     raise P4Error(gm)
 
-            self._data = theData
 
-        else:
-            # When you do this method, _setData(), self gets a suitable
-            # model.  We have here no model, so we may have never seen a
-            # data before.  Or we might have just lost the model.
+        else:  # no model
 
-            # Check for same number of taxa
-            treeNTax = 0
-            treeTaxNames = []
-            for n in self.iterNodes():
-                if n.isLeaf:
-                    treeNTax += 1
-                    treeTaxNames.append(n.name)
-            dataNTax = len(theData.taxNames)
-            if treeNTax != dataNTax:
-                gm.append("The number of taxa in the tree (%s)" % treeNTax)
-                gm.append("is not the same as in the data (%s)" % dataNTax)
-                raise P4Error(gm)
+            self.setNewModel()
 
-            # Check for mis-matched taxNames
-            isBad = 0
-            for tn in treeTaxNames:
-                if tn not in theData.taxNames:
-                    isBad = 1
-                    break
-            for tn in theData.taxNames:
-                if tn not in treeTaxNames:
-                    isBad = 1
-                    break
-            if isBad:
-                gm.append("TaxName mismatch between the tree and the data.")
-                gm.append("Here they are, sorted to show mis-matches.")
-                gm.append("    %25s  %25s" % ('data', 'tree'))
-                treeTaxNames.sort()
-                theData.taxNames.sort()
-                for i in range(len(treeTaxNames)):
-                    if theData.taxNames[i] == treeTaxNames[i]:
-                        gm.append("    %25s  %25s" %
-                                  (theData.taxNames[i], treeTaxNames[i]))
-                    else:
-                        gm.append("*** %25s  %25s" %
-                                  (theData.taxNames[i], treeTaxNames[i]))
-                raise P4Error(gm)
+    def setNewModel(self):
 
-            # attach
-            self.taxNames = theData.taxNames
-            self._data = theData
-            #self.nParts = len(theData.parts)
+        theData = self.data
+        assert self.data, "set the data first"
+        # assert not self.model, "this method is to be used when there is no model"
+        if self.model:
+            self.model = None
 
-            # Now that nParts is known ...
-            # print "_setData.  len(theData.parts) = %s" % len(theData.parts)
-            # calls self.deleteCStuff()
-            self.model = Model(len(theData.parts))
-            for n in self.iterNodes():
-                if n.parts:
-                    n.parts = []
+        # When you do this method, self gets a suitable
+        # model.  We have here no model, so we may have never seen a
+        # data before.  Or we might have just lost the model.
+
+        # Check for same number of taxa
+        treeNTax = 0
+        treeTaxNames = []
+        for n in self.iterNodes():
+            if n.isLeaf:
+                treeNTax += 1
+                treeTaxNames.append(n.name)
+        dataNTax = len(theData.taxNames)
+        if treeNTax != dataNTax:
+            gm.append("The number of taxa in the tree (%s)" % treeNTax)
+            gm.append("is not the same as in the data (%s)" % dataNTax)
+            raise P4Error(gm)
+
+        # Check for mis-matched taxNames
+        isBad = 0
+        for tn in treeTaxNames:
+            if tn not in theData.taxNames:
+                isBad = 1
+                break
+        for tn in theData.taxNames:
+            if tn not in treeTaxNames:
+                isBad = 1
+                break
+        if isBad:
+            gm.append("TaxName mismatch between the tree and the data.")
+            gm.append("Here they are, sorted to show mis-matches.")
+            gm.append("    %25s  %25s" % ('data', 'tree'))
+            treeTaxNames.sort()
+            theData.taxNames.sort()
+            for i in range(len(treeTaxNames)):
+                if theData.taxNames[i] == treeTaxNames[i]:
+                    gm.append("    %25s  %25s" %
+                              (theData.taxNames[i], treeTaxNames[i]))
+                else:
+                    gm.append("*** %25s  %25s" %
+                              (theData.taxNames[i], treeTaxNames[i]))
+            raise P4Error(gm)
+
+        # attach
+        self.taxNames = theData.taxNames
+        self._data = theData
+
+        # print "_setData.  len(theData.parts) = %s" % len(theData.parts)
+        # calls self.deleteCStuff()
+        self.model = Model(len(theData.parts))
+        for n in self.iterNodes():
+            if n.parts:
+                n.parts = []
+            for i in range(self.model.nParts):
+                n.parts.append(NodePart())
+        for n in self.iterNodes():
+            if n != self.root:
+                n.br.parts = []
                 for i in range(self.model.nParts):
-                    n.parts.append(NodePart())
-            for n in self.iterNodes():
-                if n != self.root:
-                    n.br.parts = []
-                    for i in range(self.model.nParts):
-                        n.br.parts.append(NodeBranchPart())
+                    n.br.parts.append(NodeBranchPart())
 
-            # Set modelPart dims and symbols
-            for pNum in range(self.model.nParts):
-                self.model.parts[pNum].dim = theData.parts[pNum].dim
-                self.model.parts[pNum].symbols = theData.parts[pNum].symbols
+        # Set modelPart dims and symbols
+        for pNum in range(self.model.nParts):
+            self.model.parts[pNum].dim = theData.parts[pNum].dim
+            self.model.parts[pNum].symbols = theData.parts[pNum].symbols
 
-            # There is intentionally no default pInvar, forcing the user to be
-            # explicit.
-            for p in self.model.parts:
-                p.pInvar = None
+        # There is intentionally no default pInvar, forcing the user to be
+        # explicit.
+        for p in self.model.parts:
+            p.pInvar = None
 
-            # Set seqNum
-            for n in self.iterNodes():
-                if n.isLeaf:
-                    n.seqNum = self.taxNames.index(n.name)
+        # Set seqNum
+        for n in self.iterNodes():
+            if n.isLeaf:
+                n.seqNum = self.taxNames.index(n.name)
 
     @property
     def model(self):
@@ -6845,13 +6877,11 @@ class Tree(object):
             raise P4Error(gm)
 
         if not self.model:
-            # When you _setData(), a model object of suitable dimensions
+            # When you set the self.data, a model object of suitable dimensions
             # is made and attached to self.  If we have got here, it is
             # because the model has subsequently been lost.  So just
             # re-instate it.
-            #self._setData(self.data)
-            gm.append("No model.  Set the model first.  Or FIXME?")
-            raise P4Error(gm)
+            self.setNewModel()
 
         if partNum < 0 or partNum >= self.model.nParts:
             gm.append("Zero-based partNum (%s) is out of range (of %s parts)" %
@@ -7288,6 +7318,7 @@ class Tree(object):
                 theNode.parts[partNum].compNum = theModelComponent.num
         else:
             if isinstance(theModelComponent, Comp):
+                #print(f"node {theNode.nodeNum}, partNum {partNum}, comp num {theModelComponent.num}")
                 theNode.parts[partNum].compNum = theModelComponent.num
             elif isinstance(theModelComponent, RMatrix):
                 theNode.br.parts[partNum].rMatrixNum = theModelComponent.num
@@ -7703,6 +7734,7 @@ class Tree(object):
             if mp.ndch2:
                 if mp.nComps != len(list(self.iterNodes())):
                     complaints.append('Part %i, ndch2 needs a comp for each node' % pNum)
+                    complaints.append(f"   {len(list(self.iterNodes()))} nodes in the tree, {mp.nComps} comps") 
                     partIsBad = 1
 
             if partIsBad:
