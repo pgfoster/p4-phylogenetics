@@ -14,6 +14,8 @@ rNum = int(var.argvAfterDoubleDash[0])
 
 read("d.nex")
 a = var.alignments[0]
+
+# assuming we have a partition defined ...
 a.setCharPartition('p1')
 d = Data()
 t = func.randomTree(taxNames=d.taxNames)
@@ -35,7 +37,15 @@ t.setNGammaCat(partNum=pNum, nGammaCat=1)
 t.setPInvar(partNum=pNum, free=1, val=0.1)
 t.setRelRate(partNum=pNum, val=2.0)
 
-t.model.relRatesAreFree = True
+if 1:
+    t.model.relRatesAreFree = True
+else:
+    pass
+    # # set fixed part rates, using eg ml vals from iqtree
+    # t.model.relRatesAreFree = False
+    # t.model.parts[0].relRate = 0.89
+    # t.model.parts[1].relRate = 1.07
+
 
 nGen = 1000000
 nSamples = 2000
@@ -44,7 +54,11 @@ nCheckPoints = 2
 cpInterv = int(nGen / nCheckPoints)  # or None
 
 m = Mcmc(t, nChains=4, runNum=rNum, sampleInterval=sInterv, checkPointInterval=cpInterv)
+
+m.doCpo = True
+m.cpo_startGen = 500000
+
 m.run(nGen)
-# func.summarizeMcmcPrams(skip=200)
+# func.summarizeMcmcPrams(skip=500000)
 
 

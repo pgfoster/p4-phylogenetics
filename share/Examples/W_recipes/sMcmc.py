@@ -29,7 +29,13 @@ nCheckPoints = 2
 cpInterv = int(nGen / nCheckPoints)  # or None
 
 m = Mcmc(t, nChains=4, runNum=rNum, sampleInterval=sInterv, checkPointInterval=cpInterv)
+
+m.doCpo = True
+m.cpo_startGen = 500000
+
+
 m.run(nGen)
-# func.summarizeMcmcPrams(skip=500)
+
+# func.summarizeMcmcPrams(skip=1000)
 
 

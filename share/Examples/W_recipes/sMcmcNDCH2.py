@@ -46,6 +46,9 @@ m = Mcmc(t, nChains=4, runNum=rNum, sampleInterval=sInterv, checkPointInterval=c
 # Check what proposals are turned on
 # print(m.prob)
 
+m.doCpo = True
+m.cpo_startGen = 500000
+
 m.run(nGen)
 
 
