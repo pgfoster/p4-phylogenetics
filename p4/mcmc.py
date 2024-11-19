@@ -3288,6 +3288,8 @@ class Mcmc(object):
                 siteNum = 0
                 pf.p4_treeLogLike(self.chains[self.coldChainNum].curTree.cTree, 1)
                 for dp in self.chains[self.coldChainNum].curTree.data.parts:
+                    # FIXME, too much memory allocation; it makes a new list with each
+                    # call to getSiteLikes
                     siteLikes = pf.getSiteLikes(dp.cPart)
                     for sL in siteLikes:
                         self.cpo_sumsOfInverseSiteLikes[siteNum] += 1./sL

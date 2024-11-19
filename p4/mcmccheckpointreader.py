@@ -219,3 +219,33 @@ class McmcCheckPointReader(object):
     def writeProposalProbs(self):
         for m in self.mm:
             m.writeProposalProbs()
+
+    def combineLPMLs(self):
+        """Combine LPML values from all Mcmc objects in self"""
+
+        # check
+        m0 = self.mm[0]
+        m0totalDataLen = len(m0.cpo_sumsOfInverseSiteLikes)
+        assert m0totalDataLen
+        for m in self.mm:
+            assert m.doCpo
+            assert m.cpo_nSamples
+            # I don't think this next assert is strictly necessary --
+            # different Mcmc objects could possibly have 
+            # different cpo_nSamples values and still be valid.
+            # But if it is not so, then things are probably mixed-up.
+            assert m.cpo_nSamples == m0.cpo_nSamples
+            assert len(m.cpo_sumsOfInverseSiteLikes) == m0totalDataLen 
+
+        a = numpy.zeros(m0totalDataLen, float)
+        all_cpo_nSamples = 0
+        for m in self.mm:
+            b = numpy.array(m.cpo_sumsOfInverseSiteLikes)
+            a += b
+            all_cpo_nSamples += m.cpo_nSamples
+        a /= all_cpo_nSamples
+        a = -numpy.log(a)
+        theSum = a.sum()
+        print(f"combineLPMLs() from {len(self.mm)} Mcmc objects all_cpo_nSamples: {all_cpo_nSamples}, lpml: {theSum}")
+        return theSum
+
