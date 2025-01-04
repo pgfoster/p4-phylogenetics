@@ -1045,7 +1045,7 @@ class Mcmc(object):
 
             if mp.ndrh2:
                 if mp.nRMatrices != nNodes - 1:
-                    gm.append("Model part %i, ndrh2 is on, nNodes is %i, nRMatices is %i" % (
+                    gm.append("Model part %i, ndrh2 is on, nNodes is %i, nRMatrices is %i" % (
                         pNum, nNodes, mp.nRMatrices))
                     gm.append("For ndrh2 there should be one comp for each node except the root.")
                     raise P4Error(gm)
@@ -3745,4 +3745,4 @@ class Mcmc(object):
         theSum = a.sum()
         if verbose:
             print(f"cpo_nSamples: {self.cpo_nSamples}, lpml: {theSum}")
-        return theSum
+        return float(theSum)
