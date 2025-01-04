@@ -3640,6 +3640,8 @@ class Alignment(SequenceList):
         """
         # if we have parts, ie self is in a Data object, use fast pf.getSimpleBigF()
         if self.parts:
+            if not hasattr(self, "simpBigF"):
+                self.simpBigF = numpy.zeros([self.dim, self.dim], dtype=numpy.double)
             pf.getSimpleBigF(self.parts[0].cPart, self.simpBigF, iA, iB)
             return(self.simpBigF)
 
