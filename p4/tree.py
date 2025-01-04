@@ -6757,6 +6757,7 @@ class Tree(object):
 
     def setNewModel(self):
 
+        gm = ["Tree.setNewModel()"]
         theData = self.data
         assert self.data, "set the data first"
         # assert not self.model, "this method is to be used when there is no model"

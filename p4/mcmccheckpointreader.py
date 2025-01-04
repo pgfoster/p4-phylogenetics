@@ -220,8 +220,11 @@ class McmcCheckPointReader(object):
         for m in self.mm:
             m.writeProposalProbs()
 
-    def combineLPMLs(self):
-        """Combine LPML values from all Mcmc objects in self"""
+    def combineLPMLs(self, verbose=True):
+        """Combine LPML values from all Mcmc objects in self
+
+        Returns the combined LPML.
+        """
 
         # check
         m0 = self.mm[0]
@@ -246,6 +249,7 @@ class McmcCheckPointReader(object):
         a /= all_cpo_nSamples
         a = -numpy.log(a)
         theSum = a.sum()
-        print(f"combineLPMLs() from {len(self.mm)} Mcmc objects all_cpo_nSamples: {all_cpo_nSamples}, lpml: {theSum}")
-        return theSum
+        if verbose:
+            print(f"combineLPMLs() from {len(self.mm)} Mcmc objects all_cpo_nSamples: {all_cpo_nSamples}, lpml: {theSum}")
+        return float(theSum)
 
