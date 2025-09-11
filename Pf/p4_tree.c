@@ -528,11 +528,11 @@ void p4_setPramsPart(p4_tree *aTree, int pNum)
     }
 
 #if 0
-    printf("bigP for node 1\n");
+    printf("p4_setPramsPart() bigP for node 1\n");
     dump_psdmatrix(aTree->nodes[1]->bigPDecks[0][0], aTree->model->parts[pNum]->dim);	
     //dump_psdmatrix(aTree->nodes[1]->bigPDecks[0][1], aTree->model->parts[pNum]->dim);
-    //printf("bigP for node 2\n");
-    //dump_psdmatrix(aTree->nodes[2]->bigPDecks[0][0], aTree->model->parts[pNum]->dim);	
+    printf("p4_setPramsPart() bigP for node 2\n");
+    dump_psdmatrix(aTree->nodes[2]->bigPDecks[0][0], aTree->model->parts[pNum]->dim);	
 #endif
 
 
@@ -952,7 +952,7 @@ double p4_partLogLike(p4_tree *aTree, part *dp, int pNum, int getSiteLikes)
     }
 
 #if 0
-    printf("Conditional Likes of the root\n");
+    printf("p4_partLogLike() Conditional Likes of the root\n");
     for(seqPos = 0; seqPos < dp->nPatterns; seqPos++) {
         printf("    Pattern position %i\n", seqPos);
         for(rate = 0; rate < mp->nCat; rate++) {
