@@ -5,7 +5,7 @@ the tree, or over different parts of the data.
 """
 
 # distutils is deprecated and removal is planned for Python 3.12
-from distutils.core import setup, Extension
+from setuptools import setup, Extension
 import sys
 import os
 
@@ -121,9 +121,17 @@ for f in allFiles:
 for i in range(len(pfSources)):
     pfSources[i] = os.path.join(sourceDir, pfSources[i])
 	
+myPfExtension = Extension("pf",
+          pfSources,
+          include_dirs = my_include_dirs,
+          library_dirs = my_lib_dirs,
+          # If you need to link the gsl stuff statically, uncomment the extra_link_args line below,
+          # and adjust the rpath to the location of your gsl libs.
+          #extra_link_args = ['-Wl,-rpath=/home/peter/Secret/lib' ],
+          libraries=["gsl", "gslcblas", "nlopt"])
 
 setup(name="p4",
-      description="Phylogenetic analysis with heterogeneous models",
+      description="Phylogenetic analysis with tree-heterogeneous models",
       author="Peter Foster",
       author_email="p.foster _at_ nhm ac uk",
       url="https://p4.nhm.ac.uk",
@@ -133,12 +141,5 @@ setup(name="p4",
       #data_files= ['share/Examples', 'share/sphinxdoc'],
       packages=["p4", "p4.interactive"],
       ext_package="p4",
-      ext_modules=[Extension("pf",
-                             pfSources,
-                             include_dirs = my_include_dirs,
-                             library_dirs = my_lib_dirs,
-                             # If you need to link the gsl stuff statically, uncomment the extra_link_args line below,
-                             # and adjust the rpath to the location of your gsl libs.
-                             #extra_link_args = ['-Wl,-rpath=/home/peter/Secret/lib' ],
-                             libraries=["gsl", "gslcblas", "nlopt"])])
+      ext_modules=[myPfExtension])
     
